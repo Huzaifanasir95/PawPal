@@ -4,9 +4,8 @@
 [![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 [![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat&logo=node.js&logoColor=white)](https://nodejs.org)
-[![GitHub stars](https://img.shields.io/github/stars/Huzaifanasir95/PawPal.svg)](https://github.com/Huzaifanasir95/PawPal/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Huzaifanasir95/PawPal.svg)](https://github.com/Huzaifanasir95/PawPal/network)
-[![GitHub issues](https://img.shields.io/github/issues/Huzaifanasir95/PawPal.svg)](https://github.com/Huzaifanasir95/PawPal/issues)
+[![Development Status](https://img.shields.io/badge/Status-In%20Development-orange.svg)](https://github.com/Huzaifanasir95/PawPal)
+[![FYP Project](https://img.shields.io/badge/Project-Final%20Year%20Project-blue.svg)](https://github.com/Huzaifanasir95/PawPal)
 
 > A comprehensive cross-platform mobile application for pet owners to manage, monitor, and care for their beloved companions using AI-powered features.
 
@@ -286,9 +285,12 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 ## 🐛 Bug Reports & Feature Requests
 
-- **Bug Reports**: Please use the [GitHub Issues](https://github.com/Huzaifanasir95/PawPal/issues) page to report bugs
-- **Feature Requests**: We'd love to hear your ideas! Submit them through [GitHub Issues](https://github.com/Huzaifanasir95/PawPal/issues)
-- **Security Issues**: Please email us directly at [security@pawpal.com] for security-related concerns
+> **Note**: This is a private repository currently in development phase.
+
+- **Bug Reports**: Contact the development team directly for bug reports
+- **Feature Requests**: Suggestions and ideas are welcome through direct communication
+- **Academic Feedback**: Please coordinate through university supervisors and faculty
+- **Security Issues**: Report directly to the development team
 
 ## 📊 Project Status
 
@@ -360,9 +362,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Project Links
 
-- **Repository**: [https://github.com/Huzaifanasir95/PawPal](https://github.com/Huzaifanasir95/PawPal)
-- **Issues**: [https://github.com/Huzaifanasir95/PawPal/issues](https://github.com/Huzaifanasir95/PawPal/issues)
-- **Discussions**: [https://github.com/Huzaifanasir95/PawPal/discussions](https://github.com/Huzaifanasir95/PawPal/discussions)
+- **Repository**: [https://github.com/Huzaifanasir95/PawPal](https://github.com/Huzaifanasir95/PawPal) *(Private Repository)*
+- **Project Type**: Final Year Project (FYP)
+- **Status**: In Development - Will be made public upon completion
 
 ## 🙏 Acknowledgments
 

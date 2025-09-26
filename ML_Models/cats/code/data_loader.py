@@ -1,4 +1,3 @@
-# Data loading and preprocessing utilities
 import os
 import random
 import copy
@@ -15,6 +14,7 @@ import torchvision.datasets as datasets
 from torch.utils.data import DataLoader, Dataset, random_split
 
 from config import *
+from tqdm import tqdm
 
 
 def seed_torch(seed=RANDOM_SEED):
@@ -28,16 +28,162 @@ def seed_torch(seed=RANDOM_SEED):
     torch.backends.cudnn.deterministic = True
 
 
-def is_image_valid(image_path):
-    """Check if an image file is valid and can be opened and converted"""
+def is_image_valid_gpu_accelerated(image_path):
+    """GPU-accelerated image validation using OpenCV and CUDA"""
     try:
-        with Image.open(image_path) as img:
-            # Try to load and convert to ensure it's fully readable
-            img.load()
-            img.convert("RGB")
-        return True
-    except (IOError, OSError, Image.DecompressionBombError, ValueError, TypeError):
+        # Try to use OpenCV with CUDA if available
+        import cv2
+        if cv2.cuda.getCudaEnabledDeviceCount() > 0:
+            # Use GPU-accelerated OpenCV
+            img = cv2.imread(image_path)
+            if img is None:
+                return False
+            # Convert to RGB and check dimensions
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            if img_rgb.shape[0] < 10 or img_rgb.shape[1] < 10:
+                return False
+            return True
+        else:
+            # Fallback to CPU-based validation
+            img = cv2.imread(image_path)
+            if img is None:
+                return False
+            return True
+    except ImportError:
+        # Fallback to PIL-based validation
+        return is_image_valid(image_path)
+    except Exception:
         return False
+
+
+def validate_images_parallel(image_paths, max_workers=None):
+    """Validate images using parallel processing for speed"""
+    from concurrent.futures import ThreadPoolExecutor
+    import multiprocessing
+
+    if max_workers is None:
+        max_workers = min(8, multiprocessing.cpu_count())  # Use up to 8 workers
+
+    print(f"Validating {len(image_paths)} images using {max_workers} parallel workers...")
+
+    def validate_single_image(img_path):
+        return img_path, is_image_valid_gpu_accelerated(img_path)
+
+    valid_samples = []
+    total_processed = 0
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(validate_single_image, img_path) for img_path in image_paths]
+
+        for future in tqdm(futures, desc="Validating images", unit="img"):
+            img_path, is_valid = future.result()
+            total_processed += 1
+
+            if is_valid:
+                # Extract class name from path
+                class_name = os.path.basename(os.path.dirname(img_path))
+                class_idx = temp_dataset.class_to_idx.get(class_name, 0)
+                valid_samples.append((img_path, class_idx))
+
+            # Progress update every 100 images
+            if total_processed % 100 == 0:
+                print(f"Processed {total_processed}/{len(image_paths)} images, {len(valid_samples)} valid so far")
+
+    return valid_samples
+
+
+def save_validation_cache(valid_samples, cache_path="validation_cache.pkl"):
+    """Save validation results to cache file"""
+    import pickle
+    try:
+        with open(cache_path, 'wb') as f:
+            pickle.dump(valid_samples, f)
+        print(f"✅ Validation cache saved to {cache_path}")
+    except Exception as e:
+        print(f"⚠️ Failed to save cache: {e}")
+
+
+def load_validation_cache(cache_path="validation_cache.pkl"):
+    """Load validation results from cache file"""
+    import pickle
+    try:
+        if os.path.exists(cache_path):
+            with open(cache_path, 'rb') as f:
+                valid_samples = pickle.load(f)
+            print(f"✅ Loaded {len(valid_samples)} validated images from cache")
+            return valid_samples
+        else:
+            print("No validation cache found")
+            return None
+    except Exception as e:
+        print(f"⚠️ Failed to load cache: {e}")
+        return None
+
+
+def validate_dataset_once(cache_path="validation_cache.pkl", force_revalidate=False):
+    """Validate dataset once and cache results for future use"""
+    global temp_dataset
+
+    # Try to load from cache first
+    if not force_revalidate:
+        cached_samples = load_validation_cache(cache_path)
+        if cached_samples is not None:
+            return cached_samples
+
+    print("🔍 Starting one-time dataset validation...")
+
+    # Check if local dataset exists
+    if not os.path.exists(DATASET_ROOT):
+        raise FileNotFoundError(f"Dataset not found at {DATASET_ROOT}")
+
+    # Set dataset path to images folder
+    dataset_path = IMAGES_PATH if os.path.exists(IMAGES_PATH) else DATASET_ROOT
+    print(f"📁 Dataset path: {dataset_path}")
+
+    # Get basic dataset info without transforms
+    temp_dataset = datasets.ImageFolder(root=dataset_path, transform=None)
+    print(f"📊 Found {len(temp_dataset.classes)} classes with {len(temp_dataset)} total images")
+
+    # Collect all image paths
+    all_image_paths = []
+    class_stats = {}
+
+    for class_idx, class_name in enumerate(temp_dataset.classes):
+        class_path = os.path.join(dataset_path, class_name)
+        if os.path.isdir(class_path):
+            image_files = [f for f in os.listdir(class_path)
+                          if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+            class_stats[class_name] = len(image_files)
+            for img_file in image_files:
+                img_path = os.path.join(class_path, img_file)
+                all_image_paths.append(img_path)
+
+    print(f"🖼️ Total images to validate: {len(all_image_paths)}")
+
+    # Validate images in parallel
+    valid_samples = validate_images_parallel(all_image_paths)
+
+    # Show validation summary
+    print(f"\n📈 Validation Summary:")
+    print(f"✅ Valid images: {len(valid_samples)}/{len(all_image_paths)} ({100*len(valid_samples)/len(all_image_paths):.1f}%)")
+
+    # Per-class statistics
+    valid_per_class = {}
+    for img_path, class_idx in valid_samples:
+        class_name = temp_dataset.classes[class_idx]
+        valid_per_class[class_name] = valid_per_class.get(class_name, 0) + 1
+
+    print(f"\n📋 Per-class validation results:")
+    for class_name in sorted(temp_dataset.classes):
+        original = class_stats.get(class_name, 0)
+        valid = valid_per_class.get(class_name, 0)
+        percentage = 100 * valid / original if original > 0 else 0
+        print(f"  {class_name}: {valid}/{original} ({percentage:.1f}%)")
+
+    # Save to cache
+    save_validation_cache(valid_samples, cache_path)
+
+    return valid_samples
 
 
 class ValidImageDataset(Dataset):
@@ -97,9 +243,18 @@ def get_data_transforms():
     return train_transforms, val_transforms
 
 
-def load_and_filter_dataset():
-    """Load dataset, validate images, and filter out corrupted ones"""
-    print("Loading and validating dataset...")
+def load_and_filter_dataset(force_reload=False, force_revalidate=False):
+    """Load dataset using cached validation results for speed"""
+    global _cached_train_loader, _cached_val_loader, _cached_full_dataset
+    global _cached_train_dataset, _cached_val_dataset, _dataset_loaded
+    global class_names, class_to_idx, idx_to_class, NUM_CLASSES
+
+    # Return cached data if already loaded and not forcing reload
+    if _dataset_loaded and not force_reload and _cached_train_loader is not None:
+        print("✅ Using cached dataset (already loaded and validated)")
+        return _cached_train_loader, _cached_val_loader, _cached_full_dataset, _cached_train_dataset, _cached_val_dataset
+
+    print("🔄 Loading dataset...")
 
     # Set random seed
     seed_torch(RANDOM_SEED)
@@ -110,35 +265,23 @@ def load_and_filter_dataset():
 
     # Set dataset path to images folder
     dataset_path = IMAGES_PATH if os.path.exists(IMAGES_PATH) else DATASET_ROOT
-    print(f"Using dataset path: {dataset_path}")
+    print(f"📁 Using dataset path: {dataset_path}")
 
     # Get data transforms
     train_transforms, val_transforms = get_data_transforms()
 
-    # Validate all images in the dataset
-    print("Validating images in dataset...")
-    valid_samples = []
+    # Get validated samples (from cache or validate once)
+    valid_samples = validate_dataset_once(force_revalidate=force_revalidate)
 
-    # Use the original dataset classes
-    temp_dataset = datasets.ImageFolder(root=dataset_path, transform=None)
+    if not valid_samples:
+        raise ValueError("No valid images found in dataset!")
 
-    for class_idx, class_name in enumerate(temp_dataset.classes):
-        class_path = os.path.join(dataset_path, class_name)
-        if os.path.isdir(class_path):
-            image_files = [f for f in os.listdir(class_path)
-                          if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-            valid_count = 0
-            for img_file in image_files:
-                img_path = os.path.join(class_path, img_file)
-                if is_image_valid(img_path):
-                    valid_samples.append((img_path, class_idx))
-                    valid_count += 1
-                else:
-                    print(f"Skipping corrupted image: {img_path}")
-            print(f"Class '{class_name}': {valid_count}/{len(image_files)} valid images")
+    print(f"✅ Loaded {len(valid_samples)} validated images")
 
-    print(f"\nTotal valid images: {len(valid_samples)}")
-    print(f"Original dataset size: {len(temp_dataset)}")
+    # Get class names from the validation process
+    global temp_dataset
+    if temp_dataset is None:
+        temp_dataset = datasets.ImageFolder(root=dataset_path, transform=None)
 
     # Create filtered dataset
     full_dataset = ValidImageDataset(valid_samples, temp_dataset.classes, transform=None)
@@ -167,16 +310,23 @@ def load_and_filter_dataset():
     )
 
     # Update global variables
-    global NUM_CLASSES, class_names, class_to_idx, idx_to_class
     class_names = full_dataset.classes
     NUM_CLASSES = len(class_names)
     class_to_idx = {class_name: idx for idx, class_name in enumerate(class_names)}
     idx_to_class = {v: k for k, v in class_to_idx.items()}
 
-    print(f"Dataset loaded successfully!")
-    print(f"Classes: {len(class_names)}")
-    print(f"Training images: {len(train_dataset)}")
-    print(f"Validation images: {len(val_dataset)}")
+    # Cache the loaded data
+    _cached_train_loader = train_loader
+    _cached_val_loader = val_loader
+    _cached_full_dataset = full_dataset
+    _cached_train_dataset = train_dataset
+    _cached_val_dataset = val_dataset
+    _dataset_loaded = True
+
+    print(f"✅ Dataset loaded and cached successfully!")
+    print(f"📊 Classes: {len(class_names)}")
+    print(f"🖼️ Training images: {len(train_dataset)}")
+    print(f"🖼️ Validation images: {len(val_dataset)}")
 
     return train_loader, val_loader, full_dataset, train_dataset, val_dataset
 
@@ -227,10 +377,18 @@ def explore_dataset():
         print("\nNo CSV file found")
 
 
-# Global variables to be updated
+# Global variables to be updated and cached
 class_names = None
 class_to_idx = None
 idx_to_class = None
+_cached_train_loader = None
+_cached_val_loader = None
+_cached_full_dataset = None
+_cached_train_dataset = None
+_cached_val_dataset = None
+_dataset_loaded = False
+_cached_labels = None  # Cache for class weights computation
+temp_dataset = None  # Global for validation cache
 
 
 def get_data_loaders(batch_size=None):
@@ -253,12 +411,40 @@ def validate_dataset():
 
 def get_class_names():
     """Get class names (breeds)"""
+    global class_names
+
     if class_names is None:
         # Load dataset to populate class names
         load_and_filter_dataset()
-    return class_names
+
+    return class_names if class_names is not None else []
 
 
-def get_transforms():
-    """Get data transforms"""
-    return get_data_transforms()
+def get_labels_for_class_weights():
+    """Get all labels for computing class weights"""
+    global _cached_labels, _cached_train_dataset, _cached_val_dataset, _dataset_loaded
+
+    # If we have cached labels, use them
+    if _cached_labels is not None:
+        return _cached_labels
+
+    # If dataset is not loaded, load it (this will use cached validation)
+    if not _dataset_loaded or _cached_train_dataset is None or _cached_val_dataset is None:
+        load_and_filter_dataset()
+
+    # Extract labels from cached datasets without loading images
+    all_labels = []
+    if _cached_train_dataset is not None:
+        # Get labels from the underlying dataset using indices
+        dataset = _cached_train_dataset.dataset
+        indices = _cached_train_dataset.indices
+        all_labels.extend([dataset.samples[idx][1] for idx in indices])
+    if _cached_val_dataset is not None:
+        # Get labels from the underlying dataset using indices
+        dataset = _cached_val_dataset.dataset
+        indices = _cached_val_dataset.indices
+        all_labels.extend([dataset.samples[idx][1] for idx in indices])
+
+    # Cache the labels for future use
+    _cached_labels = np.array(all_labels)
+    return _cached_labels

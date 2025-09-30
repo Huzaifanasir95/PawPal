@@ -2,7 +2,7 @@ def get_train_transforms():
     """Advanced training augmentations with Albumentations"""
     return A.Compose([
         # Resize and crop
-        A.RandomResizedCrop(config.IMAGE_SIZE, config.IMAGE_SIZE, 
+        A.RandomResizedCrop(size=(config.IMAGE_SIZE, config.IMAGE_SIZE), 
                            scale=(0.75, 1.0), ratio=(0.9, 1.1), p=1.0),
         
         # Geometric transforms
@@ -45,7 +45,7 @@ def get_train_transforms():
 def get_val_transforms():
     """Validation/Test transforms (no augmentation)"""
     return A.Compose([
-        A.Resize(config.IMAGE_SIZE, config.IMAGE_SIZE),
+        A.Resize(height=config.IMAGE_SIZE, width=config.IMAGE_SIZE),
         A.Normalize(mean=config.MEAN, std=config.STD),
         ToTensorV2()
     ])
@@ -55,34 +55,34 @@ def get_tta_transforms():
     return [
         # Original
         A.Compose([
-            A.Resize(config.IMAGE_SIZE, config.IMAGE_SIZE),
+            A.Resize(height=config.IMAGE_SIZE, width=config.IMAGE_SIZE),
             A.Normalize(mean=config.MEAN, std=config.STD),
             ToTensorV2()
         ]),
         # Horizontal flip
         A.Compose([
-            A.Resize(config.IMAGE_SIZE, config.IMAGE_SIZE),
+            A.Resize(height=config.IMAGE_SIZE, width=config.IMAGE_SIZE),
             A.HorizontalFlip(p=1.0),
             A.Normalize(mean=config.MEAN, std=config.STD),
             ToTensorV2()
         ]),
         # Crop 1
         A.Compose([
-            A.Resize(int(config.IMAGE_SIZE * 1.1), int(config.IMAGE_SIZE * 1.1)),
-            A.CenterCrop(config.IMAGE_SIZE, config.IMAGE_SIZE),
+            A.Resize(height=int(config.IMAGE_SIZE * 1.1), width=int(config.IMAGE_SIZE * 1.1)),
+            A.CenterCrop(height=config.IMAGE_SIZE, width=config.IMAGE_SIZE),
             A.Normalize(mean=config.MEAN, std=config.STD),
             ToTensorV2()
         ]),
         # Crop 2
         A.Compose([
-            A.Resize(int(config.IMAGE_SIZE * 1.15), int(config.IMAGE_SIZE * 1.15)),
-            A.RandomCrop(config.IMAGE_SIZE, config.IMAGE_SIZE),
+            A.Resize(height=int(config.IMAGE_SIZE * 1.15), width=int(config.IMAGE_SIZE * 1.15)),
+            A.RandomCrop(height=config.IMAGE_SIZE, width=config.IMAGE_SIZE),
             A.Normalize(mean=config.MEAN, std=config.STD),
             ToTensorV2()
         ]),
         # Color jitter
         A.Compose([
-            A.Resize(config.IMAGE_SIZE, config.IMAGE_SIZE),
+            A.Resize(height=config.IMAGE_SIZE, width=config.IMAGE_SIZE),
             A.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.05, p=1.0),
             A.Normalize(mean=config.MEAN, std=config.STD),
             ToTensorV2()

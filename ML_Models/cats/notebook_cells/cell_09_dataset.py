@@ -46,17 +46,58 @@ class BalancedCatDataset(Dataset):
             return torch.zeros(3, config.IMAGE_SIZE, config.IMAGE_SIZE), label
 
 def create_stratified_split(samples, class_to_idx, train_ratio=0.85):
-    """Create stratified train/val split ensuring all classes represented"""
+    """Create stratified train/val split handling classes with only 1 sample"""
     # Convert to format needed for sklearn
     labels = [class_to_idx[class_name] for _, class_name in samples]
     
-    # Stratified split
-    train_samples, val_samples = train_test_split(
-        [(path, class_to_idx[cls]) for path, cls in samples],
-        test_size=1-train_ratio,
-        stratify=labels,
-        random_state=42
-    )
+    # Count samples per class
+    class_counts = Counter(labels)
+    
+    # Separate samples by class frequency
+    single_sample_classes = {cls for cls, count in class_counts.items() if count == 1}
+    
+    if single_sample_classes:
+        print(f"   ⚠️  Found {len(single_sample_classes)} classes with only 1 sample")
+        print(f"      These will be added to TRAINING set only")
+        
+        # Separate single-sample classes
+        single_samples = []
+        multi_samples = []
+        multi_labels = []
+        
+        for (path, cls_name), label in zip(samples, labels):
+            if label in single_sample_classes:
+                # Add single samples to training
+                single_samples.append((path, class_to_idx[cls_name]))
+            else:
+                # Keep multi-sample classes for stratified split
+                multi_samples.append((path, cls_name))
+                multi_labels.append(label)
+        
+        if len(multi_samples) > 0:
+            # Stratified split only on classes with 2+ samples
+            train_multi, val_multi = train_test_split(
+                [(path, class_to_idx[cls]) for path, cls in multi_samples],
+                test_size=1-train_ratio,
+                stratify=multi_labels,
+                random_state=42
+            )
+            
+            # Add single samples to training set
+            train_samples = train_multi + single_samples
+            val_samples = val_multi
+        else:
+            # All classes have only 1 sample (extreme case)
+            train_samples = single_samples
+            val_samples = []
+    else:
+        # Normal stratified split (all classes have 2+ samples)
+        train_samples, val_samples = train_test_split(
+            [(path, class_to_idx[cls]) for path, cls in samples],
+            test_size=1-train_ratio,
+            stratify=labels,
+            random_state=42
+        )
     
     return train_samples, val_samples
 

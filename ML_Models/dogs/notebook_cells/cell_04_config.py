@@ -12,8 +12,8 @@ class Config:
     NUM_CLASSES = 120  # Stanford Dogs has 120 breeds
     
     # Training Hyperparameters (⚡ FAST MODE - 2 hours!)
-    BATCH_SIZE = 32         # Larger batch = fewer iterations
-    ACCUMULATION_STEPS = 2  # Effective batch size = 64
+    BATCH_SIZE = 16         # Reduced for T4 GPU (15GB)
+    ACCUMULATION_STEPS = 4  # Effective batch size = 64
     NUM_EPOCHS = 40         # Fewer epochs, still 90%+
     LEARNING_RATE = 3e-5    # Conservative for fine-tuning
     WEIGHT_DECAY = 0.05

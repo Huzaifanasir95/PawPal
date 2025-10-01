@@ -47,30 +47,10 @@ def analyze_dataset_distribution(images_path):
     imbalance_ratio = max(counts) / max(min(counts), 1)
     print(f"\n⚖️  IMBALANCE RATIO: {imbalance_ratio:.1f}:1")
     
-    if imbalance_ratio > 100:
-        print(f"   ⚠️  EXTREME IMBALANCE DETECTED!")
-    elif imbalance_ratio > 10:
-        print(f"   ⚠️  SEVERE IMBALANCE DETECTED!")
-    
-    # Identify rare classes
-    rare_classes = {k: v for k, v in class_counts.items() 
-                    if v < config.RARE_CLASS_THRESHOLD}
-    
-    print(f"\n⚠️  RARE CLASSES (< {config.RARE_CLASS_THRESHOLD} images): {len(rare_classes)}")
-    
-    if rare_classes:
-        print(f"\n   Top 10 rarest breeds:")
-        for i, (breed, count) in enumerate(sorted(rare_classes.items(), key=lambda x: x[1])[:10], 1):
-            print(f"      {i:2d}. {breed:30s} : {count:2d} images")
-        
-        if len(rare_classes) > 10:
-            print(f"      ... and {len(rare_classes) - 10} more rare breeds")
-        
-        print(f"\n   💡 SOLUTION APPLIED:")
-        print(f"      ✓ {config.RARE_CLASS_BOOST}x augmentation boost")
-        print(f"      ✓ Weighted random sampling")
-        print(f"      ✓ Focal Loss for hard examples")
-        print(f"      ✓ Class-balanced loss weights")
+    if imbalance_ratio > 10:
+        print(f"   ⚠️  MODERATE IMBALANCE DETECTED")
+    else:
+        print(f"   ✅ WELL-BALANCED DATASET!")
     
     print(f"\n{'='*70}\n")
     

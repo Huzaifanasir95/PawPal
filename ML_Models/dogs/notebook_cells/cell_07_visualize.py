@@ -53,18 +53,20 @@ Images per Breed:
   • Std Dev: {np.std(counts):.1f}
 
 Imbalance Ratio: {max(counts)/max(min(counts), 1):.1f}:1
+Status: {'✅ Well-Balanced!' if max(counts)/max(min(counts), 1) < 3 else '⚠️ Moderate Imbalance'}
 
 {'='*42}
 TRAINING STRATEGY:
 {'='*42}
 
+✓ ConvNeXt V2 Base (88M params)
 ✓ Focal Loss (γ={config.FOCAL_GAMMA})
 ✓ Advanced Augmentation
 ✓ Progressive Training (4 stages)
 ✓ Test-Time Augmentation
 ✓ MixUp & CutMix
 
-Target: 90%+ Accuracy
+Target: 92-95% Accuracy
 """
 ax.text(0.05, 0.95, stats_text, transform=ax.transAxes,
        fontsize=10, verticalalignment='top',

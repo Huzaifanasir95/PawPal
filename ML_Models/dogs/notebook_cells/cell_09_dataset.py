@@ -1,4 +1,4 @@
-class BalancedDogDataset(Dataset):
+class DogDataset(Dataset):
     """Custom dataset for dog breed classification"""
     
     def __init__(self, samples, class_to_idx, transform=None, is_training=False):
@@ -7,9 +7,6 @@ class BalancedDogDataset(Dataset):
         self.idx_to_class = {v: k for k, v in class_to_idx.items()}
         self.transform = transform
         self.is_training = is_training
-        
-        # Calculate class frequencies
-        self.class_counts = Counter([label for _, label in samples])
     
     def __len__(self):
         return len(self.samples)
@@ -70,10 +67,10 @@ print(f"   • Validation samples: {len(val_samples):,}")
 train_transforms = get_train_transforms()
 val_transforms = get_val_transforms()
 
-train_dataset = BalancedDogDataset(train_samples, class_to_idx, 
-                                   train_transforms, is_training=True)
-val_dataset = BalancedDogDataset(val_samples, class_to_idx, 
-                                 val_transforms, is_training=False)
+train_dataset = DogDataset(train_samples, class_to_idx, 
+                           train_transforms, is_training=True)
+val_dataset = DogDataset(val_samples, class_to_idx, 
+                         val_transforms, is_training=False)
 
 # Create dataloaders
 train_loader = DataLoader(

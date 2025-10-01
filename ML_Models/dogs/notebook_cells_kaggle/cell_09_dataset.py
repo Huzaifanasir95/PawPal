@@ -1,5 +1,5 @@
-class BalancedCatDataset(Dataset):
-    """Custom dataset with special handling for rare classes"""
+class DogDataset(Dataset):
+    """Custom dataset for dog breed classification"""
     
     def __init__(self, samples, class_to_idx, transform=None, is_training=False):
         self.samples = samples
@@ -7,16 +7,6 @@ class BalancedCatDataset(Dataset):
         self.idx_to_class = {v: k for k, v in class_to_idx.items()}
         self.transform = transform
         self.is_training = is_training
-        
-        # Calculate class frequencies
-        self.class_counts = Counter([label for _, label in samples])
-        
-        # Identify rare classes
-        self.rare_classes = set([label for label, count in self.class_counts.items() 
-                                 if count < config.RARE_CLASS_THRESHOLD])
-        
-        if self.rare_classes and is_training:
-            print(f"\n   ⚠️  Detected {len(self.rare_classes)} rare classes in this split")
     
     def __len__(self):
         return len(self.samples)
@@ -101,28 +91,6 @@ def create_stratified_split(samples, class_to_idx, train_ratio=0.85):
     
     return train_samples, val_samples
 
-def get_weighted_sampler(dataset):
-    """Create weighted sampler for balanced training"""
-    # Calculate class weights (inverse frequency)
-    class_counts = Counter([label for _, label in dataset.samples])
-    class_weights = {cls: 1.0 / count for cls, count in class_counts.items()}
-    
-    # Boost rare classes even more
-    for cls in dataset.rare_classes:
-        class_weights[cls] *= config.RARE_CLASS_BOOST
-    
-    # Assign weights to each sample
-    sample_weights = [class_weights[label] for _, label in dataset.samples]
-    
-    # Create sampler
-    sampler = WeightedRandomSampler(
-        weights=sample_weights,
-        num_samples=len(sample_weights),
-        replacement=True
-    )
-    
-    return sampler
-
 # Create class mapping
 class_to_idx = {cls: idx for idx, cls in enumerate(class_names)}
 idx_to_class = {idx: cls for cls, idx in class_to_idx.items()}
@@ -140,30 +108,19 @@ print(f"   • Validation samples: {len(val_samples):,}")
 train_transforms = get_train_transforms()
 val_transforms = get_val_transforms()
 
-train_dataset = BalancedCatDataset(train_samples, class_to_idx, 
-                                   train_transforms, is_training=True)
-val_dataset = BalancedCatDataset(val_samples, class_to_idx, 
-                                 val_transforms, is_training=False)
+train_dataset = DogDataset(train_samples, class_to_idx, 
+                           train_transforms, is_training=True)
+val_dataset = DogDataset(val_samples, class_to_idx, 
+                         val_transforms, is_training=False)
 
-# Create weighted sampler for training
-if config.USE_WEIGHTED_SAMPLER:
-    print("\n⚖️  Creating weighted sampler...")
-    train_sampler = get_weighted_sampler(train_dataset)
-    shuffle_train = False
-    print(f"   • Rare classes get {config.RARE_CLASS_BOOST}x sampling probability")
-else:
-    train_sampler = None
-    shuffle_train = True
-
-# Create dataloaders
+# Create dataloaders (no weighted sampling needed for balanced dataset)
 train_loader = DataLoader(
     train_dataset, 
     batch_size=config.BATCH_SIZE,
-    sampler=train_sampler,
-    shuffle=shuffle_train if train_sampler is None else False,
+    shuffle=True,
     num_workers=config.NUM_WORKERS,
     pin_memory=config.PIN_MEMORY,
-    drop_last=True  # Drop last incomplete batch
+    drop_last=True
 )
 
 val_loader = DataLoader(

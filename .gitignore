@@ -5,3 +5,4 @@ images/
 oxford_pet_dataset/
 ML_Models/cats/code/cat_breed_classifier.pth
 data/
+model/

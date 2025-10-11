@@ -7,7 +7,6 @@ warnings.filterwarnings('ignore')
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
 from collections import Counter, defaultdict
 from tqdm.auto import tqdm
@@ -30,7 +29,10 @@ from albumentations.pytorch import ToTensorV2
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, f1_score, confusion_matrix, accuracy_score
 
-# Check GPU (Kaggle specific)
+# Import seaborn last
+import seaborn as sns
+
+# Rest of your code remains the same
 print(f"\n{'='*70}")
 print(f"KAGGLE GPU CHECK")
 print(f"{'='*70}")
@@ -45,7 +47,6 @@ if torch.cuda.is_available():
         print(f"   Memory: {memory_gb:.1f} GB")
     print(f"   CUDA version: {torch.version.cuda}")
     
-    # Check if T4 x2 (2 GPUs)
     if torch.cuda.device_count() == 2:
         print(f"\n💪 T4 x2 detected! Using DataParallel for faster training")
 else:
@@ -54,7 +55,6 @@ else:
 
 print(f"{'='*70}\n")
 
-# Set seeds for reproducibility
 def set_seed(seed=42):
     random.seed(seed)
     np.random.seed(seed)

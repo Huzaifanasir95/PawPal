@@ -55,6 +55,12 @@ class Config:
     RARE_CLASS_THRESHOLD = 10
     RARE_CLASS_BOOST = 4.0  # 4x for rare classes
     
+    # Dataset Size Control (NEW - to reduce computation)
+    MAX_SAMPLES_PER_BREED = 500  # Cap per breed to save computation
+    MIN_SAMPLES_PER_BREED = 1    # Minimum to keep a breed (keep all breeds)
+    USE_SMART_SAMPLING = True    # Use quality-based sampling
+    USE_GPU_ANALYSIS = True      # Use GPU for faster image processing
+    
     # Mixed Precision Training
     USE_AMP = True
     
@@ -89,6 +95,8 @@ print(f"🖼️  Image Size: {config.IMAGE_SIZE}x{config.IMAGE_SIZE}")
 print(f"📊 Batch Size: {config.BATCH_SIZE} (effective: {config.BATCH_SIZE * config.ACCUMULATION_STEPS})")
 print(f"🎯 Epochs: {config.NUM_EPOCHS}")
 print(f"⚖️  Rare Class Boost: {config.RARE_CLASS_BOOST}x")
+print(f"📊 Min Samples/Breed: {config.MIN_SAMPLES_PER_BREED} (keep all breeds)")
+print(f"🚀 GPU Analysis: {'✓ Enabled' if config.USE_GPU_ANALYSIS else '✗ CPU only'}")
 print(f"💪 Multi-GPU: {'✓ Enabled' if config.USE_MULTI_GPU else '✗ Single GPU'}")
 print(f"📂 Dataset: {config.IMAGES_PATH}")
 print(f"💾 Output: {config.OUTPUT_DIR} (auto-saved!)")

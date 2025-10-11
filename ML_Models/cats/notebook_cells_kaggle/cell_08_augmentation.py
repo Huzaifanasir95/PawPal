@@ -2,7 +2,7 @@ def get_train_transforms():
     """Advanced training augmentations with Albumentations"""
     return A.Compose([
         # Resize and crop
-        A.RandomResizedCrop(size=(config.IMAGE_SIZE, config.IMAGE_SIZE), 
+        A.RandomResizedCrop(height=config.IMAGE_SIZE, width=config.IMAGE_SIZE, 
                            scale=(0.75, 1.0), ratio=(0.9, 1.1), p=1.0),
         
         # Geometric transforms

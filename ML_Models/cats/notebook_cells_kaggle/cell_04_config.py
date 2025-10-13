@@ -1,15 +1,15 @@
 class Config:
     """Advanced training configuration for Kaggle - 90%+ accuracy"""
     
-    # Kaggle-specific paths
-    DATASET_ROOT = "/kaggle/input/cat-breeds-dataset"
-    IMAGES_PATH = "/kaggle/input/cat-breeds-dataset/images"
+    # Kaggle-specific paths (Cat Breeds Refined 7k Dataset)
+    DATASET_ROOT = "/kaggle/input/catbreedsrefined-7k"
+    IMAGES_PATH = "/kaggle/input/catbreedsrefined-7k"
     OUTPUT_DIR = "/kaggle/working"  # Auto-saved by Kaggle!
     
     # Model Architecture
     MODEL_NAME = 'convnextv2_base.fcmae_ft_in22k_in1k_384'  # 88M params
     IMAGE_SIZE = 384
-    NUM_CLASSES = 67
+    NUM_CLASSES = 20  # Cat Breeds Refined has 20 breeds
     
     # Training Hyperparameters (optimized for Kaggle GPU)
     BATCH_SIZE = 32  # Kaggle T4 x2 can handle larger batches
@@ -49,16 +49,16 @@ class Config:
     FOCAL_ALPHA = 0.25
     FOCAL_GAMMA = 2.0
     
-    # Class Imbalance Handling (CRITICAL FOR SUCCESS!)
-    USE_WEIGHTED_SAMPLER = True
-    USE_CLASS_WEIGHTS = True
-    RARE_CLASS_THRESHOLD = 10
-    RARE_CLASS_BOOST = 4.0  # 4x for rare classes
+    # Class Imbalance Handling (Cat Breeds Refined is perfectly balanced!)
+    USE_WEIGHTED_SAMPLER = False  # No need - perfectly balanced dataset
+    USE_CLASS_WEIGHTS = False     # No need - perfectly balanced dataset  
+    RARE_CLASS_THRESHOLD = 10     # All breeds have 350 images (no rare classes)
+    RARE_CLASS_BOOST = 1.0        # No boost needed - perfectly balanced
     
-    # Dataset Size Control (NEW - to reduce computation)
-    MAX_SAMPLES_PER_BREED = 500  # Cap per breed to save computation
+    # Dataset Size Control (Cat Breeds Refined is perfectly balanced!)
+    MAX_SAMPLES_PER_BREED = 350  # All breeds have exactly 350 images
     MIN_SAMPLES_PER_BREED = 1    # Minimum to keep a breed (keep all breeds)
-    USE_SMART_SAMPLING = True    # Use quality-based sampling
+    USE_SMART_SAMPLING = False   # No need - dataset is perfectly balanced
     USE_GPU_ANALYSIS = True      # Use GPU for faster image processing
     
     # Mixed Precision Training
@@ -102,5 +102,6 @@ print(f"📂 Dataset: {config.IMAGES_PATH}")
 print(f"💾 Output: {config.OUTPUT_DIR} (auto-saved!)")
 print(f"{'='*70}\n")
 
-print("🎯 TARGET: 90%+ accuracy with balanced class handling")
-print("⏱️  Expected training time: 3-4 hours on T4 x2")
+print("🎯 TARGET: 95%+ accuracy with perfectly balanced dataset!")
+print("⏱️  Expected training time: 2-3 hours on T4 x2 (faster due to balance)")
+print("🐱 Cat Breeds Refined 7k: 20 breeds × 350 images = 7,000 total")

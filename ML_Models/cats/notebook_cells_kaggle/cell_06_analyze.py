@@ -86,8 +86,9 @@ def analyze_dataset_distribution(images_path):
                         if os.path.isdir(os.path.join(images_path, d))])
     
     print(f"\n{'='*70}")
-    print(f"📊 GPU-ACCELERATED DATASET ANALYSIS WITH SMART SAMPLING")
+    print(f"📊 CAT BREEDS REFINED 7K - GPU ANALYSIS")
     print(f"{'='*70}")
+    print(f"🐱 Dataset: Cat Breeds Refined 7k (20 breeds × 350 images)")
     print(f"🎯 Max samples per breed: {config.MAX_SAMPLES_PER_BREED}")
     print(f"🎯 Min samples per breed: {config.MIN_SAMPLES_PER_BREED}")
     print(f"🧠 Smart sampling: {'✓ Enabled' if config.USE_SMART_SAMPLING else '✗ Disabled'}")

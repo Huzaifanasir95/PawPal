@@ -1,6 +1,29 @@
 # Load best model
 print("📥 Loading best model...")
-model.load_state_dict(torch.load(os.path.join(config.OUTPUT_DIR, 'best_model_final.pth')))
+
+# Check which model files are available
+available_models = []
+model_files = ['best_model_final.pth', 'best_model_stage4.pth', 'best_model_stage3.pth', 'best_model_stage2.pth', 'best_model_stage1.pth']
+
+for model_file in model_files:
+    model_path = os.path.join(config.OUTPUT_DIR, model_file)
+    if os.path.exists(model_path):
+        available_models.append((model_file, model_path))
+        print(f"   ✅ Found: {model_file}")
+
+if not available_models:
+    print("❌ No model files found!")
+    print("Available files in output directory:")
+    for file in os.listdir(config.OUTPUT_DIR):
+        if file.endswith('.pth'):
+            print(f"   📄 {file}")
+    raise FileNotFoundError("No trained model found!")
+
+# Use the best available model (prefer final, then latest stage)
+best_model_file, best_model_path = available_models[0]
+print(f"🎯 Loading: {best_model_file}")
+
+model.load_state_dict(torch.load(best_model_path))
 model.eval()
 
 # Standard validation

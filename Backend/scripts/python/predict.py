@@ -233,10 +233,12 @@ def main():
     parser = argparse.ArgumentParser(description='Dog Breed Prediction Service')
     parser.add_argument('--model-path', required=True, help='Path to model file')
     parser.add_argument('--class-names-path', required=True, help='Path to class names JSON')
-    parser.add_argument('--image', required=True, help='Base64 encoded image')
+    parser.add_argument('--image', help='Base64 encoded image (optional)')
+    parser.add_argument('--image-file', help='Path to file containing base64 image data')
     parser.add_argument('--use-tta', action='store_true', help='Use Test-Time Augmentation')
     parser.add_argument('--use-gpu', action='store_true', help='Use GPU if available')
     parser.add_argument('--top-k', type=int, default=5, help='Number of top predictions')
+    parser.add_argument('--stdin', action='store_true', help='Read image data from stdin')
     
     args = parser.parse_args()
     
@@ -249,8 +251,25 @@ def main():
             use_tta=args.use_tta
         )
         
+        # Get image data
+        if args.image_file:
+            # Read from file
+            with open(args.image_file, 'r') as f:
+                image_data = f.read().strip()
+        elif args.stdin:
+            # Read from stdin
+            image_data = sys.stdin.read().strip()
+        elif args.image:
+            # Use command line argument
+            image_data = args.image
+        else:
+            raise ValueError("No image data provided")
+        
+        if not image_data:
+            raise ValueError("No image data provided")
+        
         # Decode image
-        image = decode_base64_image(args.image)
+        image = decode_base64_image(image_data)
         
         # Make prediction
         result = predictor.predict(image, top_k=args.top_k)

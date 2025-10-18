@@ -145,13 +145,13 @@ func (s *PredictionService) PredictBatch(images []string, useeTTA bool, topK int
 }
 
 func (s *PredictionService) callPythonPredict(imageBase64 string, useeTTA bool, topK int) (*PythonPredictionResult, error) {
-	// Build command arguments
+	// Build command arguments (without the image data to avoid command line length issues)
 	args := []string{
 		s.config.Python.ScriptPath,
 		"--model-path", s.config.Model.ModelPath,
 		"--class-names-path", s.config.Model.ClassNamesPath,
-		"--image", imageBase64,
 		"--top-k", fmt.Sprintf("%d", topK),
+		"--stdin", // Use stdin for image data
 	}
 	
 	if useeTTA {
@@ -162,27 +162,26 @@ func (s *PredictionService) callPythonPredict(imageBase64 string, useeTTA bool, 
 		args = append(args, "--use-gpu")
 	}
 	
-	// Determine Python command
-	pythonCmd := s.config.Python.PythonPath
-	if s.config.Python.VenvPath != "" {
-		// If virtual environment is specified, use it
-		if strings.Contains(s.config.Python.VenvPath, "conda") {
-			pythonCmd = fmt.Sprintf("conda run -p %s python", s.config.Python.VenvPath)
-		} else {
-			pythonCmd = fmt.Sprintf("%s/Scripts/python", s.config.Python.VenvPath)
-		}
+	// Execute Python script
+	cmd := exec.Command(s.config.Python.PythonPath, args...)
+	
+	// Set up stdin to pass image data
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create stdin pipe: %s", err)
 	}
 	
-	// Execute Python script
-	cmd := exec.Command(pythonCmd, args...)
+	s.logger.Debugf("Executing: %s %s", s.config.Python.PythonPath, strings.Join(args, " "))
 	
-	s.logger.Debugf("Executing: %s %s", pythonCmd, strings.Join(args, " "))
+	// Write image data to stdin in a goroutine and close it
+	go func() {
+		defer stdin.Close()
+		stdin.Write([]byte(imageBase64))
+	}()
 	
+	// Get output directly (this starts the process, waits for completion, and returns output)
 	output, err := cmd.Output()
 	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			return nil, fmt.Errorf("python script failed: %s, stderr: %s", err, string(exitError.Stderr))
-		}
 		return nil, fmt.Errorf("failed to execute python script: %s", err)
 	}
 	

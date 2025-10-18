@@ -2,7 +2,6 @@ package config
 
 import (
 	"os"
-	"path/filepath"
 )
 
 type Config struct {
@@ -39,12 +38,6 @@ type PythonConfig struct {
 }
 
 func LoadConfig() (*Config, error) {
-	// Get current working directory
-	pwd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	
 	// Default configuration
 	config := &Config{
 		Server: ServerConfig{
@@ -55,8 +48,8 @@ func LoadConfig() (*Config, error) {
 		},
 		Model: ModelConfig{
 			Name:           "ConvNeXt V2 Base - Dog Breed Classifier",
-			ModelPath:      getEnv("MODEL_PATH", filepath.Join(pwd, "..", "..", "ML_Models", "dogs", "model", "cat_breed_classifier_complete.pth")),
-			ClassNamesPath: getEnv("CLASS_NAMES_PATH", filepath.Join(pwd, "..", "..", "ML_Models", "dogs", "model", "class_names.json")),
+			ModelPath:      getEnv("MODEL_PATH", "d:\\PawPal\\ML_Models\\dogs\\model\\cat_breed_classifier_complete.pth"),
+			ClassNamesPath: getEnv("CLASS_NAMES_PATH", "d:\\PawPal\\ML_Models\\dogs\\model\\class_names.json"),
 			ImageSize:      384,
 			NumClasses:     120,
 			UseGPU:         getEnvBool("USE_GPU", true),
@@ -66,8 +59,8 @@ func LoadConfig() (*Config, error) {
 			SupportedTypes: []string{"image/jpeg", "image/jpg", "image/png", "image/webp"},
 		},
 		Python: PythonConfig{
-			PythonPath: getEnv("PYTHON_PATH", "python"),
-			ScriptPath: getEnv("PYTHON_SCRIPT_PATH", filepath.Join(pwd, "scripts", "python", "predict.py")),
+			PythonPath: getEnv("PYTHON_PATH", "D:/Apps/Python/python.exe"),
+			ScriptPath: getEnv("PYTHON_SCRIPT_PATH", "d:\\PawPal\\Backend\\scripts\\python\\predict.py"),
 			Timeout:    getEnvInt("PYTHON_TIMEOUT", 30),
 			VenvPath:   getEnv("PYTHON_VENV_PATH", ""),
 		},

@@ -198,27 +198,432 @@ go build -o pawpal-backend cmd/api/main.go
 
 ## Flutter Integration
 
-This backend is designed to work seamlessly with Flutter mobile apps:
+This backend is designed to work seamlessly with Flutter mobile apps. Here's how to integrate it:
 
-### Flutter HTTP Example
+### 1. API Base Configuration
+
+```dart
+class ApiConfig {
+  static const String baseUrl = 'http://your-server:8080'; // Change for production
+  static const String apiVersion = 'v1';
+  
+  // Endpoints
+  static const String health = '/health';
+  static const String modelInfo = '/api/$apiVersion/model/info';
+  static const String predict = '/api/$apiVersion/predict';
+  static const String predictUrl = '/api/$apiVersion/predict/url';
+  static const String predictBatch = '/api/$apiVersion/predict/batch';
+  static const String breeds = '/api/$apiVersion/breeds';
+}
+```
+
+### 2. API Service Class
+
 ```dart
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
-Future<Map<String, dynamic>> predictBreed(String base64Image) async {
-  final response = await http.post(
-    Uri.parse('http://localhost:8080/api/v1/predict'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'image': base64Image,
-      'use_tta': true,
-      'top_k': 5,
-    }),
-  );
+class PawPalApiService {
+  static const String _baseUrl = ApiConfig.baseUrl;
   
-  return jsonDecode(response.body);
+  // Convert image to base64
+  static String imageToBase64(File imageFile) {
+    Uint8List imageBytes = imageFile.readAsBytesSync();
+    String base64Image = base64Encode(imageBytes);
+    return 'data:image/jpeg;base64,$base64Image';
+  }
+  
+  // Health check
+  static Future<bool> checkHealth() async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl${ApiConfig.health}'));
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // Get model information
+  static Future<Map<String, dynamic>?> getModelInfo() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl${ApiConfig.modelInfo}'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print('Error getting model info: $e');
+      return null;
+    }
+  }
+  
+  // Single image prediction
+  static Future<Map<String, dynamic>?> predictBreed({
+    required File imageFile,
+    bool useTTA = true,
+    int topK = 5,
+  }) async {
+    try {
+      String base64Image = imageToBase64(imageFile);
+      
+      final response = await http.post(
+        Uri.parse('$_baseUrl${ApiConfig.predict}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'image': base64Image,
+          'use_tta': useTTA,
+          'top_k': topK,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print('Prediction failed: ${response.statusCode}');
+        return jsonDecode(response.body); // May contain error info
+      }
+    } catch (e) {
+      print('Error predicting breed: $e');
+      return null;
+    }
+  }
+  
+  // URL-based prediction
+  static Future<Map<String, dynamic>?> predictFromUrl({
+    required String imageUrl,
+    bool useTTA = true,
+    int topK = 5,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl${ApiConfig.predictUrl}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'image_url': imageUrl,
+          'use_tta': useTTA,
+          'top_k': topK,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('Error predicting from URL: $e');
+      return null;
+    }
+  }
+  
+  // Batch prediction
+  static Future<Map<String, dynamic>?> predictBatch({
+    required List<File> imageFiles,
+    bool useTTA = false, // Usually disabled for batch to save time
+    int topK = 3,
+  }) async {
+    try {
+      List<String> base64Images = imageFiles
+          .map((file) => imageToBase64(file))
+          .toList();
+      
+      final response = await http.post(
+        Uri.parse('$_baseUrl${ApiConfig.predictBatch}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'images': base64Images,
+          'use_tta': useTTA,
+          'top_k': topK,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('Error in batch prediction: $e');
+      return null;
+    }
+  }
+  
+  // Get supported breeds
+  static Future<List<String>?> getSupportedBreeds() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl${ApiConfig.breeds}'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = jsonDecode(response.body);
+        return List<String>.from(data['breeds']);
+      }
+      return null;
+    } catch (e) {
+      print('Error getting breeds: $e');
+      return null;
+    }
+  }
 }
 ```
+
+### 3. Response Models
+
+```dart
+class PredictionResult {
+  final bool success;
+  final String? predicted;
+  final double? confidence;
+  final List<BreedPrediction> predictions;
+  final double processTime;
+  final bool usedTTA;
+  final String? message;
+  
+  PredictionResult({
+    required this.success,
+    this.predicted,
+    this.confidence,
+    required this.predictions,
+    required this.processTime,
+    required this.usedTTA,
+    this.message,
+  });
+  
+  factory PredictionResult.fromJson(Map<String, dynamic> json) {
+    return PredictionResult(
+      success: json['success'] ?? false,
+      predicted: json['predicted'],
+      confidence: json['confidence']?.toDouble(),
+      predictions: (json['predictions'] as List?)
+          ?.map((p) => BreedPrediction.fromJson(p))
+          .toList() ?? [],
+      processTime: json['process_time']?.toDouble() ?? 0.0,
+      usedTTA: json['used_tta'] ?? false,
+      message: json['message'],
+    );
+  }
+}
+
+class BreedPrediction {
+  final String breed;
+  final double confidence;
+  final int rank;
+  
+  BreedPrediction({
+    required this.breed,
+    required this.confidence,
+    required this.rank,
+  });
+  
+  factory BreedPrediction.fromJson(Map<String, dynamic> json) {
+    return BreedPrediction(
+      breed: json['breed'] ?? '',
+      confidence: json['confidence']?.toDouble() ?? 0.0,
+      rank: json['rank'] ?? 0,
+    );
+  }
+}
+```
+
+### 4. Flutter Usage Example
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+
+class DogBreedScreen extends StatefulWidget {
+  @override
+  _DogBreedScreenState createState() => _DogBreedScreenState();
+}
+
+class _DogBreedScreenState extends State<DogBreedScreen> {
+  File? _selectedImage;
+  PredictionResult? _result;
+  bool _isLoading = false;
+  
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+        _result = null;
+      });
+    }
+  }
+  
+  Future<void> _predictBreed() async {
+    if (_selectedImage == null) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      final response = await PawPalApiService.predictBreed(
+        imageFile: _selectedImage!,
+        useTTA: true,
+        topK: 5,
+      );
+      
+      if (response != null) {
+        setState(() {
+          _result = PredictionResult.fromJson(response);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Dog Breed Classifier')),
+      body: Column(
+        children: [
+          if (_selectedImage != null)
+            Image.file(_selectedImage!, height: 300),
+          
+          ElevatedButton(
+            onPressed: _pickImage,
+            child: Text('Pick Image'),
+          ),
+          
+          ElevatedButton(
+            onPressed: _selectedImage != null && !_isLoading 
+                ? _predictBreed 
+                : null,
+            child: _isLoading 
+                ? CircularProgressIndicator() 
+                : Text('Predict Breed'),
+          ),
+          
+          if (_result != null && _result!.success)
+            Expanded(
+              child: ListView.builder(
+                itemCount: _result!.predictions.length,
+                itemBuilder: (context, index) {
+                  final prediction = _result!.predictions[index];
+                  return ListTile(
+                    title: Text(prediction.breed),
+                    subtitle: Text('${(prediction.confidence * 100).toStringAsFixed(1)}%'),
+                    leading: CircleAvatar(
+                      child: Text('${prediction.rank}'),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+### 5. Dependencies (pubspec.yaml)
+
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0
+  image_picker: ^1.0.4
+  
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+```
+
+### 6. Network Configuration
+
+#### Android (android/app/src/main/AndroidManifest.xml)
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+<!-- For HTTP traffic in debug mode -->
+<application
+    android:usesCleartextTraffic="true"
+    ... >
+```
+
+#### iOS (ios/Runner/Info.plist)
+```xml
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+</dict>
+```
+
+### 7. Error Handling
+
+```dart
+class ApiException implements Exception {
+  final String message;
+  final int? statusCode;
+  
+  ApiException(this.message, [this.statusCode]);
+  
+  @override
+  String toString() => 'ApiException: $message';
+}
+
+// Enhanced API calls with better error handling
+static Future<PredictionResult> predictBreedSafe({
+  required File imageFile,
+  bool useTTA = true,
+  int topK = 5,
+}) async {
+  try {
+    final response = await predictBreed(
+      imageFile: imageFile,
+      useTTA: useTTA,
+      topK: topK,
+    );
+    
+    if (response == null) {
+      throw ApiException('No response from server');
+    }
+    
+    return PredictionResult.fromJson(response);
+  } catch (e) {
+    throw ApiException('Prediction failed: $e');
+  }
+}
+```
+
+### 8. Production Deployment
+
+For production, update the base URL:
+```dart
+static const String baseUrl = 'https://your-domain.com'; // Your production server
+```
+
+### 9. Testing the Integration
+
+1. Start the Go backend server
+2. Ensure your Flutter app can reach the server
+3. Test with sample dog images
+4. Monitor logs for debugging
+
+This integration provides a complete bridge between your Flutter mobile app and the Go backend API for seamless dog breed classification!
 
 ## Troubleshooting
 

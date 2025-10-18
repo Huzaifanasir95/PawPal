@@ -1,0 +1,137 @@
+{
+  "info": {
+    "name": "PawPal - Dog Breed Classifier API",
+    "description": "Complete API collection for testing the PawPal backend with ConvNeXt V2 dog breed classification model",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Check if the API is running and healthy"
+      }
+    },
+    {
+      "name": "Get Model Info",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/model/info",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "model", "info"]
+        },
+        "description": "Get information about the loaded model"
+      }
+    },
+    {
+      "name": "Get Supported Breeds",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/breeds",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "breeds"]
+        },
+        "description": "Get list of all supported dog breeds"
+      }
+    },
+    {
+      "name": "Single Prediction (Base64)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"image\": \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCABkAGQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoGRCCNCobHBUjNictEVFiQ0JSo1OEJCdJCxs1JzgvLTJGNzYvHjk2SjorSUVXW0xNTVJaOTs8fx4vOUhLS0xNTk9PWFtcXV5fY2Boa2xtbnN1dXZ3eHl6f3SFhoeIiYqLjI2Oj4CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6voKGys7S1tre4ubq8vL2+v7KztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/aAAwDAQACEQMRAD8A...\",\n  \"use_tta\": true,\n  \"top_k\": 5\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/predict",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "predict"]
+        },
+        "description": "Predict dog breed from base64 encoded image. Replace the base64 string with your actual image data."
+      }
+    },
+    {
+      "name": "Single Prediction (URL)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"image_url\": \"https://example.com/dog-image.jpg\",\n  \"use_tta\": true,\n  \"top_k\": 5\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/predict/url",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "predict", "url"]
+        },
+        "description": "Predict dog breed from image URL. Replace with an actual image URL."
+      }
+    },
+    {
+      "name": "Batch Prediction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"images\": [\n    \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/...\",\n    \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/...\"\n  ],\n  \"use_tta\": false,\n  \"top_k\": 3\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/predict/batch",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "predict", "batch"]
+        },
+        "description": "Predict dog breeds for multiple images (max 10). Replace base64 strings with actual image data."
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}

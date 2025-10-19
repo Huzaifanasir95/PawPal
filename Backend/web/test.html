@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PawPal - Dog Breed Classifier Test</title>
+    <title>PawPal - Pet Breed Classifier Test</title>
     <style>
         * {
             margin: 0;
@@ -286,14 +286,47 @@
         .status-value {
             color: #1976d2;
         }
+
+        .pet-type-toggle {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .pet-type-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .pet-type-label.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .pet-type-label:not(.active) {
+            background: white;
+            color: #007bff;
+        }
+
+        .pet-type-label:hover {
+            box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🐕 PawPal</h1>
-            <p>AI-Powered Dog Breed Classification</p>
-            <p>Test your ConvNeXt V2 model with 120+ breed recognition</p>
+            <h1>🐕🐱 PawPal</h1>
+            <p>AI-Powered Pet Breed Classification</p>
+            <p>Test your ConvNeXt V2 models with Dog (120 breeds) & Cat (20 breeds) recognition</p>
         </div>
 
         <div class="content">
@@ -322,8 +355,23 @@
 
             <!-- Upload Section -->
             <div class="upload-section" id="upload-area">
-                <h3>📸 Upload Dog Image</h3>
-                <p>Drag and drop an image here, or click to select</p>
+                <!-- Pet Type Selection -->
+                <div style="margin-bottom: 20px;">
+                    <h3>🐾 Select Pet Type</h3>
+                    <div style="display: flex; gap: 20px; justify-content: center; margin: 15px 0;">
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 20px; border: 2px solid #007bff; border-radius: 10px; cursor: pointer; background: #007bff; color: white;" id="dog-label">
+                            <input type="radio" name="pet-type" value="dog" checked style="margin: 0;">
+                            <span>🐕 Dog (120 breeds)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 20px; border: 2px solid #007bff; border-radius: 10px; cursor: pointer; background: white; color: #007bff;" id="cat-label">
+                            <input type="radio" name="pet-type" value="cat" style="margin: 0;">
+                            <span>🐱 Cat (20 breeds)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <h3 id="upload-title">📸 Upload Dog Image</h3>
+                <p id="upload-subtitle">Drag and drop an image here, or click to select</p>
                 
                 <div class="file-input-wrapper">
                     <input type="file" id="file-input" class="file-input" accept="image/*">
@@ -402,6 +450,10 @@
         const results = document.getElementById('results');
         const useTTACheckbox = document.getElementById('use-tta');
         const topKInput = document.getElementById('top-k');
+        const uploadTitle = document.getElementById('upload-title');
+        const uploadSubtitle = document.getElementById('upload-subtitle');
+        const dogLabel = document.getElementById('dog-label');
+        const catLabel = document.getElementById('cat-label');
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -410,6 +462,11 @@
         });
 
         function setupEventListeners() {
+            // Pet type selection
+            document.querySelectorAll('input[name="pet-type"]').forEach(radio => {
+                radio.addEventListener('change', handlePetTypeChange);
+            });
+            
             // File input
             fileInput.addEventListener('change', handleFileSelect);
             
@@ -428,9 +485,34 @@
             predictButton.addEventListener('click', handlePredict);
         }
 
+        function handlePetTypeChange(e) {
+            const petType = e.target.value;
+            const isDog = petType === 'dog';
+            
+            // Update labels styling
+            dogLabel.className = isDog ? 'pet-type-label active' : 'pet-type-label';
+            catLabel.className = !isDog ? 'pet-type-label active' : 'pet-type-label';
+            
+            // Update upload section text
+            uploadTitle.textContent = `📸 Upload ${isDog ? 'Dog' : 'Cat'} Image`;
+            uploadSubtitle.textContent = 'Drag and drop an image here, or click to select';
+            
+            // Update loading text
+            const loadingText = document.querySelector('#loading h3');
+            loadingText.textContent = `🤖 AI is analyzing your ${petType}...`;
+            
+            // Update API status for selected pet type
+            checkAPIStatus();
+        }
+
+        function getSelectedPetType() {
+            return document.querySelector('input[name="pet-type"]:checked').value;
+        }
+
         async function checkAPIStatus() {
             try {
-                const response = await fetch(`${API_BASE_URL}/model/info`);
+                const petType = getSelectedPetType();
+                const response = await fetch(`${API_BASE_URL}/model/info?pet_type=${petType}`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -518,6 +600,7 @@
             try {
                 const useeTTA = useTTACheckbox.checked;
                 const topK = parseInt(topKInput.value) || 5;
+                const petType = getSelectedPetType();
 
                 let requestBody;
                 let endpoint;
@@ -527,6 +610,7 @@
                     endpoint = `${API_BASE_URL}/predict`;
                     requestBody = {
                         image: selectedImage,
+                        pet_type: petType,
                         use_tta: useeTTA,
                         top_k: topK
                     };
@@ -535,6 +619,7 @@
                     endpoint = `${API_BASE_URL}/predict/url`;
                     requestBody = {
                         image_url: selectedImage,
+                        pet_type: petType,
                         use_tta: useeTTA,
                         top_k: topK
                     };

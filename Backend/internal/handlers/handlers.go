@@ -31,12 +31,20 @@ func NewHandlers(predictionService *services.PredictionService, logger *logger.L
 func (h *Handlers) HealthCheck(c *gin.Context) {
 	uptime := time.Since(h.startTime)
 	
+	// Get model info for both dogs and cats
+	dogModel := h.predictionService.GetModelInfo(models.PetTypeDog)
+	catModel := h.predictionService.GetModelInfo(models.PetTypeCat)
+	
 	response := models.HealthResponse{
 		Status:    "healthy",
 		Timestamp: time.Now(),
 		Version:   "1.0.0",
 		Uptime:    uptime.String(),
-		Model:     h.predictionService.GetModelInfo(),
+		Model:     dogModel, // For backward compatibility (default to dog)
+		Models: map[string]models.ModelInfo{
+			"dog": dogModel,
+			"cat": catModel,
+		},
 	}
 	
 	c.JSON(http.StatusOK, response)
@@ -44,7 +52,19 @@ func (h *Handlers) HealthCheck(c *gin.Context) {
 
 // GetModelInfo returns information about the model
 func (h *Handlers) GetModelInfo(c *gin.Context) {
-	modelInfo := h.predictionService.GetModelInfo()
+	petTypeStr := c.Query("pet_type")
+	if petTypeStr == "" {
+		petTypeStr = "dog" // Default to dog
+	}
+	
+	var petType models.PetType
+	if petTypeStr == "cat" {
+		petType = models.PetTypeCat
+	} else {
+		petType = models.PetTypeDog
+	}
+	
+	modelInfo := h.predictionService.GetModelInfo(petType)
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"model":   modelInfo,
@@ -59,6 +79,16 @@ func (h *Handlers) PredictSingle(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Success: false,
 			Error:   "Invalid request format: " + err.Error(),
+			Code:    http.StatusBadRequest,
+		})
+		return
+	}
+	
+	// Validate pet type
+	if req.PetType != models.PetTypeDog && req.PetType != models.PetTypeCat {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Success: false,
+			Error:   "Invalid pet type. Must be 'dog' or 'cat'",
 			Code:    http.StatusBadRequest,
 		})
 		return
@@ -84,7 +114,7 @@ func (h *Handlers) PredictSingle(c *gin.Context) {
 	}
 	
 	// Make prediction
-	result, err := h.predictionService.PredictSingle(imageData, req.UseeTTA, topK)
+	result, err := h.predictionService.PredictSingle(imageData, req.PetType, req.UseeTTA, topK)
 	if err != nil {
 		h.logger.Errorf("Prediction failed: %v", err)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -106,6 +136,16 @@ func (h *Handlers) PredictBatch(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Success: false,
 			Error:   "Invalid request format: " + err.Error(),
+			Code:    http.StatusBadRequest,
+		})
+		return
+	}
+	
+	// Validate pet type
+	if req.PetType != models.PetTypeDog && req.PetType != models.PetTypeCat {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Success: false,
+			Error:   "Invalid pet type. Must be 'dog' or 'cat'",
 			Code:    http.StatusBadRequest,
 		})
 		return
@@ -146,7 +186,7 @@ func (h *Handlers) PredictBatch(c *gin.Context) {
 	}
 	
 	// Make batch prediction
-	result, err := h.predictionService.PredictBatch(validatedImages, req.UseeTTA, topK)
+	result, err := h.predictionService.PredictBatch(validatedImages, req.PetType, req.UseeTTA, topK)
 	if err != nil {
 		h.logger.Errorf("Batch prediction failed: %v", err)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -173,6 +213,16 @@ func (h *Handlers) PredictFromURL(c *gin.Context) {
 		return
 	}
 	
+	// Validate pet type
+	if req.PetType != models.PetTypeDog && req.PetType != models.PetTypeCat {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Success: false,
+			Error:   "Invalid pet type. Must be 'dog' or 'cat'",
+			Code:    http.StatusBadRequest,
+		})
+		return
+	}
+	
 	// Download image from URL
 	h.logger.Infof("Downloading image from URL: %s", req.ImageURL)
 	imageData, err := utils.DownloadImageFromURL(req.ImageURL, 50*1024*1024) // 50MB limit
@@ -193,7 +243,7 @@ func (h *Handlers) PredictFromURL(c *gin.Context) {
 	}
 	
 	// Make prediction
-	result, err := h.predictionService.PredictSingle(imageData, req.UseeTTA, topK)
+	result, err := h.predictionService.PredictSingle(imageData, req.PetType, req.UseeTTA, topK)
 	if err != nil {
 		h.logger.Errorf("Prediction failed: %v", err)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -207,21 +257,57 @@ func (h *Handlers) PredictFromURL(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// GetSupportedBreeds returns list of supported dog breeds
+// GetSupportedBreeds returns list of supported breeds
 func (h *Handlers) GetSupportedBreeds(c *gin.Context) {
-	// Read class names from the model's class names file
-	// This is a simplified version - in production you might want to cache this
-	breeds := []models.BreedInfo{
-		{ID: "n02085620-Chihuahua", Name: "Chihuahua", CleanName: "Chihuahua", Group: "Toy"},
-		{ID: "n02085782-Japanese_spaniel", Name: "Japanese Spaniel", CleanName: "Japanese Spaniel", Group: "Toy"},
-		{ID: "n02085936-Maltese_dog", Name: "Maltese Dog", CleanName: "Maltese", Group: "Toy"},
-		// Add more breeds here or read from the actual JSON file
+	petTypeStr := c.Query("pet_type")
+	if petTypeStr == "" {
+		petTypeStr = "dog" // Default to dog
+	}
+	
+	var petType models.PetType
+	if petTypeStr == "cat" {
+		petType = models.PetTypeCat
+	} else {
+		petType = models.PetTypeDog
+	}
+	
+	// Read class names from the appropriate model's class names file
+	var classNamesPath string
+	if petType == models.PetTypeDog {
+		classNamesPath = "d:\\PawPal\\ML_Models\\dogs\\model\\class_names.json"
+	} else {
+		classNamesPath = "d:\\PawPal\\ML_Models\\cats\\model\\class_names.json"
+	}
+	
+	// Read and parse class names (this should be cached in production)
+	classNames, err := utils.ReadClassNames(classNamesPath)
+	if err != nil {
+		h.logger.Errorf("Failed to read class names: %v", err)
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Success: false,
+			Error:   "Failed to load breed information",
+			Code:    http.StatusInternalServerError,
+		})
+		return
+	}
+	
+	// Convert to BreedInfo format
+	breeds := make([]models.BreedInfo, len(classNames))
+	for i, className := range classNames {
+		cleanName := utils.CleanBreedName(className)
+		breeds[i] = models.BreedInfo{
+			ID:        className,
+			Name:      className,
+			CleanName: cleanName,
+			Group:     "", // Could be enhanced with breed group information
+		}
 	}
 	
 	response := models.BreedsResponse{
 		Success:    true,
 		TotalCount: len(breeds),
 		Breeds:     breeds,
+		PetType:    petType,
 	}
 	
 	c.JSON(http.StatusOK, response)

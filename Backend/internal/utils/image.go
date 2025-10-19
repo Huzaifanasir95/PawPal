@@ -2,10 +2,12 @@ package utils
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -138,4 +140,47 @@ func SanitizeFilename(filename string) string {
 		safe = strings.ReplaceAll(safe, char, "_")
 	}
 	return safe
+}
+
+// ReadClassNames reads class names from JSON file
+func ReadClassNames(filePath string) ([]string, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read class names file: %v", err)
+	}
+	
+	var classNames []string
+	if err := json.Unmarshal(data, &classNames); err != nil {
+		return nil, fmt.Errorf("failed to parse class names JSON: %v", err)
+	}
+	
+	return classNames, nil
+}
+
+// CleanBreedName cleans up breed names for display
+func CleanBreedName(breedName string) string {
+	// Remove common prefixes and suffixes
+	cleaned := breedName
+	
+	// Remove ImageNet class prefixes (like "n02085620-")
+	if strings.Contains(cleaned, "-") {
+		parts := strings.Split(cleaned, "-")
+		if len(parts) > 1 {
+			cleaned = strings.Join(parts[1:], "-")
+		}
+	}
+	
+	// Replace underscores and hyphens with spaces
+	cleaned = strings.ReplaceAll(cleaned, "_", " ")
+	cleaned = strings.ReplaceAll(cleaned, "-", " ")
+	
+	// Capitalize each word
+	words := strings.Fields(cleaned)
+	for i, word := range words {
+		if len(word) > 0 {
+			words[i] = strings.ToUpper(word[:1]) + strings.ToLower(word[1:])
+		}
+	}
+	
+	return strings.Join(words, " ")
 }

@@ -42,7 +42,7 @@ func main() {
 	}
 	
 	logger.Info("Starting PawPal Backend API server on port " + port)
-	logger.Info("Model: ConvNeXt V2 - Dog Breed Classifier (120 breeds)")
+	logger.Info("Models: ConvNeXt V2 - Dog Breed Classifier (120 breeds) & Cat Breed Classifier")
 	logger.Info("Access at: http://localhost:" + port)
 	
 	if err := router.Run(":" + port); err != nil {

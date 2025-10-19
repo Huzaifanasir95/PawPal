@@ -6,7 +6,7 @@ import (
 
 type Config struct {
 	Server ServerConfig `json:"server"`
-	Model  ModelConfig  `json:"model"`
+	Models ModelsConfig `json:"models"`
 	Python PythonConfig `json:"python"`
 }
 
@@ -17,7 +17,25 @@ type ServerConfig struct {
 	MaxFileSize int64  `json:"max_file_size"` // in bytes
 }
 
-type ModelConfig struct {
+type ModelsConfig struct {
+	Dogs DogModelConfig `json:"dogs"`
+	Cats CatModelConfig `json:"cats"`
+}
+
+type DogModelConfig struct {
+	Name           string   `json:"name"`
+	ModelPath      string   `json:"model_path"`
+	ClassNamesPath string   `json:"class_names_path"`
+	ImageSize      int      `json:"image_size"`
+	NumClasses     int      `json:"num_classes"`
+	UseGPU         bool     `json:"use_gpu"`
+	UseTTA         bool     `json:"use_tta"`
+	BatchSize      int      `json:"batch_size"`
+	TopK           int      `json:"top_k"`
+	SupportedTypes []string `json:"supported_types"`
+}
+
+type CatModelConfig struct {
 	Name           string   `json:"name"`
 	ModelPath      string   `json:"model_path"`
 	ClassNamesPath string   `json:"class_names_path"`
@@ -46,17 +64,31 @@ func LoadConfig() (*Config, error) {
 			Host:        getEnv("HOST", "localhost"),
 			MaxFileSize: 50 * 1024 * 1024, // 50MB
 		},
-		Model: ModelConfig{
-			Name:           "ConvNeXt V2 Base - Dog Breed Classifier",
-			ModelPath:      getEnv("MODEL_PATH", "d:\\PawPal\\ML_Models\\dogs\\model\\cat_breed_classifier_complete.pth"),
-			ClassNamesPath: getEnv("CLASS_NAMES_PATH", "d:\\PawPal\\ML_Models\\dogs\\model\\class_names.json"),
-			ImageSize:      384,
-			NumClasses:     120,
-			UseGPU:         getEnvBool("USE_GPU", true),
-			UseTTA:         getEnvBool("USE_TTA", true),
-			BatchSize:      1,
-			TopK:           5,
-			SupportedTypes: []string{"image/jpeg", "image/jpg", "image/png", "image/webp"},
+		Models: ModelsConfig{
+			Dogs: DogModelConfig{
+				Name:           "ConvNeXt V2 Base - Dog Breed Classifier",
+				ModelPath:      getEnv("DOG_MODEL_PATH", "d:\\PawPal\\ML_Models\\dogs\\model\\cat_breed_classifier_complete.pth"),
+				ClassNamesPath: getEnv("DOG_CLASS_NAMES_PATH", "d:\\PawPal\\ML_Models\\dogs\\model\\class_names.json"),
+				ImageSize:      384,
+				NumClasses:     120,
+				UseGPU:         getEnvBool("USE_GPU", true),
+				UseTTA:         getEnvBool("USE_TTA", true),
+				BatchSize:      1,
+				TopK:           5,
+				SupportedTypes: []string{"image/jpeg", "image/jpg", "image/png", "image/webp"},
+			},
+			Cats: CatModelConfig{
+				Name:           "ConvNeXt V2 Base - Cat Breed Classifier",
+				ModelPath:      getEnv("CAT_MODEL_PATH", "d:\\PawPal\\ML_Models\\cats\\model\\best_model_stage3.pth"),
+				ClassNamesPath: getEnv("CAT_CLASS_NAMES_PATH", "d:\\PawPal\\ML_Models\\cats\\model\\class_names.json"),
+				ImageSize:      384,
+				NumClasses:     20, // Based on the class_names.json file
+				UseGPU:         getEnvBool("USE_GPU", true),
+				UseTTA:         getEnvBool("USE_TTA", true),
+				BatchSize:      1,
+				TopK:           5,
+				SupportedTypes: []string{"image/jpeg", "image/jpg", "image/png", "image/webp"},
+			},
 		},
 		Python: PythonConfig{
 			PythonPath: getEnv("PYTHON_PATH", "D:/Apps/Python/python.exe"),

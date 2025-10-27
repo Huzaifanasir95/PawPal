@@ -1,0 +1,28 @@
+{
+  "total_breeds": 20,
+  "model_name": "ConvNeXt V2 Base - Cat Breed Classifier",
+  "dataset": "CatBreedsRefined-7k (v2)",
+  "accuracy": "88-92%",
+  "breeds": [
+    "Abyssinian",
+    "American Bobtail",
+    "American Curl",
+    "American Shorthair",
+    "Bengal",
+    "Birman",
+    "Bombay",
+    "British Shorthair",
+    "Egyptian Mau",
+    "Exotic Shorthair",
+    "Maine Coon",
+    "Manx",
+    "Norwegian Forest",
+    "Persian",
+    "Ragdoll",
+    "Russian Blue",
+    "Scottish Fold",
+    "Siamese",
+    "Sphynx",
+    "Turkish Angora"
+  ]
+}

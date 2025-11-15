@@ -6,9 +6,10 @@ Retrieval-Augmented Generation for Veterinary Assistance
 from langchain_community.llms import Ollama
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 from typing import List, Dict, Optional
 import os
 
@@ -20,7 +21,7 @@ class VeterinaryRAG:
     
     def __init__(
         self,
-        model_name: str = "llama3.2:1b",
+        model_name: str = "llama3.1:8b",  # Using 8B for best quality
         embedding_model: str = "all-MiniLM-L6-v2",
         vector_db_path: str = "./vector_db",
         temperature: float = 0.3,
@@ -74,7 +75,7 @@ class VeterinaryRAG:
         print("✅ RAG System initialized successfully!\n")
     
     def _setup_retrieval_chain(self):
-        """Setup the retrieval QA chain with custom prompt"""
+        """Setup the retrieval chain with custom prompt"""
         
         # Veterinary-specific prompt template
         template = """You are PawPal, an expert veterinary AI assistant. Your role is to provide helpful, accurate, and compassionate guidance on pet health matters.
@@ -94,21 +95,26 @@ Instructions:
 
 Answer:"""
 
-        PROMPT = PromptTemplate(
+        self.prompt = PromptTemplate(
             template=template,
             input_variables=["context", "question"]
         )
         
-        # Create retrieval QA chain
-        self.qa_chain = RetrievalQA.from_chain_type(
-            llm=self.llm,
-            chain_type="stuff",  # Stuff all retrieved docs into context
-            retriever=self.vector_db.as_retriever(
-                search_type="similarity",
-                search_kwargs={"k": 5}  # Retrieve top 5 relevant chunks
-            ),
-            return_source_documents=True,
-            chain_type_kwargs={"prompt": PROMPT}
+        # Setup retriever
+        self.retriever = self.vector_db.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": 5}  # Retrieve top 5 relevant chunks
+        )
+        
+        # Create RAG chain using LCEL (LangChain Expression Language)
+        def format_docs(docs):
+            return "\n\n".join(doc.page_content for doc in docs)
+        
+        self.qa_chain = (
+            {"context": self.retriever | format_docs, "question": RunnablePassthrough()}
+            | self.prompt
+            | self.llm
+            | StrOutputParser()
         )
     
     def query(
@@ -140,17 +146,19 @@ Answer:"""
         print(f"🔍 Processing query: {enhanced_query[:100]}...")
         
         # Get response from RAG chain
-        result = self.qa_chain({"query": enhanced_query})
+        answer = self.qa_chain.invoke(enhanced_query)
         
         response = {
-            "answer": result["result"],
+            "answer": answer,
             "query": question,
             "enhanced_query": enhanced_query
         }
         
         if return_sources:
+            # Get source documents separately
+            docs = self.retriever.invoke(enhanced_query)
             sources = []
-            for doc in result.get("source_documents", []):
+            for doc in docs[:3]:  # Top 3 sources
                 sources.append({
                     "content": doc.page_content[:200] + "...",
                     "metadata": doc.metadata

@@ -1,0 +1,70 @@
+
+# Pet Nutrition Guidelines
+
+## Dog Nutrition by Life Stage
+
+### Puppy (0-12 months)
+- High protein (22-32%)
+- High fat (10-25%)
+- Calcium and phosphorus for bone growth
+- Feed 3-4 times daily when young
+- Gradually reduce to 2 meals by 6 months
+
+### Adult Dog (1-7 years)
+- Protein: 18-25%
+- Fat: 10-15%
+- Feed twice daily
+- Monitor weight and adjust portions
+- Regular exercise
+
+### Senior Dog (7+ years)
+- Lower calories (less active)
+- Higher quality protein
+- Joint support (glucosamine, omega-3)
+- May need more frequent, smaller meals
+
+## Dog Nutrition by Breed Size
+
+### Small Breeds (<20 lbs)
+- Higher metabolism
+- Small, frequent meals
+- Calorie-dense food
+- Small kibble size
+
+### Medium Breeds (20-50 lbs)
+- Balanced nutrition
+- Moderate exercise needs
+- Standard feeding schedules
+
+### Large Breeds (50-100 lbs)
+- Joint support important
+- Controlled growth in puppies
+- Watch for bloat risk
+- Large breed specific formulas
+
+### Giant Breeds (100+ lbs)
+- Slow, controlled growth critical
+- Joint and bone support
+- Lower calcium in puppies
+- Multiple small meals to prevent bloat
+
+## Cat Nutrition
+
+### Obligate Carnivores
+- Require animal protein
+- Taurine essential
+- Cannot be vegetarian
+- Need moisture in diet
+
+### Feeding Guidelines
+- Wet food preferred (moisture)
+- Multiple small meals
+- Fresh water always available
+- Avoid free-feeding dry food
+- Monitor weight closely
+
+### Special Dietary Needs
+- Urinary health: increased moisture
+- Weight management: portion control
+- Senior cats: easier to digest protein
+- Kidney disease: low phosphorus

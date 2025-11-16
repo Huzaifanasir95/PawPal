@@ -97,7 +97,7 @@ def main():
     # Initialize RAG system
     try:
         rag = VeterinaryRAG(
-            model_name="llama3.1:8b",  # Using 8B for best quality
+            model_name="llama3.2:1b",  # Fast mode - use llama3.1:8b for quality demos
             vector_db_path="./vector_db",
             temperature=0.3
         )

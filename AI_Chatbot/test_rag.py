@@ -7,8 +7,8 @@ print("=" * 70)
 print("🧪 Testing PawPal RAG System")
 print("=" * 70)
 
-# Initialize RAG
-rag = VeterinaryRAG(model_name="llama3.1:8b")
+# Initialize RAG (using faster 1B model - change to llama3.1:8b for better quality)
+rag = VeterinaryRAG(model_name="llama3.2:1b")
 
 # Test query 1: Emergency situation
 print("\n" + "=" * 70)

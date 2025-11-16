@@ -6,14 +6,19 @@ from langchain_community.document_loaders import (
     PyPDFLoader,
     TextLoader,
     CSVLoader,
-    DirectoryLoader
+    DirectoryLoader,
+    UnstructuredWordDocumentLoader,
+    JSONLoader
 )
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
+from langchain_core.documents import Document
 from pathlib import Path
 from tqdm import tqdm
 import os
+import torch
+import json
 
 
 class KnowledgeBaseBuilder:
@@ -26,23 +31,36 @@ class KnowledgeBaseBuilder:
         knowledge_base_path: str = "./knowledge_base",
         vector_db_path: str = "./vector_db",
         embedding_model: str = "all-MiniLM-L6-v2",
-        chunk_size: int = 500,
-        chunk_overlap: int = 50
+        chunk_size: int = 1000,
+        chunk_overlap: int = 100,
+        batch_size: int = 100
     ):
         self.knowledge_base_path = Path(knowledge_base_path)
         self.vector_db_path = vector_db_path
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+        self.batch_size = batch_size
         
         print("🔧 Initializing Knowledge Base Builder...")
         
-        # Initialize embeddings
+        # Detect GPU
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        if device == 'cuda':
+            print(f"🚀 GPU detected! Using CUDA for acceleration")
+            print(f"   GPU: {torch.cuda.get_device_name(0)}")
+            # Limit GPU memory to prevent overheating
+            torch.cuda.set_per_process_memory_fraction(0.7)  # Use only 70% GPU memory
+        else:
+            print("💻 Using CPU (GPU not available)")
+        
+        # Initialize embeddings with GPU
         print(f"🔤 Loading embedding model: {embedding_model}...")
         self.embeddings = HuggingFaceEmbeddings(
             model_name=embedding_model,
-            model_kwargs={'device': 'cpu'},
-            encode_kwargs={'normalize_embeddings': True}
+            model_kwargs={'device': device},
+            encode_kwargs={'normalize_embeddings': True, 'batch_size': 16}  # Reduced from 32 for temperature control
         )
+        self.device = device
         
         # Text splitter
         self.text_splitter = RecursiveCharacterTextSplitter(
@@ -89,17 +107,39 @@ class KnowledgeBaseBuilder:
                 except Exception as e:
                     print(f"  ⚠️  Error loading {txt_file.name}: {e}")
         
-        # Load CSV files
+        # Load CSV files (skip, too slow)
         csv_files = list(self.knowledge_base_path.rglob("*.csv"))
         if csv_files:
-            print(f"📊 Found {len(csv_files)} CSV files")
-            for csv_file in tqdm(csv_files, desc="Loading CSV files"):
+            print(f"📊 Found {len(csv_files)} CSV files (skipping for speed)")
+        
+        # Load JSON files
+        json_files = list(self.knowledge_base_path.rglob("*.json"))
+        if json_files:
+            print(f"📋 Found {len(json_files)} JSON files")
+            for json_file in tqdm(json_files, desc="Loading JSON files"):
                 try:
-                    loader = CSVLoader(str(csv_file))
-                    docs = loader.load()
-                    all_documents.extend(docs)
+                    with open(json_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    # Convert JSON to text
+                    text_content = json.dumps(data, indent=2)
+                    doc = Document(page_content=text_content, metadata={"source": str(json_file)})
+                    all_documents.append(doc)
                 except Exception as e:
-                    print(f"  ⚠️  Error loading {csv_file.name}: {e}")
+                    print(f"  ⚠️  Error loading {json_file.name}: {e}")
+        
+        # Load DOCX files  
+        docx_files = list(self.knowledge_base_path.rglob("*.docx"))
+        if docx_files:
+            print(f"📄 Found {len(docx_files)} Word documents")
+            for docx_file in tqdm(docx_files, desc="Loading DOCX files"):
+                try:
+                    from docx import Document as DocxDocument
+                    doc_obj = DocxDocument(str(docx_file))
+                    text = '\n'.join([para.text for para in doc_obj.paragraphs])
+                    doc = Document(page_content=text, metadata={"source": str(docx_file)})
+                    all_documents.append(doc)
+                except Exception as e:
+                    print(f"  ⚠️  Error loading {docx_file.name}: {e}")
         
         print(f"\n✅ Loaded {len(all_documents)} documents total")
         return all_documents
@@ -442,15 +482,34 @@ Emergency Contacts:
         
         # Create vector database
         print(f"\n🔨 Creating vector database at {self.vector_db_path}...")
-        print("   This may take a few minutes...")
+        print(f"   Processing {len(chunks)} chunks with GPU acceleration...")
         
-        vector_db = Chroma.from_documents(
-            documents=chunks,
-            embedding=self.embeddings,
-            persist_directory=self.vector_db_path
-        )
+        # Process in batches to show progress and monitor temperature
+        batch_size = self.batch_size
+        total_batches = (len(chunks) + batch_size - 1) // batch_size
         
-        # Persist to disk
+        print(f"   📦 Processing in {total_batches} batches of {batch_size} chunks each\n")
+        
+        # Initialize empty vector DB
+        vector_db = None
+        
+        # Process batches with progress bar
+        for i in tqdm(range(0, len(chunks), batch_size), desc="🔄 Building vector DB", unit="batch"):
+            batch = chunks[i:i + batch_size]
+            
+            # Create or add to vector DB
+            if vector_db is None:
+                # First batch - create DB
+                vector_db = Chroma.from_documents(
+                    documents=batch,
+                    embedding=self.embeddings,
+                    persist_directory=self.vector_db_path
+                )
+            else:
+                # Subsequent batches - add to existing DB
+                vector_db.add_documents(batch)
+        
+        print("\n💾 Persisting vector database to disk...")
         vector_db.persist()
         
         print(f"\n✅ SUCCESS! Vector database created!")

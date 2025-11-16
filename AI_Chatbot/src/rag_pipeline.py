@@ -21,7 +21,7 @@ class VeterinaryRAG:
     
     def __init__(
         self,
-        model_name: str = "llama3.1:8b",  # Using 8B for best quality
+        model_name: str = "llama3.2:1b",  # Using 1B for speed (change to llama3.1:8b for quality)
         embedding_model: str = "all-MiniLM-L6-v2",
         vector_db_path: str = "./vector_db",
         temperature: float = 0.3,
@@ -103,7 +103,7 @@ Answer:"""
         # Setup retriever
         self.retriever = self.vector_db.as_retriever(
             search_type="similarity",
-            search_kwargs={"k": 5}  # Retrieve top 5 relevant chunks
+            search_kwargs={"k": 3}  # Retrieve top 3 relevant chunks (faster)
         )
         
         # Create RAG chain using LCEL (LangChain Expression Language)

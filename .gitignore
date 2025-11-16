@@ -8,3 +8,10 @@ data/
 model/
 ML_Models/cats/model_cats.zip
 ML_Models/dogs/model.zip
+*.bin
+AI_Chatbot/vector_db/0505af2a-b9ee-42f5-a42e-c46374286ad5/header.bin
+AI_Chatbot/vector_db/0505af2a-b9ee-42f5-a42e-c46374286ad5/index_metadata.pickle
+/AI_Chatbot/vector_db
+/AI_Chatbot/vector_db
+AI_Chatbot/vector_db/0505af2a-b9ee-42f5-a42e-c46374286ad5/header.bin
+AI_Chatbot/vector_db/0505af2a-b9ee-42f5-a42e-c46374286ad5/data_level0.bin

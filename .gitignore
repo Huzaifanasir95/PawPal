@@ -1,7 +1,22 @@
+# Office temp files
 Documentation/~$PawPal FYP.pptx
-/AI_Chatbot/vector_db
-AI_Chatbot/vector_db
 
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# AI Chatbot vector database (large files)
+AI_Chatbot/vector_db/
+vector_db/
+
+# Binary files
+*.bin
+*.pickle
+*.pkl
+
+# ML Model files
 images/
 oxford_pet_dataset/
 ML_Models/cats/code/cat_breed_classifier.pth
@@ -9,14 +24,8 @@ data/
 model/
 ML_Models/cats/model_cats.zip
 ML_Models/dogs/model.zip
-*.bin
-AI_Chatbot/vector_db/0505af2a-b9ee-42f5-a42e-c46374286ad5/header.bin
-AI_Chatbot/vector_db/0505af2a-b9ee-42f5-a42e-c46374286ad5/index_metadata.pickle
-/AI_Chatbot/vector_db
-/AI_Chatbot/vector_db
-AI_Chatbot/vector_db/0505af2a-b9ee-42f5-a42e-c46374286ad5/header.bin
-AI_Chatbot/vector_db/0505af2a-b9ee-42f5-a42e-c46374286ad5/data_level0.bin
-AI_Chatbot/vector_db/0505af2a-b9ee-42f5-a42e-c46374286ad5/data_level0.bin
-AI_Chatbot/vector_db/0505af2a-b9ee-42f5-a42e-c46374286ad5/header.bin
-AI_Chatbot/vector_db/0505af2a-b9ee-42f5-a42e-c46374286ad5/index_metadata.pickle
 
+# Environment
+.env
+venv/
+env/

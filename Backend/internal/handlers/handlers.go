@@ -14,18 +14,20 @@ import (
 )
 
 type Handlers struct {
-	predictionService *services.PredictionService
-	chatbotService    *services.ChatbotService
-	logger            *logger.Logger
-	startTime         time.Time
+	predictionService    *services.PredictionService
+	chatbotService       *services.ChatbotService
+	chatbotStreamService *services.ChatbotStreamService // For streaming responses
+	logger               *logger.Logger
+	startTime            time.Time
 }
 
-func NewHandlers(predictionService *services.PredictionService, chatbotService *services.ChatbotService, logger *logger.Logger) *Handlers {
+func NewHandlers(predictionService *services.PredictionService, chatbotService *services.ChatbotService, chatbotStreamService *services.ChatbotStreamService, logger *logger.Logger) *Handlers {
 	return &Handlers{
-		predictionService: predictionService,
-		chatbotService:    chatbotService,
-		logger:            logger,
-		startTime:         time.Now(),
+		predictionService:    predictionService,
+		chatbotService:       chatbotService,
+		chatbotStreamService: chatbotStreamService,
+		logger:               logger,
+		startTime:            time.Now(),
 	}
 }
 
@@ -351,4 +353,40 @@ func (h *Handlers) ChatbotQuery(c *gin.Context) {
 		"enhanced_query": response.EnhancedQuery,
 		"sources":        response.Sources,
 	})
+}
+
+// ChatbotQueryStream handles streaming chatbot responses (like ChatGPT)
+func (h *Handlers) ChatbotQueryStream(c *gin.Context) {
+	var req struct {
+		Message    string                 `json:"message" binding:"required"`
+		PetProfile map[string]interface{} `json:"pet_profile,omitempty"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Errorf("Invalid chatbot stream request: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid request format: " + err.Error(),
+		})
+		return
+	}
+
+	h.logger.Infof("Chatbot streaming query: %s", req.Message)
+
+	// Set SSE headers
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("X-Accel-Buffering", "no")
+
+	// Stream the response
+	err := h.chatbotStreamService.QueryStream(req.Message, req.PetProfile, c.Writer)
+	if err != nil {
+		h.logger.Errorf("Chatbot streaming failed: %v", err)
+		// Send error as SSE event
+		c.SSEvent("error", gin.H{
+			"success": false,
+			"error":   "Streaming failed: " + err.Error(),
+		})
+	}
 }

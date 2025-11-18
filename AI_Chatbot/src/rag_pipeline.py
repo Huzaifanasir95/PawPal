@@ -202,6 +202,35 @@ Answer:"""
         
         return f"{profile_text}\n\nQuestion: {question}"
     
+    def query_stream(
+        self,
+        question: str,
+        pet_profile: Optional[Dict] = None
+    ):
+        """
+        Query the RAG system with streaming response (word-by-word like ChatGPT)
+        
+        Args:
+            question: User's veterinary question
+            pet_profile: Optional pet info (type, breed, age, weight, conditions)
+            
+        Yields:
+            Response chunks from the LLM
+        """
+        if not self.vector_db:
+            yield "❌ Vector database not initialized. Please run build_knowledge_base.py first."
+            return
+        
+        # Enhance query with pet profile
+        enhanced_query = self._enhance_query_with_profile(question, pet_profile)
+        
+        if not self.silent:
+            print(f"Processing streaming query: {enhanced_query[:100]}...")
+        
+        # Stream response from RAG chain
+        for chunk in self.qa_chain.stream(enhanced_query):
+            yield chunk
+    
     def chat(self):
         """Interactive chat mode"""
         

@@ -59,7 +59,7 @@ func LoadConfig() (*Config, error) {
 	// Default configuration
 	config := &Config{
 		Server: ServerConfig{
-			Port:        getEnv("PORT", "8080"),
+			Port:        getEnv("PORT", "8081"),
 			Environment: getEnv("ENVIRONMENT", "development"),
 			Host:        getEnv("HOST", "localhost"),
 			MaxFileSize: 50 * 1024 * 1024, // 50MB

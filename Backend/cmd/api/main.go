@@ -30,9 +30,10 @@ func main() {
 	}
 	
 	chatbotService := services.NewChatbotService(logger)
+	chatbotStreamService := services.NewChatbotStreamService(logger) // For streaming
 	
 	// Initialize handlers
-	h := handlers.NewHandlers(predictionService, chatbotService, logger)
+	h := handlers.NewHandlers(predictionService, chatbotService, chatbotStreamService, logger)
 	
 	// Setup router
 	router := setupRouter(h, cfg)
@@ -82,6 +83,7 @@ func setupRouter(h *handlers.Handlers, cfg *config.Config) *gin.Engine {
 		
 		// Chatbot endpoints
 		v1.POST("/chatbot/query", h.ChatbotQuery)
+		v1.POST("/chatbot/stream", h.ChatbotQueryStream) // Streaming endpoint
 		
 		// Utility endpoints
 		v1.GET("/breeds", h.GetSupportedBreeds)
@@ -97,6 +99,9 @@ func setupRouter(h *handlers.Handlers, cfg *config.Config) *gin.Engine {
 	})
 	router.GET("/test/chatbot", func(c *gin.Context) {
 		c.File("./web/chatbot_test.html")
+	})
+	router.GET("/test/chatbot_stream", func(c *gin.Context) {
+		c.File("./web/chatbot_stream_test.html")
 	})
 	
 	return router

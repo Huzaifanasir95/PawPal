@@ -25,6 +25,7 @@ class VeterinaryRAG:
         embedding_model: str = "all-MiniLM-L6-v2",
         vector_db_path: str = "./vector_db",
         temperature: float = 0.3,
+        silent: bool = False,  # Suppress emoji output for API mode
     ):
         """
         Initialize RAG pipeline
@@ -37,19 +38,24 @@ class VeterinaryRAG:
         """
         self.model_name = model_name
         self.vector_db_path = vector_db_path
+        self.silent = silent
         
-        print("🚀 Initializing PawPal Veterinary RAG System...")
+        if not silent:
+            print("Initializing PawPal Veterinary RAG System...")
         
         # Initialize Ollama LLM
-        print(f"📡 Connecting to Ollama ({model_name})...")
+        if not silent:
+            print(f"Connecting to Ollama ({model_name})...")
         self.llm = Ollama(
             model=model_name,
             temperature=temperature,
             num_ctx=4096,  # Context window
+            num_predict=512,  # Max tokens for detailed responses
         )
         
         # Initialize embeddings
-        print(f"🔤 Loading embedding model ({embedding_model})...")
+        if not silent:
+            print(f"Loading embedding model ({embedding_model})...")
         self.embeddings = HuggingFaceEmbeddings(
             model_name=embedding_model,
             model_kwargs={'device': 'cpu'},  # Use GPU if available
@@ -58,21 +64,25 @@ class VeterinaryRAG:
         
         # Load or create vector database
         if os.path.exists(vector_db_path):
-            print(f"📚 Loading vector database from {vector_db_path}...")
+            if not silent:
+                print(f"Loading vector database from {vector_db_path}...")
             self.vector_db = Chroma(
                 persist_directory=vector_db_path,
                 embedding_function=self.embeddings
             )
-            print(f"✅ Vector DB loaded: {self.vector_db._collection.count()} documents")
+            if not silent:
+                print(f"Vector DB loaded: {self.vector_db._collection.count()} documents")
         else:
-            print("⚠️  No vector database found. Run build_knowledge_base.py first!")
+            if not silent:
+                print("No vector database found. Run build_knowledge_base.py first!")
             self.vector_db = None
         
         # Setup retrieval chain
         if self.vector_db:
             self._setup_retrieval_chain()
         
-        print("✅ RAG System initialized successfully!\n")
+        if not silent:
+            print("RAG System initialized successfully!\n")
     
     def _setup_retrieval_chain(self):
         """Setup the retrieval chain with custom prompt"""
@@ -103,7 +113,7 @@ Answer:"""
         # Setup retriever
         self.retriever = self.vector_db.as_retriever(
             search_type="similarity",
-            search_kwargs={"k": 3}  # Retrieve top 3 relevant chunks (faster)
+            search_kwargs={"k": 2}  # Top 2 chunks (faster than 3)
         )
         
         # Create RAG chain using LCEL (LangChain Expression Language)
@@ -143,7 +153,8 @@ Answer:"""
         # Enhance query with pet profile
         enhanced_query = self._enhance_query_with_profile(question, pet_profile)
         
-        print(f"🔍 Processing query: {enhanced_query[:100]}...")
+        if not self.silent:
+            print(f"Processing query: {enhanced_query[:100]}...")
         
         # Get response from RAG chain
         answer = self.qa_chain.invoke(enhanced_query)
@@ -158,7 +169,7 @@ Answer:"""
             # Get source documents separately
             docs = self.retriever.invoke(enhanced_query)
             sources = []
-            for doc in docs[:3]:  # Top 3 sources
+            for doc in docs[:2]:  # Top 2 sources (faster)
                 sources.append({
                     "content": doc.page_content[:200] + "...",
                     "metadata": doc.metadata

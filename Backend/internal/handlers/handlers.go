@@ -15,13 +15,15 @@ import (
 
 type Handlers struct {
 	predictionService *services.PredictionService
+	chatbotService    *services.ChatbotService
 	logger            *logger.Logger
 	startTime         time.Time
 }
 
-func NewHandlers(predictionService *services.PredictionService, logger *logger.Logger) *Handlers {
+func NewHandlers(predictionService *services.PredictionService, chatbotService *services.ChatbotService, logger *logger.Logger) *Handlers {
 	return &Handlers{
 		predictionService: predictionService,
+		chatbotService:    chatbotService,
 		logger:            logger,
 		startTime:         time.Now(),
 	}
@@ -311,4 +313,42 @@ func (h *Handlers) GetSupportedBreeds(c *gin.Context) {
 	}
 	
 	c.JSON(http.StatusOK, response)
+}
+
+// ChatbotQuery handles chatbot question queries
+func (h *Handlers) ChatbotQuery(c *gin.Context) {
+	var req struct {
+		Message    string                 `json:"message" binding:"required"`
+		PetProfile map[string]interface{} `json:"pet_profile,omitempty"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Errorf("Invalid chatbot request: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid request format: " + err.Error(),
+		})
+		return
+	}
+
+	h.logger.Infof("Chatbot query: %s", req.Message)
+
+	// Query chatbot service
+	response, err := h.chatbotService.Query(req.Message, req.PetProfile)
+	if err != nil {
+		h.logger.Errorf("Chatbot query failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Failed to process query: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":        true,
+		"answer":         response.Answer,
+		"query":          response.Query,
+		"enhanced_query": response.EnhancedQuery,
+		"sources":        response.Sources,
+	})
 }

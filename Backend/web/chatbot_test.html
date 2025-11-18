@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PawPal AI Chatbot Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+
+        .chat-container {
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin: 0 10px;
+        }
+
+        .message.user .message-icon {
+            background: #764ba2;
+            order: 2;
+        }
+
+        .message.bot .message-icon {
+            background: #4CAF50;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .pet-profile {
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .pet-profile h3 {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .profile-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .profile-inputs input,
+        .profile-inputs select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #messageInput:focus {
+            border-color: #667eea;
+        }
+
+        #sendBtn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #sendBtn:hover {
+            transform: scale(1.05);
+        }
+
+        #sendBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: flex;
+            gap: 5px;
+            padding: 15px;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .sources {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .source-item {
+            margin-top: 5px;
+            padding: 5px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .emergency {
+            background: #fff3cd;
+            border-left: 4px solid #ff6b6b;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐾 PawPal AI Veterinary Assistant</h1>
+            <p>Ask me anything about your pet's health, diet, or behavior!</p>
+        </div>
+
+        <div class="input-area">
+            <div class="pet-profile">
+                <h3>📋 Pet Profile (Optional)</h3>
+                <div class="profile-inputs">
+                    <select id="petType">
+                        <option value="">Pet Type</option>
+                        <option value="dog">Dog</option>
+                        <option value="cat">Cat</option>
+                    </select>
+                    <input type="text" id="breed" placeholder="Breed">
+                    <input type="number" id="age" placeholder="Age (years)">
+                    <input type="number" id="weight" placeholder="Weight (kg)">
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message bot">
+                <div class="message-icon">🐾</div>
+                <div class="message-content">
+                    Hello! I'm PawPal, your AI veterinary assistant. Ask me about your pet's health concerns, diet recommendations, or behavior questions. How can I help your furry friend today?
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Ask about your pet..." 
+                       onkeypress="if(event.key==='Enter') sendMessage()">
+                <button id="sendBtn" onclick="sendMessage()">Send 🐾</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8081/api/v1/chatbot/query';
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        function addMessage(content, isUser = false, sources = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            const icon = document.createElement('div');
+            icon.className = 'message-icon';
+            icon.textContent = isUser ? '👤' : '🐾';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // Check for emergency keywords
+            const isEmergency = content.includes('⚠️ EMERGENCY') || content.includes('EMERGENCY:');
+            if (isEmergency && !isUser) {
+                const emergencyDiv = document.createElement('div');
+                emergencyDiv.className = 'emergency';
+                emergencyDiv.innerHTML = '⚠️ <strong>EMERGENCY</strong>';
+                contentDiv.appendChild(emergencyDiv);
+            }
+            
+            const textDiv = document.createElement('div');
+            textDiv.innerHTML = content.replace(/\n/g, '<br>');
+            contentDiv.appendChild(textDiv);
+            
+            // Add sources if available
+            if (sources && sources.length > 0) {
+                const sourcesDiv = document.createElement('div');
+                sourcesDiv.className = 'sources';
+                sourcesDiv.innerHTML = '<strong>📚 Sources:</strong>';
+                sources.forEach((source, i) => {
+                    const sourceItem = document.createElement('div');
+                    sourceItem.className = 'source-item';
+                    sourceItem.textContent = `${i + 1}. ${source.metadata?.source || 'Knowledge Base'}`;
+                    sourcesDiv.appendChild(sourceItem);
+                });
+                contentDiv.appendChild(sourcesDiv);
+            }
+            
+            messageDiv.appendChild(icon);
+            messageDiv.appendChild(contentDiv);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message bot';
+            loadingDiv.id = 'loading';
+            loadingDiv.innerHTML = `
+                <div class="message-icon">🐾</div>
+                <div class="message-content">
+                    <div class="loading">
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(loadingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) loading.remove();
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Get pet profile
+            const petProfile = {};
+            const petType = document.getElementById('petType').value;
+            const breed = document.getElementById('breed').value;
+            const age = document.getElementById('age').value;
+            const weight = document.getElementById('weight').value;
+
+            if (petType) petProfile.type = petType;
+            if (breed) petProfile.breed = breed;
+            if (age) petProfile.age = parseFloat(age);
+            if (weight) petProfile.weight = parseFloat(weight);
+
+            // Add user message
+            addMessage(message, true);
+            messageInput.value = '';
+            sendBtn.disabled = true;
+            showLoading();
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        pet_profile: Object.keys(petProfile).length > 0 ? petProfile : null
+                    })
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    addMessage(data.answer, false, data.sources);
+                } else {
+                    addMessage(`Sorry, I encountered an error: ${data.error}`, false);
+                }
+            } catch (error) {
+                hideLoading();
+                addMessage(`Sorry, I couldn't connect to the server. Error: ${error.message}`, false);
+            } finally {
+                sendBtn.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // Focus input on load
+        window.onload = () => messageInput.focus();
+    </script>
+</body>
+</html>

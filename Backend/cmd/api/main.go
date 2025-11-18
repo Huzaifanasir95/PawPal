@@ -29,8 +29,10 @@ func main() {
 		log.Fatal("Failed to initialize prediction service:", err)
 	}
 	
+	chatbotService := services.NewChatbotService(logger)
+	
 	// Initialize handlers
-	h := handlers.NewHandlers(predictionService, logger)
+	h := handlers.NewHandlers(predictionService, chatbotService, logger)
 	
 	// Setup router
 	router := setupRouter(h, cfg)
@@ -78,6 +80,9 @@ func setupRouter(h *handlers.Handlers, cfg *config.Config) *gin.Engine {
 		v1.POST("/predict/batch", h.PredictBatch)
 		v1.POST("/predict/url", h.PredictFromURL)
 		
+		// Chatbot endpoints
+		v1.POST("/chatbot/query", h.ChatbotQuery)
+		
 		// Utility endpoints
 		v1.GET("/breeds", h.GetSupportedBreeds)
 	}
@@ -89,6 +94,9 @@ func setupRouter(h *handlers.Handlers, cfg *config.Config) *gin.Engine {
 	router.Static("/web", "./web")
 	router.GET("/test", func(c *gin.Context) {
 		c.File("./web/test.html")
+	})
+	router.GET("/test/chatbot", func(c *gin.Context) {
+		c.File("./web/chatbot_test.html")
 	})
 	
 	return router

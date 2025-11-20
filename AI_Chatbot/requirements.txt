@@ -4,6 +4,7 @@
 langchain==0.1.0
 langchain-community==0.0.13
 ollama==0.1.6
+langchain-groq==0.0.1
 
 # Vector Database
 chromadb==0.4.22

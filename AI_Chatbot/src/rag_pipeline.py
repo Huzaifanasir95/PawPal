@@ -4,6 +4,7 @@ Retrieval-Augmented Generation for Veterinary Assistance
 """
 
 from langchain_community.llms import Ollama
+from langchain_groq import ChatGroq
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -21,37 +22,53 @@ class VeterinaryRAG:
     
     def __init__(
         self,
-        model_name: str = "llama3.2:1b",  # Using 1B for speed (change to llama3.1:8b for quality)
+        model_name: str = "llama-3.3-70b-versatile",  # Groq's latest model (llama-3.3-70b, llama-3.1-8b, mixtral-8x7b)
         embedding_model: str = "all-MiniLM-L6-v2",
         vector_db_path: str = "./vector_db",
         temperature: float = 0.3,
         silent: bool = False,  # Suppress emoji output for API mode
+        use_groq: bool = True,  # Use Groq API (fast) or local Ollama
+        groq_api_key: str = "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",
     ):
         """
         Initialize RAG pipeline
         
         Args:
-            model_name: Ollama model name
+            model_name: Model name (Groq: llama-3.3-70b-versatile, llama-3.1-8b-instant; Ollama: llama3.2:1b)
             embedding_model: HuggingFace embedding model
             vector_db_path: Path to ChromaDB storage
             temperature: LLM creativity (0=factual, 1=creative)
+            use_groq: Use Groq API (True) or local Ollama (False)
+            groq_api_key: Groq API key for cloud inference
         """
         self.model_name = model_name
         self.vector_db_path = vector_db_path
         self.silent = silent
+        self.use_groq = use_groq
         
         if not silent:
             print("Initializing PawPal Veterinary RAG System...")
         
-        # Initialize Ollama LLM
-        if not silent:
-            print(f"Connecting to Ollama ({model_name})...")
-        self.llm = Ollama(
-            model=model_name,
-            temperature=temperature,
-            num_ctx=4096,  # Context window
-            num_predict=512,  # Max tokens for detailed responses
-        )
+        # Initialize LLM (Groq or Ollama)
+        if use_groq:
+            if not silent:
+                print(f"Connecting to Groq API ({model_name})...")
+            self.llm = ChatGroq(
+                model=model_name,
+                temperature=temperature,
+                groq_api_key=groq_api_key,
+                max_tokens=384,  # Reduced for faster responses
+            )
+        else:
+            if not silent:
+                print(f"Connecting to Ollama ({model_name})...")
+            self.llm = Ollama(
+                model=model_name,
+                temperature=temperature,
+                num_ctx=2048,  # Reduced context window for speed
+                num_predict=256,  # Reduced tokens for faster responses
+                num_gpu=0,  # Use CPU to avoid GPU out-of-memory errors
+            )
         
         # Initialize embeddings
         if not silent:
@@ -110,10 +127,10 @@ Answer:"""
             input_variables=["context", "question"]
         )
         
-        # Setup retriever
+        # Setup retriever - optimized for speed
         self.retriever = self.vector_db.as_retriever(
             search_type="similarity",
-            search_kwargs={"k": 2}  # Top 2 chunks (faster than 3)
+            search_kwargs={"k": 2}  # Top 2 chunks for faster retrieval
         )
         
         # Create RAG chain using LCEL (LangChain Expression Language)
@@ -169,9 +186,9 @@ Answer:"""
             # Get source documents separately
             docs = self.retriever.invoke(enhanced_query)
             sources = []
-            for doc in docs[:2]:  # Top 2 sources (faster)
+            for doc in docs[:2]:  # Top 2 sources for speed
                 sources.append({
-                    "content": doc.page_content[:200] + "...",
+                    "content": doc.page_content[:150] + "...",  # Reduced content preview
                     "metadata": doc.metadata
                 })
             response["sources"] = sources

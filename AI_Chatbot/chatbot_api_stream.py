@@ -27,9 +27,10 @@ def get_rag_instance():
     if _rag_instance is None:
         vector_db_path = os.path.join(SCRIPT_DIR, "vector_db")
         _rag_instance = VeterinaryRAG(
-            model_name="llama3.2:1b", 
+            model_name="llama-3.3-70b-versatile",  # Groq's latest powerful model
             vector_db_path=vector_db_path,
-            silent=True
+            silent=True,
+            use_groq=True,  # Use Groq API for speed
         )
     return _rag_instance
 

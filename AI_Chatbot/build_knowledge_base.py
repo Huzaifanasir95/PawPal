@@ -62,10 +62,10 @@ class KnowledgeBaseBuilder:
         )
         self.device = device
         
-        # Text splitter
+        # Text splitter - optimized for speed
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
+            chunk_size=800,  # Reduced from 1000 for faster processing
+            chunk_overlap=50,  # Reduced from 100 to minimize redundancy
             separators=["\n\n", "\n", ". ", " ", ""]
         )
         

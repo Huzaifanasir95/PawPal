@@ -2,12 +2,15 @@ package services
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"pawpal-backend/pkg/logger"
 )
@@ -17,6 +20,9 @@ type ChatbotStreamService struct {
 	logger     *logger.Logger
 	pythonPath string
 	scriptPath string
+	apiURL     string
+	httpClient *http.Client
+	useHTTP    bool
 }
 
 // NewChatbotStreamService creates a new chatbot streaming service instance
@@ -24,11 +30,41 @@ func NewChatbotStreamService(logger *logger.Logger) *ChatbotStreamService {
 	// Get absolute path to AI_Chatbot streaming script
 	scriptPath, _ := filepath.Abs("../AI_Chatbot/chatbot_api_stream.py")
 	
-	return &ChatbotStreamService{
+	service := &ChatbotStreamService{
 		logger:     logger,
 		pythonPath: "python",
 		scriptPath: scriptPath,
+		apiURL:     "http://localhost:8000/api/chatbot/stream",
+		httpClient: &http.Client{
+			Timeout: 60 * time.Second,
+		},
+		useHTTP: true,
 	}
+	
+	// Check if FastAPI server is running
+	if err := service.checkAPIHealth(); err != nil {
+		logger.Info("⚠️  FastAPI streaming not available (will use exec mode)")
+		service.useHTTP = false
+	} else {
+		logger.Info("✅ FastAPI streaming ready (HTTP mode - optimized)")
+	}
+	
+	return service
+}
+
+// checkAPIHealth checks if the FastAPI server is running
+func (s *ChatbotStreamService) checkAPIHealth() error {
+	healthURL := "http://localhost:8000/health"
+	resp, err := s.httpClient.Get(healthURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unhealthy status: %d", resp.StatusCode)
+	}
+	return nil
 }
 
 // StreamRequest represents the streaming request structure
@@ -44,8 +80,66 @@ type StreamChunk struct {
 	Error string `json:"error,omitempty"`
 }
 
-// QueryStream executes the Python chatbot script and streams responses
+// QueryStream executes the chatbot streaming
 func (s *ChatbotStreamService) QueryStream(message string, petProfile map[string]interface{}, writer io.Writer) error {
+	// Use HTTP mode if available (FAST!)
+	if s.useHTTP {
+		return s.queryStreamHTTP(message, petProfile, writer)
+	}
+	
+	// Fallback to exec mode
+	return s.queryStreamExec(message, petProfile, writer)
+}
+
+// queryStreamHTTP uses HTTP to stream from FastAPI (FAST!)
+func (s *ChatbotStreamService) queryStreamHTTP(message string, petProfile map[string]interface{}, writer io.Writer) error {
+	// Create the request
+	request := StreamRequest{
+		Message:    message,
+		PetProfile: petProfile,
+	}
+
+	requestJSON, err := json.Marshal(request)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	// Make HTTP POST request
+	resp, err := s.httpClient.Post(s.apiURL, "application/json", bytes.NewBuffer(requestJSON))
+	if err != nil {
+		s.logger.Info("⚠️  HTTP streaming failed, falling back to exec mode: " + err.Error())
+		s.useHTTP = false
+		return s.queryStreamExec(message, petProfile, writer)
+	}
+	defer resp.Body.Close()
+
+	// Check status
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("API error (status %d)", resp.StatusCode)
+	}
+
+	// Stream the response
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := scanner.Text()
+		
+		// Forward SSE data directly
+		if _, err := writer.Write([]byte(line + "\n\n")); err != nil {
+			return fmt.Errorf("failed to write chunk: %w", err)
+		}
+
+		// Flush if writer supports it
+		if flusher, ok := writer.(interface{ Flush() }); ok {
+			flusher.Flush()
+		}
+	}
+
+	s.logger.Info("Streaming completed via HTTP (fast mode)")
+	return scanner.Err()
+}
+
+// queryStreamExec uses exec to spawn Python process (SLOW fallback)
+func (s *ChatbotStreamService) queryStreamExec(message string, petProfile map[string]interface{}, writer io.Writer) error {
 	// Create the request
 	request := StreamRequest{
 		Message:    message,

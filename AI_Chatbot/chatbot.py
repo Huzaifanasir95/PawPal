@@ -97,9 +97,10 @@ def main():
     # Initialize RAG system
     try:
         rag = VeterinaryRAG(
-            model_name="llama3.2:1b",  # Fast mode - use llama3.1:8b for quality demos
+            model_name="llama-3.3-70b-versatile",  # Groq's latest model (0.5s responses!)
             vector_db_path="./vector_db",
-            temperature=0.3
+            temperature=0.3,
+            use_groq=True,  # Use Groq API for 10x faster responses
         )
     except Exception as e:
         print(f"\n❌ Error initializing RAG system: {e}")

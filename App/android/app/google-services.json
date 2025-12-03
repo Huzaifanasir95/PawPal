@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "559082766933",
+    "project_id": "pawpawl",
+    "storage_bucket": "pawpawl.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:559082766933:android:388c96c477adbe0d4f0adc",
+        "android_client_info": {
+          "package_name": "com.example.pawpawl"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "559082766933-d63tv2afeqptq2qmd52a36g3htp0qn2c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.pawpawl",
+            "certificate_hash": "5690e5aea23f2806962a37d5d9778224c2c81597"
+          }
+        },
+        {
+          "client_id": "559082766933-oon5o3vb611n1s8qbhb1mmfmehvcvcri.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMtfDsw2O77v492gWSgeXKg2fcUqYVP1g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "559082766933-oon5o3vb611n1s8qbhb1mmfmehvcvcri.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "559082766933-6t97j6u2v8kgosp8rbmj8jvlvc8r72au.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.pawpawl"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

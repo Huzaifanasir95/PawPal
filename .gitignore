@@ -29,3 +29,24 @@ ML_Models/dogs/model.zip
 .env
 venv/
 env/
+
+# Flutter/Dart
+App/build/
+App/.dart_tool/
+App/.flutter-plugins
+App/.flutter-plugins-dependencies
+App/.packages
+App/.pub-cache/
+App/.pub/
+App/coverage/
+App/pubspec.lock
+App/ios/Flutter/Flutter.framework/
+App/ios/Flutter/Flutter.podspec
+App/android/.gradle/
+App/android/captures/
+App/android/gradlew.bat
+
+# Generated files
+App/.g.dart
+App/*.g.dart
+

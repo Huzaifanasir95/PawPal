@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
+import '../../../../core/navigation/app_navigator.dart';
 import '../../data/models/vet_profile_model.dart';
 import '../../../chat/data/models/chat_model.dart';
 import '../bloc/vet_bloc.dart';
@@ -13,6 +14,7 @@ import '../../../chat/presentation/bloc/chat_bloc.dart';
 import '../../../chat/presentation/bloc/chat_event.dart';
 import '../../../chat/presentation/bloc/chat_state.dart';
 import '../../../chat/presentation/pages/chat_conversation_screen.dart';
+import '../../../profile/presentation/pages/profile_screen.dart';
 import 'vet_profile_setup_screen.dart';
 
 class VetHomeScreen extends StatefulWidget {
@@ -23,6 +25,8 @@ class VetHomeScreen extends StatefulWidget {
 }
 
 class _VetHomeScreenState extends State<VetHomeScreen> {
+  int _currentIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -124,6 +128,47 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: AppColors.surface,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textSecondary,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          switch (index) {
+            case 0: // Home/Dashboard
+              setState(() {
+                _currentIndex = 0;
+              });
+              break;
+            case 1: // Chats
+              AppNavigator.navigateToChats(context);
+              break;
+            case 2: // Profile
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+              break;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Chats',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }

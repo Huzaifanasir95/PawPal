@@ -12,7 +12,7 @@ import '../../features/chat/presentation/bloc/chat_bloc.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/auth/presentation/widgets/auth_navigator.dart';
 import '../../features/auth/presentation/pages/account_type_selection_screen.dart';
-import '../../features/home/presentation/pages/home_screen.dart';
+import '../../features/home/presentation/pages/role_based_home.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/utils/image_service.dart';
 
@@ -112,13 +112,13 @@ class _AuthFlowState extends State<AuthFlow> {
                 return AccountTypeSelectionScreen(
                   onAccountTypeSelected: () {
                     // Trigger a rebuild by updating the auth state
-                    // The FutureBuilder will re-run and show HomeScreen
+                    // The FutureBuilder will re-run and show appropriate home
                     setState(() {});
                   },
                 );
               } else {
-                // User has account type, go to home
-                return const HomeScreen();
+                // User has account type, show role-based home
+                return const RoleBasedHome();
               }
             },
           ),

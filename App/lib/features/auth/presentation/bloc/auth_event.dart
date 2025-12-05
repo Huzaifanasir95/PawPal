@@ -1,0 +1,13 @@
+part of 'auth_bloc.dart';
+
+@freezed
+class AuthEvent with _$AuthEvent {
+  const factory AuthEvent.signInWithEmail(String email, String password) = _SignInWithEmail;
+  const factory AuthEvent.signUpWithEmail(String email, String password, String? name) = _SignUpWithEmail;
+  const factory AuthEvent.signInWithGoogle() = _SignInWithGoogle;
+  const factory AuthEvent.signOut() = _SignOut;
+  const factory AuthEvent.resetPassword(String email) = _ResetPassword;
+  const factory AuthEvent.updateAccountType(String accountType) = _UpdateAccountType;
+  const factory AuthEvent.userChanged(User user) = _UserChanged;
+  const factory AuthEvent.signedOut() = _SignedOut;
+}

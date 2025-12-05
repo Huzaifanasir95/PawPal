@@ -146,7 +146,8 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 
 // SetUserRole sets the user's role (petowner or vet)
 func (r *UserRepository) SetUserRole(ctx context.Context, userID uuid.UUID, role string) error {
-	query := `UPDATE users SET user_role = $2, updated_at = $3 WHERE id = $1`
+	// Update both account_type and user_role to keep them in sync
+	query := `UPDATE users SET account_type = $2, user_role = $2, updated_at = $3 WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, userID, role, time.Now())
 	return err
 }

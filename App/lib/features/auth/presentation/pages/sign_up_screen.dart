@@ -463,16 +463,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 );
                 
-                // After successful signup, set the user role
-                Future.delayed(const Duration(milliseconds: 500), () async {
-                  try {
-                    final apiClient = ApiClient.instance;
-                    await apiClient.post('/api/v1/auth/set-role', data: {
-                      'role': _accountType,
-                    });
-                  } catch (e) {
-                    debugPrint('Failed to set user role: $e');
-                  }
+                // Wait for authentication to complete, then set the user role
+                final subscription = authBloc.stream.listen((authState) async {
+                  authState.maybeWhen(
+                    authenticated: (user) async {
+                      // User is authenticated, tokens are stored
+                      try {
+                        final apiClient = ApiClient.instance;
+                        await apiClient.post('/api/v1/auth/set-role', data: {
+                          'role': _accountType,
+                        });
+                        debugPrint('Successfully set user role to: $_accountType');
+                        
+                        // If user selected vet role, navigate to vet profile setup
+                        if (_accountType == 'vet' && mounted) {
+                          // Small delay to ensure state is updated
+                          await Future.delayed(const Duration(milliseconds: 300));
+                          if (mounted) {
+                            // Navigation will be handled by AuthBlocListener
+                            // which will redirect to VetHomeScreen via RoleBasedHome
+                            // The VetHomeScreen will detect missing profile and show setup
+                          }
+                        }
+                      } catch (e) {
+                        debugPrint('Failed to set user role: $e');
+                      }
+                    },
+                    orElse: () {},
+                  );
+                });
+                
+                // Clean up subscription after a short delay
+                Future.delayed(const Duration(seconds: 3), () {
+                  subscription.cancel();
                 });
               }
             } catch (e) {

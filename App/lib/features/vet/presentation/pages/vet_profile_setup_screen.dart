@@ -6,6 +6,7 @@ import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/services/api_client.dart';
 import '../../data/repositories/vet_repository.dart';
 import '../../data/models/vet_profile_model.dart';
+import 'vet_home_screen.dart';
 
 class VetProfileSetupScreen extends StatefulWidget {
   const VetProfileSetupScreen({super.key});
@@ -422,9 +423,11 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
         'Profile created successfully!',
       );
 
-      // Navigate to main app
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        '/home',
+      // Navigate back to VetHomeScreen (which will now load the profile)
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => const VetHomeScreen(),
+        ),
         (route) => false,
       );
     } catch (e) {

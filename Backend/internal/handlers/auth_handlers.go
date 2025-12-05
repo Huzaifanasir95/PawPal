@@ -127,21 +127,29 @@ func (h *AuthHandlers) RefreshToken(c *gin.Context) {
 
 // SignOut handles user logout
 func (h *AuthHandlers) SignOut(c *gin.Context) {
-	var req models.RefreshTokenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.GenericResponse{
-			Success: false,
-			Message: "Invalid request: " + err.Error(),
-		})
-		return
+	// Try to get refresh token from request body (optional)
+	var req struct {
+		RefreshToken string `json:"refreshToken"`
+	}
+	_ = c.ShouldBindJSON(&req)
+
+	// If refresh token provided, revoke it specifically
+	if req.RefreshToken != "" {
+		if err := h.authService.SignOut(c.Request.Context(), req.RefreshToken); err != nil {
+			// Log error but don't fail - continue with clearing client tokens
+			c.JSON(http.StatusOK, models.GenericResponse{
+				Success: true,
+				Message: "Signed out successfully",
+			})
+			return
+		}
 	}
 
-	if err := h.authService.SignOut(c.Request.Context(), req.RefreshToken); err != nil {
-		c.JSON(http.StatusInternalServerError, models.GenericResponse{
-			Success: false,
-			Message: "Failed to sign out",
-		})
-		return
+	// Optionally: Sign out from all devices using user ID from JWT
+	userIDStr, exists := c.Get("userID")
+	if exists {
+		userID := parseUUID(userIDStr.(string))
+		_ = h.authService.SignOutAll(c.Request.Context(), userID)
 	}
 
 	c.JSON(http.StatusOK, models.GenericResponse{
@@ -315,11 +323,17 @@ func (h *AuthHandlers) SetUserRole(c *gin.Context) {
 		return
 	}
 
+	// Normalize role format (accept both "pet_owner" and "petowner")
+	normalizedRole := req.Role
+	if req.Role == "pet_owner" {
+		normalizedRole = "petowner"
+	}
+
 	// Validate role
-	if req.Role != "petowner" && req.Role != "vet" {
+	if normalizedRole != "petowner" && normalizedRole != "vet" {
 		c.JSON(http.StatusBadRequest, models.GenericResponse{
 			Success: false,
-			Message: "Invalid role. Must be 'petowner' or 'vet'",
+			Message: "Invalid role. Must be 'pet_owner' or 'vet'",
 		})
 		return
 	}
@@ -334,7 +348,7 @@ func (h *AuthHandlers) SetUserRole(c *gin.Context) {
 	}
 
 	// Update user role
-	if err := h.authService.SetUserRole(c.Request.Context(), user.ID, req.Role); err != nil {
+	if err := h.authService.SetUserRole(c.Request.Context(), user.ID, normalizedRole); err != nil {
 		c.JSON(http.StatusInternalServerError, models.GenericResponse{
 			Success: false,
 			Message: "Failed to set user role",
@@ -347,7 +361,7 @@ func (h *AuthHandlers) SetUserRole(c *gin.Context) {
 		Message: "User role set successfully",
 		Data: gin.H{
 			"userId": user.ID,
-			"role":   req.Role,
+			"role":   normalizedRole,
 		},
 	})
 }

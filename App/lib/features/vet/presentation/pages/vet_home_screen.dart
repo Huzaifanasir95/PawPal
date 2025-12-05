@@ -36,21 +36,43 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Vet Dashboard'),
-        backgroundColor: AppColors.primary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<VetBloc>().add(const VetEvent.loadMyProfile());
-              context.read<ChatBloc>().add(const ChatEvent.loadChats());
-            },
-          ),
-        ],
-      ),
+    return BlocListener<VetBloc, VetState>(
+      listener: (context, state) {
+        state.maybeWhen(
+          error: (message) {
+            // If profile not found, navigate to profile setup
+            if (message.toLowerCase().contains('not found') || 
+                message.toLowerCase().contains('no profile')) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => const VetProfileSetupScreen(),
+                  ),
+                );
+              });
+            } else {
+              // Show other errors as snackbar
+              CustomSnackbar.showError(context, message);
+            }
+          },
+          orElse: () {},
+        );
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('Vet Dashboard'),
+          backgroundColor: AppColors.primary,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                context.read<VetBloc>().add(const VetEvent.loadMyProfile());
+                context.read<ChatBloc>().add(const ChatEvent.loadChats());
+              },
+            ),
+          ],
+        ),
       body: RefreshIndicator(
         onRefresh: () async {
           context.read<VetBloc>().add(const VetEvent.loadMyProfile());
@@ -169,8 +191,9 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
             label: 'Profile',
           ),
         ],
-      ),
-    );
+      ), // End bottomNavigationBar
+    ), // End Scaffold
+    ); // End BlocListener
   }
 
   Widget _buildWelcomeHeader(VetProfile profile) {

@@ -49,7 +49,8 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
         }
 
         // Check account type and show appropriate screen
-        final accountType = snapshot.data;
+        // Normalize account type (backend may return "petowner" or "pet_owner")
+        final accountType = snapshot.data?.toLowerCase();
         
         if (accountType == 'vet') {
           return const VetHomeScreen();

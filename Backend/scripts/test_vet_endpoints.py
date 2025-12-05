@@ -17,9 +17,9 @@ HEADERS = {
 }
 
 # Test user credentials
-TEST_VET_EMAIL = "drsmith@vetclinic.com"
+TEST_VET_EMAIL = "drsh@vetclinic.com"
 TEST_VET_PASSWORD = "VetPass123!"
-TEST_VET_NAME = "Dr. Sarah Smith"
+TEST_VET_NAME = "Dr. Sarah Henderson"
 
 # Global token storage
 auth_token: Optional[str] = None
@@ -75,10 +75,11 @@ def test_signup():
                 print(f"✅ Signup successful! Token: {auth_token[:20]}...")
                 print(f"✅ User ID: {user_id}")
                 return True
-        
-        if "already exists" in str(data):
-            print("⚠️  User already exists, trying signin instead...")
-            return test_signin()
+    
+    # Check for existing user error
+    if response.status_code == 409 or "already exists" in response.text.lower():
+        print("⚠️  User already exists, trying signin instead...")
+        return test_signin()
     
     print("❌ Signup failed!")
     return False

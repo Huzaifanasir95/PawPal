@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lib/pq"
 
 	"pawpal-backend/internal/models"
 )
@@ -43,10 +42,15 @@ func (r *VetRepository) CreateOrUpdate(ctx context.Context, profile *models.VetP
 		profile.ID = uuid.New()
 		profile.CreatedAt = time.Now()
 		profile.UpdatedAt = time.Now()
+		
+		// Ensure specialization is not nil
+		if profile.Specialization == nil {
+			profile.Specialization = []string{}
+		}
 
 		return r.db.QueryRow(ctx, query,
 			profile.ID, profile.UserID, profile.FullName, profile.Degree, profile.LicenseNumber,
-			pq.Array(profile.Specialization), profile.Experience, profile.ClinicName, profile.ClinicAddress,
+			profile.Specialization, profile.Experience, profile.ClinicName, profile.ClinicAddress,
 			profile.City, profile.State, profile.ZipCode, profile.Phone, profile.ConsultationFee,
 			profile.Currency, profile.Bio, profile.ProfilePhotoURL, profile.AvailabilityHours,
 			profile.IsAvailable, profile.CreatedAt, profile.UpdatedAt,
@@ -54,6 +58,11 @@ func (r *VetRepository) CreateOrUpdate(ctx context.Context, profile *models.VetP
 	}
 
 	// Update existing profile
+	// Ensure specialization is not nil
+	if profile.Specialization == nil {
+		profile.Specialization = []string{}
+	}
+	
 	query := `
 		UPDATE vet_profiles SET
 			full_name = $2, degree = $3, license_number = $4, specialization = $5, experience = $6,
@@ -64,7 +73,7 @@ func (r *VetRepository) CreateOrUpdate(ctx context.Context, profile *models.VetP
 
 	_, err = r.db.Exec(ctx, query,
 		profile.UserID, profile.FullName, profile.Degree, profile.LicenseNumber,
-		pq.Array(profile.Specialization), profile.Experience, profile.ClinicName, profile.ClinicAddress,
+		profile.Specialization, profile.Experience, profile.ClinicName, profile.ClinicAddress,
 		profile.City, profile.State, profile.ZipCode, profile.Phone, profile.ConsultationFee,
 		profile.Currency, profile.Bio, profile.ProfilePhotoURL, profile.AvailabilityHours,
 		profile.IsAvailable, time.Now(),
@@ -90,7 +99,7 @@ func (r *VetRepository) GetByUserID(ctx context.Context, userID uuid.UUID, profi
 	var specialization []string
 	err := r.db.QueryRow(ctx, query, userID).Scan(
 		&profile.ID, &profile.UserID, &profile.FullName, &profile.Degree, &profile.LicenseNumber,
-		pq.Array(&specialization), &profile.Experience, &profile.ClinicName, &profile.ClinicAddress,
+		&specialization, &profile.Experience, &profile.ClinicName, &profile.ClinicAddress,
 		&profile.City, &profile.State, &profile.ZipCode, &profile.Phone, &profile.ConsultationFee,
 		&profile.Currency, &profile.Bio, &profile.ProfilePhotoURL, &profile.AvailabilityHours,
 		&profile.Rating, &profile.TotalReviews, &profile.IsVerified, &profile.IsAvailable,
@@ -149,7 +158,7 @@ func (r *VetRepository) List(ctx context.Context, filters map[string]interface{}
 		var specialization []string
 		err := rows.Scan(
 			&vet.ID, &vet.UserID, &vet.FullName, &vet.Degree, &vet.LicenseNumber,
-			pq.Array(&specialization), &vet.Experience, &vet.ClinicName, &vet.ClinicAddress,
+			&specialization, &vet.Experience, &vet.ClinicName, &vet.ClinicAddress,
 			&vet.City, &vet.State, &vet.ZipCode, &vet.Phone, &vet.ConsultationFee, &vet.Currency,
 			&vet.Bio, &vet.ProfilePhotoURL, &vet.AvailabilityHours, &vet.Rating, &vet.TotalReviews,
 			&vet.IsVerified, &vet.IsAvailable, &vet.CreatedAt, &vet.UpdatedAt,

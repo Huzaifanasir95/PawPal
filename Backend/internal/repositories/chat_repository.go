@@ -74,7 +74,7 @@ func (r *ChatRepository) GetUserChats(ctx context.Context, userID uuid.UUID, isV
 		query = `
 			SELECT c.id, c.pet_owner_id, c.vet_id, c.pet_id, c.last_message, c.last_message_at,
 				c.unread_count_owner, c.unread_count_vet, c.created_at, c.updated_at,
-				u.full_name as pet_owner_name, u.profile_photo_url as pet_owner_photo,
+				u.display_name as pet_owner_name, u.avatar_url as pet_owner_photo,
 				p.name as pet_name
 			FROM chats c
 			LEFT JOIN users u ON c.pet_owner_id = u.id

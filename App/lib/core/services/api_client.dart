@@ -27,9 +27,24 @@ class ApiClient {
         if (_accessToken != null) {
           options.headers['Authorization'] = 'Bearer $_accessToken';
         }
+        print('📤 [${options.method}] ${options.path}');
+        if (options.data != null) {
+          print('   Data: ${options.data}');
+        }
         return handler.next(options);
       },
+      onResponse: (response, handler) {
+        print('✅ [${response.statusCode}] ${response.requestOptions.path}');
+        print('   Response: ${response.data}');
+        return handler.next(response);
+      },
       onError: (error, handler) async {
+        print('❌ [${error.response?.statusCode}] ${error.requestOptions.path}');
+        print('   Error: ${error.message}');
+        if (error.response?.data != null) {
+          print('   Error Data: ${error.response?.data}');
+        }
+        
         // If 401, try to refresh token
         if (error.response?.statusCode == 401 && _refreshToken != null) {
           try {

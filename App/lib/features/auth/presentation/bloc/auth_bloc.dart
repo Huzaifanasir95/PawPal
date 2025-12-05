@@ -96,7 +96,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthState.loading());
     try {
       await _authRepository.initialize();
-      // The stream will handle emitting the right state
+      
+      // Check if user is authenticated after initialization
+      final currentUser = _authRepository.currentUser;
+      if (currentUser != null) {
+        if (!isClosed) {
+          emit(AuthState.authenticated(currentUser));
+        }
+      } else {
+        if (!isClosed) {
+          emit(const AuthState.unauthenticated());
+        }
+      }
     } catch (e) {
       if (!isClosed) {
         emit(const AuthState.unauthenticated());

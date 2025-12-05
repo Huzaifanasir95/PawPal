@@ -7,6 +7,7 @@ import '../../data/models/pet_model.dart';
 import '../../data/models/breed_prediction_model.dart';
 import '../../data/services/breed_verification_service.dart';
 import '../../data/repositories/pet_repository_api.dart';
+import '../../data/repositories/health_repository_api.dart';
 import 'add_health_journal_screen.dart';
 import 'edit_health_records_screen.dart';
 
@@ -26,12 +27,30 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
   late PetModel _currentPet;
   final _breedVerificationService = BreedVerificationService();
   final _petRepository = PetRepositoryApi();
+  final _healthRepository = HealthRepositoryApi();
   bool _isVerifying = false;
 
   @override
   void initState() {
     super.initState();
     _currentPet = widget.pet;
+    _loadHealthRecords();
+  }
+
+  Future<void> _loadHealthRecords() async {
+    try {
+      // Load health records if not already present
+      if (_currentPet.healthRecord == null) {
+        final healthRecord = await _healthRepository.getHealthRecord(_currentPet.id);
+        if (healthRecord != null) {
+          setState(() {
+            _currentPet = _currentPet.copyWith(healthRecord: healthRecord);
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading health records: $e');
+    }
   }
 
   Future<void> _refreshPetData() async {
@@ -41,6 +60,8 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
         setState(() {
           _currentPet = updatedPet;
         });
+        // Also refresh health records
+        await _loadHealthRecords();
       }
     } catch (e) {
       _showSnackBar('Failed to refresh pet data', isError: true);
@@ -879,29 +900,47 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
 
                     if (_currentPet.healthRecord == null) ...[
                       // No health records message
-                      Center(
+                      Container(
+                        padding: EdgeInsets.all(24.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.info.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(16.r),
+                          border: Border.all(
+                            color: AppColors.info.withOpacity(0.2),
+                            width: 1.5,
+                          ),
+                        ),
                         child: Column(
                           children: [
-                            Icon(
-                              Icons.medical_services_outlined,
-                              color: AppColors.textSecondary,
-                              size: 48.sp,
+                            Container(
+                              padding: EdgeInsets.all(12.w),
+                              decoration: BoxDecoration(
+                                color: AppColors.info.withOpacity(0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.medical_services_outlined,
+                                color: AppColors.info,
+                                size: 32.sp,
+                              ),
                             ),
-                            SizedBox(height: 12.h),
+                            SizedBox(height: 16.h),
                             Text(
                               'No health records added yet',
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 16.sp,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w700,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                             SizedBox(height: 8.h),
                             Text(
                               'Add your pet\'s medical history and keep track of their health',
                               style: AppTextStyles.onboardingBody.copyWith(
-                                fontSize: 14.sp,
+                                fontSize: 13.sp,
                                 color: AppColors.textSecondary,
+                                height: 1.4,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -910,46 +949,64 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                       ),
                       SizedBox(height: 20.h),
                     ] else ...[
-                      // Health Info Grid
-                      GridView.count(
-                        crossAxisCount: 2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12.h,
-                        crossAxisSpacing: 12.w,
-                        childAspectRatio: 1.2,
-                        children: [
-                          if (_currentPet.healthRecord!.isVaccinated)
-                            _buildHealthInfoTile(
-                              icon: Icons.vaccines,
-                              label: 'Vaccinated',
-                              value: 'Yes',
-                              color: AppColors.success,
+                      // Health Info Grid with elegant design
+                      Container(
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(14.r),
+                          border: Border.all(
+                            color: AppColors.success.withOpacity(0.15),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.success.withOpacity(0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
-                          if (_currentPet.healthRecord!.vetName != null)
-                            _buildHealthInfoTile(
-                              icon: Icons.local_hospital,
-                              label: 'Vet',
-                              value: _currentPet.healthRecord!.vetName!,
-                              color: AppColors.primary,
-                            ),
-                          if (_currentPet.healthRecord!.medicalConditions != null &&
-                              _currentPet.healthRecord!.medicalConditions!.isNotEmpty)
-                            _buildHealthInfoTile(
-                              icon: Icons.warning,
-                              label: 'Conditions',
-                              value: '${_currentPet.healthRecord!.medicalConditions!.length} recorded',
-                              color: AppColors.warning,
-                            ),
-                          if (_currentPet.healthRecord!.medications != null &&
-                              _currentPet.healthRecord!.medications!.isNotEmpty)
-                            _buildHealthInfoTile(
-                              icon: Icons.medication,
-                              label: 'Medications',
-                              value: '${_currentPet.healthRecord!.medications!.length} active',
-                              color: AppColors.info,
-                            ),
-                        ],
+                          ],
+                        ),
+                        child: GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          mainAxisSpacing: 12.h,
+                          crossAxisSpacing: 12.w,
+                          childAspectRatio: 1.15,
+                          children: [
+                            if (_currentPet.healthRecord!.isVaccinated)
+                              _buildElegantHealthTile(
+                                icon: Icons.vaccines,
+                                label: 'Vaccinated',
+                                value: 'Yes',
+                                color: AppColors.success,
+                              ),
+                            if (_currentPet.healthRecord!.vetName != null)
+                              _buildElegantHealthTile(
+                                icon: Icons.local_hospital,
+                                label: 'Vet',
+                                value: _currentPet.healthRecord!.vetName!,
+                                color: AppColors.primary,
+                              ),
+                            if (_currentPet.healthRecord!.medicalConditions != null &&
+                                _currentPet.healthRecord!.medicalConditions!.isNotEmpty)
+                              _buildElegantHealthTile(
+                                icon: Icons.warning_rounded,
+                                label: 'Conditions',
+                                value: '${_currentPet.healthRecord!.medicalConditions!.length} recorded',
+                                color: AppColors.warning,
+                              ),
+                            if (_currentPet.healthRecord!.medications != null &&
+                                _currentPet.healthRecord!.medications!.isNotEmpty)
+                              _buildElegantHealthTile(
+                                icon: Icons.medication,
+                                label: 'Medications',
+                                value: '${_currentPet.healthRecord!.medications!.length} active',
+                                color: AppColors.info,
+                              ),
+                          ],
+                        ),
                       ),
                       SizedBox(height: 20.h),
                     ],
@@ -1037,6 +1094,223 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                     ),
                   ],
                 ),
+              ),
+            ),
+            SizedBox(height: 20.h),
+
+            // Health Journal Section
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Health Journal',
+                        style: AppTextStyles.onboardingTitle.copyWith(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.all(8.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.health_and_safety,
+                          color: AppColors.primary,
+                          size: 20.sp,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16.h),
+                  StreamBuilder<List<dynamic>>(
+                    stream: _healthRepository.getHealthJournalEntries(_currentPet.id),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24.h),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                            ),
+                          ),
+                        );
+                      }
+
+                      final journals = snapshot.data ?? [];
+
+                      if (journals.isEmpty) {
+                        return Container(
+                          padding: EdgeInsets.all(24.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(16.r),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.2),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(12.w),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.history,
+                                  color: AppColors.primary,
+                                  size: 28.sp,
+                                ),
+                              ),
+                              SizedBox(height: 16.h),
+                              Text(
+                                'No journal entries yet',
+                                style: AppTextStyles.onboardingBody.copyWith(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 8.h),
+                              Text(
+                                'Start tracking your pet\'s daily health and wellness',
+                                style: AppTextStyles.onboardingBody.copyWith(
+                                  fontSize: 13.sp,
+                                  color: AppColors.textSecondary,
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: journals.length,
+                        itemBuilder: (context, index) {
+                          final journal = journals[index];
+                          final moodColor = _getMoodColor(journal.mood ?? 'happy');
+                          final moodIcon = _getMoodIcon(journal.mood ?? 'happy');
+                          
+                          return Container(
+                            margin: EdgeInsets.only(bottom: 12.h),
+                            padding: EdgeInsets.all(16.w),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(14.r),
+                              border: Border.all(
+                                color: moodColor.withOpacity(0.2),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: moodColor.withOpacity(0.08),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.all(8.w),
+                                            decoration: BoxDecoration(
+                                              color: moodColor.withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(10.r),
+                                            ),
+                                            child: Icon(
+                                              moodIcon,
+                                              color: moodColor,
+                                              size: 20.sp,
+                                            ),
+                                          ),
+                                          SizedBox(width: 12.w),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${journal.date.day}/${journal.date.month}/${journal.date.year}',
+                                                style: AppTextStyles.onboardingBody.copyWith(
+                                                  fontSize: 14.sp,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.textPrimary,
+                                                ),
+                                              ),
+                                              SizedBox(height: 2.h),
+                                              Text(
+                                                journal.mood ?? 'neutral',
+                                                style: AppTextStyles.onboardingBody.copyWith(
+                                                  fontSize: 12.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: moodColor,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (journal.weight != null)
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 10.w,
+                                          vertical: 6.h,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.info.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(8.r),
+                                        ),
+                                        child: Text(
+                                          '${journal.weight} ${journal.weightUnit ?? 'kg'}',
+                                          style: AppTextStyles.onboardingBody.copyWith(
+                                            fontSize: 11.sp,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.info,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                SizedBox(height: 8.h),
+                                if (journal.generalNotes != null && journal.generalNotes!.isNotEmpty)
+                                  Text(
+                                    journal.generalNotes!,
+                                    style: AppTextStyles.onboardingBody.copyWith(
+                                      fontSize: 12.sp,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             SizedBox(height: 20.h),
@@ -1207,8 +1481,51 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
       ),
     );
   }
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return '${date.day}/${date.month}/${date.year}';
+  }
 
-  Widget _buildHealthInfoTile({
+  String _capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
+  }
+
+  Color _getMoodColor(String mood) {
+    switch (mood.toLowerCase()) {
+      case 'happy':
+        return Colors.green;
+      case 'sad':
+        return Colors.blue;
+      case 'anxious':
+        return Colors.orange;
+      case 'aggressive':
+        return Colors.red;
+      case 'calm':
+        return Colors.purple;
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  IconData _getMoodIcon(String mood) {
+    switch (mood.toLowerCase()) {
+      case 'happy':
+        return Icons.sentiment_satisfied;
+      case 'sad':
+        return Icons.sentiment_dissatisfied;
+      case 'anxious':
+        return Icons.sentiment_very_dissatisfied;
+      case 'aggressive':
+        return Icons.warning;
+      case 'calm':
+        return Icons.spa;
+      default:
+        return Icons.sentiment_neutral;
+    }
+  }
+
+  Widget _buildElegantHealthTile({
     required IconData icon,
     required String label,
     required String value,
@@ -1220,9 +1537,16 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: color.withOpacity(0.15),
-          width: 1,
+          color: color.withOpacity(0.2),
+          width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1260,16 +1584,6 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
         ],
       ),
     );
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
-  String _capitalize(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 
   void _showImageGallery(BuildContext context, int initialIndex) {

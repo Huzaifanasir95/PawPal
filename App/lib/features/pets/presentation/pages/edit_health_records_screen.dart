@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/health_record_model.dart';
-import '../../data/repositories/health_repository.dart';
+import '../../data/repositories/health_repository_api.dart';
 
 class EditHealthRecordsScreen extends StatefulWidget {
   final String petId;
@@ -22,7 +22,7 @@ class EditHealthRecordsScreen extends StatefulWidget {
 }
 
 class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
-  final _healthRepository = HealthRepository();
+  final _healthRepository = HealthRepositoryApi();
 
   // Form controllers
   final _vaccinationDateController = TextEditingController();

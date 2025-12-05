@@ -59,6 +59,9 @@ dependencies:
   # Google Fonts
   google_fonts: ^6.1.0
   
+  # Time formatting
+  timeago: ^3.7.0
+  
   # Local Storage
   shared_preferences: ^2.2.2
   

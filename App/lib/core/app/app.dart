@@ -7,6 +7,8 @@ import '../../features/auth/data/repositories/auth_repository.dart';
 
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/community/presentation/bloc/community_bloc.dart';
+import '../../features/vet/presentation/bloc/vet_bloc.dart';
+import '../../features/chat/presentation/bloc/chat_bloc.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/auth/presentation/widgets/auth_navigator.dart';
 import '../../features/auth/presentation/pages/account_type_selection_screen.dart';
@@ -180,6 +182,12 @@ class _PawPawlAppState extends State<PawPawlApp> {
         ),
         BlocProvider(
           create: (context) => getIt<CommunityBloc>(),
+        ),
+        BlocProvider(
+          create: (context) => getIt<VetBloc>(),
+        ),
+        BlocProvider(
+          create: (context) => getIt<ChatBloc>(),
         ),
         Provider<AuthRepository>.value(
           value: _authRepository,

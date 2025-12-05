@@ -10,6 +10,11 @@ class ApiClient {
   String? _refreshToken;
   String? _userId;
 
+  static ApiClient get instance {
+    _instance ??= ApiClient._();
+    return _instance!;
+  }
+
   ApiClient._() {
     _dio = Dio(BaseOptions(
       baseUrl: AppConfig.backendBaseUrl,
@@ -64,11 +69,6 @@ class ApiClient {
         return handler.next(error);
       },
     ));
-  }
-
-  static ApiClient get instance {
-    _instance ??= ApiClient._();
-    return _instance!;
   }
 
   Dio get dio => _dio;

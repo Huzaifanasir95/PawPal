@@ -21,7 +21,7 @@ mixin _$ChatEvent {
   TResult when<TResult extends Object?>({
     required TResult Function() loadChats,
     required TResult Function(String chatId) loadChat,
-    required TResult Function(String vetId, String petId) startChat,
+    required TResult Function(String vetId, String? petId) startChat,
     required TResult Function(String chatId, String content) sendMessage,
     required TResult Function(String chatId, int page, int limit) loadMessages,
     required TResult Function(String messageId) markAsRead,
@@ -32,7 +32,7 @@ mixin _$ChatEvent {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? loadChats,
     TResult? Function(String chatId)? loadChat,
-    TResult? Function(String vetId, String petId)? startChat,
+    TResult? Function(String vetId, String? petId)? startChat,
     TResult? Function(String chatId, String content)? sendMessage,
     TResult? Function(String chatId, int page, int limit)? loadMessages,
     TResult? Function(String messageId)? markAsRead,
@@ -43,7 +43,7 @@ mixin _$ChatEvent {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? loadChats,
     TResult Function(String chatId)? loadChat,
-    TResult Function(String vetId, String petId)? startChat,
+    TResult Function(String vetId, String? petId)? startChat,
     TResult Function(String chatId, String content)? sendMessage,
     TResult Function(String chatId, int page, int limit)? loadMessages,
     TResult Function(String messageId)? markAsRead,
@@ -152,7 +152,7 @@ class _$LoadChatsImpl implements _LoadChats {
   TResult when<TResult extends Object?>({
     required TResult Function() loadChats,
     required TResult Function(String chatId) loadChat,
-    required TResult Function(String vetId, String petId) startChat,
+    required TResult Function(String vetId, String? petId) startChat,
     required TResult Function(String chatId, String content) sendMessage,
     required TResult Function(String chatId, int page, int limit) loadMessages,
     required TResult Function(String messageId) markAsRead,
@@ -167,7 +167,7 @@ class _$LoadChatsImpl implements _LoadChats {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? loadChats,
     TResult? Function(String chatId)? loadChat,
-    TResult? Function(String vetId, String petId)? startChat,
+    TResult? Function(String vetId, String? petId)? startChat,
     TResult? Function(String chatId, String content)? sendMessage,
     TResult? Function(String chatId, int page, int limit)? loadMessages,
     TResult? Function(String messageId)? markAsRead,
@@ -182,7 +182,7 @@ class _$LoadChatsImpl implements _LoadChats {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? loadChats,
     TResult Function(String chatId)? loadChat,
-    TResult Function(String vetId, String petId)? startChat,
+    TResult Function(String vetId, String? petId)? startChat,
     TResult Function(String chatId, String content)? sendMessage,
     TResult Function(String chatId, int page, int limit)? loadMessages,
     TResult Function(String messageId)? markAsRead,
@@ -322,7 +322,7 @@ class _$LoadChatImpl implements _LoadChat {
   TResult when<TResult extends Object?>({
     required TResult Function() loadChats,
     required TResult Function(String chatId) loadChat,
-    required TResult Function(String vetId, String petId) startChat,
+    required TResult Function(String vetId, String? petId) startChat,
     required TResult Function(String chatId, String content) sendMessage,
     required TResult Function(String chatId, int page, int limit) loadMessages,
     required TResult Function(String messageId) markAsRead,
@@ -337,7 +337,7 @@ class _$LoadChatImpl implements _LoadChat {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? loadChats,
     TResult? Function(String chatId)? loadChat,
-    TResult? Function(String vetId, String petId)? startChat,
+    TResult? Function(String vetId, String? petId)? startChat,
     TResult? Function(String chatId, String content)? sendMessage,
     TResult? Function(String chatId, int page, int limit)? loadMessages,
     TResult? Function(String messageId)? markAsRead,
@@ -352,7 +352,7 @@ class _$LoadChatImpl implements _LoadChat {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? loadChats,
     TResult Function(String chatId)? loadChat,
-    TResult Function(String vetId, String petId)? startChat,
+    TResult Function(String vetId, String? petId)? startChat,
     TResult Function(String chatId, String content)? sendMessage,
     TResult Function(String chatId, int page, int limit)? loadMessages,
     TResult Function(String messageId)? markAsRead,
@@ -435,7 +435,7 @@ abstract class _$$StartChatImplCopyWith<$Res> {
     $Res Function(_$StartChatImpl) then,
   ) = __$$StartChatImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({String vetId, String petId});
+  $Res call({String vetId, String? petId});
 }
 
 /// @nodoc
@@ -451,7 +451,7 @@ class __$$StartChatImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? vetId = null, Object? petId = null}) {
+  $Res call({Object? vetId = null, Object? petId = freezed}) {
     return _then(
       _$StartChatImpl(
         vetId:
@@ -460,10 +460,10 @@ class __$$StartChatImplCopyWithImpl<$Res>
                 : vetId // ignore: cast_nullable_to_non_nullable
                     as String,
         petId:
-            null == petId
+            freezed == petId
                 ? _value.petId
                 : petId // ignore: cast_nullable_to_non_nullable
-                    as String,
+                    as String?,
       ),
     );
   }
@@ -472,12 +472,12 @@ class __$$StartChatImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$StartChatImpl implements _StartChat {
-  const _$StartChatImpl({required this.vetId, required this.petId});
+  const _$StartChatImpl({required this.vetId, this.petId});
 
   @override
   final String vetId;
   @override
-  final String petId;
+  final String? petId;
 
   @override
   String toString() {
@@ -509,7 +509,7 @@ class _$StartChatImpl implements _StartChat {
   TResult when<TResult extends Object?>({
     required TResult Function() loadChats,
     required TResult Function(String chatId) loadChat,
-    required TResult Function(String vetId, String petId) startChat,
+    required TResult Function(String vetId, String? petId) startChat,
     required TResult Function(String chatId, String content) sendMessage,
     required TResult Function(String chatId, int page, int limit) loadMessages,
     required TResult Function(String messageId) markAsRead,
@@ -524,7 +524,7 @@ class _$StartChatImpl implements _StartChat {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? loadChats,
     TResult? Function(String chatId)? loadChat,
-    TResult? Function(String vetId, String petId)? startChat,
+    TResult? Function(String vetId, String? petId)? startChat,
     TResult? Function(String chatId, String content)? sendMessage,
     TResult? Function(String chatId, int page, int limit)? loadMessages,
     TResult? Function(String messageId)? markAsRead,
@@ -539,7 +539,7 @@ class _$StartChatImpl implements _StartChat {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? loadChats,
     TResult Function(String chatId)? loadChat,
-    TResult Function(String vetId, String petId)? startChat,
+    TResult Function(String vetId, String? petId)? startChat,
     TResult Function(String chatId, String content)? sendMessage,
     TResult Function(String chatId, int page, int limit)? loadMessages,
     TResult Function(String messageId)? markAsRead,
@@ -604,13 +604,11 @@ class _$StartChatImpl implements _StartChat {
 }
 
 abstract class _StartChat implements ChatEvent {
-  const factory _StartChat({
-    required final String vetId,
-    required final String petId,
-  }) = _$StartChatImpl;
+  const factory _StartChat({required final String vetId, final String? petId}) =
+      _$StartChatImpl;
 
   String get vetId;
-  String get petId;
+  String? get petId;
 
   /// Create a copy of ChatEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -700,7 +698,7 @@ class _$SendMessageImpl implements _SendMessage {
   TResult when<TResult extends Object?>({
     required TResult Function() loadChats,
     required TResult Function(String chatId) loadChat,
-    required TResult Function(String vetId, String petId) startChat,
+    required TResult Function(String vetId, String? petId) startChat,
     required TResult Function(String chatId, String content) sendMessage,
     required TResult Function(String chatId, int page, int limit) loadMessages,
     required TResult Function(String messageId) markAsRead,
@@ -715,7 +713,7 @@ class _$SendMessageImpl implements _SendMessage {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? loadChats,
     TResult? Function(String chatId)? loadChat,
-    TResult? Function(String vetId, String petId)? startChat,
+    TResult? Function(String vetId, String? petId)? startChat,
     TResult? Function(String chatId, String content)? sendMessage,
     TResult? Function(String chatId, int page, int limit)? loadMessages,
     TResult? Function(String messageId)? markAsRead,
@@ -730,7 +728,7 @@ class _$SendMessageImpl implements _SendMessage {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? loadChats,
     TResult Function(String chatId)? loadChat,
-    TResult Function(String vetId, String petId)? startChat,
+    TResult Function(String vetId, String? petId)? startChat,
     TResult Function(String chatId, String content)? sendMessage,
     TResult Function(String chatId, int page, int limit)? loadMessages,
     TResult Function(String messageId)? markAsRead,
@@ -909,7 +907,7 @@ class _$LoadMessagesImpl implements _LoadMessages {
   TResult when<TResult extends Object?>({
     required TResult Function() loadChats,
     required TResult Function(String chatId) loadChat,
-    required TResult Function(String vetId, String petId) startChat,
+    required TResult Function(String vetId, String? petId) startChat,
     required TResult Function(String chatId, String content) sendMessage,
     required TResult Function(String chatId, int page, int limit) loadMessages,
     required TResult Function(String messageId) markAsRead,
@@ -924,7 +922,7 @@ class _$LoadMessagesImpl implements _LoadMessages {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? loadChats,
     TResult? Function(String chatId)? loadChat,
-    TResult? Function(String vetId, String petId)? startChat,
+    TResult? Function(String vetId, String? petId)? startChat,
     TResult? Function(String chatId, String content)? sendMessage,
     TResult? Function(String chatId, int page, int limit)? loadMessages,
     TResult? Function(String messageId)? markAsRead,
@@ -939,7 +937,7 @@ class _$LoadMessagesImpl implements _LoadMessages {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? loadChats,
     TResult Function(String chatId)? loadChat,
-    TResult Function(String vetId, String petId)? startChat,
+    TResult Function(String vetId, String? petId)? startChat,
     TResult Function(String chatId, String content)? sendMessage,
     TResult Function(String chatId, int page, int limit)? loadMessages,
     TResult Function(String messageId)? markAsRead,
@@ -1094,7 +1092,7 @@ class _$MarkAsReadImpl implements _MarkAsRead {
   TResult when<TResult extends Object?>({
     required TResult Function() loadChats,
     required TResult Function(String chatId) loadChat,
-    required TResult Function(String vetId, String petId) startChat,
+    required TResult Function(String vetId, String? petId) startChat,
     required TResult Function(String chatId, String content) sendMessage,
     required TResult Function(String chatId, int page, int limit) loadMessages,
     required TResult Function(String messageId) markAsRead,
@@ -1109,7 +1107,7 @@ class _$MarkAsReadImpl implements _MarkAsRead {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? loadChats,
     TResult? Function(String chatId)? loadChat,
-    TResult? Function(String vetId, String petId)? startChat,
+    TResult? Function(String vetId, String? petId)? startChat,
     TResult? Function(String chatId, String content)? sendMessage,
     TResult? Function(String chatId, int page, int limit)? loadMessages,
     TResult? Function(String messageId)? markAsRead,
@@ -1124,7 +1122,7 @@ class _$MarkAsReadImpl implements _MarkAsRead {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? loadChats,
     TResult Function(String chatId)? loadChat,
-    TResult Function(String vetId, String petId)? startChat,
+    TResult Function(String vetId, String? petId)? startChat,
     TResult Function(String chatId, String content)? sendMessage,
     TResult Function(String chatId, int page, int limit)? loadMessages,
     TResult Function(String messageId)? markAsRead,
@@ -1272,7 +1270,7 @@ class _$DeleteChatImpl implements _DeleteChat {
   TResult when<TResult extends Object?>({
     required TResult Function() loadChats,
     required TResult Function(String chatId) loadChat,
-    required TResult Function(String vetId, String petId) startChat,
+    required TResult Function(String vetId, String? petId) startChat,
     required TResult Function(String chatId, String content) sendMessage,
     required TResult Function(String chatId, int page, int limit) loadMessages,
     required TResult Function(String messageId) markAsRead,
@@ -1287,7 +1285,7 @@ class _$DeleteChatImpl implements _DeleteChat {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? loadChats,
     TResult? Function(String chatId)? loadChat,
-    TResult? Function(String vetId, String petId)? startChat,
+    TResult? Function(String vetId, String? petId)? startChat,
     TResult? Function(String chatId, String content)? sendMessage,
     TResult? Function(String chatId, int page, int limit)? loadMessages,
     TResult? Function(String messageId)? markAsRead,
@@ -1302,7 +1300,7 @@ class _$DeleteChatImpl implements _DeleteChat {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? loadChats,
     TResult Function(String chatId)? loadChat,
-    TResult Function(String vetId, String petId)? startChat,
+    TResult Function(String vetId, String? petId)? startChat,
     TResult Function(String chatId, String content)? sendMessage,
     TResult Function(String chatId, int page, int limit)? loadMessages,
     TResult Function(String messageId)? markAsRead,
@@ -1423,7 +1421,7 @@ class _$RefreshChatsImpl implements _RefreshChats {
   TResult when<TResult extends Object?>({
     required TResult Function() loadChats,
     required TResult Function(String chatId) loadChat,
-    required TResult Function(String vetId, String petId) startChat,
+    required TResult Function(String vetId, String? petId) startChat,
     required TResult Function(String chatId, String content) sendMessage,
     required TResult Function(String chatId, int page, int limit) loadMessages,
     required TResult Function(String messageId) markAsRead,
@@ -1438,7 +1436,7 @@ class _$RefreshChatsImpl implements _RefreshChats {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? loadChats,
     TResult? Function(String chatId)? loadChat,
-    TResult? Function(String vetId, String petId)? startChat,
+    TResult? Function(String vetId, String? petId)? startChat,
     TResult? Function(String chatId, String content)? sendMessage,
     TResult? Function(String chatId, int page, int limit)? loadMessages,
     TResult? Function(String messageId)? markAsRead,
@@ -1453,7 +1451,7 @@ class _$RefreshChatsImpl implements _RefreshChats {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? loadChats,
     TResult Function(String chatId)? loadChat,
-    TResult Function(String vetId, String petId)? startChat,
+    TResult Function(String vetId, String? petId)? startChat,
     TResult Function(String chatId, String content)? sendMessage,
     TResult Function(String chatId, int page, int limit)? loadMessages,
     TResult Function(String messageId)? markAsRead,

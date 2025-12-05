@@ -4,10 +4,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
+import '../../../../core/navigation/app_navigator.dart';
 import '../../data/models/vet_profile_model.dart';
 import '../bloc/vet_bloc.dart';
 import '../bloc/vet_event.dart';
 import '../bloc/vet_state.dart';
+import '../../../chat/presentation/bloc/chat_bloc.dart';
+import '../../../chat/presentation/bloc/chat_event.dart';
+import '../../../chat/presentation/bloc/chat_state.dart';
 
 class VetDetailScreen extends StatefulWidget {
   final String vetId;
@@ -22,31 +26,104 @@ class VetDetailScreen extends StatefulWidget {
 }
 
 class _VetDetailScreenState extends State<VetDetailScreen> {
+  bool _isStartingChat = false;
+
   @override
   void initState() {
     super.initState();
     context.read<VetBloc>().add(VetEvent.loadVetProfile(widget.vetId));
   }
 
+  void _startChatWithVet(BuildContext context) async {
+    if (_isStartingChat) return;
+
+    setState(() {
+      _isStartingChat = true;
+    });
+
+    // Start chat - petId will be determined from authenticated user by backend
+    context.read<ChatBloc>().add(
+      ChatEvent.startChat(
+        vetId: widget.vetId,
+        petId: null, // Backend will use authenticated user's ID
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: BlocConsumer<VetBloc, VetState>(
-        listener: (context, state) {
-          state.maybeWhen(
-            error: (message) => CustomSnackbar.showError(context, message),
-            orElse: () {},
+      floatingActionButton: BlocBuilder<VetBloc, VetState>(
+        builder: (context, state) {
+          return state.maybeWhen(
+            profileLoaded: (vet) => FloatingActionButton.extended(
+              onPressed: _isStartingChat ? null : () => _startChatWithVet(context),
+              backgroundColor: _isStartingChat ? AppColors.textSecondary : AppColors.primary,
+              icon: _isStartingChat
+                  ? SizedBox(
+                      width: 20.w,
+                      height: 20.h,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.textOnPrimary),
+                      ),
+                    )
+                  : Icon(Icons.chat_bubble_outline, color: AppColors.textOnPrimary),
+              label: Text(
+                _isStartingChat ? 'Starting...' : 'Start Chat',
+                style: AppTextStyles.titleMedium.copyWith(
+                  color: AppColors.textOnPrimary,
+                ),
+              ),
+            ),
+            orElse: () => const SizedBox.shrink(),
           );
         },
-        builder: (context, state) {
-          return state.when(
-            initial: () => const Center(child: Text('Loading...')),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            profileLoaded: (vet) => _buildProfileContent(context, vet),
-            vetsListLoaded: (_, __, ___, ____, _____, ______, _______, ________) => const SizedBox(),
-            profileSaved: (_) => const SizedBox(),
-            error: (message) => Center(
+      ),
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<VetBloc, VetState>(
+            listener: (context, state) {
+              state.maybeWhen(
+                error: (message) => CustomSnackbar.showError(context, message),
+                orElse: () {},
+              );
+            },
+          ),
+          BlocListener<ChatBloc, ChatState>(
+            listener: (context, state) {
+              state.maybeWhen(
+                chatStarted: (chat) {
+                  if (mounted) {
+                    setState(() {
+                      _isStartingChat = false;
+                    });
+                    AppNavigator.navigateToConversation(context, chatId: chat.id);
+                  }
+                },
+                error: (message) {
+                  if (mounted) {
+                    setState(() {
+                      _isStartingChat = false;
+                    });
+                    CustomSnackbar.showError(context, message);
+                  }
+                },
+                orElse: () {},
+              );
+            },
+          ),
+        ],
+        child: BlocBuilder<VetBloc, VetState>(
+          builder: (context, state) {
+            return state.when(
+              initial: () => const Center(child: Text('Loading...')),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              profileLoaded: (vet) => _buildProfileContent(context, vet),
+              vetsListLoaded: (_, __, ___, ____, _____, ______, _______, ________) => const SizedBox(),
+              profileSaved: (_) => const SizedBox(),
+              error: (message) => Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -68,6 +145,7 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
             ),
           );
         },
+        ),
       ),
     );
   }

@@ -8,7 +8,7 @@ class ChatEvent with _$ChatEvent {
   const factory ChatEvent.loadChat(String chatId) = _LoadChat;
   const factory ChatEvent.startChat({
     required String vetId,
-    required String petId,
+    String? petId,
   }) = _StartChat;
   const factory ChatEvent.sendMessage({
     required String chatId,

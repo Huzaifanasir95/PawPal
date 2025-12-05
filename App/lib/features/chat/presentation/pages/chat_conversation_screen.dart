@@ -26,6 +26,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isSending = false;
+  Chat? _lastChat;
+  List<ChatMessage> _lastMessages = [];
 
   @override
   void initState() {
@@ -107,71 +109,35 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         builder: (context, state) {
           return state.when(
             initial: () => const Center(child: Text('Loading...')),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () {
+              // If we have cached data, show it while loading
+              if (_lastChat != null && _lastMessages.isNotEmpty) {
+                return _buildChatView(_lastChat!, _lastMessages);
+              }
+              return const Center(child: CircularProgressIndicator());
+            },
             chatsLoaded: (_) => const SizedBox(),
             chatLoaded: (chat, messages, hasMore, currentPage) {
-              if (messages.isEmpty) {
-                return Column(
-                  children: [
-                    Expanded(
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chat_bubble_outline,
-                              size: 64.sp,
-                              color: AppColors.neutral400,
-                            ),
-                            SizedBox(height: 16.h),
-                            Text(
-                              'No messages yet',
-                              style: AppTextStyles.titleMedium.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              'Start the conversation',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    _buildMessageInput(),
-                  ],
-                );
-              }
-
-              return Column(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
-                        final message = messages[index];
-                        final isNextSameSender = index < messages.length - 1 &&
-                            messages[index + 1].senderId == message.senderId;
-                        
-                        return _MessageBubble(
-                          message: message,
-                          showSenderInfo: !isNextSameSender,
-                        );
-                      },
-                    ),
-                  ),
-                  _buildMessageInput(),
-                ],
-              );
+              // Cache the latest chat state
+              _lastChat = chat;
+              _lastMessages = messages;
+              return _buildChatView(chat, messages);
             },
             chatStarted: (_) => const SizedBox(),
-            messageSent: (_) => const SizedBox(),
-            messageMarkedAsRead: (_) => const SizedBox(),
+            messageSent: (_) {
+              // Keep showing the cached chat view while message is being sent
+              if (_lastChat != null) {
+                return _buildChatView(_lastChat!, _lastMessages);
+              }
+              return const Center(child: CircularProgressIndicator());
+            },
+            messageMarkedAsRead: (_) {
+              // Keep showing the cached chat view
+              if (_lastChat != null) {
+                return _buildChatView(_lastChat!, _lastMessages);
+              }
+              return const SizedBox();
+            },
             chatDeleted: (_) => const SizedBox(),
             error: (message) => Center(
               child: Column(
@@ -193,6 +159,67 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildChatView(Chat chat, List<ChatMessage> messages) {
+    if (messages.isEmpty) {
+      return Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline,
+                    size: 64.sp,
+                    color: AppColors.neutral400,
+                  ),
+                  SizedBox(height: 16.h),
+                  Text(
+                    'No messages yet',
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    'Start the conversation',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          _buildMessageInput(),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            controller: _scrollController,
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+            itemCount: messages.length,
+            itemBuilder: (context, index) {
+              final message = messages[index];
+              final isNextSameSender = index < messages.length - 1 &&
+                  messages[index + 1].senderId == message.senderId;
+              
+              return _MessageBubble(
+                message: message,
+                showSenderInfo: !isNextSameSender,
+              );
+            },
+          ),
+        ),
+        _buildMessageInput(),
+      ],
     );
   }
 

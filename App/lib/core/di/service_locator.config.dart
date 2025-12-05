@@ -14,6 +14,8 @@ import 'package:injectable/injectable.dart' as _i526;
 import 'package:pawpawl/core/di/api_client_module.dart' as _i509;
 import 'package:pawpawl/core/services/api_client.dart' as _i428;
 import 'package:pawpawl/core/utils/image_service.dart' as _i480;
+import 'package:pawpawl/features/auth/data/repositories/auth_repository.dart'
+    as _i681;
 import 'package:pawpawl/features/chat/data/repositories/chat_repository.dart'
     as _i218;
 import 'package:pawpawl/features/chat/presentation/bloc/chat_bloc.dart'
@@ -42,6 +44,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i11.PetRepositoryApi>(() => _i11.PetRepositoryApi());
     gh.factory<_i37.CommunityRepository>(() => _i37.CommunityRepository());
     gh.factory<_i7.CommunityRepositoryApi>(() => _i7.CommunityRepositoryApi());
+    gh.lazySingleton<_i681.AuthRepository>(() => _i681.AuthRepository());
     gh.lazySingleton<_i428.ApiClient>(() => apiClientModule.apiClient);
     gh.lazySingleton<_i217.VetRepository>(
       () => _i217.VetRepository(gh<_i428.ApiClient>()),

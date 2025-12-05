@@ -272,6 +272,7 @@ class _VetCard extends StatelessWidget {
           ],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Profile Image
@@ -290,9 +291,10 @@ class _VetCard extends StatelessWidget {
               ),
             ),
 
-            Padding(
-              padding: EdgeInsets.all(12.w),
-              child: Column(
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(12.w),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Name
@@ -350,6 +352,7 @@ class _VetCard extends StatelessWidget {
                   SizedBox(height: 8.h),
 
                   // Consultation Fee
+                  const Spacer(),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                     decoration: BoxDecoration(
@@ -365,6 +368,7 @@ class _VetCard extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
               ),
             ),
           ],

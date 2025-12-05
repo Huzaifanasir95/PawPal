@@ -45,7 +45,7 @@ func (r *MessageRepository) GetMessagesByChat(ctx context.Context, chatID uuid.U
 
 	query := `
 		SELECT m.id, m.chat_id, m.sender_id, m.content, m.is_read, m.created_at,
-			u.full_name as sender_name, u.profile_photo_url as sender_photo
+			u.display_name as sender_name, u.avatar_url as sender_photo
 		FROM messages m
 		LEFT JOIN users u ON m.sender_id = u.id
 		WHERE m.chat_id = $1

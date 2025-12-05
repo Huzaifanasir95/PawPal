@@ -4,7 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/data/models/user_profile.dart';
+import '../../../auth/data/models/auth_user.dart';
+import '../../../auth/presentation/pages/sign_in_screen.dart';
 import '../../data/repositories/profile_repository.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -15,7 +16,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  UserProfile? _userProfile;
+  AuthUser? _userProfile;
   bool _isLoading = true;
   bool _isUpdating = false;
 
@@ -32,6 +33,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'Shelter/Rescue',
     'Other'
   ];
+
+  // Map backend values to display names
+  String _mapAccountTypeToDisplay(String? backendType) {
+    if (backendType == null) return 'Pet Owner';
+    
+    switch (backendType.toLowerCase()) {
+      case 'vet':
+      case 'veterinarian':
+        return 'Veterinarian';
+      case 'petowner':
+      case 'pet_owner':
+      case 'pet owner':
+        return 'Pet Owner';
+      case 'breeder':
+        return 'Breeder';
+      case 'pet sitter':
+      case 'petsitter':
+        return 'Pet Sitter';
+      case 'pet trainer':
+      case 'pettrainer':
+        return 'Pet Trainer';
+      case 'shelter':
+      case 'rescue':
+      case 'shelter/rescue':
+        return 'Shelter/Rescue';
+      default:
+        return 'Other';
+    }
+  }
+
+  // Map display names to backend values
+  String _mapDisplayToAccountType(String displayType) {
+    switch (displayType) {
+      case 'Veterinarian':
+        return 'vet';
+      case 'Pet Owner':
+        return 'petowner';
+      case 'Breeder':
+        return 'breeder';
+      case 'Pet Sitter':
+        return 'petsitter';
+      case 'Pet Trainer':
+        return 'pettrainer';
+      case 'Shelter/Rescue':
+        return 'shelter';
+      default:
+        return 'other';
+    }
+  }
 
   @override
   void initState() {
@@ -51,17 +101,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       if (currentUser != null) {
-        // Create a basic profile from Firebase user
-        _userProfile = UserProfile(
-          uid: currentUser.uid,
-          email: currentUser.email ?? '',
-          displayName: currentUser.displayName,
-          accountType: null, // We'll load this separately
-          createdAt: null,
-          updatedAt: null,
-        );
+        // Use the AuthUser directly
+        _userProfile = currentUser;
 
         _displayNameController.text = _userProfile?.displayName ?? '';
+        _selectedAccountType = _mapAccountTypeToDisplay(_userProfile?.accountType);
 
         // Try to load additional profile data
         try {
@@ -70,20 +114,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (fullProfile != null) {
             _userProfile = fullProfile;
             _displayNameController.text = _userProfile?.displayName ?? '';
-            _selectedAccountType = _userProfile?.accountType;
+            _selectedAccountType = _mapAccountTypeToDisplay(_userProfile?.accountType);
           }
         } catch (e) {
           // Profile data might not exist yet, use basic info
-          print('Could not load full profile: $e');
+          debugPrint('Could not load full profile: $e');
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load profile: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load profile: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -107,7 +153,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       await profileRepo.updateUserProfile(
         displayName: _displayNameController.text.trim(),
-        accountType: _selectedAccountType,
+        accountType: _selectedAccountType != null 
+            ? _mapDisplayToAccountType(_selectedAccountType!)
+            : null,
       );
 
       // Reload profile
@@ -189,28 +237,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.authBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        title: Text(
-          'Profile',
-          style: AppTextStyles.onboardingTitle.copyWith(
-            fontSize: 20.sp,
-            color: AppColors.accent,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        actions: [
-          IconButton(
-            onPressed: _showLogoutDialog,
-            icon: Icon(
-              Icons.logout,
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        state.maybeWhen(
+          unauthenticated: () {
+            // User logged out, navigate to sign in screen
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => BlocProvider.value(
+                  value: context.read<AuthBloc>(),
+                  child: const SignInScreen(),
+                ),
+              ),
+              (route) => false,
+            );
+          },
+          orElse: () {},
+        );
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.authBackground,
+        appBar: AppBar(
+          backgroundColor: AppColors.primary,
+          elevation: 0,
+          title: Text(
+            'Profile',
+            style: AppTextStyles.onboardingTitle.copyWith(
+              fontSize: 20.sp,
               color: AppColors.accent,
-              size: 24.sp,
+              fontWeight: FontWeight.w600,
             ),
           ),
+          actions: [
+            IconButton(
+              onPressed: _showLogoutDialog,
+              icon: Icon(
+                Icons.logout,
+                color: AppColors.accent,
+                size: 24.sp,
+              ),
+            ),
         ],
       ),
       body: _isLoading
@@ -404,6 +470,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+      )
     );
   }
 
@@ -467,6 +534,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ],
-    );
+    ); // End Scaffold
+    
   }
 }

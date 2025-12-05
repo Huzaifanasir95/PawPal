@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/app_images.dart';
+import '../../../../core/services/api_client.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/widgets/custom_password_field.dart';
 import '../bloc/auth_bloc.dart';
@@ -28,6 +29,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   DateTime? _lastButtonPress;
+  String _accountType = 'pet_owner'; // Default to pet owner
 
   @override
   void dispose() {
@@ -168,6 +170,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: AppStrings.confirmPassword,
                 hintText: 'Confirm your password',
                 isConfirmPassword: true,
+              ),
+              
+              SizedBox(height: 30.h),
+              
+              // Account Type Selection
+              Text(
+                'I am a',
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: AppColors.authText,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              
+              SizedBox(height: 16.h),
+              
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildAccountTypeOption(
+                      'Pet Owner',
+                      'pet_owner',
+                      Icons.pets,
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: _buildAccountTypeOption(
+                      'Veterinarian',
+                      'vet',
+                      Icons.medical_services,
+                    ),
+                  ),
+                ],
               ),
               
               SizedBox(height: 40.h),
@@ -427,6 +462,41 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     name,
                   ),
                 );
+                
+                // Wait for authentication to complete, then set the user role
+                final subscription = authBloc.stream.listen((authState) async {
+                  authState.maybeWhen(
+                    authenticated: (user) async {
+                      // User is authenticated, tokens are stored
+                      try {
+                        final apiClient = ApiClient.instance;
+                        await apiClient.post('/api/v1/auth/set-role', data: {
+                          'role': _accountType,
+                        });
+                        debugPrint('Successfully set user role to: $_accountType');
+                        
+                        // If user selected vet role, navigate to vet profile setup
+                        if (_accountType == 'vet' && mounted) {
+                          // Small delay to ensure state is updated
+                          await Future.delayed(const Duration(milliseconds: 300));
+                          if (mounted) {
+                            // Navigation will be handled by AuthBlocListener
+                            // which will redirect to VetHomeScreen via RoleBasedHome
+                            // The VetHomeScreen will detect missing profile and show setup
+                          }
+                        }
+                      } catch (e) {
+                        debugPrint('Failed to set user role: $e');
+                      }
+                    },
+                    orElse: () {},
+                  );
+                });
+                
+                // Clean up subscription after a short delay
+                Future.delayed(const Duration(seconds: 3), () {
+                  subscription.cancel();
+                });
               }
             } catch (e) {
               debugPrint('Sign-up error: $e');
@@ -456,6 +526,46 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
         },
+    );
+  }
+
+  Widget _buildAccountTypeOption(String label, String value, IconData icon) {
+    final isSelected = _accountType == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _accountType = value;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 12.w),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.neutral300,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 32.sp,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

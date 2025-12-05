@@ -1,0 +1,157 @@
+✅ Successfully connected to Aiven PostgreSQL database
+INFO: 2025/12/06 02:16:15 logger.go:24: ⚠️  FastAPI chatbot server not running (will use exec mode): Get "http://localhost:8000/health": dial tcp [::1]:8000: connect: connection refused
+INFO: 2025/12/06 02:16:15 logger.go:24: 💡 For 10x faster responses, run: cd ../AI_Chatbot && python chatbot_fastapi_server.py
+INFO: 2025/12/06 02:16:15 logger.go:24: ⚠️  FastAPI streaming not available (will use exec mode)
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /health                   --> pawpal-backend/internal/handlers.(*Handlers).HealthCheck-fm (5 handlers)
+[GIN-debug] GET    /api/v1/model/info        --> pawpal-backend/internal/handlers.(*Handlers).GetModelInfo-fm (5 handlers)
+[GIN-debug] POST   /api/v1/predict           --> pawpal-backend/internal/handlers.(*Handlers).PredictSingle-fm (5 handlers)
+[GIN-debug] POST   /api/v1/predict/batch     --> pawpal-backend/internal/handlers.(*Handlers).PredictBatch-fm (5 handlers)
+[GIN-debug] POST   /api/v1/predict/url       --> pawpal-backend/internal/handlers.(*Handlers).PredictFromURL-fm (5 handlers)
+[GIN-debug] POST   /api/v1/chatbot/query     --> pawpal-backend/internal/handlers.(*Handlers).ChatbotQuery-fm (5 handlers)
+[GIN-debug] POST   /api/v1/chatbot/stream    --> pawpal-backend/internal/handlers.(*Handlers).ChatbotQueryStream-fm (5 handlers)
+[GIN-debug] GET    /api/v1/breeds            --> pawpal-backend/internal/handlers.(*Handlers).GetSupportedBreeds-fm (5 handlers)
+[GIN-debug] GET    /api/v1/vets              --> pawpal-backend/internal/handlers.(*VetHandlers).ListVets-fm (5 handlers)
+[GIN-debug] GET    /api/v1/vets/profile/:userId --> pawpal-backend/internal/handlers.(*VetHandlers).GetVetProfile-fm (5 handlers)
+[GIN-debug] POST   /api/v1/auth/signup       --> pawpal-backend/internal/handlers.(*AuthHandlers).SignUp-fm (5 handlers)
+[GIN-debug] POST   /api/v1/auth/signin       --> pawpal-backend/internal/handlers.(*AuthHandlers).SignIn-fm (5 handlers)
+[GIN-debug] POST   /api/v1/auth/google       --> pawpal-backend/internal/handlers.(*AuthHandlers).SignInWithGoogle-fm (5 handlers)
+[GIN-debug] POST   /api/v1/auth/refresh      --> pawpal-backend/internal/handlers.(*AuthHandlers).RefreshToken-fm (5 handlers)
+[GIN-debug] POST   /api/v1/auth/signout      --> pawpal-backend/internal/handlers.(*AuthHandlers).SignOut-fm (5 handlers)
+[GIN-debug] POST   /api/v1/auth/password/reset-request --> pawpal-backend/internal/handlers.(*AuthHandlers).RequestPasswordReset-fm (5 handlers)
+[GIN-debug] POST   /api/v1/auth/password/reset --> pawpal-backend/internal/handlers.(*AuthHandlers).ResetPassword-fm (5 handlers)
+[GIN-debug] GET    /api/v1/profile           --> pawpal-backend/internal/handlers.(*AuthHandlers).GetProfile-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/profile           --> pawpal-backend/internal/handlers.(*AuthHandlers).UpdateProfile-fm (6 handlers)
+[GIN-debug] POST   /api/v1/auth/set-role     --> pawpal-backend/internal/handlers.(*AuthHandlers).SetUserRole-fm (6 handlers)
+[GIN-debug] GET    /api/v1/vets/profile/me   --> pawpal-backend/internal/handlers.(*VetHandlers).GetMyVetProfile-fm (6 handlers)
+[GIN-debug] POST   /api/v1/vets/profile      --> pawpal-backend/internal/handlers.(*VetHandlers).CreateVetProfile-fm (6 handlers)
+[GIN-debug] POST   /api/v1/chats             --> pawpal-backend/internal/handlers.(*ChatHandlers).StartChat-fm (6 handlers)
+[GIN-debug] GET    /api/v1/chats             --> pawpal-backend/internal/handlers.(*ChatHandlers).GetMyChats-fm (6 handlers)
+[GIN-debug] GET    /api/v1/chats/:id         --> pawpal-backend/internal/handlers.(*ChatHandlers).GetChat-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/chats/:id         --> pawpal-backend/internal/handlers.(*ChatHandlers).DeleteChat-fm (6 handlers)
+[GIN-debug] POST   /api/v1/messages          --> pawpal-backend/internal/handlers.(*ChatHandlers).SendMessage-fm (6 handlers)
+[GIN-debug] GET    /api/v1/messages/:chatId  --> pawpal-backend/internal/handlers.(*ChatHandlers).GetChatMessages-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/messages/:id/read --> pawpal-backend/internal/handlers.(*ChatHandlers).MarkMessageAsRead-fm (6 handlers)
+[GIN-debug] POST   /api/v1/pets              --> pawpal-backend/internal/handlers.(*PetHandlers).CreatePet-fm (6 handlers)
+[GIN-debug] GET    /api/v1/pets              --> pawpal-backend/internal/handlers.(*PetHandlers).GetPets-fm (6 handlers)
+[GIN-debug] GET    /api/v1/pets/verified     --> pawpal-backend/internal/handlers.(*PetHandlers).GetVerifiedPets-fm (6 handlers)
+[GIN-debug] GET    /api/v1/pets/search       --> pawpal-backend/internal/handlers.(*PetHandlers).SearchPetsByBreed-fm (6 handlers)
+[GIN-debug] GET    /api/v1/pets/count        --> pawpal-backend/internal/handlers.(*PetHandlers).GetPetCount-fm (6 handlers)
+[GIN-debug] GET    /api/v1/pets/:id          --> pawpal-backend/internal/handlers.(*PetHandlers).GetPet-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/pets/:id          --> pawpal-backend/internal/handlers.(*PetHandlers).UpdatePet-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/pets/:id          --> pawpal-backend/internal/handlers.(*PetHandlers).DeletePet-fm (6 handlers)
+[GIN-debug] POST   /api/v1/health-records    --> pawpal-backend/internal/handlers.(*HealthHandlers).CreateHealthRecord-fm (6 handlers)
+[GIN-debug] GET    /api/v1/health-records/pet/:petId --> pawpal-backend/internal/handlers.(*HealthHandlers).GetHealthRecord-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/health-records/:id --> pawpal-backend/internal/handlers.(*HealthHandlers).UpdateHealthRecord-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/health-records/:id --> pawpal-backend/internal/handlers.(*HealthHandlers).DeleteHealthRecord-fm (6 handlers)
+[GIN-debug] POST   /api/v1/health-journals   --> pawpal-backend/internal/handlers.(*HealthHandlers).CreateHealthJournal-fm (6 handlers)
+[GIN-debug] GET    /api/v1/health-journals/pet/:petId --> pawpal-backend/internal/handlers.(*HealthHandlers).GetHealthJournals-fm (6 handlers)
+[GIN-debug] GET    /api/v1/health-journals/:id --> pawpal-backend/internal/handlers.(*HealthHandlers).GetHealthJournal-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/health-journals/:id --> pawpal-backend/internal/handlers.(*HealthHandlers).DeleteHealthJournal-fm (6 handlers)
+[GIN-debug] POST   /api/v1/posts             --> pawpal-backend/internal/handlers.(*CommunityHandlers).CreatePost-fm (6 handlers)
+[GIN-debug] GET    /api/v1/posts             --> pawpal-backend/internal/handlers.(*CommunityHandlers).GetPosts-fm (6 handlers)
+[GIN-debug] GET    /api/v1/posts/me          --> pawpal-backend/internal/handlers.(*CommunityHandlers).GetMyPosts-fm (6 handlers)
+[GIN-debug] GET    /api/v1/posts/user/:userId --> pawpal-backend/internal/handlers.(*CommunityHandlers).GetUserPosts-fm (6 handlers)
+[GIN-debug] GET    /api/v1/posts/:id         --> pawpal-backend/internal/handlers.(*CommunityHandlers).GetPost-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/posts/:id         --> pawpal-backend/internal/handlers.(*CommunityHandlers).UpdatePost-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/posts/:id         --> pawpal-backend/internal/handlers.(*CommunityHandlers).DeletePost-fm (6 handlers)
+[GIN-debug] POST   /api/v1/posts/:id/like    --> pawpal-backend/internal/handlers.(*CommunityHandlers).TogglePostLike-fm (6 handlers)
+[GIN-debug] GET    /api/v1/posts/:id/liked   --> pawpal-backend/internal/handlers.(*CommunityHandlers).HasUserLikedPost-fm (6 handlers)
+[GIN-debug] POST   /api/v1/comments          --> pawpal-backend/internal/handlers.(*CommunityHandlers).CreateComment-fm (6 handlers)
+[GIN-debug] GET    /api/v1/comments/post/:postId --> pawpal-backend/internal/handlers.(*CommunityHandlers).GetComments-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/comments/:id      --> pawpal-backend/internal/handlers.(*CommunityHandlers).DeleteComment-fm (6 handlers)
+[GIN-debug] POST   /api/v1/comments/:id/like --> pawpal-backend/internal/handlers.(*CommunityHandlers).ToggleCommentLike-fm (6 handlers)
+[GIN-debug] GET    /uploads/*filepath        --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (5 handlers)
+[GIN-debug] HEAD   /uploads/*filepath        --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (5 handlers)
+[GIN-debug] GET    /web/*filepath            --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (5 handlers)
+[GIN-debug] HEAD   /web/*filepath            --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (5 handlers)
+[GIN-debug] GET    /test                     --> main.setupRouter.func1 (5 handlers)
+[GIN-debug] GET    /test/chatbot             --> main.setupRouter.func2 (5 handlers)
+[GIN-debug] GET    /test/chatbot_stream      --> main.setupRouter.func3 (5 handlers)
+INFO: 2025/12/06 02:16:15 logger.go:24: Starting PawPal Backend API server on port 8081
+INFO: 2025/12/06 02:16:15 logger.go:24: Models: ConvNeXt V2 - Dog Breed Classifier (120 breeds) & Cat Breed Classifier
+INFO: 2025/12/06 02:16:15 logger.go:24: Access at: http://localhost:8081
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8081
+[GIN] 2025/12/06 - 02:16:26 | 409 |         349ns |    58.65.217.82 | POST     "/api/v1/auth/signup"
+[GIN] 2025/12/06 - 02:16:26 | 409 |  325.987656ms |    58.65.217.82 | POST     "/api/v1/auth/signup"
+[GIN] 2025/12/06 - 02:16:27 | 200 |         478ns |    58.65.217.82 | POST     "/api/v1/auth/signin"
+[GIN] 2025/12/06 - 02:16:27 | 200 |  405.315236ms |    58.65.217.82 | POST     "/api/v1/auth/signin"
+[GIN] 2025/12/06 - 02:16:28 | 200 |         819ns |    58.65.217.82 | POST     "/api/v1/auth/set-role"
+[GIN] 2025/12/06 - 02:16:28 | 200 |  656.313814ms |    58.65.217.82 | POST     "/api/v1/auth/set-role"
+[GIN] 2025/12/06 - 02:16:30 | 200 |         351ns |    58.65.217.82 | POST     "/api/v1/vets/profile"
+[GIN] 2025/12/06 - 02:16:30 | 200 |  963.502072ms |    58.65.217.82 | POST     "/api/v1/vets/profile"
+[GIN] 2025/12/06 - 02:16:30 | 200 |         465ns |    58.65.217.82 | GET      "/api/v1/vets/profile/me"
+[GIN] 2025/12/06 - 02:16:30 | 200 |   99.484764ms |    58.65.217.82 | GET      "/api/v1/vets/profile/me"
+[GIN] 2025/12/06 - 02:16:31 | 200 |         286ns |    58.65.217.82 | GET      "/api/v1/vets"
+[GIN] 2025/12/06 - 02:16:31 | 200 |  588.514256ms |    58.65.217.82 | GET      "/api/v1/vets"
+[GIN] 2025/12/06 - 02:16:32 | 200 |         260ns |    58.65.217.82 | GET      "/api/v1/vets?city=San%20Francisco"
+[GIN] 2025/12/06 - 02:16:32 | 200 |  444.222757ms |    58.65.217.82 | GET      "/api/v1/vets?city=San%20Francisco"
+[GIN] 2025/12/06 - 02:16:33 | 200 |         202ns |    58.65.217.82 | GET      "/api/v1/vets?specialization=Emergency%20Care"
+[GIN] 2025/12/06 - 02:16:33 | 200 |  457.832215ms |    58.65.217.82 | GET      "/api/v1/vets?specialization=Emergency%20Care"
+[GIN] 2025/12/06 - 02:16:34 | 200 |         186ns |    58.65.217.82 | GET      "/api/v1/vets?minRating=4.0"
+[GIN] 2025/12/06 - 02:16:34 | 200 |  430.048427ms |    58.65.217.82 | GET      "/api/v1/vets?minRating=4.0"
+[GIN] 2025/12/06 - 02:16:35 | 200 |         619ns |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=5"
+[GIN] 2025/12/06 - 02:16:35 | 200 |   257.02819ms |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=5"
+[GIN] 2025/12/06 - 02:16:36 | 201 |         287ns |    58.65.217.82 | POST     "/api/v1/chats"
+[GIN] 2025/12/06 - 02:16:36 | 201 |  332.778024ms |    58.65.217.82 | POST     "/api/v1/chats"
+[GIN] 2025/12/06 - 02:16:37 | 200 |         391ns |    58.65.217.82 | GET      "/api/v1/chats"
+[GIN] 2025/12/06 - 02:16:37 | 200 |  314.531009ms |    58.65.217.82 | GET      "/api/v1/chats"
+[GIN] 2025/12/06 - 02:53:28 | 400 |         229ns |    58.65.217.82 | POST     "/api/v1/auth/signout"
+[GIN] 2025/12/06 - 02:53:28 | 400 |     1.05743ms |    58.65.217.82 | POST     "/api/v1/auth/signout"
+[GIN] 2025/12/06 - 02:54:21 | 201 |         343ns |    58.65.217.82 | POST     "/api/v1/auth/signup"
+[GIN] 2025/12/06 - 02:54:21 | 201 |  852.728575ms |    58.65.217.82 | POST     "/api/v1/auth/signup"
+[GIN] 2025/12/06 - 02:57:38 | 401 |         237ns |             ::1 | GET      "/api/v1/pets"
+[GIN] 2025/12/06 - 02:57:38 | 401 |   16.486985ms |             ::1 | GET      "/api/v1/pets"
+[GIN] 2025/12/06 - 02:57:39 | 404 |         240ns |             ::1 | GET      "/favicon.ico"
+[GIN] 2025/12/06 - 02:57:39 | 404 |         133µs |             ::1 | GET      "/favicon.ico"
+[GIN] 2025/12/06 - 03:04:29 | 200 |         382ns |    58.65.217.82 | GET      "/api/v1/profile"
+[GIN] 2025/12/06 - 03:04:29 | 200 |  336.375219ms |    58.65.217.82 | GET      "/api/v1/profile"
+[GIN] 2025/12/06 - 03:12:24 | 200 |         340ns |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:12:24 | 200 |   519.22667ms |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:12:35 | 200 |         375ns |    58.65.217.82 | GET      "/api/v1/vets/profile/24573166-a877-4549-a457-5f30c83c1727"
+[GIN] 2025/12/06 - 03:12:35 | 200 |  370.404893ms |    58.65.217.82 | GET      "/api/v1/vets/profile/24573166-a877-4549-a457-5f30c83c1727"
+[GIN] 2025/12/06 - 03:12:56 | 200 |         418ns |    58.65.217.82 | GET      "/api/v1/chats"
+[GIN] 2025/12/06 - 03:12:56 | 200 |   628.20767ms |    58.65.217.82 | GET      "/api/v1/chats"
+[GIN] 2025/12/06 - 03:13:03 | 200 |         334ns |    58.65.217.82 | GET      "/api/v1/chats"
+[GIN] 2025/12/06 - 03:13:03 | 200 |  368.727839ms |    58.65.217.82 | GET      "/api/v1/chats"
+[GIN] 2025/12/06 - 03:13:08 | 200 |         448ns |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:13:08 | 200 |  397.980118ms |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:13:09 | 200 |         394ns |    58.65.217.82 | GET      "/api/v1/vets/profile/24573166-a877-4549-a457-5f30c83c1727"
+[GIN] 2025/12/06 - 03:13:09 | 200 |  255.197223ms |    58.65.217.82 | GET      "/api/v1/vets/profile/24573166-a877-4549-a457-5f30c83c1727"
+[GIN] 2025/12/06 - 03:13:30 | 200 |         357ns |    58.65.217.82 | GET      "/api/v1/chats"
+[GIN] 2025/12/06 - 03:13:30 | 200 |  449.726963ms |    58.65.217.82 | GET      "/api/v1/chats"
+[GIN] 2025/12/06 - 03:13:37 | 200 |         378ns |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:13:37 | 200 |  315.378808ms |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:13:39 | 200 |         541ns |    58.65.217.82 | GET      "/api/v1/vets/profile/24573166-a877-4549-a457-5f30c83c1727"
+[GIN] 2025/12/06 - 03:13:39 | 200 |  216.874816ms |    58.65.217.82 | GET      "/api/v1/vets/profile/24573166-a877-4549-a457-5f30c83c1727"
+[GIN] 2025/12/06 - 03:32:32 | 500 |         548ns |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:32:32 | 500 | 29.950828932s |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:33:11 | 200 |         430ns |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:33:11 | 200 |  616.307419ms |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:33:14 | 200 |         284ns |    58.65.217.82 | GET      "/api/v1/vets/profile/24573166-a877-4549-a457-5f30c83c1727"
+[GIN] 2025/12/06 - 03:33:14 | 200 |  321.395673ms |    58.65.217.82 | GET      "/api/v1/vets/profile/24573166-a877-4549-a457-5f30c83c1727"
+[GIN] 2025/12/06 - 03:33:59 | 200 |         212ns |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:33:59 | 200 |  509.334998ms |    58.65.217.82 | GET      "/api/v1/vets?page=1&limit=20"
+[GIN] 2025/12/06 - 03:35:22 | 200 |         426ns |    58.65.217.82 | GET      "/api/v1/vets/profile/24573166-a877-4549-a457-5f30c83c1727"
+[GIN] 2025/12/06 - 03:35:22 | 200 |  316.268858ms |    58.65.217.82 | GET      "/api/v1/vets/profile/24573166-a877-4549-a457-5f30c83c1727"
+[GIN] 2025/12/06 - 03:36:02 | 400 |         175ns |    58.65.217.82 | POST     "/api/v1/chats"
+[GIN] 2025/12/06 - 03:36:02 | 400 |     344.539µs |    58.65.217.82 | POST     "/api/v1/chats"
+[GIN] 2025/12/06 - 03:39:42 | 201 |         383ns |    58.65.217.82 | POST     "/api/v1/chats"
+[GIN] 2025/12/06 - 03:39:42 | 201 |   638.39686ms |    58.65.217.82 | POST     "/api/v1/chats"
+[GIN] 2025/12/06 - 03:39:43 | 200 |         401ns |    58.65.217.82 | GET      "/api/v1/chats/c0c4113e-29fc-4cb7-baed-2dc40591707f"
+[GIN] 2025/12/06 - 03:39:43 | 200 |  618.014128ms |    58.65.217.82 | GET      "/api/v1/chats/c0c4113e-29fc-4cb7-baed-2dc40591707f"
+[GIN] 2025/12/06 - 03:39:43 | 500 |         534ns |    58.65.217.82 | GET      "/api/v1/messages/c0c4113e-29fc-4cb7-baed-2dc40591707f?page=1&limit=50"
+[GIN] 2025/12/06 - 03:39:43 | 500 |  227.469611ms |    58.65.217.82 | GET      "/api/v1/messages/c0c4113e-29fc-4cb7-baed-2dc40591707f?page=1&limit=50"
+[GIN] 2025/12/06 - 03:40:31 | 200 |         348ns |    58.65.217.82 | GET      "/api/v1/chats"
+[GIN] 2025/12/06 - 03:40:31 | 200 |   472.86798ms |    58.65.217.82 | GET      "/api/v1/chats"
+[GIN] 2025/12/06 - 03:40:34 | 200 |         209ns |    58.65.217.82 | GET      "/api/v1/chats/c0c4113e-29fc-4cb7-baed-2dc40591707f"
+[GIN] 2025/12/06 - 03:40:34 | 200 |  629.825552ms |    58.65.217.82 | GET      "/api/v1/chats/c0c4113e-29fc-4cb7-baed-2dc40591707f"
+[GIN] 2025/12/06 - 03:40:35 | 500 |         576ns |    58.65.217.82 | GET      "/api/v1/messages/c0c4113e-29fc-4cb7-baed-2dc40591707f?page=1&limit=50"
+[GIN] 2025/12/06 - 03:40:35 | 500 |  211.134231ms |    58.65.217.82 | GET      "/api/v1/messages/c0c4113e-29fc-4cb7-baed-2dc40591707f?page=1&limit=50"
+[GIN] 2025/12/06 - 03:41:34 | 200 |         614ns |    58.65.217.82 | GET      "/api/v1/chats"
+[GIN] 2025/12/06 - 03:41:34 | 200 |  436.207507ms |    58.65.217.82 | GET      "/api/v1/chats"

@@ -6,6 +6,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/app_images.dart';
 import '../../../../core/widgets/custom_drawer.dart';
+import '../../../../core/navigation/app_navigator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../pets/presentation/pages/add_pet_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
@@ -197,6 +198,35 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             
+            SizedBox(height: 12.h),
+            
+            // Vet & Chat Actions
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Browse Vets',
+                    icon: Icons.local_hospital_outlined,
+                    color: const Color(0xFF4CAF50),
+                    onTap: () {
+                      AppNavigator.navigateToVetsList(context);
+                    },
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'My Chats',
+                    icon: Icons.chat_bubble_outline,
+                    color: const Color(0xFF2196F3),
+                    onTap: () {
+                      AppNavigator.navigateToChats(context);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            
             SizedBox(height: 30.h),
             
             // Categories
@@ -277,17 +307,26 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedItemColor: AppColors.textSecondary,
         currentIndex: _currentIndex,
         onTap: (index) {
-          if (index == 3) { // Profile tab
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ProfileScreen(),
-              ),
-            );
-          } else {
-            setState(() {
-              _currentIndex = index;
-            });
+          switch (index) {
+            case 0: // Home
+              setState(() {
+                _currentIndex = 0;
+              });
+              break;
+            case 1: // Vets
+              AppNavigator.navigateToVetsList(context);
+              break;
+            case 2: // Chats
+              AppNavigator.navigateToChats(context);
+              break;
+            case 3: // Profile
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+              break;
           }
         },
         items: const [
@@ -296,12 +335,12 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
+            icon: Icon(Icons.local_hospital_outlined),
+            label: 'Vets',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_outline),
-            label: 'Favorites',
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Chats',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),

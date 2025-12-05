@@ -5,6 +5,7 @@ import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/community/presentation/pages/community_page.dart';
+import '../../features/chatbot/presentation/pages/chatbot_screen.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});
@@ -41,10 +42,10 @@ class CustomDrawer extends StatelessWidget {
                       _buildDrawerSection('Home'),
                       _buildDrawerItem(
                         icon: Icons.home,
-                        title: 'Dashboard',
+                        title: 'Home',
                         onTap: () {
                           Navigator.pop(context);
-                          // Navigate to home
+                          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                         },
                       ),
                       _buildDrawerItem(
@@ -120,7 +121,12 @@ class CustomDrawer extends StatelessWidget {
                         title: 'Pet Care Assistant',
                         onTap: () {
                           Navigator.pop(context);
-                          // Navigate to chatbot
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ChatbotScreen(),
+                            ),
+                          );
                         },
                       ),
             

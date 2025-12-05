@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
+import '../../../../core/services/api_client.dart';
 import '../../data/models/comment.dart';
 import '../bloc/community_bloc.dart';
 import '../bloc/community_event.dart';
@@ -129,7 +129,7 @@ class _CommentWidgetState extends State<CommentWidget> {
                     ),
                   ),
                   // Three-dot menu for comment owner
-                  if (FirebaseAuth.instance.currentUser?.uid == widget.comment.userId)
+                  if (ApiClient.instance.userId == widget.comment.userId)
                     PopupMenuButton<String>(
                       icon: Icon(Icons.more_vert, size: 16.sp, color: const Color(0xFF324B49)),
                       onSelected: (value) {

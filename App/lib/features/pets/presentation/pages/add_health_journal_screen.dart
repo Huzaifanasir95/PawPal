@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
-import '../../data/models/health_journal_model.dart';
-import '../../data/repositories/health_repository.dart';
+
+import '../../data/repositories/health_repository_api.dart';
 
 class AddHealthJournalScreen extends StatefulWidget {
   final String petId;
@@ -21,7 +21,7 @@ class AddHealthJournalScreen extends StatefulWidget {
 
 class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _healthRepository = HealthRepository();
+  final _healthRepository = HealthRepositoryApi();
 
   // Form controllers
   final _weightController = TextEditingController();

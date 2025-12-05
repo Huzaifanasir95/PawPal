@@ -4,12 +4,15 @@ import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
+
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/community/presentation/bloc/community_bloc.dart';
+import '../../features/vet/presentation/bloc/vet_bloc.dart';
+import '../../features/chat/presentation/bloc/chat_bloc.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/auth/presentation/widgets/auth_navigator.dart';
 import '../../features/auth/presentation/pages/account_type_selection_screen.dart';
-import '../../features/home/presentation/pages/home_screen.dart';
+import '../../features/home/presentation/pages/role_based_home.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/utils/image_service.dart';
 
@@ -109,13 +112,13 @@ class _AuthFlowState extends State<AuthFlow> {
                 return AccountTypeSelectionScreen(
                   onAccountTypeSelected: () {
                     // Trigger a rebuild by updating the auth state
-                    // The FutureBuilder will re-run and show HomeScreen
+                    // The FutureBuilder will re-run and show appropriate home
                     setState(() {});
                   },
                 );
               } else {
-                // User has account type, go to home
-                return const HomeScreen();
+                // User has account type, show role-based home
+                return const RoleBasedHome();
               }
             },
           ),
@@ -144,21 +147,50 @@ class OnboardingScreenWrapper extends StatelessWidget {
   }
 }
 
-class PawPawlApp extends StatelessWidget {
+class PawPawlApp extends StatefulWidget {
   const PawPawlApp({super.key});
+
+  @override
+  State<PawPawlApp> createState() => _PawPawlAppState();
+}
+
+class _PawPawlAppState extends State<PawPawlApp> {
+  final AuthRepository _authRepository = AuthRepository();
+  late AuthBloc _authBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _authBloc = AuthBloc(authRepository: _authRepository);
+    // Initialize auth check
+    _authBloc.add(const AuthEvent.checkAuth());
+  }
+
+  @override
+  void dispose() {
+    _authBloc.close();
+    _authRepository.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create: (context) => AuthBloc(authRepository: AuthRepository()),
+        BlocProvider.value(
+          value: _authBloc,
         ),
         BlocProvider(
           create: (context) => getIt<CommunityBloc>(),
         ),
-        Provider<AuthRepository>(
-          create: (context) => AuthRepository(),
+        BlocProvider(
+          create: (context) => getIt<VetBloc>(),
+        ),
+        BlocProvider(
+          create: (context) => getIt<ChatBloc>(),
+        ),
+        Provider<AuthRepository>.value(
+          value: _authRepository,
         ),
         Provider<ImageService>(
           create: (context) => getIt<ImageService>(),
@@ -169,7 +201,6 @@ class PawPawlApp extends StatelessWidget {
         minTextAdapt: true,
         splitScreenMode: true,
         builder: (context, child) {
-          final authRepository = context.read<AuthRepository>();
           return MaterialApp(
             title: 'PawPawl',
             debugShowCheckedModeBanner: false,
@@ -177,7 +208,7 @@ class PawPawlApp extends StatelessWidget {
               primarySwatch: Colors.blue,
               visualDensity: VisualDensity.adaptivePlatformDensity,
             ),
-            home: AuthFlow(authRepository: authRepository),
+            home: AuthFlow(authRepository: _authRepository),
           );
         },
       ),

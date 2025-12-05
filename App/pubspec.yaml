@@ -46,6 +46,9 @@ dependencies:
   # HTTP Client
   dio: ^5.3.2
   
+  # JWT Decoding
+  jwt_decoder: ^2.0.1
+  
   # Code Generation
   freezed_annotation: ^2.4.1
   json_annotation: ^4.8.1
@@ -55,6 +58,9 @@ dependencies:
   
   # Google Fonts
   google_fonts: ^6.1.0
+  
+  # Time formatting
+  timeago: ^3.7.0
   
   # Local Storage
   shared_preferences: ^2.2.2

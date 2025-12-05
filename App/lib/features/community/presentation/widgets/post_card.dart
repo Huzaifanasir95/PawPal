@@ -1,13 +1,12 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
-import '../../../../core/di/service_locator.dart';
 import '../../../../core/utils/image_service.dart';
+import '../../../../core/services/api_client.dart';
 import '../../data/models/post.dart';
 import '../bloc/community_bloc.dart';
 import '../bloc/community_event.dart';
@@ -132,7 +131,7 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
                 // Three-dot menu for post owner
-                if (FirebaseAuth.instance.currentUser?.uid == widget.post.userId)
+                if (ApiClient.instance.userId == widget.post.userId)
                   PopupMenuButton<String>(
                     icon: Icon(Icons.more_vert, color: const Color(0xFF324B49)),
                     onSelected: (value) {

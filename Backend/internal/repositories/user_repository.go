@@ -24,8 +24,8 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 // Create creates a new user
 func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 	query := `
-		INSERT INTO users (id, email, password_hash, display_name, account_type, avatar_url, is_active, email_verified, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO users (id, email, password_hash, display_name, account_type, avatar_url, is_active, email_verified, google_id, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING id, created_at, updated_at`
 
 	now := time.Now()
@@ -33,7 +33,6 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 	user.CreatedAt = now
 	user.UpdatedAt = now
 	user.IsActive = true
-	user.EmailVerified = false
 
 	if user.AccountType == "" {
 		user.AccountType = "pet_owner"
@@ -48,6 +47,7 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 		user.AvatarURL,
 		user.IsActive,
 		user.EmailVerified,
+		user.GoogleID,
 		user.CreatedAt,
 		user.UpdatedAt,
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
@@ -56,7 +56,7 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 // GetByID gets a user by ID
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	query := `
-		SELECT id, email, password_hash, display_name, account_type, avatar_url, is_active, email_verified, created_at, updated_at
+		SELECT id, email, password_hash, display_name, account_type, avatar_url, is_active, email_verified, google_id, created_at, updated_at
 		FROM users WHERE id = $1 AND is_active = true`
 
 	user := &models.User{}
@@ -69,6 +69,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 		&user.AvatarURL,
 		&user.IsActive,
 		&user.EmailVerified,
+		&user.GoogleID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -84,7 +85,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 // GetByEmail gets a user by email
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT id, email, password_hash, display_name, account_type, avatar_url, is_active, email_verified, created_at, updated_at
+		SELECT id, email, password_hash, display_name, account_type, avatar_url, is_active, email_verified, google_id, created_at, updated_at
 		FROM users WHERE email = $1`
 
 	user := &models.User{}
@@ -97,6 +98,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 		&user.AvatarURL,
 		&user.IsActive,
 		&user.EmailVerified,
+		&user.GoogleID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -113,7 +115,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
 	query := `
 		UPDATE users 
-		SET display_name = $2, account_type = $3, avatar_url = $4, updated_at = $5
+		SET display_name = $2, account_type = $3, avatar_url = $4, google_id = $5, email_verified = $6, updated_at = $7
 		WHERE id = $1`
 
 	_, err := r.db.Exec(ctx, query,
@@ -121,6 +123,8 @@ func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
 		user.DisplayName,
 		user.AccountType,
 		user.AvatarURL,
+		user.GoogleID,
+		user.EmailVerified,
 		time.Now(),
 	)
 	return err

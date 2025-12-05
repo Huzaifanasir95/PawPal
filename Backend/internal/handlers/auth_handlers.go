@@ -75,6 +75,29 @@ func (h *AuthHandlers) SignIn(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// SignInWithGoogle handles Google OAuth sign-in
+func (h *AuthHandlers) SignInWithGoogle(c *gin.Context) {
+	var req models.GoogleSignInRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.AuthResponse{
+			Success: false,
+			Message: "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	response, err := h.authService.SignInWithGoogle(c.Request.Context(), &req)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, models.AuthResponse{
+			Success: false,
+			Message: "Google authentication failed: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 // RefreshToken handles token refresh
 func (h *AuthHandlers) RefreshToken(c *gin.Context) {
 	var req models.RefreshTokenRequest

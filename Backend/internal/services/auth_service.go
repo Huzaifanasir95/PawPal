@@ -4,7 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -358,4 +361,145 @@ func (s *AuthService) generateRefreshToken(ctx context.Context, userID uuid.UUID
 	}
 
 	return token, nil
+}
+
+// GoogleTokenInfo represents the response from Google's tokeninfo endpoint
+type GoogleTokenInfo struct {
+	Iss           string `json:"iss"`
+	Azp           string `json:"azp"`
+	Aud           string `json:"aud"`
+	Sub           string `json:"sub"`
+	Email         string `json:"email"`
+	EmailVerified string `json:"email_verified"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Locale        string `json:"locale"`
+	Iat           string `json:"iat"`
+	Exp           string `json:"exp"`
+	Alg           string `json:"alg"`
+	Kid           string `json:"kid"`
+	Typ           string `json:"typ"`
+}
+
+// SignInWithGoogle authenticates a user with Google ID token
+func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSignInRequest) (*models.AuthResponse, error) {
+	// Verify the Google ID token
+	tokenInfo, err := s.verifyGoogleIDToken(req.IDToken)
+	if err != nil {
+		return nil, fmt.Errorf("invalid Google token: %w", err)
+	}
+
+	// Check if user exists
+	user, err := s.userRepo.GetByEmail(ctx, tokenInfo.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		// Create new user with Google info
+		user = &models.User{
+			Email:          tokenInfo.Email,
+			DisplayName:    &tokenInfo.Name,
+			AvatarURL:      &tokenInfo.Picture,
+			PasswordHash:   "", // No password for Google users
+			AccountType:    "pet_owner",
+			IsActive:       true,
+			EmailVerified:  tokenInfo.EmailVerified == "true",
+			GoogleID:       &tokenInfo.Sub,
+		}
+		
+		if req.DisplayName != nil && *req.DisplayName != "" {
+			user.DisplayName = req.DisplayName
+		}
+		if req.PhotoURL != nil && *req.PhotoURL != "" {
+			user.AvatarURL = req.PhotoURL
+		}
+
+		if err := s.userRepo.Create(ctx, user); err != nil {
+			return nil, err
+		}
+	} else {
+		// Update existing user with Google info if needed
+		needsUpdate := false
+		if user.GoogleID == nil || *user.GoogleID != tokenInfo.Sub {
+			user.GoogleID = &tokenInfo.Sub
+			needsUpdate = true
+		}
+		if user.AvatarURL == nil && tokenInfo.Picture != "" {
+			user.AvatarURL = &tokenInfo.Picture
+			needsUpdate = true
+		}
+		if !user.EmailVerified && tokenInfo.EmailVerified == "true" {
+			user.EmailVerified = true
+			needsUpdate = true
+		}
+		
+		if needsUpdate {
+			if err := s.userRepo.Update(ctx, user); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// Generate tokens
+	accessToken, err := s.generateAccessToken(user)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := s.generateRefreshToken(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.AuthResponse{
+		Success: true,
+		Message: "Google sign in successful",
+		User: &models.UserProfile{
+			ID:          user.ID,
+			Email:       user.Email,
+			DisplayName: user.DisplayName,
+			AccountType: &user.AccountType,
+			AvatarURL:   user.AvatarURL,
+			CreatedAt:   user.CreatedAt,
+			UpdatedAt:   user.UpdatedAt,
+		},
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    int64(s.accessExpiry.Seconds()),
+	}, nil
+}
+
+// verifyGoogleIDToken verifies a Google ID token
+func (s *AuthService) verifyGoogleIDToken(idToken string) (*GoogleTokenInfo, error) {
+	// Verify token with Google's tokeninfo endpoint
+	resp, err := http.Get(fmt.Sprintf("https://oauth2.googleapis.com/tokeninfo?id_token=%s", idToken))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("google token verification failed with status: %d", resp.StatusCode)
+	}
+
+	var tokenInfo GoogleTokenInfo
+	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
+		return nil, err
+	}
+
+	// Verify the token is from Google
+	if tokenInfo.Iss != "accounts.google.com" && tokenInfo.Iss != "https://accounts.google.com" {
+		return nil, fmt.Errorf("invalid token issuer")
+	}
+
+	// Optionally verify the audience matches your client ID
+	// googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+	// if googleClientID != "" && tokenInfo.Aud != googleClientID {
+	// 	return nil, fmt.Errorf("invalid token audience")
+	// }
+
+	return &tokenInfo, nil
 }

@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/data/models/user_profile.dart';
+import '../../../auth/data/models/auth_user.dart';
 import '../../data/repositories/profile_repository.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -15,7 +15,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  UserProfile? _userProfile;
+  AuthUser? _userProfile;
   bool _isLoading = true;
   bool _isUpdating = false;
 
@@ -51,17 +51,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       if (currentUser != null) {
-        // Create a basic profile from Firebase user
-        _userProfile = UserProfile(
-          uid: currentUser.uid,
-          email: currentUser.email ?? '',
-          displayName: currentUser.displayName,
-          accountType: null, // We'll load this separately
-          createdAt: null,
-          updatedAt: null,
-        );
+        // Use the AuthUser directly
+        _userProfile = currentUser;
 
         _displayNameController.text = _userProfile?.displayName ?? '';
+        _selectedAccountType = _userProfile?.accountType;
 
         // Try to load additional profile data
         try {
@@ -74,16 +68,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
         } catch (e) {
           // Profile data might not exist yet, use basic info
-          print('Could not load full profile: $e');
+          debugPrint('Could not load full profile: $e');
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load profile: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load profile: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }

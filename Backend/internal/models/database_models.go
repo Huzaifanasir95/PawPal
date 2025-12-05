@@ -16,6 +16,7 @@ type User struct {
 	AvatarURL     *string    `json:"avatar_url,omitempty"`
 	IsActive      bool       `json:"is_active"`
 	EmailVerified bool       `json:"email_verified"`
+	GoogleID      *string    `json:"google_id,omitempty"` // For Google OAuth users
 	CreatedAt     time.Time  `json:"created_at"`
 	UpdatedAt     time.Time  `json:"updated_at"`
 }

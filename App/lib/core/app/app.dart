@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
+import '../../features/auth/data/models/auth_user.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/community/presentation/bloc/community_bloc.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
@@ -144,21 +145,44 @@ class OnboardingScreenWrapper extends StatelessWidget {
   }
 }
 
-class PawPawlApp extends StatelessWidget {
+class PawPawlApp extends StatefulWidget {
   const PawPawlApp({super.key});
+
+  @override
+  State<PawPawlApp> createState() => _PawPawlAppState();
+}
+
+class _PawPawlAppState extends State<PawPawlApp> {
+  final AuthRepository _authRepository = AuthRepository();
+  late AuthBloc _authBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _authBloc = AuthBloc(authRepository: _authRepository);
+    // Initialize auth check
+    _authBloc.add(const AuthEvent.checkAuth());
+  }
+
+  @override
+  void dispose() {
+    _authBloc.close();
+    _authRepository.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create: (context) => AuthBloc(authRepository: AuthRepository()),
+        BlocProvider.value(
+          value: _authBloc,
         ),
         BlocProvider(
           create: (context) => getIt<CommunityBloc>(),
         ),
-        Provider<AuthRepository>(
-          create: (context) => AuthRepository(),
+        Provider<AuthRepository>.value(
+          value: _authRepository,
         ),
         Provider<ImageService>(
           create: (context) => getIt<ImageService>(),
@@ -169,7 +193,6 @@ class PawPawlApp extends StatelessWidget {
         minTextAdapt: true,
         splitScreenMode: true,
         builder: (context, child) {
-          final authRepository = context.read<AuthRepository>();
           return MaterialApp(
             title: 'PawPawl',
             debugShowCheckedModeBanner: false,
@@ -177,7 +200,7 @@ class PawPawlApp extends StatelessWidget {
               primarySwatch: Colors.blue,
               visualDensity: VisualDensity.adaptivePlatformDensity,
             ),
-            home: AuthFlow(authRepository: authRepository),
+            home: AuthFlow(authRepository: _authRepository),
           );
         },
       ),

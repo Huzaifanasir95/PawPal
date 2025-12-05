@@ -26,12 +26,17 @@ func main() {
 	}
 
 	// Initialize database connection
+	dbEnabled := true
 	if err := database.Initialize(); err != nil {
-		log.Fatal("Failed to initialize database:", err)
+		log.Printf("Warning: Failed to initialize database: %v", err)
+		log.Println("Running without database support - PostgreSQL endpoints will not work")
+		dbEnabled = false
 	}
-	defer database.Close()
+	if dbEnabled {
+		defer database.Close()
+	}
 
-	// Get database pool
+	// Get database pool (may be nil if database not available)
 	db := database.GetDB()
 
 	// Initialize repositories
@@ -117,6 +122,7 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 		{
 			auth.POST("/signup", authHandlers.SignUp)
 			auth.POST("/signin", authHandlers.SignIn)
+			auth.POST("/google", authHandlers.SignInWithGoogle)
 			auth.POST("/refresh", authHandlers.RefreshToken)
 			auth.POST("/signout", authHandlers.SignOut)
 			auth.POST("/password/reset-request", authHandlers.RequestPasswordReset)

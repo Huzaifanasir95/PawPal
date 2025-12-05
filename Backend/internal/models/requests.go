@@ -18,6 +18,13 @@ type SignInRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// GoogleSignInRequest represents a Google sign-in request
+type GoogleSignInRequest struct {
+	IDToken     string  `json:"idToken" binding:"required"`
+	DisplayName *string `json:"displayName,omitempty"`
+	PhotoURL    *string `json:"photoUrl,omitempty"`
+}
+
 // AuthResponse represents an authentication response
 type AuthResponse struct {
 	Success      bool         `json:"success"`

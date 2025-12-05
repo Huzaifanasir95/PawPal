@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/repositories/auth_repository.dart';
+import '../../data/models/auth_user.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -10,7 +10,7 @@ part 'auth_bloc.freezed.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
-  late final StreamSubscription<User?> _authStateSubscription;
+  late final StreamSubscription<AuthUser?> _authStateSubscription;
   bool _isProcessingAuthChange = false;
 
   AuthBloc({required AuthRepository authRepository})
@@ -80,10 +80,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await _onUpdateAccountType(event.accountType, emit);
       }
     });
+
+    on<_CheckAuth>((event, emit) async {
+      if (!isClosed) {
+        await _onCheckAuth(emit);
+      }
+    });
   }
 
   // Getter for auth repository
   AuthRepository get authRepository => _authRepository;
+
+  Future<void> _onCheckAuth(Emitter<AuthState> emit) async {
+    if (isClosed) return;
+    emit(const AuthState.loading());
+    try {
+      await _authRepository.initialize();
+      // The stream will handle emitting the right state
+    } catch (e) {
+      if (!isClosed) {
+        emit(const AuthState.unauthenticated());
+      }
+    }
+  }
 
   Future<void> _onSignInWithEmail(
     String email,
@@ -93,14 +112,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (isClosed) return;
     emit(const AuthState.loading());
     try {
-      final userCredential = await _authRepository.signInWithEmailAndPassword(
+      await _authRepository.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      if (!isClosed && userCredential.user != null) {
-        // Don't emit authenticated here - let the auth state listener handle it
-        // This prevents double state emissions
-      }
+      // The stream will handle emitting the authenticated state
     } catch (e) {
       if (!isClosed) {
         emit(AuthState.error(e.toString()));
@@ -117,15 +133,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (isClosed) return;
     emit(const AuthState.loading());
     try {
-      final userCredential = await _authRepository.signUpWithEmailAndPassword(
+      await _authRepository.signUpWithEmailAndPassword(
         email: email,
         password: password,
         displayName: name,
       );
-      if (!isClosed && userCredential.user != null) {
-        // Don't emit authenticated here - let the auth state listener handle it
-        // This prevents double state emissions
-      }
+      // The stream will handle emitting the authenticated state
     } catch (e) {
       if (!isClosed) {
         emit(AuthState.error(e.toString()));
@@ -137,11 +150,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (isClosed) return;
     emit(const AuthState.loading());
     try {
-      final userCredential = await _authRepository.signInWithGoogle();
-      if (!isClosed && userCredential.user != null) {
-        // Don't emit authenticated here - let the auth state listener handle it
-        // This prevents double state emissions
-      }
+      await _authRepository.signInWithGoogle();
+      // The stream will handle emitting the authenticated state
     } catch (e) {
       if (!isClosed) {
         emit(AuthState.error(e.toString()));
@@ -155,11 +165,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthState.loading());
     try {
       await _authRepository.signOut();
-      print('AuthBloc: Sign out repository call completed');
-      if (!isClosed) {
-        // Don't emit unauthenticated here - let the auth state listener handle it
-        print('AuthBloc: Sign out completed, waiting for auth state listener');
-      }
+      print('AuthBloc: Sign out completed');
+      // The stream will handle emitting the unauthenticated state
     } catch (e) {
       print('AuthBloc: Sign out error: $e');
       if (!isClosed) {
@@ -183,7 +190,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  void _onUserChanged(User user, Emitter<AuthState> emit) {
+  void _onUserChanged(AuthUser user, Emitter<AuthState> emit) {
     if (!isClosed) {
       emit(AuthState.authenticated(user));
     }
@@ -199,7 +206,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (isClosed) return;
     try {
       await _authRepository.updateAccountType(accountType);
-      // Don't emit any state change - just update the profile
+      // The stream will handle emitting the updated state
     } catch (e) {
       if (!isClosed) {
         emit(AuthState.error(e.toString()));

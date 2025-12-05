@@ -13,6 +13,7 @@ type User struct {
 	PasswordHash  string     `json:"-"` // Never expose in JSON
 	DisplayName   *string    `json:"display_name,omitempty"`
 	AccountType   string     `json:"account_type"`
+	UserRole      string     `json:"user_role"` // 'petowner' or 'vet'
 	AvatarURL     *string    `json:"avatar_url,omitempty"`
 	IsActive      bool       `json:"is_active"`
 	EmailVerified bool       `json:"email_verified"`
@@ -27,6 +28,7 @@ type UserProfile struct {
 	Email       string    `json:"email"`
 	DisplayName *string   `json:"displayName,omitempty"`
 	AccountType *string   `json:"accountType,omitempty"`
+	UserRole    *string   `json:"userRole,omitempty"`
 	AvatarURL   *string   `json:"avatarUrl,omitempty"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
@@ -160,3 +162,72 @@ type PasswordResetToken struct {
 	Used      bool      `json:"used"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+// VetProfile represents a veterinarian's professional profile
+type VetProfile struct {
+	ID                uuid.UUID  `json:"id"`
+	UserID            uuid.UUID  `json:"userId"`
+	FullName          string     `json:"fullName"`
+	Degree            string     `json:"degree"` // e.g., "DVM", "BVMS", etc.
+	LicenseNumber     *string    `json:"licenseNumber,omitempty"`
+	Specialization    []string   `json:"specialization,omitempty"` // e.g., ["Surgery", "Dermatology"]
+	Experience        int        `json:"experience"` // years of experience
+	ClinicName        *string    `json:"clinicName,omitempty"`
+	ClinicAddress     *string    `json:"clinicAddress,omitempty"`
+	City              *string    `json:"city,omitempty"`
+	State             *string    `json:"state,omitempty"`
+	ZipCode           *string    `json:"zipCode,omitempty"`
+	Phone             string     `json:"phone"`
+	ConsultationFee   float64    `json:"consultationFee"`
+	Currency          string     `json:"currency"` // e.g., "USD", "PKR"
+	Bio               *string    `json:"bio,omitempty"`
+	ProfilePhotoURL   *string    `json:"profilePhotoUrl,omitempty"`
+	AvailabilityHours *string    `json:"availabilityHours,omitempty"` // JSON string of availability
+	Rating            float64    `json:"rating"`
+	TotalReviews      int        `json:"totalReviews"`
+	IsVerified        bool       `json:"isVerified"`
+	IsAvailable       bool       `json:"isAvailable"`
+	CreatedAt         time.Time  `json:"createdAt"`
+	UpdatedAt         time.Time  `json:"updatedAt"`
+}
+
+// Chat represents a conversation between a pet owner and a vet
+type Chat struct {
+	ID              uuid.UUID  `json:"id"`
+	PetOwnerID      uuid.UUID  `json:"petOwnerId"`
+	VetID           uuid.UUID  `json:"vetId"`
+	PetOwnerName    *string    `json:"petOwnerName,omitempty"`
+	VetName         *string    `json:"vetName,omitempty"`
+	PetOwnerAvatar  *string    `json:"petOwnerAvatar,omitempty"`
+	VetAvatar       *string    `json:"vetAvatar,omitempty"`
+	LastMessage     *string    `json:"lastMessage,omitempty"`
+	LastMessageTime *time.Time `json:"lastMessageTime,omitempty"`
+	UnreadCount     int        `json:"unreadCount"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	UpdatedAt       time.Time  `json:"updatedAt"`
+}
+
+// Message represents a single message in a chat
+type Message struct {
+	ID         uuid.UUID `json:"id"`
+	ChatID     uuid.UUID `json:"chatId"`
+	SenderID   uuid.UUID `json:"senderId"`
+	SenderRole string    `json:"senderRole"` // 'petowner' or 'vet'
+	Content    string    `json:"content"`
+	IsRead     bool      `json:"isRead"`
+	CreatedAt  time.Time `json:"createdAt"`
+}
+
+// VetReview represents a review for a vet
+type VetReview struct {
+	ID         uuid.UUID  `json:"id"`
+	VetID      uuid.UUID  `json:"vetId"`
+	UserID     uuid.UUID  `json:"userId"`
+	UserName   *string    `json:"userName,omitempty"`
+	UserAvatar *string    `json:"userAvatar,omitempty"`
+	Rating     int        `json:"rating"` // 1-5
+	Comment    *string    `json:"comment,omitempty"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	UpdatedAt  time.Time  `json:"updatedAt"`
+}
+

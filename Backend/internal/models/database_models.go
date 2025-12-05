@@ -193,29 +193,31 @@ type VetProfile struct {
 
 // Chat represents a conversation between a pet owner and a vet
 type Chat struct {
-	ID              uuid.UUID  `json:"id"`
-	PetOwnerID      uuid.UUID  `json:"petOwnerId"`
-	VetID           uuid.UUID  `json:"vetId"`
-	PetOwnerName    *string    `json:"petOwnerName,omitempty"`
-	VetName         *string    `json:"vetName,omitempty"`
-	PetOwnerAvatar  *string    `json:"petOwnerAvatar,omitempty"`
-	VetAvatar       *string    `json:"vetAvatar,omitempty"`
-	LastMessage     *string    `json:"lastMessage,omitempty"`
-	LastMessageTime *time.Time `json:"lastMessageTime,omitempty"`
-	UnreadCount     int        `json:"unreadCount"`
-	CreatedAt       time.Time  `json:"createdAt"`
-	UpdatedAt       time.Time  `json:"updatedAt"`
+	ID                uuid.UUID  `json:"id"`
+	PetOwnerID        uuid.UUID  `json:"petOwnerId"`
+	VetID             uuid.UUID  `json:"vetId"`
+	PetID             *uuid.UUID `json:"petId,omitempty"`
+	PetName           string     `json:"petName,omitempty"`
+	LastMessage       *string    `json:"lastMessage,omitempty"`
+	LastMessageAt     *time.Time `json:"lastMessageAt,omitempty"`
+	UnreadCountOwner  int        `json:"unreadCountOwner"`
+	UnreadCountVet    int        `json:"unreadCountVet"`
+	OtherUserName     string     `json:"otherUserName,omitempty"`
+	OtherUserPhoto    string     `json:"otherUserPhoto,omitempty"`
+	CreatedAt         time.Time  `json:"createdAt"`
+	UpdatedAt         time.Time  `json:"updatedAt"`
 }
 
 // Message represents a single message in a chat
 type Message struct {
-	ID         uuid.UUID `json:"id"`
-	ChatID     uuid.UUID `json:"chatId"`
-	SenderID   uuid.UUID `json:"senderId"`
-	SenderRole string    `json:"senderRole"` // 'petowner' or 'vet'
-	Content    string    `json:"content"`
-	IsRead     bool      `json:"isRead"`
-	CreatedAt  time.Time `json:"createdAt"`
+	ID          uuid.UUID `json:"id"`
+	ChatID      uuid.UUID `json:"chatId"`
+	SenderID    uuid.UUID `json:"senderId"`
+	SenderName  string    `json:"senderName,omitempty"`
+	SenderPhoto string    `json:"senderPhoto,omitempty"`
+	Content     string    `json:"content"`
+	IsRead      bool      `json:"isRead"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 // VetReview represents a review for a vet

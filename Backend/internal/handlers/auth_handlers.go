@@ -291,3 +291,64 @@ func (h *AuthHandlers) UpdateProfile(c *gin.Context) {
 		},
 	})
 }
+
+// SetUserRole sets the user's role (petowner or vet)
+func (h *AuthHandlers) SetUserRole(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.GenericResponse{
+			Success: false,
+			Message: "User not authenticated",
+		})
+		return
+	}
+
+	var req struct {
+		Role string `json:"role" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.GenericResponse{
+			Success: false,
+			Message: "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	// Validate role
+	if req.Role != "petowner" && req.Role != "vet" {
+		c.JSON(http.StatusBadRequest, models.GenericResponse{
+			Success: false,
+			Message: "Invalid role. Must be 'petowner' or 'vet'",
+		})
+		return
+	}
+
+	user, err := h.authService.GetUserByID(c.Request.Context(), parseUUID(userID.(string)))
+	if err != nil || user == nil {
+		c.JSON(http.StatusNotFound, models.GenericResponse{
+			Success: false,
+			Message: "User not found",
+		})
+		return
+	}
+
+	// Update user role
+	if err := h.authService.SetUserRole(c.Request.Context(), user.ID, req.Role); err != nil {
+		c.JSON(http.StatusInternalServerError, models.GenericResponse{
+			Success: false,
+			Message: "Failed to set user role",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.GenericResponse{
+		Success: true,
+		Message: "User role set successfully",
+		Data: gin.H{
+			"userId": user.ID,
+			"role":   req.Role,
+		},
+	})
+}
+

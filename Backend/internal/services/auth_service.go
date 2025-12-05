@@ -324,6 +324,11 @@ func (s *AuthService) UpdateUser(ctx context.Context, user *models.User) error {
 	return s.userRepo.Update(ctx, user)
 }
 
+// SetUserRole sets the user's role (petowner or vet)
+func (s *AuthService) SetUserRole(ctx context.Context, userID uuid.UUID, role string) error {
+	return s.userRepo.SetUserRole(ctx, userID, role)
+}
+
 // Helper functions
 
 func (s *AuthService) generateAccessToken(user *models.User) (string, error) {

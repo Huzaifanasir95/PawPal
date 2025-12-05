@@ -144,6 +144,13 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+// SetUserRole sets the user's role (petowner or vet)
+func (r *UserRepository) SetUserRole(ctx context.Context, userID uuid.UUID, role string) error {
+	query := `UPDATE users SET user_role = $2, updated_at = $3 WHERE id = $1`
+	_, err := r.db.Exec(ctx, query, userID, role, time.Now())
+	return err
+}
+
 // CreateRefreshToken creates a new refresh token
 func (r *UserRepository) CreateRefreshToken(ctx context.Context, token *models.RefreshToken) error {
 	query := `

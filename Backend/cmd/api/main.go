@@ -44,6 +44,9 @@ func main() {
 	petRepo := repositories.NewPetRepository(db)
 	healthRepo := repositories.NewHealthRepository(db)
 	communityRepo := repositories.NewCommunityRepository(db)
+	vetRepo := repositories.NewVetRepository(db)
+	chatRepo := repositories.NewChatRepository(db)
+	messageRepo := repositories.NewMessageRepository(db)
 
 	// Initialize auth service
 	authService := services.NewAuthService(userRepo)
@@ -63,9 +66,11 @@ func main() {
 	petHandlers := handlers.NewPetHandlers(petRepo)
 	healthHandlers := handlers.NewHealthHandlers(healthRepo, petRepo)
 	communityHandlers := handlers.NewCommunityHandlers(communityRepo, userRepo)
+	vetHandlers := handlers.NewVetHandlers(vetRepo)
+	chatHandlers := handlers.NewChatHandlers(chatRepo, messageRepo, userRepo, vetRepo)
 	
 	// Setup router
-	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, authService, cfg)
+	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, authService, cfg)
 	
 	// Start server
 	port := os.Getenv("PORT")
@@ -82,7 +87,7 @@ func main() {
 	}
 }
 
-func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
+func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
 	// Set Gin mode
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -117,6 +122,13 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 		// Utility endpoints
 		v1.GET("/breeds", h.GetSupportedBreeds)
 
+		// Public vet browsing (no auth required)
+		publicVets := v1.Group("/vets")
+		{
+			publicVets.GET("", vetHandlers.ListVets)                      // List all vets (public)
+			publicVets.GET("/profile/:userId", vetHandlers.GetVetProfile) // Get vet profile (public)
+		}
+
 		// Authentication endpoints (public)
 		auth := v1.Group("/auth")
 		{
@@ -133,9 +145,33 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 		protected := v1.Group("")
 		protected.Use(middleware.AuthMiddleware(authService))
 		{
-			// User profile
+			// User profile and role
 			protected.GET("/profile", authHandlers.GetProfile)
 			protected.PUT("/profile", authHandlers.UpdateProfile)
+			protected.POST("/auth/set-role", authHandlers.SetUserRole)
+
+			// Vet Profiles (protected)
+			vets := protected.Group("/vets")
+			{
+				vets.GET("/profile/me", vetHandlers.GetMyVetProfile)      // Get my vet profile
+				vets.POST("/profile", vetHandlers.CreateVetProfile)       // Create/Update vet profile
+			}
+
+			// Chat & Messaging
+			chats := protected.Group("/chats")
+			{
+				chats.POST("", chatHandlers.StartChat)                    // Start new chat
+				chats.GET("", chatHandlers.GetMyChats)                    // Get my chats
+				chats.GET("/:id", chatHandlers.GetChat)                   // Get specific chat
+				chats.DELETE("/:id", chatHandlers.DeleteChat)             // Delete chat
+			}
+
+			messages := protected.Group("/messages")
+			{
+				messages.POST("", chatHandlers.SendMessage)               // Send message
+				messages.GET("/:chatId", chatHandlers.GetChatMessages)    // Get chat messages
+				messages.PUT("/:id/read", chatHandlers.MarkMessageAsRead) // Mark as read
+			}
 
 			// Pets
 			pets := protected.Group("/pets")

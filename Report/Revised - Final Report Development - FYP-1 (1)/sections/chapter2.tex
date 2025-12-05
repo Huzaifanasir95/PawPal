@@ -1,0 +1,220 @@
+\chapter{Project Requirements}
+
+This chapter outlines comprehensive requirements for the PawPal mobile application, encompassing functional and non-functional aspects. These requirements serve as the foundation for system design, implementation, and testing.
+
+\section{Use Cases}
+
+This section presents detailed use cases representing key user interactions with the PawPal system. Each use case follows the fully dressed format with actors, preconditions, main flows, alternative flows, and postconditions.
+
+\subsection{UC-00: User Registration and Authentication}
+
+\textbf{Primary Actor:} Pet Owner / Veterinarian / Caregiver \\
+\textbf{Goal:} Create account and authenticate to access PawPal services \\
+\textbf{Preconditions:} User has mobile application installed
+
+\textbf{Main Success Scenario:}
+\begin{enumerate}
+    \item User opens app, selects "Create Account"
+    \item System displays registration form (email, password, name, phone, user type)
+    \item User enters information and accepts terms
+    \item System validates email format and password strength (min 8 chars, uppercase, number, special char)
+    \item System sends verification email with 6-digit code
+    \item User enters code within 10 minutes
+    \item System validates, creates account, generates JWT token (7-day expiration)
+    \item System redirects to profile setup
+\end{enumerate}
+
+\textbf{Alternative Flows:} Email already exists, weak password, expired code
+
+\subsection{UC-01: Pet Breed Identification}
+
+\textbf{Primary Actor:} Pet Owner \\
+\textbf{Goal:} Identify pet breed from photo and receive care recommendations \\
+\textbf{Preconditions:} User authenticated, has pet image
+
+\textbf{Main Success Scenario:}
+\begin{enumerate}
+    \item User navigates to Pet Identification module, uploads image (JPG/PNG, <10MB)
+    \item System validates, preprocesses (224x224 resize, normalization)
+    \item System invokes ConvNeXt V2 CNN via Python API
+    \item Model returns top 3 breed predictions with confidence scores
+    \item System displays primary breed (confidence >85\%) with alternatives
+    \item User confirms breed
+    \item System retrieves and displays breed-specific care information (health, diet, exercise, behavior, grooming)
+    \item User adds to pet profile, system updates with breed data
+\end{enumerate}
+
+\textbf{Alternative Flows:} Invalid format, oversized image, low confidence (<85\%), no animal detected
+
+\subsection{UC-02: AI Chatbot Veterinary Consultation}
+
+\textbf{Primary Actor:} Pet Owner \\
+\textbf{Goal:} Receive veterinary guidance for pet health concern \\
+\textbf{Preconditions:} User authenticated, pet profile exists
+
+\textbf{Main Success Scenario:}
+\begin{enumerate}
+    \item User opens Chatbot module, selects pet from profile list
+    \item System loads pet context (breed, age, weight, medical history)
+    \item User types health query
+    \item System sends to FastAPI service via HTTP POST
+    \item Service generates embedding, searches ChromaDB (281,438 docs, k=2)
+    \item Service constructs prompt with context + profile + query
+    \item Service calls Groq API (llama-3.3-70b-versatile, max\_tokens=384)
+    \item LLM generates response in 2-3 seconds
+    \item System displays with source citations, checks emergency keywords
+    \item Response logged to conversation history
+\end{enumerate}
+
+\textbf{Alternative Flows:} FastAPI unavailable (exec fallback), emergency detected (urgent alert + vet referral)
+
+\subsection{UC-03: Veterinary Appointment Booking}
+
+\textbf{Primary Actor:} Pet Owner \\
+\textbf{Goal:} Book appointment at nearby veterinary clinic \\
+\textbf{Preconditions:} User authenticated, pet profile exists, GPS enabled
+
+\textbf{Main Success Scenario:}
+\begin{enumerate}
+    \item User opens Veterinary Services module, grants GPS access
+    \item System queries OpenStreetMap for clinics within 10km
+    \item System displays clinics sorted by distance (name, distance, rating, hours)
+    \item User selects clinic, views details (services, vets, reviews)
+    \item User clicks "Book Appointment", selects date
+    \item System queries clinic availability API, shows available time slots
+    \item User selects time, pet, and reason
+    \item System creates appointment, sends confirmation, schedules reminders (24h, 2h)
+    \item Appointment integrated with health journal
+\end{enumerate}
+
+\textbf{Alternative Flows:} No GPS permission, no nearby clinics, time slot unavailable
+
+\section{Functional Requirements}
+
+This section details specific functional requirements organized by module, with unique identifiers for traceability. Each requirement specifies measurable, testable system capabilities.
+
+\subsection{Pet Identification Module}
+
+\begin{enumerate}
+    \item \textbf{FR-PI-1:} Accept JPG, PNG, HEIC formats up to 10MB
+    \item \textbf{FR-PI-2:} Preprocess images to 224x224 with normalization
+    \item \textbf{FR-PI-3:} Identify dog breeds with ≥85\% accuracy (ConvNeXt V2, Stanford Dogs Dataset)
+    \item \textbf{FR-PI-4:} Identify cat breeds with ≥85\% accuracy (ConvNeXt V2, Oxford-IIIT Pets Dataset)
+    \item \textbf{FR-PI-5:} Return top 3 predictions with confidence scores
+    \item \textbf{FR-PI-6:} Provide breed-specific care recommendations (health, diet, exercise, behavior, grooming)
+    \item \textbf{FR-PI-7:} Complete identification within 2 seconds
+\end{enumerate}
+
+\subsection{Chatbot Module}
+
+\begin{enumerate}
+    \item \textbf{FR-CB-1:} Implement RAG with ChromaDB (≥280,000 veterinary documents)
+    \item \textbf{FR-CB-2:} Generate embeddings using sentence transformers (all-MiniLM-L6-v2)
+    \item \textbf{FR-CB-3:} Retrieve k=2 relevant knowledge chunks
+    \item \textbf{FR-CB-4:} Use Groq llama-3.3-70b-versatile (max\_tokens=384)
+    \item \textbf{FR-CB-5:} Respond within 5 seconds (target: 2-3s achieved)
+    \item \textbf{FR-CB-6:} Maintain conversation history for multi-turn dialogues
+    \item \textbf{FR-CB-7:} Integrate pet profile data for personalized responses
+    \item \textbf{FR-CB-8:} Detect emergency keywords with urgent alerts
+    \item \textbf{FR-CB-9:} Cite knowledge sources for transparency
+    \item \textbf{FR-CB-10:} Generate personalized diet plans
+    \item \textbf{FR-CB-11:} Maintain 99.5\% uptime availability
+    \item \textbf{FR-CB-12:} Fallback to Python exec mode if FastAPI unavailable
+\end{enumerate}
+
+\subsection{Pet Profiles \& Journals Module}
+
+\begin{enumerate}
+    \item \textbf{FR-PP-1:} Create unlimited pet profiles (name, species, breed, DOB, gender, weight, microchip, insurance)
+    \item \textbf{FR-PP-2:} Support multi-pet households with household and individual views
+    \item \textbf{FR-PP-3:} Maintain health journal (vaccinations, medications, vet visits, weight, symptoms)
+    \item \textbf{FR-PP-4:} Send vaccination reminders 7 days before due date
+    \item \textbf{FR-PP-5:} Track medication adherence with dosage and timing logs
+    \item \textbf{FR-PP-6:} Generate weight/growth charts with trend analysis
+    \item \textbf{FR-PP-7:} Store medical documents digitally
+    \item \textbf{FR-PP-8:} Generate PDF health reports for veterinary appointments
+    \item \textbf{FR-PP-9:} Provide timeline visualization of health events
+\end{enumerate}
+
+\subsection{Veterinary Services Module}
+
+\begin{enumerate}
+    \item \textbf{FR-VS-1:} Integrate OpenStreetMap API for clinic discovery within 10km
+    \item \textbf{FR-VS-2:} Provide real-time appointment availability checking
+    \item \textbf{FR-VS-3:} Send appointment reminders at 24h and 2h intervals
+    \item \textbf{FR-VS-4:} Support online consultations (video, audio, chat)
+    \item \textbf{FR-VS-5:} Enable digital prescription generation
+    \item \textbf{FR-VS-6:} Verify veterinarians using government registration numbers
+    \item \textbf{FR-VS-7:} Support rescheduling with 4-hour minimum notice
+    \item \textbf{FR-VS-8:} Integrate appointments with pet health journal
+    \item \textbf{FR-VS-9:} Display clinic details (specializations, services, hours, contact)
+\end{enumerate}
+
+\section{Non-Functional Requirements}
+
+This section specifies quality attributes and constraints that the system must satisfy. These requirements are measurable and verifiable.
+
+\subsection{Performance Requirements}
+
+\begin{enumerate}
+    \item \textbf{PER-1:} Chatbot response within 5s for 95\% of queries (achieved: 2-3s avg)
+    \item \textbf{PER-2:} Breed identification within 2s for 90\% of uploads
+    \item \textbf{PER-3:} Mobile screens load within 1.5s on 4G
+    \item \textbf{PER-4:} Support 10,000 concurrent users without degradation
+    \item \textbf{PER-5:} Database queries within 500ms for 95\% of operations
+    \item \textbf{PER-6:} API endpoints respond within 200ms (excluding external calls)
+    \item \textbf{PER-7:} Vector search within 100ms for k=2 retrieval
+\end{enumerate}
+
+\subsection{Reliability Requirements}
+
+\begin{enumerate}
+    \item \textbf{REL-1:} Maintain 99.5\% uptime (max 3.65h downtime/month)
+    \item \textbf{REL-2:} Chatbot auto-fallback to exec mode if FastAPI unavailable
+    \item \textbf{REL-3:} Automatic database backups every 6 hours
+    \item \textbf{REL-4:} Recover from crashes within 2 minutes with no data loss
+    \item \textbf{REL-5:} Log all errors with stack traces for debugging
+\end{enumerate}
+
+\subsection{Security Requirements}
+
+\begin{enumerate}
+    \item \textbf{SEC-1:} JWT-based authentication with 7-day token expiration
+    \item \textbf{SEC-2:} Bcrypt password hashing with cost factor 12
+    \item \textbf{SEC-3:} HTTPS/TLS 1.3 encryption for all API communications
+    \item \textbf{SEC-4:} Rate limiting: 100 requests/minute per user
+    \item \textbf{SEC-5:} Input sanitization to prevent SQL injection and XSS
+    \item \textbf{SEC-6:} Role-based access control (RBAC) for all modules
+    \item \textbf{SEC-7:} AES-256 encryption for sensitive data at rest
+    \item \textbf{SEC-8:} Security event logging for audit trails
+\end{enumerate}
+
+\subsection{Usability Requirements}
+
+\begin{enumerate}
+    \item \textbf{USE-1:} New users complete registration within 3 minutes
+    \item \textbf{USE-2:} Frequently used features within 2 taps from home
+    \item \textbf{USE-3:} Clear error messages with actionable recovery steps
+    \item \textbf{USE-4:} WCAG 2.1 Level AA accessibility compliance
+    \item \textbf{USE-5:} Consistent UI/UX across iOS and Android
+    \item \textbf{USE-6:} Visual feedback for user actions within 100ms
+\end{enumerate}
+
+\subsection{Scalability Requirements}
+
+\begin{enumerate}
+    \item \textbf{SCA-1:} Scale to 100,000 users within 6 months
+    \item \textbf{SCA-2:} Handle 1 million pet profiles without degradation
+    \item \textbf{SCA-3:} Vector database scale to 500,000 knowledge documents
+    \item \textbf{SCA-4:} API auto-scale based on load (min 2, max 10 instances)
+\end{enumerate}
+
+\subsection{Maintainability Requirements}
+
+\begin{enumerate}
+    \item \textbf{MAI-1:} Maintain minimum 80\% test coverage
+    \item \textbf{MAI-2:} Follow SOLID design principles
+    \item \textbf{MAI-3:} Comprehensive logging for debugging
+    \item \textbf{MAI-4:} Auto-generated, up-to-date API documentation
+    \item \textbf{MAI-5:} Database migration scripts for version control
+\end{enumerate}

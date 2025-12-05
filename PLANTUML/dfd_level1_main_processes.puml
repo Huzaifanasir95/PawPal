@@ -1,0 +1,112 @@
+@startuml DFD_Level1_Main_Processes
+!define RECTANGLE class
+
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+
+' External Entities
+actor "Pet Owner" as Owner <<External Entity>>
+actor "Veterinarian" as Vet <<External Entity>>
+actor "Caregiver/Seller" as Caregiver <<External Entity>>
+database "OpenStreetMap API" as OSM <<External System>>
+database "Groq LLM API" as Groq <<External System>>
+database "Firebase FCM" as FCM <<External System>>
+
+' Main Processes
+rectangle "1.0\nUser Authentication\n& Authorization" as Auth <<Process>>
+rectangle "2.0\nPet Profile\nManagement" as PetMgmt <<Process>>
+rectangle "3.0\nBreed Identification\n(AI/ML)" as BreedID <<Process>>
+rectangle "4.0\nAI Chatbot\n(RAG System)" as Chatbot <<Process>>
+rectangle "5.0\nDiet & Care\nRecommendations" as DietCare <<Process>>
+rectangle "6.0\nVeterinary\nAppointment Booking" as VetAppt <<Process>>
+rectangle "7.0\nNotification\nManagement" as Notify <<Process>>
+
+' Data Stores (Current Iteration)
+database "D1: Users" as D1 <<Data Store>>
+database "D2: Pets" as D2 <<Data Store>>
+database "D3: Health Journals" as D3 <<Data Store>>
+database "D4: Breed Database" as D4 <<Data Store>>
+database "D5: Knowledge Base\n(ChromaDB 281,438 docs)" as D5 <<Data Store>>
+database "D6: Appointments" as D6 <<Data Store>>
+database "D7: Clinics" as D7 <<Data Store>>
+database "D8: Sessions/Cache\n(Redis)" as D8 <<Data Store>>
+database "D9: Chatbot Messages" as D9 <<Data Store>>
+database "D10: Vaccinations" as D10 <<Data Store>>
+
+' Owner flows
+Owner --> Auth : Registration Data\nLogin Credentials
+Auth --> Owner : JWT Token\nAuth Status
+Owner --> PetMgmt : Pet Details\nHealth Records
+PetMgmt --> Owner : Pet Information\nHealth History
+Owner --> BreedID : Pet Photo
+BreedID --> Owner : Breed Predictions\nCare Guide
+Owner --> Chatbot : Health Query
+Chatbot --> Owner : AI Response\nSources
+Owner --> VetAppt : Appointment Request\nGPS Location
+VetAppt --> Owner : Available Slots\nConfirmation
+
+' Vet flows
+Vet --> VetAppt : Clinic Info\nAvailability
+VetAppt --> Vet : Appointment Details
+Vet --> Auth : Login Credentials
+Auth --> Vet : JWT Token
+
+' Data Store interactions
+Auth <--> D1 : User Data\nCredentials
+Auth <--> D8 : Session Tokens
+
+PetMgmt <--> D2 : Pet Profiles
+PetMgmt <--> D3 : Health Records
+
+BreedID --> D4 : Breed Info Query
+D4 --> BreedID : Breed Details
+BreedID --> D2 : Store Breed
+
+Chatbot <--> D5 : Vector Search\nKnowledge Retrieval
+Chatbot --> D3 : Read Health Journal
+Chatbot --> D2 : Read Pet Profile
+Chatbot --> D9 : Log Conversations
+
+DietCare --> D4 : Breed Info
+DietCare --> D2 : Pet Data
+DietCare --> Owner : Diet Plans\nCare Schedule
+
+VetAppt <--> D6 : Appointments
+VetAppt <--> D7 : Clinic Data
+VetAppt --> D2 : Pet Info
+
+Notify --> D6 : Appointment Details
+Notify --> D10 : Vaccination Due Dates
+Notify --> D1 : User Tokens
+Notify --> Owner : Push Notifications
+
+PetMgmt <--> D10 : Vaccination Records
+
+' External API flows
+VetAppt --> OSM : GPS + Radius
+OSM --> VetAppt : Clinic Locations
+
+Chatbot --> Groq : Prompt + Context
+Groq --> Chatbot : LLM Response
+
+Notify --> FCM : Notification Payload
+FCM --> Notify : Delivery Status
+
+note bottom of Auth
+  Level 1 DFD - Current Iteration
+  
+  7 Core Modules Implemented:
+  1.0 - User Authentication & Authorization
+  2.0 - Pet Profile Management
+  3.0 - Breed Identification (ConvNeXt V2 CNN)
+  4.0 - AI Chatbot (RAG with Groq LLM)
+  5.0 - Diet & Care Recommendations
+  6.0 - Veterinary Appointment Booking
+  7.0 - Notification Management
+  
+  Data Stores: PostgreSQL (D1-D4, D6-D7, D9-D10)
+               Redis (D8 - caching/sessions)
+               ChromaDB (D5 - vector embeddings)
+end note
+
+@enduml

@@ -1,0 +1,134 @@
+@startuml DFD_Level2_Notification_Management
+!define RECTANGLE class
+
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+
+' External Entities
+actor "Pet Owner" as Owner <<External Entity>>
+actor "Veterinarian" as Vet <<External Entity>>
+database "Firebase FCM" as FCM <<External System>>
+
+' Level 2 Processes for Notification Management (7.0)
+rectangle "7.1\nSchedule\nReminders" as ScheduleReminder <<Process>>
+rectangle "7.2\nProcess Scheduled\nNotifications" as ProcessScheduled <<Process>>
+rectangle "7.3\nSend Push\nNotification" as SendPush <<Process>>
+rectangle "7.4\nSend Email\nNotification" as SendEmail <<Process>>
+rectangle "7.5\nLog Notification\nDelivery" as LogNotification <<Process>>
+rectangle "7.6\nManage User\nPreferences" as ManagePrefs <<Process>>
+rectangle "7.7\nHandle Notification\nFailures" as HandleFailures <<Process>>
+
+' Data Stores
+database "D1: Users" as D1 <<Data Store>>
+database "D6: Appointments" as D6 <<Data Store>>
+database "D10: Vaccinations" as D10 <<Data Store>>
+database "D14: Notification Queue" as D14 <<Data Store>>
+database "D15: Notification Logs" as D15 <<Data Store>>
+database "D16: User Preferences" as D16 <<Data Store>>
+
+' Scheduling Flow
+D6 --> ScheduleReminder : Appointment Created/Updated\n(24h and 2h before)
+D10 --> ScheduleReminder : Vaccination Due Date\n(7 days before)
+
+ScheduleReminder --> D14 : Queue Notification\n(type, user_id, scheduled_time, payload)
+
+' Processing Flow
+ProcessScheduled --> D14 : Poll Queue\n(current_time >= scheduled_time)
+D14 --> ProcessScheduled : Pending Notifications
+
+ProcessScheduled --> ManagePrefs : Check User Settings
+ManagePrefs --> D16 : Get Preferences
+D16 --> ManagePrefs : Push/Email/SMS enabled
+
+ManagePrefs --> ProcessScheduled : Preference Status
+
+ProcessScheduled --> SendPush : Send via Push\n(if enabled)
+ProcessScheduled --> SendEmail : Send via Email\n(if enabled)
+
+' Push Notification Flow
+SendPush --> D1 : Get FCM Token
+D1 --> SendPush : User FCM Token
+
+SendPush --> FCM : Notification Payload\n(title, body, data)
+FCM --> SendPush : Delivery Status
+
+SendPush --> Owner : Push Notification\n(appointment, vaccination, emergency)
+SendPush --> Vet : Appointment Updates
+
+SendPush --> LogNotification : Log Push Delivery
+
+' Email Flow
+SendEmail --> D1 : Get Email Address
+D1 --> SendEmail : User Email
+
+SendEmail --> Owner : Email Notification
+SendEmail --> Vet : Email Alerts
+
+SendEmail --> LogNotification : Log Email Delivery
+
+' Logging Flow
+LogNotification --> D15 : Store Log\n(user_id, type, status, timestamp)
+LogNotification --> HandleFailures : Delivery Status
+
+' Failure Handling
+HandleFailures --> D15 : Log Failure Reason
+HandleFailures --> D14 : Retry Queue\n(max 3 attempts)
+HandleFailures --> ProcessScheduled : Retry Notification
+
+' Preference Management
+Owner --> ManagePrefs : Update Preferences\n(push/email/sms on/off)
+ManagePrefs --> D16 : Store Preferences
+ManagePrefs --> Owner : Preferences Saved
+
+note right of ScheduleReminder
+  Level 2 DFD: Notification Management (7.0)
+  
+  Sub-processes:
+  7.1 - Reminder scheduling (appointments, vaccinations)
+  7.2 - Scheduled notification processing
+  7.3 - Push notification via Firebase FCM
+  7.4 - Email notification sending
+  7.5 - Delivery logging
+  7.6 - User preference management
+  7.7 - Retry logic for failures
+  
+  Notification Types:
+  - Appointment reminders (24-hour and 2-hour intervals)
+  - Vaccination reminders (7 days before due date)
+  - Emergency alerts from chatbot (urgent keywords detected)
+  - Appointment confirmations/cancellations
+  - Medication adherence reminders
+  - Lost pet alerts (future)
+  
+  Delivery Channels:
+  - Firebase Cloud Messaging (Push)
+  - Email (SMTP)
+  - SMS (optional, future)
+end note
+
+note bottom of D14
+  Notification Queue stores:
+  - queue_id, user_id, type
+  - scheduled_time, payload
+  - status (pending/sent/failed)
+  - retry_count, created_at
+end note
+
+note bottom of D15
+  Notification Logs stores:
+  - log_id, user_id, type
+  - sent_at, delivery_status
+  - channel (push/email/sms)
+  - error_message (if failed)
+end note
+
+note bottom of D16
+  User Preferences stores:
+  - user_id, push_enabled
+  - email_enabled, sms_enabled
+  - appointment_reminders
+  - vaccination_alerts
+  - emergency_alerts
+end note
+
+@enduml

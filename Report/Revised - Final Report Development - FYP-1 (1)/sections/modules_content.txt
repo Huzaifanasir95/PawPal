@@ -1,0 +1,163 @@
+\section{Modules}
+
+The PawPal system is structured into eight major modules, each addressing specific pet care needs and user requirements. These modules work cohesively to provide a comprehensive pet care ecosystem within a single mobile application, with backend modules implemented within a unified Golang codebase for optimal performance and efficient inter-module communication through direct function calls.
+
+\subsection{Pet Identification Module}
+
+This module provides instant breed recognition and personalized care recommendations through advanced deep learning technology. Using Convolutional Neural Networks (CNN) specifically the ConvNeXt V2 architecture, trained on extensive pet image datasets including Stanford Dogs Dataset and Oxford-IIIT Pets Dataset, the system can accurately identify dog and cat breeds from uploaded photos with over 85\% accuracy. The Go backend module handles image preprocessing, model inference coordination through Python TensorFlow/PyTorch serving, and response generation with sub-second latency through efficient concurrent processing.
+
+Upon identification, the module provides comprehensive breed-specific information including typical health concerns, dietary requirements based on breed size and predispositions, exercise needs and activity recommendations, behavioral characteristics and training tips, grooming requirements and schedules, and common genetic conditions with preventive care suggestions. The module integrates seamlessly with the Pet Profiles module to automatically populate breed information and provide tailored care recommendations.
+
+\begin{enumerate}
+    \item Breed detection from pet images using ConvNeXt V2 CNN models with real-time processing capabilities
+    \item Breed-specific care recommendations with comprehensive guidelines covering health, nutrition, and behavior
+    \item Dietary requirements and feeding schedules tailored to identified breed with portion size recommendations
+    \item Health predisposition information including common genetic conditions and preventive care tips
+    \item Training and behavioral guidance specific to breed characteristics with positive reinforcement techniques
+    \item Image quality validation and enhancement preprocessing to ensure optimal model inference accuracy
+    \item Confidence scoring with alternative breed suggestions when primary identification confidence is below 85\%
+    \item Integration with pet profile system to store breed information and track identification history
+\end{enumerate}
+
+\subsection{Chatbot Module}
+
+The intelligent chatbot serves as a 24/7 virtual veterinary assistant, providing instant guidance on pet health concerns and dietary planning through sophisticated artificial intelligence. Built using Retrieval-Augmented Generation (RAG) combined with Large Language Models (specifically Groq's llama-3.3-70b-versatile), the chatbot can understand natural language queries, access curated veterinary knowledge bases, and provide contextually relevant responses with medical accuracy.
+
+The chatbot implements a two-stage information retrieval process: first, semantic search through a vector database of 281,438 veterinary knowledge chunks using sentence transformers for embedding generation; second, contextual response generation through the LLM with retrieved knowledge as context. This RAG approach ensures responses are grounded in verified veterinary knowledge while maintaining conversational fluency and context awareness. The Go backend module implements efficient concurrent request handling, while a dedicated Python FastAPI service manages the RAG pipeline, embedding generation, and LLM inference with optimized caching strategies.
+
+The system achieves average response times of 2-3 seconds, significantly exceeding the 5-second requirement, through architectural optimizations including persistent RAG model loading, HTTP-based communication between Go and Python services, and intelligent caching of embedding vectors. The chatbot maintains conversation history for context-aware multi-turn dialogues and integrates with pet health journals to provide personalized responses based on individual pet medical history.
+
+\begin{enumerate}
+    \item AI-powered veterinary guidance for common health queries with evidence-based recommendations
+    \item Personalized diet plan generation based on breed, age, weight, and health conditions with meal timing
+    \item 24/7 availability for immediate pet care support with average response times under 3 seconds
+    \item Emergency guidance and symptom assessment with automated severity classification
+    \item Integration with pet health journals for context-aware, personalized responses using historical data
+    \item Source citation and confidence scoring for medical advice to ensure transparency and reliability
+    \item Conversation history maintenance with ability to resume previous discussions
+    \item Emergency detection with automatic veterinarian referral recommendations for critical situations
+    \item Multi-pet support with profile-specific contextual responses for households with multiple pets
+\end{enumerate}
+
+\subsection{Pet Profiles \& Journals Module}
+
+This module enables comprehensive digital record-keeping for pet owners, serving as a centralized repository for all pet-related information. Owners can maintain detailed profiles for multiple pets, track health events, document veterinary visits, monitor behavioral changes over time, and record daily activities. The module implements a timeline-based interface showing the chronological history of all health-related events, making it easy to identify patterns and trends in pet health.
+
+The health journal functionality includes vaccination tracking with automatic reminder notifications sent 7 days before due dates, medication schedules with dosage tracking and adherence monitoring, weight tracking with growth charts and BMI calculations, symptom logging with severity ratings and duration tracking, and vet visit summaries with diagnosis and treatment plan documentation. The system generates comprehensive health reports in PDF format that can be shared with veterinarians during appointments, ensuring continuity of care.
+
+\begin{enumerate}
+    \item Digital pet profile creation with comprehensive information fields including microchip ID and insurance details
+    \item Health journal with vaccination records, medical history, and veterinary visit logs with timeline visualization
+    \item Medication tracking with automated reminders and adherence monitoring with notification system
+    \item Weight and growth monitoring with charts and trend analysis for early detection of health issues
+    \item Activity and behavior logging with pattern recognition for behavioral changes
+    \item Document storage for medical certificates, lab reports, and vaccination certificates in digital format
+    \item Multi-pet management for owners with multiple pets with household view and individual pet dashboards
+    \item Health report generation in PDF format for veterinary appointments with complete medical history
+    \item Photo gallery with unlimited photo storage and automatic organization by date and event
+    \item Integration with chatbot module for personalized health recommendations based on journal data
+\end{enumerate}
+
+\subsection{Pet Toy Marketplace Module}
+
+A secure e-commerce platform dedicated to pet toys, food, and accessories, connecting buyers with sellers while ensuring transaction safety and user accountability. The marketplace features comprehensive product listings with multiple photos, detailed descriptions, pricing with discount capabilities, advanced search functionality by category and breed compatibility, secure payment processing through multiple methods including cryptocurrency, and comprehensive review systems with photo/video review support.
+
+The module implements intelligent product recommendations based on pet breed, age, and previous purchase history, utilizing collaborative filtering algorithms. Sellers can manage inventory with automatic stock alerts, create promotional campaigns with coupon codes, track sales analytics, and manage order fulfillment through an integrated dashboard. The system includes fraud detection mechanisms, dispute resolution workflows, and buyer protection policies to ensure marketplace integrity.
+
+\begin{enumerate}
+    \item Product listing creation with up to 10 photos, detailed descriptions, specifications, and pricing with discount options
+    \item Advanced search and filtering capabilities by category, price range, breed compatibility, ratings, and location
+    \item Shopping cart management with session persistence for 7 days and saved for later functionality
+    \item Integrated rating and review system with photo/video support and verified purchase badges
+    \item In-app messaging system between buyers and sellers with notification support and order-specific threads
+    \item Multiple payment method support including cryptocurrency (Bitcoin, Ethereum, USDT) and digital wallets
+    \item Order tracking system with real-time status updates and delivery confirmation
+    \item Seller profile management with performance metrics, ratings, and sales history
+    \item Admin moderation tools for marketplace integrity including fraud detection and dispute resolution
+    \item Wishlist functionality allowing users to save products for future purchase
+    \item Product recommendation engine based on pet profile, breed, and purchase history
+\end{enumerate}
+
+\subsection{Community Hub Module}
+
+The social core of PawPal, fostering connections among pet owners through forums, media sharing, lost and found networks, adoption systems, and event organization. This module creates a supportive community environment for pet enthusiasts through real-time interactions, content sharing, and collaborative problem-solving. The community hub implements content moderation using AI-powered inappropriate content detection and human moderator review workflows to maintain a safe and welcoming environment.
+
+The lost and found pet alert system leverages GPS technology to identify nearby community members within a 5km radius of the last known location, broadcasting alerts via push notifications and email. The system includes sighting report functionality with photo verification, location-based mapping of sightings, and success story sharing to celebrate reunions. The adoption module connects shelters, rescues, and individuals with potential adopters through detailed pet profiles, application screening workflows, and meet-and-greet coordination.
+
+\begin{enumerate}
+    \item Real-time forum posting with threaded discussions, rich text formatting, and media attachments
+    \item Lost and found pet alert system with GPS-based notifications to nearby community members within configurable radius
+    \item Pet adoption listings with detailed profiles, health history, application processing, and adoption status tracking
+    \item Event planning and meetup coordination for pet-friendly activities with RSVP management and calendar integration
+    \item Media sharing with photo and video uploads supporting formats up to 100MB with automatic compression
+    \item Social interactions including likes, comments, shares, and follower systems for engaging content discovery
+    \item Hashtag functionality for content categorization and trending topic discovery
+    \item Group creation and management with role-based access control for specialized communities
+    \item Pet playdate coordination with location-based matching of compatible pets and scheduling system
+    \item Success story sharing for lost pet recoveries and adoption celebrations
+    \item Content moderation system with AI-powered inappropriate content detection and reporting mechanisms
+    \item Notification system for community engagement including comment replies, event reminders, and alert updates
+\end{enumerate}
+
+\subsection{Veterinary Services Integration Module}
+
+Bridging the gap between pet owners and veterinary professionals, this module facilitates easy access to veterinary care through appointment booking, location services, and online consultations. The system integrates with OpenStreetMap APIs for geolocation services, enabling users to discover nearby veterinary clinics with distance calculations, directions, and operating hours. Veterinarians can manage their availability through an integrated calendar system with time slot management and automatic conflict resolution.
+
+The appointment booking system implements real-time availability checking to prevent double-booking, supports recurring appointment scheduling for chronic conditions, sends automated reminders 24 hours and 2 hours before appointments via push notifications and email, and maintains comprehensive appointment history for both pet owners and veterinarians. The module includes online consultation capabilities with video/audio calling, chat functionality, and screen sharing for showing medical images or documents.
+
+\begin{enumerate}
+    \item Instant veterinary appointment booking system with real-time availability checking and conflict prevention
+    \item Nearby veterinary clinic discovery using GPS location with distance calculations and navigation support
+    \item Clinic profile management with specializations, services offered, operating hours, and contact information
+    \item Appointment reminders and notification system via push notifications and email sent at 24h and 2h intervals
+    \item Online consultation support with video, audio, and chat capabilities for remote veterinary guidance
+    \item Prescription management with digital prescription generation, approval workflows, and medication history
+    \item Payment integration for veterinary services with invoice generation and receipt management
+    \item Veterinarian verification system using government registration numbers for credibility and trust
+    \item Review and rating system for veterinary services with detailed feedback collection
+    \item Appointment rescheduling and cancellation with minimum 4-hour notice requirement
+    \item Integration with health journal to provide veterinarians access to complete pet medical history
+    \item Emergency appointment support with priority scheduling for urgent cases
+\end{enumerate}
+
+\subsection{Pet Caregiver Services Module}
+
+Connecting pet owners with verified pet caregivers including walkers, sitters, groomers, and trainers, this module ensures pet safety through comprehensive verification processes and real-time tracking capabilities. Caregivers undergo background verification, credential checks, and reference validation before being approved to offer services through the platform. The module implements a rating and review system that helps maintain service quality and builds trust within the caregiver community.
+
+The GPS tracking system provides real-time location updates during pet walking services, refreshing every 2 minutes with route history visualization and geofencing capabilities. Caregivers can upload photo and video updates during service delivery, providing transparency and peace of mind to pet owners. The system includes incident reporting functionality with photo documentation, immediate notification to pet owners, and escalation to veterinarians if necessary.
+
+\begin{enumerate}
+    \item Caregiver profile creation with service offerings including pet sitting, walking, grooming, training, and boarding
+    \item Background verification and credential checking system with government ID verification
+    \item Service booking system with availability calendars, time slot management, and instant booking confirmation
+    \item Real-time GPS tracking during pet walking services with location updates every 2 minutes and route history
+    \item Service rating and review system with detailed feedback collection and photo/video review support
+    \item In-app communication between owners and caregivers with photo/video sharing and real-time messaging
+    \item Secure payment processing for caregiver services with automatic payout after service completion
+    \item Incident reporting system with photo documentation and immediate notification capabilities
+    \item Service completion confirmation with photo proof and detailed service summary reports
+    \item Insurance integration support for liability coverage during services
+    \item Favorite caregiver functionality allowing users to bookmark preferred service providers
+    \item Recurring booking support for regular schedules with automatic payment processing
+\end{enumerate}
+
+\subsection{Payment Integration Module}
+
+A secure and flexible payment system supporting multiple payment methods to facilitate transactions across marketplace purchases, veterinary appointments, and service bookings. The module implements PCI-compliant payment processing with end-to-end encryption, tokenization for card storage, and fraud detection mechanisms using machine learning-based anomaly detection.
+
+The cryptocurrency integration supports Bitcoin, Ethereum, and USDT through dedicated wallet management with QR code generation for payment requests, real-time price oracle integration for accurate conversion rates, blockchain transaction monitoring with confirmation tracking, and escrow functionality for dispute protection. The system maintains comprehensive transaction logs with audit trails for compliance and dispute resolution, generates itemized invoices with PDF export, and implements automatic refund processing with configurable approval workflows.
+
+\begin{enumerate}
+    \item Cryptocurrency wallet support for Bitcoin, Ethereum, and USDT with QR code payment generation
+    \item Digital wallet functionality for storing credits, processing refunds, and managing subscription payments
+    \item Transaction history with detailed itemization and PDF invoice generation sent via email
+    \item Refund and dispute management system with admin oversight and configurable approval workflows
+    \item Automatic payment retry mechanism for failed transactions with exponential backoff strategy
+    \item Split payment support for shared expenses between multiple pet owners
+    \item Escrow service for marketplace transactions with release upon service completion or delivery confirmation
+    \item Real-time currency conversion for international transactions with competitive exchange rates
+    \item Payment method tokenization for secure recurring payments without storing sensitive card information
+    \item Comprehensive audit logging for all payment activities with timestamps, amounts, and status changes
+    \item Fraud detection using machine learning-based anomaly detection with real-time alerts
+    \item Multi-currency support with automatic conversion based on user preferences
+\end{enumerate}

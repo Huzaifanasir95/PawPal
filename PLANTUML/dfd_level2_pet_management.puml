@@ -1,0 +1,131 @@
+@startuml DFD_Level2_Pet_Management
+!define RECTANGLE class
+
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+
+' External Entity
+actor "Pet Owner" as Owner <<External Entity>>
+
+' Level 2 Processes for Pet Profile Management (2.0)
+rectangle "2.1\nCreate Pet\nProfile" as CreatePet <<Process>>
+rectangle "2.2\nUpdate Pet\nInformation" as UpdatePet <<Process>>
+rectangle "2.3\nUpload Pet\nPhoto" as UploadPhoto <<Process>>
+rectangle "2.4\nManage Health\nJournal" as ManageHealth <<Process>>
+rectangle "2.5\nTrack Vaccinations\n& Medications" as TrackVacc <<Process>>
+rectangle "2.6\nRecord Weight\n& Growth" as RecordWeight <<Process>>
+rectangle "2.7\nDelete Pet\nProfile" as DeletePet <<Process>>
+
+' Data Stores
+database "D2: Pets" as D2 <<Data Store>>
+database "D3: Health Journals" as D3 <<Data Store>>
+database "D10: Vaccinations" as D10 <<Data Store>>
+database "D11: Weight Records" as D11 <<Data Store>>
+database "File Storage\n(Images)" as FileStorage <<Data Store>>
+
+' Create Pet Flow
+Owner --> CreatePet : Pet Details\n(name, species, breed, DOB, gender)
+CreatePet --> D2 : Store Pet Record
+CreatePet --> Owner : Pet Profile Created\n(pet_id)
+
+' Update Pet Flow
+Owner --> UpdatePet : Updated Details\n(pet_id, fields)
+UpdatePet --> D2 : Update Record
+D2 --> UpdatePet : Current Pet Data
+UpdatePet --> Owner : Updated Profile
+
+' Photo Upload Flow
+Owner --> UploadPhoto : Pet Photo\n(pet_id, image)
+UploadPhoto --> FileStorage : Store Image File
+FileStorage --> UploadPhoto : Image URL
+UploadPhoto --> D2 : Update Photo URL
+UploadPhoto --> Owner : Photo Updated
+
+' Health Journal Flow
+Owner --> ManageHealth : Health Entry\n(symptoms, diagnosis, treatment)
+ManageHealth --> D3 : Store Health Record
+D3 --> ManageHealth : Previous Entries
+ManageHealth --> Owner : Health History
+
+ManageHealth --> D2 : Read Pet Info
+D2 --> ManageHealth : Pet Details
+
+' Vaccination Tracking Flow
+Owner --> TrackVacc : Vaccination Info\n(vaccine, date, next_due)
+TrackVacc --> D10 : Store Vaccination Record
+D10 --> TrackVacc : Vaccination History
+TrackVacc --> Owner : Vaccination Schedule\n+ Reminders
+
+TrackVacc --> D2 : Link to Pet
+D2 --> TrackVacc : Pet ID
+
+' Weight Tracking Flow
+Owner --> RecordWeight : Weight Measurement\n(pet_id, weight, date)
+RecordWeight --> D11 : Store Weight Record
+D11 --> RecordWeight : Weight History
+RecordWeight --> Owner : Weight Trends\n+ Charts
+
+RecordWeight --> D2 : Read Pet Info
+D2 --> RecordWeight : Breed, Age for BMI
+
+' Delete Pet Flow
+Owner --> DeletePet : Delete Request\n(pet_id)
+DeletePet --> D2 : Delete Pet Record
+DeletePet --> D3 : Delete Health Records
+DeletePet --> D10 : Delete Vaccinations
+DeletePet --> D11 : Delete Weight Records
+DeletePet --> FileStorage : Delete Photos
+DeletePet --> Owner : Deletion Confirmed
+
+note right of CreatePet
+  Level 2 DFD: Pet Profile Management (2.0)
+  
+  Sub-processes:
+  2.1 - Pet profile creation
+  2.2 - Profile updates (breed, name, etc.)
+  2.3 - Photo upload and management
+  2.4 - Health journal entries
+  2.5 - Vaccination and medication tracking
+  2.6 - Weight and growth monitoring
+  2.7 - Profile deletion (cascade)
+  
+  Features:
+  - Multi-pet support per owner
+  - Photo gallery with main display photo
+  - Comprehensive health history
+  - Vaccination reminders
+  - Weight trend analysis
+end note
+
+note bottom of D2
+  Pets table stores:
+  - pet_id, owner_id, name
+  - species, breed, date_of_birth
+  - gender, color, microchip_id
+  - photo_url, created_at
+end note
+
+note bottom of D3
+  Health Journals table stores:
+  - journal_id, pet_id, date
+  - symptoms, diagnosis, treatment
+  - veterinarian, notes
+  - attachments (prescriptions, reports)
+end note
+
+note bottom of D10
+  Vaccinations table stores:
+  - vaccination_id, pet_id
+  - vaccine_name, date_administered
+  - next_due_date, veterinarian
+  - batch_number, notes
+end note
+
+note bottom of D11
+  Weight Records table stores:
+  - record_id, pet_id, date
+  - weight_kg, bmi_category
+  - notes (ideal weight range)
+end note
+
+@enduml

@@ -1,0 +1,104 @@
+@startuml DFD_Level2_AI_Chatbot_RAG
+!define RECTANGLE class
+
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+
+' External Entities
+actor "Pet Owner" as Owner <<External Entity>>
+rectangle "Go Backend\n(Chatbot Handler)" as GoBackend <<External Process>>
+database "Groq LLM API" as Groq <<External System>>
+database "FastAPI Service\n(Port 8000)" as FastAPI <<External System>>
+
+' Level 2 Processes for AI Chatbot (4.0)
+rectangle "4.1\nLoad Pet Context\n(Profile + History)" as LoadContext <<Process>>
+rectangle "4.2\nGenerate Query\nEmbedding" as GenEmbedding <<Process>>
+rectangle "4.3\nVector Search\n(ChromaDB k=2)" as VectorSearch <<Process>>
+rectangle "4.4\nConstruct Prompt\nwith Context" as ConstructPrompt <<Process>>
+rectangle "4.5\nCall LLM API\n(Groq)" as CallLLM <<Process>>
+rectangle "4.6\nDetect Emergency\nKeywords" as DetectEmergency <<Process>>
+rectangle "4.7\nLog Conversation\nHistory" as LogConv <<Process>>
+
+' Data Stores
+database "D2: Pets" as D2 <<Data Store>>
+database "D3: Health Journals" as D3 <<Data Store>>
+database "D5: Knowledge Base\n(ChromaDB Vector DB)" as D5 <<Data Store>>
+database "D9: Chatbot Messages" as D9 <<Data Store>>
+
+' Sentence Transformer Model
+database "Sentence Transformer\nModel" as STModel <<ML Model>>
+
+' Data Flows
+Owner --> GoBackend : User Query + Pet ID
+GoBackend --> LoadContext : HTTP Request to FastAPI\n(if service available)
+GoBackend --> LoadContext : Python Exec Mode\n(if FastAPI unavailable)
+
+LoadContext --> D2 : Get Pet Profile
+D2 --> LoadContext : Breed, Age, Weight
+LoadContext --> D3 : Get Medical History
+D3 --> LoadContext : Health Records
+
+LoadContext --> GenEmbedding : Contextualized Query\n(Query + Pet Info)
+GenEmbedding --> STModel : Encode Query
+STModel --> GenEmbedding : Query Embedding Vector
+
+GenEmbedding --> VectorSearch : Embedding Vector
+VectorSearch --> D5 : Similarity Search (k=2)
+D5 --> VectorSearch : Top 2 Relevant Chunks\n+ Sources
+
+VectorSearch --> ConstructPrompt : Knowledge Context\n+ Sources
+LoadContext --> ConstructPrompt : Pet Profile + History
+Owner --> ConstructPrompt : Original Query
+
+ConstructPrompt --> FastAPI : System Prompt + Knowledge\n+ Pet Context + Query
+FastAPI --> CallLLM : Execute LLM Call
+CallLLM --> Groq : Formatted Prompt\n(max_tokens=384, temp=0.7)
+Groq --> CallLLM : AI Response
+CallLLM --> FastAPI : LLM Response
+FastAPI --> DetectEmergency : Response + Query
+
+CallLLM --> DetectEmergency : LLM Response + Query
+DetectEmergency --> Owner : Emergency Alert\n(if critical keywords found)
+DetectEmergency --> LogConv : Response + Sources + Flag
+
+LogConv --> D9 : Store Conversation\n(pet_id, query, response, sources)
+LogConv --> GoBackend : Return Response + Sources + Flag
+GoBackend --> Owner : AI Response + Sources\n(Normal/Emergency)
+
+note right of GenEmbedding
+  Level 2 DFD: AI Chatbot RAG System (4.0)
+  
+  Sub-processes:
+  4.1 - Context loading (pet profile, health journal)
+  4.2 - Embedding generation (Sentence Transformer all-MiniLM-L6-v2)
+  4.3 - Vector similarity search (ChromaDB, k=2)
+  4.4 - Prompt construction (system + knowledge + context)
+  4.5 - LLM inference (Groq llama-3.3-70b-versatile)
+  4.6 - Emergency detection (poisoning, bleeding, seizure, etc.)
+  4.7 - Conversation logging
+  
+  Architecture: Hybrid (Primary + Fallback)
+  - Primary: HTTP POST to FastAPI service (port 8000)
+  - Fallback: Python exec mode if FastAPI unavailable
+  
+  Response Time: 2-3s average (8x improvement)
+  ChromaDB: 281,438 veterinary documents
+  Optimization: Persistent service, k=2 retrieval, max_tokens=384
+end note
+
+note bottom of D5
+  ChromaDB Vector Database:
+  - 281,438 veterinary documents
+  - Sentence transformer embeddings
+  - Metadata: source, category, relevance
+  - Semantic search for retrieval
+end note
+
+note bottom of D9
+  Stores conversation history:
+  - pet_id, user_id, timestamp
+  - query, response, sources
+  - emergency_flag, rating
+end note
+
+@enduml

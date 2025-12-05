@@ -1,0 +1,85 @@
+@startuml DFD_Level2_Breed_Identification
+!define RECTANGLE class
+
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+
+' External Entity
+actor "Pet Owner" as Owner <<External Entity>>
+
+' Level 2 Processes for Breed Identification (3.0)
+rectangle "3.1\nValidate Image\nFormat & Size" as ValidateImg <<Process>>
+rectangle "3.2\nPreprocess Image\n(Resize, Normalize)" as Preprocess <<Process>>
+rectangle "3.3\nClassify Species\n(Dog/Cat)" as ClassifySpecies <<Process>>
+rectangle "3.4\nLoad CNN Model\n(ConvNeXt V2)" as LoadModel <<Process>>
+rectangle "3.5\nRun Inference\n(Top-3 Predictions)" as Inference <<Process>>
+rectangle "3.6\nRetrieve Breed Info\n& Care Guide" as RetrieveInfo <<Process>>
+rectangle "3.7\nLog Prediction\nResults" as LogPred <<Process>>
+
+' Data Stores
+database "D2: Pets" as D2 <<Data Store>>
+database "D4: Breed Database" as D4 <<Data Store>>
+database "ML Models Storage" as MLModels <<Data Store>>
+
+' Data Flows
+Owner --> ValidateImg : Pet Image\n(JPG/PNG/HEIC)
+ValidateImg --> Preprocess : Validated Image\n(<10MB)
+ValidateImg --> Owner : Error: Invalid Format/Size\n(if failed)
+
+Preprocess --> ClassifySpecies : Decoded Image
+ClassifySpecies --> LoadModel : Species Type\n(dog/cat)
+
+LoadModel --> MLModels : Request Model
+MLModels --> LoadModel : convnextv2_dog_120breeds.h5\nOR convnextv2_cat_37breeds.h5
+
+LoadModel --> Inference : Loaded Model
+Preprocess --> Inference : Preprocessed Tensor\n(224x224, normalized)
+
+Inference --> RetrieveInfo : Top-3 Breed Predictions\n(breed, confidence)
+
+RetrieveInfo --> D4 : Query Breed Details
+D4 --> RetrieveInfo : Diet, Exercise, Grooming,\nHealth Info
+
+RetrieveInfo --> LogPred : Prediction Results
+LogPred --> D2 : Store Breed + Confidence
+LogPred --> Owner : Breed Predictions (Top-3)\nCare Recommendations
+
+RetrieveInfo --> Owner : General Care Info\n(if confidence <85%)\nOR Primary Breed Care\n(if confidence >=85%)
+
+note right of Preprocess
+  Level 2 DFD: Breed Identification (3.0)
+  
+  Sub-processes:
+  3.1 - Image validation (format: JPG/PNG/HEIC, size <10MB)
+  3.2 - Preprocessing (resize to 224x224, ImageNet normalization)
+  3.3 - Species classification (binary: dog/cat)
+  3.4 - Model loading (dog: 120 breeds, cat: 20 breeds)
+  3.5 - CNN inference (ConvNeXt V2, Top-3 predictions)
+  3.6 - Breed information retrieval
+  3.7 - Result logging
+end note
+
+note bottom of MLModels
+  Stores pre-trained CNN models:
+  - convnextv2_dog_120breeds.h5 (120 breeds, 92-95% accuracy)
+  - convnextv2_cat_20breeds.h5 (20 breeds, 88-92% accuracy)
+  
+  Training Data:
+  - Stanford Dogs Dataset: 20,580 images (120 breeds)
+  - CatBreedsRefined-7k v2: ~7,000 images (20 breeds)
+  
+  Training: 40-60 epochs with progressive unfreezing
+  Preprocessing: 384x384 resize, ImageNet normalization
+  Data Augmentation: rotation, flip, zoom, color jitter, Mixup, Cutmix
+  Inference Time: <2s (target), 1.76s average (achieved)
+end note
+
+note bottom of D4
+  Breed database contains:
+  - breed_name, species
+  - diet_requirements, exercise_needs
+  - grooming_schedule, common_health_issues
+  - temperament, size_category
+end note
+
+@enduml

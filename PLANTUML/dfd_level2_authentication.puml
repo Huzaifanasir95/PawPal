@@ -1,0 +1,75 @@
+@startuml DFD_Level2_Authentication_Process
+!define RECTANGLE class
+
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+
+' External Entity
+actor "Pet Owner" as Owner <<External Entity>>
+
+' Level 2 Processes for Authentication (1.0)
+rectangle "1.1\nValidate\nInput Data" as Validate <<Process>>
+rectangle "1.2\nHash Password\n(Bcrypt)" as Hash <<Process>>
+rectangle "1.3\nCheck User\nExistence" as CheckUser <<Process>>
+rectangle "1.4\nCreate User\nRecord" as CreateUser <<Process>>
+rectangle "1.5\nGenerate JWT\nToken" as GenJWT <<Process>>
+rectangle "1.6\nVerify Password" as VerifyPass <<Process>>
+rectangle "1.7\nValidate Token\n& Session" as ValidateToken <<Process>>
+
+' Data Stores
+database "D1: Users" as D1 <<Data Store>>
+database "D8: Sessions/Cache\n(Redis)" as D8 <<Data Store>>
+
+' Registration Flow
+Owner --> Validate : Email, Password\nName, Phone
+Validate --> Hash : Validated Data
+Hash --> CheckUser : Email + Hashed Password
+CheckUser --> D1 : Check Email
+D1 --> CheckUser : User Exists?
+CheckUser --> CreateUser : New User Data\n(if not exists)
+CreateUser --> D1 : Store User Record
+CreateUser --> GenJWT : User ID
+GenJWT --> D8 : Store Session\n(7-day expiry)
+GenJWT --> Owner : JWT Token
+
+' Login Flow
+Owner --> Validate : Email, Password\n(Login)
+Validate --> CheckUser : Validated Credentials
+CheckUser --> D1 : Query User
+D1 --> CheckUser : User Record
+CheckUser --> VerifyPass : User Hash + Input Password
+VerifyPass --> GenJWT : User ID\n(if valid)
+GenJWT --> Owner : JWT Token\n(if authenticated)
+VerifyPass --> Owner : Error: Invalid Credentials\n(if failed)
+
+' Token Validation Flow
+Owner --> ValidateToken : JWT Token\n(API Request)
+ValidateToken --> D8 : Check Session
+D8 --> ValidateToken : Session Data
+ValidateToken --> Owner : Authorized\n(User ID extracted)
+ValidateToken --> Owner : Error: Token Expired/Invalid
+
+note right of Validate
+  Level 2 DFD: Authentication (1.0)
+  
+  Sub-processes:
+  1.1 - Input validation (email format, password strength)
+  1.2 - Password hashing (bcrypt cost=12)
+  1.3 - User existence check
+  1.4 - User creation
+  1.5 - JWT generation (7-day expiry)
+  1.6 - Password verification
+  1.7 - Token validation
+end note
+
+note bottom of D1
+  Stores: user_id, email, password_hash,
+  name, phone, role, created_at
+end note
+
+note bottom of D8
+  Redis cache stores JWT sessions
+  with 7-day TTL for quick validation
+end note
+
+@enduml

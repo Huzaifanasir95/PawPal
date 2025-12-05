@@ -1,0 +1,44 @@
+@startuml DFD_Level0_Context_Diagram
+!define RECTANGLE class
+
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+
+' External Entities
+actor "Pet Owner" as Owner <<External Entity>>
+actor "Veterinarian" as Vet <<External Entity>>
+actor "Caregiver/Seller" as Caregiver <<External Entity>>
+database "OpenStreetMap API" as OSM <<External System>>
+database "Groq LLM API" as Groq <<External System>>
+database "Firebase Cloud Messaging" as FCM <<External System>>
+
+' Main System
+rectangle "PawPal\nPet Care Management System" as PawPal <<Process 0>>
+
+' Data Flows
+Owner --> PawPal : User Credentials\nPet Information\nHealth Queries\nAppointment Requests\nPet Photos
+PawPal --> Owner : Authentication Token\nBreed Predictions\nHealth Guidance\nAppointment Confirmations\nNotifications
+
+Vet --> PawPal : Clinic Information\nAvailability Slots\nAppointment Status
+PawPal --> Vet : Appointment Requests\nPet Medical History\nNotifications
+
+Caregiver --> PawPal : Service Listings\nProduct Catalog
+PawPal --> Caregiver : Order Details\nService Requests
+
+PawPal --> OSM : GPS Coordinates\nClinic Search Query
+OSM --> PawPal : Nearby Clinics Data
+
+PawPal --> Groq : Contextualized Query\nPet Profile
+Groq --> PawPal : AI-Generated Response
+
+PawPal --> FCM : Notification Payload\nUser Tokens
+FCM --> PawPal : Delivery Status
+
+note right of PawPal
+  Context Level (Level 0)
+  Shows the entire PawPal system
+  as a single process with all
+  external entities and data flows
+end note
+
+@enduml

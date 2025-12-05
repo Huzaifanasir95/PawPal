@@ -1,0 +1,126 @@
+\chapter{Introduction}
+\label{sec:introduction}
+
+PawPal is a comprehensive mobile application designed to revolutionize the pet care ecosystem by integrating health, community, and commerce into a single unified platform. This document specifies the requirements and development approach for the PawPal mobile application, intended for developers, project managers, testers, and documentation writers involved in the project. The system aims to address the fragmented nature of existing pet care solutions by providing an all-in-one platform that delivers convenience, personalized care, and active community involvement for pet owners worldwide.
+
+\section{Problem Statement}
+
+Pet owners face significant challenges in managing multiple aspects of pet care due to the scattered nature of existing applications. Currently, pet owners must juggle separate applications for health tracking, veterinary appointment booking, lost pet alerts, dietary management, and pet product marketplaces. This fragmentation limits pet safety, reduces efficiency in care delivery, and complicates access to reliable local support services. The lack of structured and secure systems for pet adoption and recovery of lost pets creates significant risks and anxiety among pet families. Additionally, pet owners struggle to find verified pet caregivers and reliable veterinary guidance, especially during emergencies when immediate support is crucial. The absence of a unified community platform further isolates pet owners from local pet communities and events. These challenges necessitate an integrated solution that consolidates all pet care needs into a single, intelligent, and user-friendly platform that prioritizes pet safety, health management, community engagement, and secure commercial transactions.
+
+\section{Scope}
+
+The scope of PawPal encompasses developing a cross-platform mobile application that unifies various pet care functions into a seamless user experience. The application leverages Flutter for frontend development to ensure and smooth user experience across iOS and Android platforms. The backend infrastructure is built using Golang (Go). Go's robust standard library provides native support for RESTful API development, making it ideal for building scalable backend services. The backend is designed as a modular monolithic application with clearly separated modules communicating through well-defined internal interfaces, ensuring maintainability, simplicity, and ease of deployment while maintaining the flexibility for future scaling.  The data persistence layer utilizes PostgreSQL for all persistent data storage including user accounts, pet profiles, transactional records, community posts, chat logs, and dynamic content, leveraging PostgreSQL's JSONB data type for flexible schema requirements. The system integrates artificial intelligence through CNN-based breed detection models trained on extensive pet image datasets and RAG (Retrieval-Augmented Generation) with Large Language Models for intelligent chatbot functionality providing veterinary guidance. Key functionalities include pet breed identification with breed-specific care and diet recommendations, an intelligent veterinary chatbot for health queries and personalized diet plan generation, comprehensive pet profile creation with health journal maintenance and activity tracking, and a secure pet toy marketplace featuring seller/buyer profiles, transaction histories, and integrated payment processing. The application hosts a vibrant community hub with real-time forum posting, media sharing capabilities, lost and found pet networks with location-based alerts, adoption modules, and event planning for pet-friendly activities. Veterinary services integration enables instant appointment booking, nearby vet location services through OpenStreetMap integration, and online veterinary consultations. Pet caregiver services include comprehensive profile verification, booking systems with availability management. Payment integration supports cryptocurrency wallets for secure marketplace transactions and service payments. The application implements push notification systems for care reminders, lost pet alerts, appointment notifications, and event updates. The modular monolithic architecture allows all eight modules to operate cohesively within a single deployable unit, enabling direct function calls for optimal performance, simplified debugging, and straightforward deployment while maintaining clear separation of concerns.
+
+\section{Modules}
+
+The PawPal system is structured into eight major modules, each addressing specific pet care needs and user requirements. These modules work cohesively to provide a comprehensive pet care ecosystem within a single mobile application, with backend modules implemented within a unified Golang codebase for optimal performance and efficient inter-module communication through direct function calls.
+
+\subsection{Pet Identification Module}
+This module provide instant breed recognition and personalized care recommendations. Using Convolutional Neural Networks (CNN) trained on extensive pet image datasets including Stanford Dogs and Oxford-IIIT Pets datasets, the system can accurately identify dog and cat breeds from uploaded photos. The Go backend module handles image processing, model inference coordination, and response generation with sub-second latency through efficient concurrent processing. Upon identification, the module provides breed-specific information including typical health concerns, dietary requirements, exercise needs, and behavioral characteristics.
+\begin{enumerate}
+    \item  Breed detection from pet images using CNN models with real-time processing
+    \item Breed-specific care recommendations and comprehensive guidelines
+    \item Dietary requirements and feeding schedules tailored to identified breed
+    \item Health predisposition information and preventive care tips
+    \item Training and behavioral guidance specific to breed characteristics
+    \item Image quality validation and enhancement preprocessing
+\end{enumerate}
+
+\subsection{Chatbot Module}
+The intelligent chatbot serves as a 24/7 virtual veterinary assistant, providing instant guidance on pet health concerns and dietary planning. Built using Retrieval-Augmented Generation (RAG) and Large Language Models, the chatbot can understand natural language queries, access veterinary knowledge bases, and provide contextually relevant responses. The Go backend module implements efficient concurrent request handling within the monolithic application, ensuring multiple users can receive instant responses simultaneously without performance degradation.
+\begin{enumerate}
+    \item AI-powered veterinary guidance for common health queries and concerns
+    \item Personalized diet plan generation based on breed, age, weight, and health conditions
+    \item 24/7 availability for immediate pet care support with sub-second response times
+    \item Emergency guidance and symptom assessment with severity classification
+    \item Integration with pet health journals for context-aware, personalized responses
+
+\end{enumerate}
+
+\subsection{Pet Profiles \& Journals Module}
+This module enables comprehensive digital record-keeping for pet owners, serving as a centralized repository for all pet-related information. Owners can maintain detailed profiles for multiple pets, track health events, document veterinary visits, and monitor behavioral changes over time. 
+\begin{enumerate}
+    \item Digital pet profile creation with comprehensive information fields 
+    \item Health journal with vaccination records, medical history, and veterinary visit logs
+    
+    \item Multi-pet management for owners with multiple pets
+\end{enumerate}
+
+\subsection{Pet Toy Marketplace Module}
+A secure e-commerce platform dedicated to pet toys and accessories, connecting buyers with sellers while ensuring transaction safety and user accountability. The marketplace features product listings, advanced search functionality, secure payment processing, and comprehensive review systems.
+\begin{enumerate}
+    \item Product listing creation with multiple photos, detailed descriptions, and pricing
+    \item Advanced search and filtering capabilities by category, price range, location, and ratings
+    \
+    \item Integrated rating and review system with moderation capabilities
+    \item In-app messaging system between buyers and sellers with notification support
+    \item Admin moderation tools for marketplace integrity and dispute resolution
+ 
+\end{enumerate}
+
+\subsection{Community Hub Module}
+The social core of PawPal, fostering connections among pet owners through forums, media sharing, lost and found networks, adoption systems, and event organization. This module creates a supportive community environment for pet enthusiasts. 
+\begin{enumerate}
+    \item Real-time forum posting with threaded discussions and comment systems
+    \item Lost and found pet alert system with location-based notifications and urgency levels
+    \item Pet adoption listings with detailed pet profiles, photos, and contact information
+    \item Event planning and meetup coordination for pet-friendly activities with RSVP management
+    
+\end{enumerate}
+
+\subsection{Veterinary Services Integration Module}
+Bridging the gap between pet owners and veterinary professionals, this module facilitates easy access to veterinary care through appointment booking, location services, and online consultations. 
+\begin{enumerate}
+    \item Instant veterinary appointment booking system with real-time availability
+    \item Nearby veterinary clinic location using current location
+    \item Appointment reminders and notification system via push notifications and email
+    \item Payment Integration for veterinary Services
+    \item Veterinary verification by their registration number using government website
+    \item Review and rating system for veterinary services
+\end{enumerate}
+
+\subsection{Pet Caregiver Services Module}
+Connecting pet owners with verified pet caregivers including walkers and sitters, this module ensures pet safety through comprehensive verification processes and real-time tracking capabilities. 
+\begin{enumerate}
+   
+    \item Service booking system with availability calendars and time slot management
+
+    \item Service rating and review system with detailed feedback collection
+    \item In-app communication between owners and caregivers with notification support
+    \item Secure payment processing for caregiver services with automatic payouts
+    \item Incident reporting system and insurance integration for liability coverage
+    \item Service completion confirmation with photo proof
+\end{enumerate}
+
+\subsection{Payment Integration Module}
+A secure and flexible payment system supporting multiple payment methods to facilitate transactions across marketplace purchases and service bookings. 
+\begin{enumerate}
+
+    \item Cryptocurrency wallet support for Bitcoin, and other digital currencies
+    \item Transaction history and automated receipt generation with PDF export
+    \item Refund and dispute management system with admin oversight
+ 
+  
+\end{enumerate}
+
+\section{User Classes and Characteristics}
+
+The PawPal system serves multiple user classes, each with distinct needs and interaction patterns with the application.
+
+\clearpage
+
+% Please add the following required packages to your document preamble:
+% \usepackage{graphicx}
+\begin{table}[]
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{p{0.15\textwidth} p{0.85\textwidth}}
+\hline
+User class & Description \\ \hline
+Pet Owner & A Pet Owner is the primary user of PawPal who manages one or more pets through the application. Pet owners use the app to maintain digital pet profiles, track health records, schedule veterinary appointments, purchase pet products from the marketplace, engage with the community, and book caregiver services. An estimated 70\% of users will fall into this category, accessing the app an average of 3-5 times per week for various pet care activities including health journal updates, appointment management, and community engagement. Pet owners may range from first-time pet parents requiring guidance to experienced owners seeking convenience and community connection. \\ \hline
+Veterinarian & A Veterinarian is a licensed veterinary professional who registers with PawPal to offer appointment booking services and online consultations. Veterinarians set availability schedules, accept appointment requests, maintain consultation records, and provide professional guidance through the platform. They interact with pet health journals shared by owners during consultations and can view complete medical histories. Approximately 5\% of users are expected to be veterinary professionals, with an average of 10-20 appointments managed per week through the app. \\ \hline
+Pet Caregiver & A Pet Caregiver (walker/sitter) is a verified service provider who offers pet walking, sitting, and care services through PawPal. Caregivers create detailed profiles, set service rates and availability, accept booking requests. They communicate with pet owners through in-app messaging, provide service completion reports with photo/video proof, and receive payments through the platform. An estimated 10\% of users will be caregivers, handling an average of 5-15 service bookings per week.\\ \hline
+Marketplace Seller & A Marketplace Seller is a user who lists pet toys, accessories, and products for sale on the PawPal marketplace. Sellers create product listings with photos and descriptions, communicate with buyers. Sellers may be individual pet owners selling unused items or small businesses specializing in pet products. Approximately 10\% of users are expected to act as sellers, with varying activity levels from occasional sellers to active merchants managing multiple listings. \\ \hline
+System Administrator & A System Administrator manages the PawPal platform, including user verification, content moderation, dispute resolution, marketplace integrity monitoring, and system configuration. Administrators have elevated privileges to access reporting tools, moderate community content, resolve payment disputes, verify caregiver backgrounds, and ensure platform compliance with policies. There will be a small team of administrators providing oversight and support for platform operations. \\ \hline
+\end{tabular}%
+}
+\end{table}

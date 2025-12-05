@@ -1,0 +1,115 @@
+@startuml DFD_Level2_Veterinary_Appointments
+!define RECTANGLE class
+
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+
+' External Entities
+actor "Pet Owner" as Owner <<External Entity>>
+actor "Veterinarian/Clinic" as Vet <<External Entity>>
+database "OpenStreetMap API" as OSM <<External System>>
+database "Firebase FCM" as FCM <<External System>>
+
+' Level 2 Processes for Veterinary Appointments (6.0)
+rectangle "6.1\nQuery Nearby Clinics\n(GPS-based)" as QueryClinics <<Process>>
+rectangle "6.2\nCalculate Distances\n(Haversine)" as CalcDistance <<Process>>
+rectangle "6.3\nSort & Rank\nClinics" as SortClinics <<Process>>
+rectangle "6.4\nRetrieve Available\nTime Slots" as GetSlots <<Process>>
+rectangle "6.5\nCreate Appointment\nRecord" as CreateAppt <<Process>>
+rectangle "6.6\nNotify Clinic\n(New Request)" as NotifyClinic <<Process>>
+rectangle "6.7\nSchedule Reminders\n(24h, 2h)" as ScheduleReminders <<Process>>
+rectangle "6.8\nUpdate/Cancel\nAppointment" as UpdateAppt <<Process>>
+
+' Data Stores
+database "D2: Pets" as D2 <<Data Store>>
+database "D6: Appointments" as D6 <<Data Store>>
+database "D7: Clinics" as D7 <<Data Store>>
+database "D1: Users" as D1 <<Data Store>>
+
+' Data Flows - Discovery Phase
+Owner --> QueryClinics : GPS Location\n(lat, lng)\nPreferred Date
+
+QueryClinics --> OSM : GPS + Radius (10km)\nCategory: veterinary_clinic
+OSM --> QueryClinics : Clinic List\n(OSM IDs, names, addresses)
+
+QueryClinics --> D7 : Match OSM IDs
+D7 --> QueryClinics : Clinic Details\n(ratings, contact, services)
+
+QueryClinics --> CalcDistance : User Location + Clinic Locations
+CalcDistance --> SortClinics : Distance List
+SortClinics --> Owner : Sorted Clinics by Distance\n(nearest first)
+
+' Booking Phase
+Owner --> GetSlots : Selected Clinic ID\nPreferred Date
+GetSlots --> D6 : Query Existing Appointments
+D6 --> GetSlots : Booked Slots
+GetSlots --> D7 : Get Clinic Hours
+D7 --> GetSlots : Operating Hours
+GetSlots --> Owner : Available Time Slots
+
+Owner --> CreateAppt : Selected Slot\nPet ID, Reason
+CreateAppt --> D2 : Get Pet Info
+D2 --> CreateAppt : Pet Details
+CreateAppt --> D1 : Get Owner Info
+D1 --> CreateAppt : Owner Contact
+
+CreateAppt --> D6 : Store Appointment\n(status: Requested)
+CreateAppt --> NotifyClinic : Appointment Details
+
+NotifyClinic --> D7 : Get Clinic Contact
+D7 --> NotifyClinic : Clinic FCM Token
+NotifyClinic --> FCM : Notification Payload
+FCM --> Vet : New Appointment Alert
+
+CreateAppt --> ScheduleReminders : Appointment DateTime
+ScheduleReminders --> D6 : Store Reminder Jobs\n(datetime - 24h, datetime - 2h)
+ScheduleReminders --> Owner : Confirmation + Reminders
+
+' Update/Cancel Phase
+Owner --> UpdateAppt : Reschedule/Cancel Request
+Vet --> UpdateAppt : Confirm/Reject Request
+UpdateAppt --> D6 : Update Status/DateTime
+UpdateAppt --> NotifyClinic : Status Change
+NotifyClinic --> Owner : Update Confirmation
+NotifyClinic --> Vet : Update Notification
+
+note right of QueryClinics
+  Level 2 DFD: Veterinary Appointments (6.0)
+  
+  Sub-processes:
+  6.1 - GPS-based clinic discovery (OpenStreetMap)
+  6.2 - Distance calculation (Haversine formula)
+  6.3 - Clinic sorting by proximity
+  6.4 - Availability query
+  6.5 - Appointment creation
+  6.6 - Clinic notification
+  6.7 - Reminder scheduling (24h, 2h before)
+  6.8 - Update/cancel handling
+  
+  Features:
+  - 10km default radius (expandable to 50km if <3 results)
+  - Real-time availability checking
+  - Firebase Cloud Messaging push notifications
+  - Appointment reminders: 24-hour and 2-hour intervals
+  - Rescheduling: 4-hour minimum notice required
+  - Haversine distance calculation for accurate sorting
+  - Status lifecycle: Requested → Confirmed/Rejected → Completed/Cancelled/NoShow
+end note
+
+note bottom of D6
+  Appointments table stores:
+  - pet_id, owner_id, clinic_id
+  - datetime, reason, status
+  - created_at, updated_at
+  - reminder_24h_sent, reminder_2h_sent
+end note
+
+note bottom of D7
+  Clinics table stores:
+  - clinic_id, osm_id, name
+  - address, lat, lng, rating
+  - phone, email, services
+  - operating_hours, fcm_token
+end note
+
+@enduml

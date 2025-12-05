@@ -1,0 +1,119 @@
+@startuml DFD_Level2_Diet_Care_Recommendations
+!define RECTANGLE class
+
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+
+' External Entity
+actor "Pet Owner" as Owner <<External Entity>>
+
+' Level 2 Processes for Diet & Care Recommendations (5.0)
+rectangle "5.1\nAnalyze Pet\nCharacteristics" as AnalyzePet <<Process>>
+rectangle "5.2\nGenerate Diet\nPlan" as GenDiet <<Process>>
+rectangle "5.3\nCalculate Calorie\nNeeds" as CalcCalories <<Process>>
+rectangle "5.4\nCreate Exercise\nPlan" as GenExercise <<Process>>
+rectangle "5.5\nGenerate Grooming\nSchedule" as GenGrooming <<Process>>
+rectangle "5.6\nCheck Allergies\n& Restrictions" as CheckAllergies <<Process>>
+rectangle "5.7\nProvide Weight\nManagement" as WeightMgmt <<Process>>
+
+' Data Stores
+database "D2: Pets" as D2 <<Data Store>>
+database "D4: Breed Database" as D4 <<Data Store>>
+database "D11: Weight Records" as D11 <<Data Store>>
+database "D12: Diet Plans" as D12 <<Data Store>>
+database "D13: Allergies" as D13 <<Data Store>>
+
+' Data Flows
+Owner --> AnalyzePet : Request Recommendations\n(pet_id)
+
+AnalyzePet --> D2 : Get Pet Data
+D2 --> AnalyzePet : Breed, Age, Weight,\nActivity Level
+
+AnalyzePet --> D4 : Query Breed Info
+D4 --> AnalyzePet : Breed-Specific Needs\n(diet, exercise, grooming)
+
+AnalyzePet --> D11 : Get Weight History
+D11 --> AnalyzePet : Weight Trends, BMI
+
+AnalyzePet --> CheckAllergies : Pet ID
+CheckAllergies --> D13 : Query Allergies
+D13 --> CheckAllergies : Allergen List
+
+CheckAllergies --> GenDiet : Allergen Restrictions
+AnalyzePet --> GenDiet : Pet Characteristics
+
+GenDiet --> CalcCalories : Age, Weight, Activity Level
+CalcCalories --> GenDiet : Daily Calorie Requirement
+GenDiet --> D4 : Breed Diet Preferences
+D4 --> GenDiet : Protein/Fat/Carb Ratios
+
+GenDiet --> D12 : Store Diet Plan
+GenDiet --> Owner : Personalized Diet Plan\n(calories, portions, food types)
+
+AnalyzePet --> GenExercise : Breed, Age, Energy Level
+GenExercise --> D4 : Breed Exercise Needs
+D4 --> GenExercise : Activity Requirements
+GenExercise --> Owner : Exercise Plan\n(duration, type, frequency)
+
+AnalyzePet --> GenGrooming : Breed, Coat Type
+GenGrooming --> D4 : Grooming Requirements
+D4 --> GenGrooming : Brushing, Bathing Frequency
+GenGrooming --> Owner : Grooming Schedule
+
+AnalyzePet --> WeightMgmt : Current Weight, Ideal Weight
+WeightMgmt --> D11 : Weight Trends
+D11 --> WeightMgmt : Historical Data
+WeightMgmt --> CalcCalories : Weight Goal
+CalcCalories --> WeightMgmt : Adjusted Calories
+WeightMgmt --> Owner : Weight Loss/Gain Plan\n(if needed)
+
+note right of AnalyzePet
+  Level 2 DFD: Diet & Care Recommendations (5.0)
+  
+  Sub-processes:
+  5.1 - Pet characteristic analysis
+  5.2 - Personalized diet plan generation
+  5.3 - Calorie requirement calculation
+  5.4 - Breed-specific exercise plan
+  5.5 - Grooming schedule creation
+  5.6 - Allergy checking and exclusions
+  5.7 - Weight management recommendations
+  
+  Inputs Considered:
+  - Breed-specific requirements
+  - Age category (puppy/adult/senior)
+  - Current weight vs ideal weight
+  - Activity level
+  - Allergies and restrictions
+  - Health conditions
+end note
+
+note bottom of D4
+  Breed Database includes:
+  - Typical calorie needs by weight
+  - Protein/fat requirements
+  - Exercise needs (minutes/day)
+  - Grooming frequency
+  - Common food allergies
+  - Health predispositions
+end note
+
+note bottom of D12
+  Diet Plans table stores:
+  - plan_id, pet_id, created_date
+  - daily_calories, protein_grams
+  - fat_grams, carbs_grams
+  - meal_frequency, portion_size
+  - food_type_recommendations
+  - excluded_ingredients
+end note
+
+note bottom of D13
+  Allergies table stores:
+  - allergy_id, pet_id
+  - allergen_name, severity
+  - diagnosed_date, symptoms
+  - alternative_ingredients
+end note
+
+@enduml

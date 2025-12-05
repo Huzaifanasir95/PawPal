@@ -7,7 +7,11 @@ class AppConfig {
 
   /// Backend API Base URL
   /// 
-  /// Development:
+  /// Development with ngrok:
+  /// - Set the ngrok URL here: 'https://your-ngrok-url.ngrok.io'
+  /// - Get URL from: ngrok http 8081
+  /// 
+  /// Development (local):
   /// - Local: 'http://localhost:8081'
   /// - Android Emulator: 'http://10.0.2.2:8081'
   /// - iOS Simulator: 'http://localhost:8081'
@@ -15,9 +19,19 @@ class AppConfig {
   /// 
   /// Production:
   /// - Use your production server URL: 'https://api.yoursite.com'
+  
+  /// 🎯 UPDATE THIS TO YOUR NGROK URL FOR EMULATOR TESTING
+  /// Replace with your ngrok URL from: ngrok http 8081
+  static const String ngrokUrl = 'https://29148ef9d307.ngrok-free.app'; // ngrok URL for emulator
+
   static String get backendBaseUrl {
+    // If ngrok URL is configured, use it (works for emulator, device, and simulator)
+    if (ngrokUrl.isNotEmpty) {
+      return ngrokUrl;
+    }
+
     if (kDebugMode) {
-      // Development mode
+      // Development mode (without ngrok)
       if (defaultTargetPlatform == TargetPlatform.android) {
         // Android emulator
         return 'http://10.0.2.2:8081';
@@ -30,11 +44,11 @@ class AppConfig {
       }
     } else {
       // Production mode - Change this to your production URL
-      return 'http://localhost:8081';
+      return 'https://api.pawpawl.com'; // Replace with your production URL
     }
   }
 
-  /// For physical devices in development, override the URL here
-  /// Uncomment and set your local IP address
+  /// For physical devices in development (local network), uncomment and set your local IP address
   // static const String developmentPhysicalDeviceUrl = 'http://192.168.1.100:8081';
 }
+

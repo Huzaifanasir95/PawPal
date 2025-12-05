@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import '../config/app_config.dart';
 
 class ApiClient {
@@ -7,6 +8,7 @@ class ApiClient {
   late final Dio _dio;
   String? _accessToken;
   String? _refreshToken;
+  String? _userId;
 
   ApiClient._() {
     _dio = Dio(BaseOptions(
@@ -61,29 +63,45 @@ class ApiClient {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
     
+    // Extract user ID from JWT token
+    try {
+      final decoded = JwtDecoder.decode(accessToken);
+      _userId = decoded['user_id'] as String?;
+    } catch (e) {
+      // Handle JWT decode error silently
+    }
+    
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', accessToken);
     await prefs.setString('refresh_token', refreshToken);
+    if (_userId != null) {
+      await prefs.setString('user_id', _userId!);
+    }
   }
 
   Future<void> loadTokens() async {
     final prefs = await SharedPreferences.getInstance();
     _accessToken = prefs.getString('access_token');
     _refreshToken = prefs.getString('refresh_token');
+    _userId = prefs.getString('user_id');
   }
 
   Future<void> clearTokens() async {
     _accessToken = null;
     _refreshToken = null;
+    _userId = null;
     
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
+    await prefs.remove('user_id');
   }
 
   bool get isAuthenticated => _accessToken != null;
 
   String? get accessToken => _accessToken;
+  
+  String? get userId => _userId;
 
   Future<bool> _refreshAccessToken() async {
     try {
@@ -105,7 +123,7 @@ class ApiClient {
         return true;
       }
     } catch (e) {
-      print('Failed to refresh token: $e');
+      // Handle refresh error silently
     }
     return false;
   }

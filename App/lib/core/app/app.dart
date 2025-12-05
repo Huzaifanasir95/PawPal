@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
-import '../../features/auth/data/models/auth_user.dart';
+
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/community/presentation/bloc/community_bloc.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';

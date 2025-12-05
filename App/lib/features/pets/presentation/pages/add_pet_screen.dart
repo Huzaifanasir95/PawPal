@@ -7,10 +7,8 @@ import 'package:path/path.dart' as path;
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/breed_prediction_model.dart';
-import '../../data/models/health_record_model.dart';
 import '../../data/services/breed_verification_service.dart';
-import '../../data/repositories/pet_repository.dart';
-import '../../data/repositories/health_repository.dart';
+import '../../data/repositories/pet_repository_api.dart';
 
 class AddPetScreen extends StatefulWidget {
   const AddPetScreen({super.key});
@@ -22,7 +20,7 @@ class AddPetScreen extends StatefulWidget {
 class _AddPetScreenState extends State<AddPetScreen> {
   final _formKey = GlobalKey<FormState>();
   final _breedVerificationService = BreedVerificationService();
-  final _petRepository = PetRepository();
+  final _petRepository = PetRepositoryApi();
   final _imagePicker = ImagePicker();
 
   // Form controllers
@@ -47,7 +45,6 @@ class _AddPetScreenState extends State<AddPetScreen> {
   double? _verificationConfidence;
 
   // Health Record
-  final _healthRepository = HealthRepository();
   bool _hasHealthRecord = false;
   final _vaccinationDateController = TextEditingController();
   final _vaccinationDetailsController = TextEditingController();
@@ -66,9 +63,6 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
   // Health record values
   bool _isVaccinated = false;
-  List<String> _medicalConditions = [];
-  List<String> _allergies = [];
-  List<String> _medications = [];
 
   @override
   void dispose() {
@@ -311,111 +305,9 @@ class _AddPetScreenState extends State<AddPetScreen> {
       );
 
       try {
-        // Create health record if provided
-        HealthRecordModel? healthRecord;
-        if (_hasHealthRecord) {
-          final healthRecordId = await _healthRepository.createHealthRecord(
-            petId: '', // Will be set after pet creation
-            isVaccinated: _isVaccinated,
-            vaccinationDate: _vaccinationDateController.text.trim().isEmpty
-                ? null
-                : _vaccinationDateController.text.trim(),
-            vaccinationDetails: _vaccinationDetailsController.text.trim().isEmpty
-                ? null
-                : _vaccinationDetailsController.text.trim(),
-            medicalConditions: _medicalConditionsController.text.trim().isEmpty
-                ? null
-                : _medicalConditionsController.text.trim().split(',').map((e) => e.trim()).toList(),
-            allergies: _allergiesController.text.trim().isEmpty
-                ? null
-                : _allergiesController.text.trim().split(',').map((e) => e.trim()).toList(),
-            medications: _medicationsController.text.trim().isEmpty
-                ? null
-                : _medicationsController.text.trim().split(',').map((e) => e.trim()).toList(),
-            vetName: _vetNameController.text.trim().isEmpty
-                ? null
-                : _vetNameController.text.trim(),
-            vetClinic: _vetClinicController.text.trim().isEmpty
-                ? null
-                : _vetClinicController.text.trim(),
-            vetPhone: _vetPhoneController.text.trim().isEmpty
-                ? null
-                : _vetPhoneController.text.trim(),
-            vetAddress: _vetAddressController.text.trim().isEmpty
-                ? null
-                : _vetAddressController.text.trim(),
-            emergencyContactName: _emergencyContactNameController.text.trim().isEmpty
-                ? null
-                : _emergencyContactNameController.text.trim(),
-            emergencyContactPhone: _emergencyContactPhoneController.text.trim().isEmpty
-                ? null
-                : _emergencyContactPhoneController.text.trim(),
-            insuranceProvider: _insuranceProviderController.text.trim().isEmpty
-                ? null
-                : _insuranceProviderController.text.trim(),
-            insurancePolicyNumber: _insurancePolicyController.text.trim().isEmpty
-                ? null
-                : _insurancePolicyController.text.trim(),
-            additionalNotes: _additionalNotesController.text.trim().isEmpty
-                ? null
-                : _additionalNotesController.text.trim(),
-          );
+        // API will handle validation and creation
 
-          if (healthRecordId != null) {
-            healthRecord = HealthRecordModel(
-              id: healthRecordId,
-              petId: '', // Will be updated
-              ownerId: '', // Will be set by repository
-              isVaccinated: _isVaccinated,
-              vaccinationDate: _vaccinationDateController.text.trim().isEmpty
-                  ? null
-                  : _vaccinationDateController.text.trim(),
-              vaccinationDetails: _vaccinationDetailsController.text.trim().isEmpty
-                  ? null
-                  : _vaccinationDetailsController.text.trim(),
-              medicalConditions: _medicalConditionsController.text.trim().isEmpty
-                  ? null
-                  : _medicalConditionsController.text.trim().split(',').map((e) => e.trim()).toList(),
-              allergies: _allergiesController.text.trim().isEmpty
-                  ? null
-                  : _allergiesController.text.trim().split(',').map((e) => e.trim()).toList(),
-              medications: _medicationsController.text.trim().isEmpty
-                  ? null
-                  : _medicationsController.text.trim().split(',').map((e) => e.trim()).toList(),
-              vetName: _vetNameController.text.trim().isEmpty
-                  ? null
-                  : _vetNameController.text.trim(),
-              vetClinic: _vetClinicController.text.trim().isEmpty
-                  ? null
-                  : _vetClinicController.text.trim(),
-              vetPhone: _vetPhoneController.text.trim().isEmpty
-                  ? null
-                  : _vetPhoneController.text.trim(),
-              vetAddress: _vetAddressController.text.trim().isEmpty
-                  ? null
-                  : _vetAddressController.text.trim(),
-              emergencyContactName: _emergencyContactNameController.text.trim().isEmpty
-                  ? null
-                  : _emergencyContactNameController.text.trim(),
-              emergencyContactPhone: _emergencyContactPhoneController.text.trim().isEmpty
-                  ? null
-                  : _emergencyContactPhoneController.text.trim(),
-              insuranceProvider: _insuranceProviderController.text.trim().isEmpty
-                  ? null
-                  : _insuranceProviderController.text.trim(),
-              insurancePolicyNumber: _insurancePolicyController.text.trim().isEmpty
-                  ? null
-                  : _insurancePolicyController.text.trim(),
-              additionalNotes: _additionalNotesController.text.trim().isEmpty
-                  ? null
-                  : _additionalNotesController.text.trim(),
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            );
-          }
-        }
-
-        // Save pet to Firestore
+        // Create pet with API
         final petId = await _petRepository.createPet(
           name: _nameController.text.trim(),
           type: _petType,
@@ -435,15 +327,24 @@ class _AddPetScreenState extends State<AddPetScreen> {
           bio: _bioController.text.trim().isEmpty
               ? null
               : _bioController.text.trim(),
-          healthRecord: healthRecord,
         );
 
-        // Update health record with pet ID if it was created
-        if (healthRecord != null && petId != null) {
-          await _healthRepository.updateHealthRecord(
-            recordId: healthRecord.id,
-            // The repository will update the petId
-          );
+        // Add health record separately if needed
+        if (_hasHealthRecord && petId != null) {
+          try {
+            await _petRepository.addHealthRecord(
+              petId: petId,
+              isVaccinated: _isVaccinated,
+              vaccinationDate: _vaccinationDateController.text.trim().isEmpty
+                  ? null
+                  : _vaccinationDateController.text.trim(),
+              vetName: _vetNameController.text.trim().isEmpty
+                  ? null
+                  : _vetNameController.text.trim(),
+            );
+          } catch (e) {
+            // Health record creation failed, but pet was created
+          }
         }
 
         // Close loading dialog

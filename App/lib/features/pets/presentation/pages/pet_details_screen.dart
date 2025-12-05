@@ -5,11 +5,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/pet_model.dart';
 import '../../data/models/breed_prediction_model.dart';
-import '../../data/models/health_record_model.dart';
-import '../../data/models/health_journal_model.dart';
 import '../../data/services/breed_verification_service.dart';
-import '../../data/repositories/health_repository.dart';
-import '../../data/repositories/pet_repository.dart';
+import '../../data/repositories/pet_repository_api.dart';
 import 'add_health_journal_screen.dart';
 import 'edit_health_records_screen.dart';
 
@@ -28,7 +25,7 @@ class PetDetailsScreen extends StatefulWidget {
 class _PetDetailsScreenState extends State<PetDetailsScreen> {
   late PetModel _currentPet;
   final _breedVerificationService = BreedVerificationService();
-  final _petRepository = PetRepository();
+  final _petRepository = PetRepositoryApi();
   bool _isVerifying = false;
 
   @override

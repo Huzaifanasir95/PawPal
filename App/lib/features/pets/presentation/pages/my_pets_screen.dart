@@ -4,7 +4,7 @@ import 'dart:io';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/pet_model.dart';
-import '../../data/repositories/pet_repository.dart';
+import '../../data/repositories/pet_repository_api.dart';
 import 'add_pet_screen.dart';
 import 'pet_details_screen.dart';
 
@@ -16,7 +16,7 @@ class MyPetsScreen extends StatefulWidget {
 }
 
 class _MyPetsScreenState extends State<MyPetsScreen> {
-  final _petRepository = PetRepository();
+  final _petRepository = PetRepositoryApi();
 
   void _navigateToAddPet() async {
     final result = await Navigator.push(

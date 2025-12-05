@@ -5,13 +5,13 @@ import 'package:injectable/injectable.dart';
 import 'package:pawpawl/features/community/data/models/post.dart';
 
 import '../../data/models/comment.dart';
-import '../../data/repositories/community_repository.dart';
+import '../../data/repositories/community_repository_api.dart';
 import 'community_event.dart';
 import 'community_state.dart';
 
 @injectable
 class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
-  final CommunityRepository _repository;
+  final CommunityRepositoryApi _repository;
   StreamSubscription<List<Comment>>? _commentsSubscription;
   
   // Track pending like operations to prevent double-tap issues

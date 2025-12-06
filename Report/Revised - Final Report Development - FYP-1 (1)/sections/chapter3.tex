@@ -1,10 +1,10 @@
 \chapter{System Overview}
 
-This chapter presents the PawPal system architecture, data design, domain models, and detailed design diagrams. The system employs a modular monolithic backend (Golang), cross-platform mobile frontend (Flutter), and specialized AI services (Python) with layered architecture for separation of concerns.
+This chapter presents the PawPal system architecture, data design, domain models, and detailed design diagrams. The system employs a modular monolithic backend, cross-platform mobile frontend, and specialized AI services.
 
 \section{Architectural Design}
 
-The system uses a three-tier architecture: presentation tier (Flutter mobile app), business logic tier (Golang backend with eight modules), and data tier (PostgreSQL with Redis caching). AI services run as isolated Python microservices for efficient ML framework integration.
+The system uses a three-tier architecture: presentation tier, business logic tier, and data tier. AI services run as isolated Python microservices for efficient ML framework integration.
 
 \subsection{High-Level Architecture}
 
@@ -17,29 +17,15 @@ The system architecture can be visualized as a client-server model with the foll
     \label{fig:system_overview}
 \end{figure}
 
-\textbf{Client Tier:} Flutter mobile app (iOS/Android) with Provider/Riverpod state management, SQLite offline persistence, HTTP client for API communication, and Firebase Cloud Messaging.
-
-\textbf{API Gateway Tier:} Golang Gin framework with JWT authentication, rate limiting (100 req/min), request validation, and CORS configuration.
-
-\textbf{Business Logic Tier (8 Modules):} Pet Identification (CNN inference), Chatbot (RAG pipeline), Pet Profiles \& Journals (health data), Marketplace (e-commerce), Community Hub (social features), Veterinary Services (appointments), Caregiver Services (provider management), Payment Integration (multi-currency).
-
-\textbf{AI Services Tier:} FastAPI chatbot server (port 8000), ChromaDB vector database (281,438 docs), Groq llama-3.3-70b-versatile LLM, TensorFlow ConvNeXt V2 CNN, sentence transformers (all-MiniLM-L6-v2).
-
-\textbf{Data Tier:} PostgreSQL 14+ (relational), Redis (caching/sessions), ChromaDB (vector embeddings), cloud storage (media files).
-
-\textbf{External Services:} Groq API (LLM), OpenStreetMap (geolocation), Firebase (notifications), blockchain networks (cryptocurrency).
+The architecture consists of Flutter mobile clients, Golang API gateway with eight business logic modules, specialized AI services (FastAPI chatbot, CNN model), PostgreSQL/ Redis/ ChromaDB data tier, and external integrations (Groq LLM, OpenStreetMap, Firebase, blockchain).
 
 \subsection{Modular Monolithic Architecture}
 
 All eight modules deploy as a single unit with clear boundaries and interfaces. Benefits include direct function calls for performance, simplified deployment, centralized logging, atomic transactions, and lower infrastructure costs. Each module uses consistent layers: Handlers (HTTP), Services (business logic), Models (entities), Repositories (database access), and Utils (shared functions).
 
-\subsection{Hybrid Architecture for AI Services}
-
-The chatbot uses hybrid architecture with two modes: (1) Primary HTTP mode sends requests to FastAPI service (port 8000) with persistent RAG pipeline, achieving 2-3s response time, and (2) Fallback exec mode spawns Python process if FastAPI unavailable. Automatic health checks determine execution mode.
-
 \subsection{Layered Architecture}
 
-The five-tier layered architecture ensures separation of concerns: (1) Presentation Layer - Flutter UI with state management, (2) API Gateway Layer - RESTful routing with authentication, (3) Business Logic Layer - eight modules with business rules, (4) Data Access Layer - repository pattern with GORM abstraction, (5) Data Storage Layer - PostgreSQL, Redis, and vector database.
+The system implements five-tier separation of concerns from presentation (Flutter UI) through API gateway, business logic, data access, to storage layers.
 
 \begin{figure}[H]
     \centering
@@ -65,8 +51,6 @@ The following data flow diagrams illustrate how data moves through the PawPal sy
     \label{fig:dfd_level0}
 \end{figure}
 
-The context diagram shows the PawPal system as a single process interacting with three external entities (Pet Owner, Veterinarian, Caregiver/Seller) and three external systems (OpenStreetMap API, Groq LLM API, Firebase Cloud Messaging). Data flows include user credentials, pet information, health queries, breed predictions, and notifications.
-
 \subsubsection{Level 1: Main Processes}
 
 \begin{figure}[H]
@@ -75,8 +59,6 @@ The context diagram shows the PawPal system as a single process interacting with
     \caption{DFD Level 1: Main system processes with data stores (D1-D10)}
     \label{fig:dfd_level1}
 \end{figure}
-
-The Level 1 diagram decomposes the system into seven main processes: User Authentication \& Authorization, Pet Profile Management, Breed Identification (AI/ML), AI Chatbot (RAG System), Diet \& Care Recommendations, Veterinary Appointment Booking, and Notification Management. Data stores include PostgreSQL tables (D1-D4, D6-D7, D9-D10), Redis cache (D8), and ChromaDB vector database (D5) with 281,438 veterinary documents.
 
 \subsubsection{Level 2: Detailed Sub-Processes}
 
@@ -89,8 +71,6 @@ The Level 1 diagram decomposes the system into seven main processes: User Authen
     \label{fig:dfd_level2_auth}
 \end{figure}
 
-Seven sub-processes handle authentication: input validation, password hashing (bcrypt cost=12), user existence checking, user creation, JWT generation (7-day expiry), password verification, and token validation. Data flows through D1 (Users) and D8 (Redis Sessions).
-
 \textbf{Pet Profile Management}
 
 \begin{figure}[H]
@@ -99,8 +79,6 @@ Seven sub-processes handle authentication: input validation, password hashing (b
     \caption{DFD Level 2: Pet Profile Management sub-processes}
     \label{fig:dfd_level2_pet}
 \end{figure}
-
-Seven sub-processes manage pet data: create pet profile, update profile, upload photo, manage health journal, track vaccinations/medications, record weight/growth, and delete pet with cascade. Interacts with D2 (Pets), D3 (Health Journals), and D10 (Vaccinations).
 
 \textbf{Breed Identification}
 
@@ -111,8 +89,6 @@ Seven sub-processes manage pet data: create pet profile, update profile, upload 
     \label{fig:dfd_level2_breed}
 \end{figure}
 
-Seven sub-processes handle breed classification: image validation (format/size), preprocessing (384x384 resize, ImageNet normalization), species classification (dog/cat), CNN model loading (120 dog breeds with 92-95\% accuracy, 20 cat breeds with 88-92\% accuracy), inference (Top-3 predictions), breed information retrieval, and result logging. Uses ML Models Storage and D4 (Breed Database).
-
 \textbf{AI Chatbot (RAG Pipeline)}
 
 \begin{figure}[H]
@@ -121,8 +97,6 @@ Seven sub-processes handle breed classification: image validation (format/size),
     \caption{DFD Level 2: AI Chatbot (RAG Pipeline) sub-processes}
     \label{fig:dfd_level2_ai}
 \end{figure}
-
-Seven sub-processes power the RAG system: load pet context from profile/health records, generate query embedding (all-MiniLM-L6-v2), perform vector search in ChromaDB (k=2 retrieval), construct contextualized prompt, call Groq LLM API (llama-3.3-70b-versatile), detect emergency keywords, and log conversation. FastAPI service runs on port 8000 with persistent RAG pipeline achieving 2-3s response time. Hybrid architecture supports HTTP mode (primary) and exec mode (fallback).
 
 \textbf{Diet \& Care Recommendations}
 
@@ -133,8 +107,6 @@ Seven sub-processes power the RAG system: load pet context from profile/health r
     \label{fig:dfd_level2_diet}
 \end{figure}
 
-Seven sub-processes generate personalized care plans: analyze pet characteristics (breed, age, weight, activity), generate breed-specific diet plan, calculate daily calorie needs, create exercise plan, generate grooming schedule, check allergies/restrictions, and provide weight management guidance. Uses D2 (Pets) and D4 (Breed Database).
-
 \textbf{Veterinary Appointment Booking}
 
 \begin{figure}[H]
@@ -143,8 +115,6 @@ Seven sub-processes generate personalized care plans: analyze pet characteristic
     \caption{DFD Level 2: Veterinary Appointment Booking sub-processes}
     \label{fig:dfd_level2_vet}
 \end{figure}
-
-Eight sub-processes manage appointments: GPS-based clinic discovery (OpenStreetMap 10km radius), Haversine distance calculation, clinic sorting by proximity, availability query, appointment creation, clinic notification via Firebase FCM, reminder scheduling (24-hour and 2-hour intervals), and update/cancel handling (4-hour minimum notice). Interacts with D6 (Appointments), D7 (Clinics), and external APIs.
 
 \textbf{Notification Management}
 
@@ -155,31 +125,13 @@ Eight sub-processes manage appointments: GPS-based clinic discovery (OpenStreetM
     \label{fig:dfd_level2_notification}
 \end{figure}
 
-Seven sub-processes handle notifications: schedule reminders (appointments, vaccinations 7 days before due date), process scheduled notifications, send push notifications via Firebase FCM, send email notifications, log delivery status, manage user preferences, and handle notification failures with retry logic.
-
-\subsection{Database Schema Overview}
-
-\textbf{User Management:} users (authentication), user\_profiles (extended info), user\_roles (RBAC), user\_sessions (active sessions).
-
-\textbf{Pet Management:} pets (profiles with breed/medical history), health\_journals (event timeline), vaccinations (records/due dates), medications (schedules), vet\_visits (history), pet\_photos (gallery).
-
-\textbf{Marketplace:} products (listings), product\_photos (up to 10/product), orders (status tracking), order\_items (line items), reviews (ratings), shopping\_carts (session-based).
-
-\textbf{Community:} posts (content), comments (threaded), lost\_pets (GPS alerts), adoptions (listings), events (RSVP tracking), sightings (lost pet reports).
-
-\textbf{Service Providers:} veterinarians (clinic profiles), caregivers (profiles), appointments (vet bookings), caregiver\_bookings (services), service\_tracking (GPS data).
-
-\textbf{Payment:} transactions (all payments), crypto\_wallets (addresses), digital\_wallets (credit balances), invoices (receipts).
-
-\textbf{AI/ML:} breed\_identifications (CNN results), chatbot\_conversations (history), chatbot\_messages (timestamped messages).
-
 \subsection{Data Storage Strategies}
 
-\textbf{PostgreSQL:} Primary store with JSONB metadata, indexes on user\_id/pet\_id/timestamp, foreign key constraints, and partitioning for large tables.
+\textbf{PostgreSQL:} Primary database storing user accounts, pet profiles, health records, marketplace data, and transactions with structured relationships.
 
-\textbf{Redis Caching:} Session tokens (7-day TTL), pet profiles (30-min TTL), API responses (5-min TTL), GPS tracking (2-min TTL), rate limiting counters (1-min sliding window).
+\textbf{Redis Caching:} Temporary storage for active user sessions, frequently accessed pet data, and API responses to improve system performance.
 
-\textbf{ChromaDB:} 281,438 veterinary document embeddings (384-dimensional, all-MiniLM-L6-v2), cosine similarity for k=2 retrieval, metadata filters for source tracking.
+\textbf{ChromaDB:} Vector database containing veterinary documents enabling intelligent chatbot responses through semantic search.
 
 \section{Domain Model}
 
@@ -194,8 +146,6 @@ The domain model represents core business entities across five domains: Core (Us
     \label{fig:domain_core}
 \end{figure}
 
-User entity with PetOwner/Veterinarian/Caregiver specializations, Pet entity with breed/health records, and 1-to-many relationships with HealthJournal, Vaccination, and Medication.
-
 \subsection{Marketplace Domain Model}
 
 \begin{figure}[H]
@@ -204,8 +154,6 @@ User entity with PetOwner/Veterinarian/Caregiver specializations, Pet entity wit
     \caption{Marketplace Domain Model - E-commerce Entities}
     \label{fig:domain_marketplace}
 \end{figure}
-
-Sellers manage Products with ProductPhotos (max 10), PetOwners use ShoppingCart with OrderItems, Orders track fulfillment states, Reviews provide product feedback.
 
 \subsection{Community Domain Model}
 
@@ -216,8 +164,6 @@ Sellers manage Products with ProductPhotos (max 10), PetOwners use ShoppingCart 
     \label{fig:domain_community}
 \end{figure}
 
-Users create Posts with threaded Comments, LostPet alerts with GPS-based Sightings, Adoption listings, Events with RSVP tracking, Groups with many-to-many memberships.
-
 \subsection{Services Domain Model}
 
 \begin{figure}[H]
@@ -227,8 +173,6 @@ Users create Posts with threaded Comments, LostPet alerts with GPS-based Sightin
     \label{fig:domain_services}
 \end{figure}
 
-VeterinaryClinics employ Veterinarians hosting Appointments with OnlineConsultation and Prescriptions, Caregivers offer CaregiverServices with CaregiverBookings and GPSTracking.
-
 \subsection{Payment and AI Domain Model}
 
 \begin{figure}[H]
@@ -237,8 +181,6 @@ VeterinaryClinics employ Veterinarians hosting Appointments with OnlineConsultat
     \caption{Payment and AI Domain Model - Transaction and ML Entities}
     \label{fig:domain_payment_ai}
 \end{figure}
-
-Transactions support cryptocurrency via CryptoWallet, DigitalWallet credit balances, BreedIdentification stores CNN results with confidence scores, ChatbotConversation maintains RAG message history.
 
 \section{Design Models [Current Iteration]}
 
@@ -255,8 +197,6 @@ This section presents UML diagrams for the current iteration: User Authenticatio
     \label{fig:activity_user_registration}
 \end{figure}
 
-User opens app → enters credentials → system validates email/password → sends verification code → user verifies → system creates account and JWT token → redirects to profile. Decision points: email exists (login redirect), invalid code (retry).
-
 \subsubsection{Pet Breed Identification}
 
 \begin{figure}[H]
@@ -265,8 +205,6 @@ User opens app → enters credentials → system validates email/password → se
     \caption{Pet Breed Identification Activity Diagram}
     \label{fig:activity_breed_identification}
 \end{figure}
-
-User uploads image → system validates → preprocesses (resize/normalize) → sends to CNN → receives top 3 predictions → displays primary if confidence >85\% → user confirms → retrieves care recommendations → updates profile.
 
 \subsubsection{Chatbot RAG Query Processing}
 
@@ -277,8 +215,6 @@ User uploads image → system validates → preprocesses (resize/normalize) → 
     \label{fig:activity_chatbot}
 \end{figure}
 
-User selects pet and types query → backend checks FastAPI availability → HTTP mode: generates embedding → searches ChromaDB (k=2) → constructs prompt → calls Groq API → receives response → checks emergency keywords → displays with alert if urgent → logs conversation.
-
 \subsubsection{Veterinary Appointment Booking}
 
 \begin{figure}[H]
@@ -288,12 +224,6 @@ User selects pet and types query → backend checks FastAPI availability → HTT
     \label{fig:activity_vet}
 \end{figure}
 
-User grants GPS → system queries OpenStreetMap → displays clinics by distance → user selects clinic and date → system shows available slots → user confirms → system creates appointment → sends confirmation → schedules reminders (24h, 2h).
-
-\subsubsection{Health Journal and Vaccination Reminder}
-
-User adds vaccination with due date → system schedules reminder → background job checks daily → 7 days before: sends push notification → user marks completed or reschedules → if completed: updates journal and generates PDF.
-
 \subsection{Class Diagram}
 
 \begin{figure}[H]
@@ -302,8 +232,6 @@ User adds vaccination with due date → system schedules reminder → background
     \caption{PawPal Core Class Diagram}
     \label{fig:class_diagram}
 \end{figure}
-
-\textbf{Core Classes:} User (userID, email, passwordHash, name, phone, userType | Register(), Login(), UpdateProfile()), Pet (petID, ownerID, name, species, breed, dob, gender, weight | Create(), Update(), GetHealthJournal() | 1-to-1 HealthJournal), ChatbotService (fastAPIURL, pythonScriptPath, httpClient | Query(), QueryStream(), checkAPIHealth()), BreedIdentificationService (modelEndpoint, imageProcessor | IdentifyBreed(), PreprocessImage(), GetBreedInfo()), Product (productID, sellerID, name, description, price, category, stock | Create(), Update(), AddPhoto() | 1-to-many ProductPhoto max 10), Order (orderID, buyerID, totalAmount, status, paymentMethod | Create(), UpdateStatus(), ProcessPayment(), GenerateInvoice() | composition with OrderItems), Appointment (appointmentID, petOwnerID, veterinarianID, petID, dateTime, status | Book(), Reschedule(), Cancel(), SendReminder() | many-to-1 VeterinaryClinic), PaymentService (cryptoProvider, walletManager | ProcessCryptoPayment(), GenerateQRCode(), MonitorTransaction() | supports Bitcoin/Ethereum/USDT).
 
 \subsection{Sequence Diagrams}
 
@@ -316,8 +244,6 @@ User adds vaccination with due date → system schedules reminder → background
     \label{fig:sequence_chatbot}
 \end{figure}
 
-User types query → MobileApp sends POST /api/v1/chatbot/query to GoBackend → GoBackend validates JWT → calls ChatbotService.Query() → checks FastAPI health → sends POST /api/chatbot/query to FastAPIService → FastAPI generates embedding → queries ChromaDB.search(k=2) → retrieves 2 knowledge chunks → constructs prompt with pet context → calls GroqAPI.chat\_completion(max\_tokens=384) → receives LLM response → checks emergency keywords → returns JSON to GoBackend → logs to PostgreSQL → returns to MobileApp → displays response to User.
-
 \subsubsection{Breed Identification with CNN}
 
 \begin{figure}[H]
@@ -327,8 +253,6 @@ User types query → MobileApp sends POST /api/v1/chatbot/query to GoBackend →
     \label{fig:sequence_breed}
 \end{figure}
 
-User uploads image → MobileApp validates format/size → sends POST /api/v1/pets/identify to GoBackend → calls BreedIdentificationService.IdentifyBreed() → preprocesses (resize 224x224, normalize) → sends to PythonCNNService → loads ConvNeXt V2 model → performs inference → returns top 3 predictions with confidence → GoBackend queries database for breed info → returns predictions + care recommendations → MobileApp displays results.
-
 \subsubsection{Veterinary Appointment with GPS Discovery}
 
 \begin{figure}[H]
@@ -337,8 +261,6 @@ User uploads image → MobileApp validates format/size → sends POST /api/v1/pe
     \caption{Veterinary Appointment Sequence Diagram}
     \label{fig:sequence_vet}
 \end{figure}
-
-Owner opens Vet Services → MobileApp requests GPS permission → captures coordinates → sends location to GoBackend → queries OpenStreetMapAPI with radius → receives 8 nearby clinics → enriches with database details → MobileApp displays by distance → Owner selects clinic and date → GoBackend queries clinic availability API → receives time slots → Owner confirms slot → GoBackend creates appointment → notifies VeterinaryClinic → schedules reminders in NotificationService → sends confirmation to Owner.
 
 \subsection{State Transition Diagrams}
 
@@ -350,5 +272,3 @@ Owner opens Vet Services → MobileApp requests GPS permission → captures coor
     \caption{Appointment Status Lifecycle State Diagram}
     \label{fig:state_appointment}
 \end{figure}
-
-Initial: Requested → Confirmed (vet approves) or Rejected (vet declines). From Confirmed: Rescheduled (owner changes date), Cancelled (owner cancels with 4h+ notice), NoShow (owner misses), or InProgress (appointment starts) → Completed (appointment ends). Final states: Completed, Cancelled, Rejected, NoShow.

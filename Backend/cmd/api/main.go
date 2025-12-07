@@ -64,9 +64,11 @@ func main() {
 	communityHandlers := handlers.NewCommunityHandlers(communityRepo, userRepo)
 	vetHandlers := handlers.NewVetHandlers(vetRepo)
 	chatHandlers := handlers.NewChatHandlers(chatRepo, messageRepo, userRepo, vetRepo)
+	uploadHandlers := handlers.NewUploadHandlers("./assets/uploads", "http://localhost:"+cfg.Server.Port)
+	petVerificationHandlers := handlers.NewPetVerificationHandlers(petRepo, predictionService)
 	
 	// Setup router
-	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, authService, cfg)
+	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, uploadHandlers, petVerificationHandlers, authService, cfg)
 	
 	// Start server
 	port := os.Getenv("PORT")
@@ -83,7 +85,7 @@ func main() {
 	}
 }
 
-func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
+func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, uploadHandlers *handlers.UploadHandlers, petVerificationHandlers *handlers.PetVerificationHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
 	// Set Gin mode
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -180,6 +182,19 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				pets.GET("/:id", petHandlers.GetPet)
 				pets.PUT("/:id", petHandlers.UpdatePet)
 				pets.DELETE("/:id", petHandlers.DeletePet)
+
+				// Pet Verification endpoints
+				pets.POST("/verify", petVerificationHandlers.VerifyPetBreed)
+				pets.POST("/verify/file", petVerificationHandlers.VerifyPetBreedFromFile)
+				pets.POST("/verify/url", petVerificationHandlers.VerifyPetBreedFromURL)
+			}
+
+			// Image Upload endpoints
+			uploads := protected.Group("/uploads")
+			{
+				uploads.POST("/image", uploadHandlers.UploadPetImage)
+				uploads.POST("/images", uploadHandlers.UploadMultiplePetImages)
+				uploads.DELETE("/image/:filename", uploadHandlers.DeleteUploadedImage)
 			}
 
 			// Health Records

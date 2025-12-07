@@ -35,21 +35,20 @@ PawPal addresses these challenges by providing a comprehensive ecosystem consoli
 
 \section{Scope}
 
-PawPal is a cross-platform mobile application built with Flutter for iOS and Android, using a Golang backend with modular monolithic architecture. The system uses PostgreSQL for persistent data, Redis for caching and sessions, and integrates AI through ConvNeXt V2 CNNs for breed identification (trained on Stanford Dogs and Oxford-IIIT Pets datasets) and RAG-based chatbot using Groq's llama-3.3-70b-versatile model, achieving 2-3 second response times.
+PawPal is a cross-platform mobile application built with Flutter for iOS and Android, using a Golang backend with modular monolithic architecture. The system uses PostgreSQL for persistent data, Redis for caching and sessions, and integrates AI through for breed identification and RAG-based chatbot.
 
 Key functionalities include pet breed identification with care recommendations, AI veterinary chatbot for 24/7 health guidance, pet profile and health journal management with vaccination reminders, marketplace for pet products with cryptocurrency payment support, community hub with forums and lost/found networks, veterinary appointment booking with OpenStreetMap integration, caregiver services with GPS tracking, and comprehensive push notifications.
 
 The modular monolithic architecture enables efficient inter-module communication through direct function calls while maintaining clear separation of concerns. The current iteration focuses on User Authentication, Pet Breed Identification, AI Chatbot System, Diet and Care Recommendations, Veterinary Appointment Booking, Initial Backend Infrastructure, and Basic UI/UX Components.
 
-Explicitly excluded from current scope: advanced telemedicine requiring specialized equipment, health insurance claim processing, genetic testing services, prescription medication dispensing, and smart device/IoT integration.
 
 \section{Modules}
 
-The PawPal system is structured into eight major modules, each addressing specific pet care needs and user requirements. These modules work cohesively to provide a comprehensive pet care ecosystem within a single mobile application, with backend modules implemented within a unified Golang codebase for optimal performance and efficient inter-module communication through direct function calls.
+The PawPal system is structured into eight major modules, each addressing specific pet care needs and user requirements. These modules work cohesively to provide a comprehensive pet care ecosystem within a single mobile application, with backend modules implemented within a unified codebase for optimal performance and efficient inter-module communication through direct function calls.
 
 \subsection{Pet Identification Module}
 
-Provides instant breed recognition using ConvNeXt V2 CNN architecture trained on Stanford Dogs and Oxford-IIIT Pets datasets, achieving 87\% accuracy for dogs (120 breeds) and 85\% for cats (37 breeds). Upon identification, delivers comprehensive breed-specific information including health concerns, dietary requirements, exercise needs, behavioral characteristics, grooming requirements, and common genetic conditions.
+Provides instant breed recognition using ConvNeXt V2 CNN architecture. Upon identification, delivers comprehensive breed-specific information including health concerns, dietary requirements, exercise needs, behavioral characteristics, grooming requirements, and common genetic conditions.
 
 \begin{enumerate}
     \item Breed detection from images with real-time processing
@@ -63,7 +62,7 @@ Provides instant breed recognition using ConvNeXt V2 CNN architecture trained on
 
 \subsection{Chatbot Module}
 
-A 24/7 virtual veterinary assistant using Retrieval-Augmented Generation (RAG) with Groq's llama-3.3-70b-versatile LLM. The system implements semantic search through 281,438 veterinary knowledge chunks using sentence transformers, followed by contextual response generation. Achieves 2-3 second average response times through persistent FastAPI service deployment and HTTP-based Go-Python communication, representing an 8x improvement over initial implementation.
+A 24/7 virtual veterinary assistant using Retrieval-Augmented Generation. The system implements semantic search through veterinary knowledge chunks using sentence transformers, followed by contextual response generation. 
 
 \begin{enumerate}
     \item AI-powered veterinary guidance with evidence-based recommendations
@@ -90,13 +89,11 @@ Comprehensive digital record-keeping with timeline-based health event tracking. 
     \item Document storage for medical certificates and lab reports
     \item Multi-pet management with household view and individual dashboards
     \item PDF health report generation for veterinary appointments
-    \item Photo gallery with automatic organization
-    \item Integration with chatbot for personalized recommendations
 \end{enumerate}
 
 \subsection{Pet Toy Marketplace Module}
 
-E-commerce platform for pet products with advanced search, secure payment processing including cryptocurrency (Bitcoin, Ethereum, USDT), and comprehensive review systems. Features intelligent product recommendations based on breed and purchase history using collaborative filtering.
+E-commerce platform for pet products with advanced search, secure payment processing including cryptocurrency, and comprehensive review systems. Features intelligent product recommendations based on breed and purchase history using collaborative filtering.
 
 \begin{enumerate}
     \item Product listing with up to 10 photos and detailed descriptions
@@ -105,15 +102,13 @@ E-commerce platform for pet products with advanced search, secure payment proces
     \item Rating and review system with photo/video support
     \item In-app messaging between buyers and sellers
     \item Multiple payment methods including cryptocurrency and digital wallets
-    \item Order tracking with real-time status updates
     \item Seller profile management with performance metrics
     \item Admin moderation tools for marketplace integrity
-    \item Product recommendation engine based on pet profile and history
 \end{enumerate}
 
 \subsection{Community Hub Module}
 
-Social platform fostering connections through forums, lost/found networks, adoption systems, and events. Lost pet alerts use GPS to notify community members within 5km radius. Includes AI-powered content moderation.
+Social platform fostering connections through forums, lost/found networks, adoption systems, and events. Lost pet alerts use GPS to notify community members within 5km radius.
 
 \begin{enumerate}
     \item Real-time forum posting with threaded discussions and media
@@ -175,7 +170,6 @@ Secure payment system supporting cryptocurrency (Bitcoin, Ethereum, USDT) and tr
     \item Real-time currency conversion
     \item Payment tokenization for recurring payments
     \item Comprehensive audit logging
-    \item ML-based fraud detection
 \end{enumerate}
 
 \section{Work Division}
@@ -183,14 +177,11 @@ Secure payment system supporting cryptocurrency (Bitcoin, Ethereum, USDT) and tr
 The PawPal project development is divided among three team members with specialized expertise while collaborating on shared infrastructure.
 
 \textbf{Huzaifa Nasir (22I-1053) - AI/ML \& Backend Lead:}
-Responsible for Pet Identification Module (ConvNeXt V2 CNN achieving 87\% dog, 85\% cat accuracy) and Chatbot Module (RAG-based system with Groq LLM, optimized to 2-3s response times). Handles Golang backend API development, PostgreSQL database design, Redis caching, and Python service integration.
+Responsible for Pet Identification Module (ConvNeXt V2 CNN ) and Chatbot Module (RAG-based system). Handles Golang backend API development, PostgreSQL database design, Redis caching, and Python service integration.
 
 \textbf{Maaz Ali (22I-1042) - Mobile Development \& Community Features Lead:}
 Responsible for Flutter mobile application development (iOS/Android), Community Hub Module (forums, lost/found, adoption, events), and Pet Profiles \& Journals Module. Handles UI/UX design, state management, local persistence, and Firebase Cloud Messaging integration.
 
 \textbf{Hamza Naveed (22I-0961) - E-commerce \& Services Lead:}
 Responsible for Pet Toy Marketplace Module, Veterinary Services Integration Module (OpenStreetMap integration, appointment booking), Pet Caregiver Services Module (GPS tracking), and Payment Integration Module (cryptocurrency and digital wallets).
-
-\textbf{Collaborative Responsibilities:}
-System integration testing, API design and documentation, security implementation (JWT, encryption), deployment strategies, code review, and comprehensive documentation.
 

@@ -50,3 +50,4 @@ App/android/gradlew.bat
 App/.g.dart
 App/*.g.dart
 
+/PLANTUML

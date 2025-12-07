@@ -4,6 +4,17 @@ This chapter describes the functional and non-functional requirements of the Paw
 \section{Use Case Analysis}
 PawPal is an interactive end-user mobile application, making use case modeling the most appropriate requirement gathering technique. The following use cases represent the core functionalities across all eight modules of the system.
 
+\subsection{System-Wide Use Case Diagram}
+
+Figure \ref{fig:use_case_system_wide} illustrates the complete system-wide use case diagram for PawPal, showing all primary actors (Pet Owner, Veterinarian, Pet Caregiver, Marketplace Seller, and System Administrator) and their interactions with the system's core functionalities. The diagram also depicts the integration with external systems including Payment Gateway, AI/ML System, Email System, and GPS Service.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{ThesisFigs/use_case.png}
+    \caption{PawPal Use Case Diagram}
+    \label{fig:use_case_system_wide}
+\end{figure}
+
 \subsection{High-Level Use Cases Overview}
 
 The PawPal system supports twelve primary use cases that span across all eight modules, providing comprehensive pet care functionality:
@@ -710,17 +721,7 @@ This section specifies measurable non-functional requirements that define the qu
 
 \textbf{SEC-5:} User sessions shall be automatically terminated after 15 minutes of inactivity with mandatory re-authentication for sensitive operations (payments, profile modifications).
 
-\subsection{Scalability Requirements}
 
-\textbf{SCA-1:} PostgreSQL table partitioning for community posts and chat messages shall be implemented to efficiently manage data growth when record count exceeds 10 million entries.
-
-\textbf{SCA-2:} The system shall implement caching strategies using Redis for frequently accessed data with cache invalidation policies to maintain data consistency.
-
-\textbf{SCA-3:} The backend services shall support horizontal scaling with load balancing across multiple server instances.
-
-\textbf{SCA-4:} The system shall handle graceful degradation under high load with priority given to critical features.
-
-\textbf{SCA-5:} The application shall optimize database queries with indexing strategies for tables exceeding 1 million records.
 
 \subsection{Maintainability Requirements}
 

@@ -12,11 +12,11 @@ import (
 
 // PetHandlers handles pet endpoints
 type PetHandlers struct {
-	petRepo *repositories.PetRepository
+	petRepo repositories.PetRepositoryInterface
 }
 
 // NewPetHandlers creates new PetHandlers
-func NewPetHandlers(petRepo *repositories.PetRepository) *PetHandlers {
+func NewPetHandlers(petRepo repositories.PetRepositoryInterface) *PetHandlers {
 	return &PetHandlers{
 		petRepo: petRepo,
 	}
@@ -268,9 +268,8 @@ func (h *PetHandlers) DeletePet(c *gin.Context) {
 
 // GetVerifiedPets handles getting all verified pets for the current user
 func (h *PetHandlers) GetVerifiedPets(c *gin.Context) {
-	userID := c.MustGet("userID").(string)
 	
-	pets, err := h.petRepo.GetVerifiedByOwnerID(c.Request.Context(), parseUUID(userID))
+	pets, err := h.petRepo.GetVerified(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.PetsResponse{
 			Success: false,
@@ -292,7 +291,6 @@ func (h *PetHandlers) GetVerifiedPets(c *gin.Context) {
 
 // SearchPetsByBreed handles searching pets by breed
 func (h *PetHandlers) SearchPetsByBreed(c *gin.Context) {
-	userID := c.MustGet("userID").(string)
 	breed := c.Query("breed")
 	
 	if breed == "" {
@@ -303,7 +301,7 @@ func (h *PetHandlers) SearchPetsByBreed(c *gin.Context) {
 		return
 	}
 
-	pets, err := h.petRepo.SearchByBreed(c.Request.Context(), parseUUID(userID), breed)
+	pets, err := h.petRepo.SearchByBreed(c.Request.Context(), breed)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.PetsResponse{
 			Success: false,
@@ -338,7 +336,7 @@ func (h *PetHandlers) GetPetCount(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.GenericResponse{
 		Success: true,
-		Data:    map[string]int{"count": count},
+		Data:    map[string]int64{"count": count},
 	})
 }
 

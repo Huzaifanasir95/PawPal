@@ -13,11 +13,11 @@ import (
 // HealthHandlers handles health record and journal endpoints
 type HealthHandlers struct {
 	healthRepo *repositories.HealthRepository
-	petRepo    *repositories.PetRepository
+	petRepo    repositories.PetRepositoryInterface
 }
 
 // NewHealthHandlers creates new HealthHandlers
-func NewHealthHandlers(healthRepo *repositories.HealthRepository, petRepo *repositories.PetRepository) *HealthHandlers {
+func NewHealthHandlers(healthRepo *repositories.HealthRepository, petRepo repositories.PetRepositoryInterface) *HealthHandlers {
 	return &HealthHandlers{
 		healthRepo: healthRepo,
 		petRepo:    petRepo,

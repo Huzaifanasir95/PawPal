@@ -33,11 +33,11 @@ func main() {
 
 	// Initialize repositories using Supabase REST API
 	userRepo := repositories.NewUserRepositorySupabase(database.Supabase)
+	petRepo := repositories.NewPetRepositorySupabase(database.Supabase)
 	logger.Info("Using Supabase REST API for all database operations")
 	
 	// TODO: Implement Supabase versions for other repositories
 	// For now, pass nil to handlers that need them
-	var petRepo *repositories.PetRepository = nil
 	var healthRepo *repositories.HealthRepository = nil
 	var communityRepo *repositories.CommunityRepository = nil
 	var vetRepo *repositories.VetRepository = nil

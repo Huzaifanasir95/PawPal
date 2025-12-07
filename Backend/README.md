@@ -595,6 +595,685 @@ This will test all authentication endpoints:
 
 ---
 
+## 🐾 Pet Management API
+
+### 🔰 Overview
+Complete CRUD operations for managing pets in the PawPal application. All pet endpoints require authentication (JWT token in Authorization header).
+
+### 📋 Pet Model
+```dart
+class Pet {
+  final String id;
+  final String ownerId;
+  final String name;
+  final String type;           // "dog" or "cat"
+  final String breed;
+  final int age;
+  final String ageUnit;        // "years", "months", "weeks"
+  final String gender;         // "male" or "female"
+  final String color;
+  final double weight;
+  final String weightUnit;     // "kg" or "lbs"
+  final String? imageUrl;
+  final String? imageLocalPath;
+  final List<String>? imageUrls;
+  final bool isVerified;
+  final double? verificationConfidence;
+  final String? verifiedBreed;
+  final String? bio;
+  final bool isAdopted;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+}
+```
+
+---
+
+### 1️⃣ Create Pet
+
+**Endpoint:** `POST /api/v1/pets`
+
+**Flutter Example:**
+```dart
+Future<Map<String, dynamic>> createPet({
+  required String accessToken,
+  required String name,
+  required String type,
+  required String breed,
+  required int age,
+  required String ageUnit,
+  required String gender,
+  required String color,
+  required double weight,
+  required String weightUnit,
+  String? bio,
+}) async {
+  final response = await http.post(
+    Uri.parse('http://localhost:8081/api/v1/pets'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $accessToken',
+    },
+    body: jsonEncode({
+      'name': name,
+      'type': type,
+      'breed': breed,
+      'age': age,
+      'ageUnit': ageUnit,
+      'gender': gender,
+      'color': color,
+      'weight': weight,
+      'weightUnit': weightUnit,
+      'bio': bio,
+    }),
+  );
+
+  if (response.statusCode == 201) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Failed to create pet: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```json
+POST /api/v1/pets
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "name": "Buddy",
+  "type": "dog",
+  "breed": "Golden Retriever",
+  "age": 3,
+  "ageUnit": "years",
+  "gender": "male",
+  "color": "golden",
+  "weight": 30.5,
+  "weightUnit": "kg",
+  "bio": "Friendly and energetic golden retriever"
+}
+```
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "message": "Pet created successfully",
+  "pet": {
+    "id": "66b637c0-a982-432c-a9a6-f14810a851c9",
+    "ownerId": "caf30610-0280-4447-b106-665301bf83fc",
+    "name": "Buddy",
+    "type": "dog",
+    "breed": "Golden Retriever",
+    "age": 3,
+    "ageUnit": "years",
+    "gender": "male",
+    "color": "golden",
+    "weight": 30.5,
+    "weightUnit": "kg",
+    "isVerified": false,
+    "bio": "Friendly and energetic golden retriever",
+    "isAdopted": false,
+    "createdAt": "2025-12-07T09:18:03.417343Z",
+    "updatedAt": "2025-12-07T09:18:03.417343Z"
+  }
+}
+```
+
+---
+
+### 2️⃣ Get All User's Pets
+
+**Endpoint:** `GET /api/v1/pets`
+
+**Flutter Example:**
+```dart
+Future<List<dynamic>> getUserPets(String accessToken) async {
+  final response = await http.get(
+    Uri.parse('http://localhost:8081/api/v1/pets'),
+    headers: {
+      'Authorization': 'Bearer $accessToken',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['pets'];
+  } else {
+    throw Exception('Failed to get pets: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```
+GET /api/v1/pets
+Authorization: Bearer <access_token>
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "pets": [
+    {
+      "id": "66b637c0-a982-432c-a9a6-f14810a851c9",
+      "ownerId": "caf30610-0280-4447-b106-665301bf83fc",
+      "name": "Buddy",
+      "type": "dog",
+      "breed": "Golden Retriever",
+      "age": 3,
+      "ageUnit": "years",
+      "gender": "male",
+      "color": "golden",
+      "weight": 30.5,
+      "weightUnit": "kg",
+      "isVerified": false,
+      "bio": "Friendly and energetic golden retriever",
+      "isAdopted": false,
+      "createdAt": "2025-12-07T09:18:03.417343Z",
+      "updatedAt": "2025-12-07T09:18:03.417343Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+---
+
+### 3️⃣ Get Single Pet by ID
+
+**Endpoint:** `GET /api/v1/pets/:id`
+
+**Flutter Example:**
+```dart
+Future<Map<String, dynamic>> getPetById(String accessToken, String petId) async {
+  final response = await http.get(
+    Uri.parse('http://localhost:8081/api/v1/pets/$petId'),
+    headers: {
+      'Authorization': 'Bearer $accessToken',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['pet'];
+  } else {
+    throw Exception('Failed to get pet: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```
+GET /api/v1/pets/66b637c0-a982-432c-a9a6-f14810a851c9
+Authorization: Bearer <access_token>
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "pet": {
+    "id": "66b637c0-a982-432c-a9a6-f14810a851c9",
+    "ownerId": "caf30610-0280-4447-b106-665301bf83fc",
+    "name": "Buddy",
+    "type": "dog",
+    "breed": "Golden Retriever",
+    "age": 3,
+    "ageUnit": "years",
+    "gender": "male",
+    "color": "golden",
+    "weight": 30.5,
+    "weightUnit": "kg",
+    "isVerified": false,
+    "bio": "Friendly and energetic golden retriever",
+    "isAdopted": false,
+    "createdAt": "2025-12-07T09:18:03.417343Z",
+    "updatedAt": "2025-12-07T09:18:03.417343Z"
+  }
+}
+```
+
+---
+
+### 4️⃣ Update Pet
+
+**Endpoint:** `PUT /api/v1/pets/:id`
+
+**Flutter Example:**
+```dart
+Future<Map<String, dynamic>> updatePet({
+  required String accessToken,
+  required String petId,
+  String? name,
+  int? age,
+  String? bio,
+  double? weight,
+  // ... other optional fields
+}) async {
+  final body = <String, dynamic>{};
+  if (name != null) body['name'] = name;
+  if (age != null) body['age'] = age;
+  if (bio != null) body['bio'] = bio;
+  if (weight != null) body['weight'] = weight;
+
+  final response = await http.put(
+    Uri.parse('http://localhost:8081/api/v1/pets/$petId'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $accessToken',
+    },
+    body: jsonEncode(body),
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Failed to update pet: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```json
+PUT /api/v1/pets/66b637c0-a982-432c-a9a6-f14810a851c9
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "name": "Buddy Updated",
+  "age": 4,
+  "bio": "Updated bio: Very friendly golden retriever"
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Pet updated successfully",
+  "pet": {
+    "id": "66b637c0-a982-432c-a9a6-f14810a851c9",
+    "ownerId": "caf30610-0280-4447-b106-665301bf83fc",
+    "name": "Buddy Updated",
+    "type": "dog",
+    "breed": "Golden Retriever",
+    "age": 4,
+    "ageUnit": "years",
+    "gender": "male",
+    "color": "golden",
+    "weight": 30.5,
+    "weightUnit": "kg",
+    "isVerified": false,
+    "bio": "Updated bio: Very friendly golden retriever",
+    "isAdopted": false,
+    "createdAt": "2025-12-07T09:18:03.417343Z",
+    "updatedAt": "2025-12-07T09:18:04.115301Z"
+  }
+}
+```
+
+---
+
+### 5️⃣ Delete Pet
+
+**Endpoint:** `DELETE /api/v1/pets/:id`
+
+**Flutter Example:**
+```dart
+Future<void> deletePet(String accessToken, String petId) async {
+  final response = await http.delete(
+    Uri.parse('http://localhost:8081/api/v1/pets/$petId'),
+    headers: {
+      'Authorization': 'Bearer $accessToken',
+    },
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to delete pet: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```
+DELETE /api/v1/pets/66b637c0-a982-432c-a9a6-f14810a851c9
+Authorization: Bearer <access_token>
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Pet deleted successfully"
+}
+```
+
+---
+
+### 6️⃣ Get Verified Pets
+
+**Endpoint:** `GET /api/v1/pets/verified`
+
+Get all pets that have been verified by the AI breed classifier.
+
+**Flutter Example:**
+```dart
+Future<List<dynamic>> getVerifiedPets(String accessToken) async {
+  final response = await http.get(
+    Uri.parse('http://localhost:8081/api/v1/pets/verified'),
+    headers: {
+      'Authorization': 'Bearer $accessToken',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['pets'];
+  } else {
+    throw Exception('Failed to get verified pets: ${response.body}');
+  }
+}
+```
+
+---
+
+### 7️⃣ Search Pets by Breed
+
+**Endpoint:** `GET /api/v1/pets/search?breed=<breed_name>`
+
+**Flutter Example:**
+```dart
+Future<List<dynamic>> searchPetsByBreed(String accessToken, String breed) async {
+  final response = await http.get(
+    Uri.parse('http://localhost:8081/api/v1/pets/search?breed=$breed'),
+    headers: {
+      'Authorization': 'Bearer $accessToken',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['pets'];
+  } else {
+    throw Exception('Failed to search pets: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```
+GET /api/v1/pets/search?breed=Golden%20Retriever
+Authorization: Bearer <access_token>
+```
+
+---
+
+### 8️⃣ Get Pet Count
+
+**Endpoint:** `GET /api/v1/pets/count`
+
+**Flutter Example:**
+```dart
+Future<int> getPetCount(String accessToken) async {
+  final response = await http.get(
+    Uri.parse('http://localhost:8081/api/v1/pets/count'),
+    headers: {
+      'Authorization': 'Bearer $accessToken',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['count'];
+  } else {
+    throw Exception('Failed to get pet count: ${response.body}');
+  }
+}
+```
+
+---
+
+### 🛠️ Complete Pet Service Class
+
+Here's a complete Flutter service class for pet management:
+
+```dart
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class PetService {
+  final String baseUrl = 'http://localhost:8081/api/v1';
+  
+  Future<Map<String, dynamic>> createPet({
+    required String accessToken,
+    required String name,
+    required String type,
+    required String breed,
+    required int age,
+    required String ageUnit,
+    required String gender,
+    required String color,
+    required double weight,
+    required String weightUnit,
+    String? bio,
+    String? imageUrl,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/pets'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode({
+        'name': name,
+        'type': type,
+        'breed': breed,
+        'age': age,
+        'ageUnit': ageUnit,
+        'gender': gender,
+        'color': color,
+        'weight': weight,
+        'weightUnit': weightUnit,
+        'bio': bio,
+        'imageUrl': imageUrl,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to create pet: ${response.body}');
+    }
+  }
+
+  Future<List<dynamic>> getUserPets(String accessToken) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/pets'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['pets'];
+    } else {
+      throw Exception('Failed to get pets: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> getPetById(String accessToken, String petId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/pets/$petId'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['pet'];
+    } else if (response.statusCode == 404) {
+      throw Exception('Pet not found');
+    } else {
+      throw Exception('Failed to get pet: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> updatePet({
+    required String accessToken,
+    required String petId,
+    String? name,
+    int? age,
+    String? bio,
+    double? weight,
+    String? imageUrl,
+  }) async {
+    final body = <String, dynamic>{};
+    if (name != null) body['name'] = name;
+    if (age != null) body['age'] = age;
+    if (bio != null) body['bio'] = bio;
+    if (weight != null) body['weight'] = weight;
+    if (imageUrl != null) body['imageUrl'] = imageUrl;
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/pets/$petId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 403) {
+      throw Exception('Not authorized to update this pet');
+    } else if (response.statusCode == 404) {
+      throw Exception('Pet not found');
+    } else {
+      throw Exception('Failed to update pet: ${response.body}');
+    }
+  }
+
+  Future<void> deletePet(String accessToken, String petId) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/pets/$petId'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 403) {
+      throw Exception('Not authorized to delete this pet');
+    } else if (response.statusCode == 404) {
+      throw Exception('Pet not found');
+    } else if (response.statusCode != 200) {
+      throw Exception('Failed to delete pet: ${response.body}');
+    }
+  }
+
+  Future<List<dynamic>> getVerifiedPets(String accessToken) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/pets/verified'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['pets'];
+    } else {
+      throw Exception('Failed to get verified pets: ${response.body}');
+    }
+  }
+
+  Future<List<dynamic>> searchPetsByBreed(String accessToken, String breed) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/pets/search?breed=$breed'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['pets'];
+    } else {
+      throw Exception('Failed to search pets: ${response.body}');
+    }
+  }
+
+  Future<int> getPetCount(String accessToken) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/pets/count'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['count'];
+    } else {
+      throw Exception('Failed to get pet count: ${response.body}');
+    }
+  }
+}
+```
+
+---
+
+### 🧪 Testing Pet Management
+
+Run the PowerShell test script:
+```powershell
+.\Backend\scripts\test_pets.ps1
+```
+
+This will test all pet endpoints:
+- ✅ Create Pet
+- ✅ Get All User's Pets
+- ✅ Get Single Pet by ID
+- ✅ Update Pet
+- ✅ Delete Pet
+
+**Test Output:**
+```
+============================================================
+TEST 1: Create Pet
+============================================================
+PASS - Pet created successfully!
+Pet ID: 66b637c0-a982-432c-a9a6-f14810a851c9
+
+============================================================
+TEST 2: Get All User's Pets
+============================================================
+PASS - Pets retrieved successfully!
+Total Pets: 1
+
+============================================================
+TEST 3: Get Single Pet by ID
+============================================================
+PASS - Pet retrieved successfully!
+
+============================================================
+TEST 4: Update Pet
+============================================================
+PASS - Pet updated successfully!
+Updated Name: Buddy Updated
+
+============================================================
+TEST 5: Delete Pet
+============================================================
+PASS - Pet deleted successfully!
+```
+
+---
+
+### 🔒 Authorization
+
+All pet endpoints verify ownership:
+- Only the pet owner can **update** or **delete** their pets
+- Users can only view their own pets via `GET /api/v1/pets`
+- `GET /api/v1/pets/:id` requires the requester to be the owner
+- 403 Forbidden returned if user tries to modify another user's pet
+
+---
+
 ## 🏗️ Architecture
 
 ### Database (Supabase PostgreSQL)

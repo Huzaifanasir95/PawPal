@@ -49,9 +49,13 @@ async def startup_event():
     print("🚀 Initializing PawPal RAG System...")
     print("⏳ This may take 5-10 seconds (only happens once)...")
     
+    # Use absolute path to vector_db
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    vector_db_path = os.path.join(script_dir, "vector_db")
+    
     rag_instance = VeterinaryRAG(
         model_name="llama-3.3-70b-versatile",
-        vector_db_path="./vector_db",
+        vector_db_path=vector_db_path,
         use_groq=True,
         silent=False,
     )

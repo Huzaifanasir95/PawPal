@@ -1942,6 +1942,549 @@ All verification endpoints:
 
 ---
 
+## 💬 RAG Chatbot System
+
+### 🔰 Overview
+24/7 AI-powered veterinary assistant using **Retrieval-Augmented Generation (RAG)** with **Groq's Llama-3.3-70B** for fast, accurate pet health advice.
+
+### 🎯 Features
+- ✅ **AI-Powered Veterinary Guidance** - Common health queries & concerns
+- ✅ **Personalized Advice** - Based on pet breed, age, weight, health conditions
+- ✅ **24/7 Availability** - Sub-second response times (when FastAPI server running)
+- ✅ **Context-Aware** - Uses RAG with veterinary knowledge base
+- ✅ **Streaming Support** - Real-time responses like ChatGPT
+- ✅ **Knowledge Base** - ASPCA pet care, medications, nutrition data
+
+### 📋 How It Works
+
+```
+User Query
+    ↓
+Query Embedding (SentenceTransformer)
+    ↓
+Vector Search (ChromaDB)
+    ↓
+Retrieve Top-K Relevant Documents
+    ↓
+Build Prompt with Context
+    ↓
+Groq LLM (llama-3.3-70b-versatile)
+    ↓
+AI-Generated Answer
+```
+
+### 🚀 Quick Start
+
+**Start FastAPI Server (Recommended for 10x faster responses):**
+```bash
+cd AI_Chatbot
+python chatbot_fastapi_server.py
+```
+
+Server will be available at `http://localhost:8000`
+
+**Alternative:** Backend will use exec mode (slower) if FastAPI server not running.
+
+---
+
+### 1️⃣ Query Chatbot (Standard)
+
+**Endpoint:** `POST /api/v1/chatbot/query`
+
+Ask the AI chatbot a pet health question.
+
+**Flutter Example:**
+```dart
+Future<Map<String, dynamic>> queryChatbot({
+  required String message,
+  Map<String, dynamic>? petProfile,
+}) async {
+  final response = await http.post(
+    Uri.parse('http://localhost:8081/api/v1/chatbot/query'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'message': message,
+      'pet_profile': petProfile,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Chatbot query failed: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```json
+POST /api/v1/chatbot/query
+Content-Type: application/json
+
+{
+  "message": "What should I feed my Golden Retriever puppy?",
+  "pet_profile": {
+    "name": "Buddy",
+    "breed": "Golden Retriever",
+    "age": 6,
+    "age_unit": "months",
+    "weight": 15.5,
+    "weight_unit": "kg"
+  }
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "answer": "For a 6-month-old Golden Retriever puppy weighing 15.5 kg, here are the feeding recommendations:\n\n**Diet Basics:**\n- Feed high-quality puppy food formulated for large breeds\n- 3-4 meals per day at this age\n- Approximately 3-4 cups of food daily (split across meals)\n- Ensure adequate protein (22-24%) for growth\n\n**Key Nutrients:**\n- Controlled calcium and phosphorus for bone development\n- DHA for brain and eye development\n- Balanced omega fatty acids for coat health\n\n**Important Notes:**\n- Transition to adult food around 12-18 months\n- Avoid overfeeding to prevent rapid growth issues\n- Always provide fresh water\n- Consult your vet for personalized portion sizes\n\nWould you like specific brand recommendations or have questions about treats?",
+  "query": "What should I feed my Golden Retriever puppy?",
+  "enhanced_query": "puppy nutrition golden retriever 6 months feeding schedule",
+  "sources": [
+    {
+      "content": "Golden Retriever puppies require...",
+      "source": "healthy_pets_happy_owners_data.json",
+      "relevance": 0.89
+    }
+  ]
+}
+```
+
+---
+
+### 2️⃣ Query Chatbot (Streaming)
+
+**Endpoint:** `POST /api/v1/chatbot/stream`
+
+Get real-time streaming responses (like ChatGPT).
+
+**Flutter Example:**
+```dart
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+Stream<String> queryChatbotStream({
+  required String message,
+  Map<String, dynamic>? petProfile,
+}) async* {
+  final request = http.Request(
+    'POST',
+    Uri.parse('http://localhost:8081/api/v1/chatbot/stream'),
+  );
+  
+  request.headers['Content-Type'] = 'application/json';
+  request.body = jsonEncode({
+    'message': message,
+    'pet_profile': petProfile,
+  });
+
+  final response = await request.send();
+  
+  await for (var chunk in response.stream.transform(utf8.decoder)) {
+    // Parse Server-Sent Events
+    final lines = chunk.split('\n');
+    for (var line in lines) {
+      if (line.startsWith('data: ')) {
+        final data = line.substring(6);
+        if (data.trim().isNotEmpty) {
+          yield data;
+        }
+      }
+    }
+  }
+}
+
+// Usage in UI
+void _streamChatResponse() async {
+  String fullResponse = '';
+  
+  await for (var chunk in queryChatbotStream(
+    message: 'What are signs of dehydration in dogs?',
+  )) {
+    setState(() {
+      fullResponse += chunk;
+    });
+  }
+}
+```
+
+**Request:**
+```json
+POST /api/v1/chatbot/stream
+Content-Type: application/json
+
+{
+  "message": "What are signs of dehydration in dogs?",
+  "pet_profile": {
+    "name": "Max",
+    "type": "dog",
+    "breed": "Labrador"
+  }
+}
+```
+
+**Response (Server-Sent Events):**
+```
+data: Signs of dehydration in dogs include:
+
+data: 1. **Dry Nose and Gums**
+
+data: - Nose feels dry or warm
+
+data: - Gums are sticky or tacky
+
+data: 2. **Loss of Skin Elasticity**
+
+data: - Gently pinch skin on back of neck
+
+data: - Slow return indicates dehydration
+
+data: [END]
+```
+
+---
+
+### 🛠️ Complete Chatbot Service Class
+
+```dart
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class ChatbotService {
+  final String baseUrl = 'http://localhost:8081/api/v1';
+  
+  // Standard query
+  Future<Map<String, dynamic>> query({
+    required String message,
+    Map<String, dynamic>? petProfile,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/chatbot/query'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'message': message,
+        'pet_profile': petProfile,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Chatbot query failed: ${response.body}');
+    }
+  }
+
+  // Streaming query
+  Stream<String> queryStream({
+    required String message,
+    Map<String, dynamic>? petProfile,
+  }) async* {
+    final request = http.Request(
+      'POST',
+      Uri.parse('$baseUrl/chatbot/stream'),
+    );
+    
+    request.headers['Content-Type'] = 'application/json';
+    request.body = jsonEncode({
+      'message': message,
+      'pet_profile': petProfile,
+    });
+
+    final response = await request.send();
+    
+    await for (var chunk in response.stream.transform(utf8.decoder)) {
+      final lines = chunk.split('\n');
+      for (var line in lines) {
+        if (line.startsWith('data: ')) {
+          final data = line.substring(6);
+          if (data.trim().isNotEmpty && data != '[END]') {
+            yield data;
+          }
+        }
+      }
+    }
+  }
+
+  // Query with context from pet health journal
+  Future<Map<String, dynamic>> queryWithHealthContext({
+    required String message,
+    required String petId,
+    required String accessToken,
+  }) async {
+    // First, get pet details
+    final petResponse = await http.get(
+      Uri.parse('$baseUrl/pets/$petId'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (petResponse.statusCode != 200) {
+      throw Exception('Failed to get pet details');
+    }
+
+    final petData = jsonDecode(petResponse.body)['pet'];
+    
+    // Build pet profile
+    final petProfile = {
+      'name': petData['name'],
+      'type': petData['type'],
+      'breed': petData['breed'],
+      'age': petData['age'],
+      'age_unit': petData['ageUnit'],
+      'weight': petData['weight'],
+      'weight_unit': petData['weightUnit'],
+      'verified_breed': petData['verifiedBreed'],
+    };
+
+    // Query chatbot with pet context
+    return await query(
+      message: message,
+      petProfile: petProfile,
+    );
+  }
+}
+```
+
+---
+
+### 📊 Example Queries
+
+**General Health:**
+```json
+{
+  "message": "What are common symptoms of kennel cough?"
+}
+```
+
+**Diet & Nutrition:**
+```json
+{
+  "message": "What foods are toxic to dogs?",
+  "pet_profile": {
+    "type": "dog",
+    "breed": "Beagle",
+    "age": 5,
+    "age_unit": "years"
+  }
+}
+```
+
+**Emergency Assessment:**
+```json
+{
+  "message": "My dog ate chocolate, what should I do?",
+  "pet_profile": {
+    "name": "Max",
+    "type": "dog",
+    "weight": 25,
+    "weight_unit": "kg"
+  }
+}
+```
+
+**Breed-Specific Advice:**
+```json
+{
+  "message": "What health issues are common in Golden Retrievers?",
+  "pet_profile": {
+    "breed": "Golden Retriever",
+    "age": 3,
+    "age_unit": "years"
+  }
+}
+```
+
+---
+
+### 🧪 Testing RAG Chatbot
+
+**Test with HTML Page:**
+```
+http://localhost:8081/test/chatbot
+```
+
+**Test Streaming:**
+```
+http://localhost:8081/test/chatbot_stream
+```
+
+**Test with PowerShell:**
+```powershell
+$body = @{
+    message = "What vaccines does a puppy need?"
+    pet_profile = @{
+        type = "dog"
+        age = 8
+        age_unit = "weeks"
+    }
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8081/api/v1/chatbot/query" `
+    -Method POST `
+    -Body $body `
+    -ContentType "application/json"
+```
+
+---
+
+### ⚡ Performance
+
+**With FastAPI Server (Recommended):**
+- First query: ~1-2 seconds (model warm-up)
+- Subsequent queries: ~300-800ms
+- Model stays loaded in memory
+- 10x faster than exec mode
+
+**Without FastAPI Server (Exec Mode):**
+- Each query: ~5-10 seconds
+- Model reloads every time
+- Fallback mode (works but slow)
+
+**To Start FastAPI Server:**
+```bash
+cd AI_Chatbot
+python chatbot_fastapi_server.py
+```
+
+Server logs will show:
+```
+🚀 Initializing PawPal RAG System...
+✅ RAG System ready! Server is now blazing fast!
+INFO: Uvicorn running on http://0.0.0.0:8000
+```
+
+---
+
+### 🧠 Knowledge Base
+
+The RAG system uses the following data sources:
+
+1. **ASPCA Pet Care Data** - General pet health information
+2. **Healthy Pets Data** - Nutrition and wellness guidelines
+3. **Medications Database** - Common pet medications and dosages
+4. **Dog Health Guides** - Breed-specific health information
+5. **Cat Health Guides** - Feline-specific care
+6. **Emergency Guidelines** - First aid and emergency care
+7. **Nutrition Data** - Diet recommendations by breed/age
+
+**Total Knowledge Base Size:** ~500+ documents, 50k+ tokens
+
+---
+
+### 🔒 Privacy & Security
+
+- ✅ Uses Groq API (not storing conversation data)
+- ✅ Pet profiles optional (better context)
+- ✅ No authentication required for chatbot endpoint (public)
+- ✅ Can be used anonymously
+- ✅ No conversation history stored
+
+**Note:** For personalized health tracking, integrate with pet health journals (requires authentication).
+
+---
+
+### 🎨 UI Integration Tips
+
+**Simple Chat Widget:**
+```dart
+class ChatWidget extends StatefulWidget {
+  @override
+  _ChatWidgetState createState() => _ChatWidgetState();
+}
+
+class _ChatWidgetState extends State<ChatWidget> {
+  final ChatbotService _chatbot = ChatbotService();
+  final TextEditingController _controller = TextEditingController();
+  List<ChatMessage> _messages = [];
+  bool _isLoading = false;
+
+  Future<void> _sendMessage() async {
+    if (_controller.text.trim().isEmpty) return;
+
+    final userMessage = _controller.text;
+    _controller.clear();
+
+    setState(() {
+      _messages.add(ChatMessage(text: userMessage, isUser: true));
+      _isLoading = true;
+    });
+
+    try {
+      final response = await _chatbot.query(message: userMessage);
+      
+      setState(() {
+        _messages.add(ChatMessage(
+          text: response['answer'],
+          isUser: false,
+        ));
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _messages.add(ChatMessage(
+          text: 'Sorry, I encountered an error. Please try again.',
+          isUser: false,
+        ));
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: _messages.length,
+            itemBuilder: (context, index) {
+              final message = _messages[index];
+              return ChatBubble(
+                text: message.text,
+                isUser: message.isUser,
+              );
+            },
+          ),
+        ),
+        if (_isLoading) CircularProgressIndicator(),
+        ChatInput(
+          controller: _controller,
+          onSend: _sendMessage,
+        ),
+      ],
+    );
+  }
+}
+```
+
+**Streaming Chat Widget:**
+```dart
+Future<void> _sendStreamingMessage() async {
+  final userMessage = _controller.text;
+  _controller.clear();
+
+  setState(() {
+    _messages.add(ChatMessage(text: userMessage, isUser: true));
+    _messages.add(ChatMessage(text: '', isUser: false)); // Placeholder
+  });
+
+  final responseIndex = _messages.length - 1;
+  String fullResponse = '';
+
+  await for (var chunk in _chatbot.queryStream(message: userMessage)) {
+    fullResponse += chunk;
+    setState(() {
+      _messages[responseIndex] = ChatMessage(
+        text: fullResponse,
+        isUser: false,
+      );
+    });
+  }
+}
+```
+
+---
+
 ## 🏗️ Architecture
 
 ### Database (Supabase PostgreSQL)

@@ -1274,6 +1274,674 @@ All pet endpoints verify ownership:
 
 ---
 
+## 🤖 AI Breed Verification
+
+### 🔰 Overview
+Automatically verify pet breeds using AI-powered image classification. The system uses ConvNeXt V2 models trained on 120 dog breeds and multiple cat breeds with 92-95% accuracy.
+
+### 📋 How It Works
+
+1. User creates a pet with basic information
+2. User uploads a photo of their pet
+3. AI analyzes the image and predicts the breed
+4. Pet record is updated with:
+   - `isVerified: true`
+   - `verificationConfidence: 0.95` (example)
+   - `verifiedBreed: "Golden Retriever"`
+
+---
+
+### 1️⃣ Verify Pet Breed (Base64 Image)
+
+**Endpoint:** `POST /api/v1/pets/verify`
+
+Upload a base64-encoded image to verify a pet's breed.
+
+**Flutter Example:**
+```dart
+import 'dart:convert';
+import 'dart:io';
+
+Future<Map<String, dynamic>> verifyPetBreed({
+  required String accessToken,
+  required String petId,
+  required File imageFile,
+  bool useETTA = false,
+  int topK = 5,
+}) async {
+  // Read and encode image
+  final bytes = await imageFile.readAsBytes();
+  final base64Image = base64Encode(bytes);
+
+  final response = await http.post(
+    Uri.parse('http://localhost:8081/api/v1/pets/verify'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $accessToken',
+    },
+    body: jsonEncode({
+      'petId': petId,
+      'image': base64Image,
+      'useETTA': useETTA,
+      'topK': topK,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Verification failed: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```json
+POST /api/v1/pets/verify
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "petId": "66b637c0-a982-432c-a9a6-f14810a851c9",
+  "image": "base64_encoded_image_data...",
+  "useETTA": false,
+  "topK": 5
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Pet breed verified successfully",
+  "pet": {
+    "id": "66b637c0-a982-432c-a9a6-f14810a851c9",
+    "ownerId": "caf30610-0280-4447-b106-665301bf83fc",
+    "name": "Buddy",
+    "type": "dog",
+    "breed": "Golden Retriever",
+    "isVerified": true,
+    "verificationConfidence": 0.9534,
+    "verifiedBreed": "Golden Retriever",
+    "createdAt": "2025-12-07T09:18:03.417343Z",
+    "updatedAt": "2025-12-07T10:30:15.123456Z"
+  },
+  "prediction": {
+    "success": true,
+    "petType": "dog",
+    "predicted": "Golden Retriever",
+    "confidence": 0.9534,
+    "predictions": [
+      {
+        "breed": "Golden Retriever",
+        "confidence": 0.9534,
+        "rank": 1
+      },
+      {
+        "breed": "Labrador Retriever",
+        "confidence": 0.0312,
+        "rank": 2
+      },
+      {
+        "breed": "Flat Coated Retriever",
+        "confidence": 0.0089,
+        "rank": 3
+      }
+    ],
+    "processTime": 1234.56,
+    "usedTTA": false,
+    "modelInfo": {
+      "name": "ConvNeXt V2 Base - Dog Breed Classifier",
+      "petType": "dog",
+      "version": "1.0",
+      "classes": 120,
+      "imageSize": 384,
+      "accuracy": "92-95%",
+      "description": "ConvNeXt V2 Base model trained for dog breed classification"
+    }
+  }
+}
+```
+
+---
+
+### 2️⃣ Verify Pet Breed (File Upload)
+
+**Endpoint:** `POST /api/v1/pets/verify/file`
+
+Upload an image file directly using multipart/form-data.
+
+**Flutter Example:**
+```dart
+import 'package:http/http.dart' as http;
+import 'dart:io';
+
+Future<Map<String, dynamic>> verifyPetBreedFromFile({
+  required String accessToken,
+  required String petId,
+  required File imageFile,
+  bool useETTA = false,
+  int topK = 5,
+}) async {
+  var request = http.MultipartRequest(
+    'POST',
+    Uri.parse('http://localhost:8081/api/v1/pets/verify/file'),
+  );
+
+  request.headers['Authorization'] = 'Bearer $accessToken';
+  request.fields['petId'] = petId;
+  request.fields['useETTA'] = useETTA.toString();
+  request.fields['topK'] = topK.toString();
+  
+  // Add image file
+  request.files.add(
+    await http.MultipartFile.fromPath('image', imageFile.path),
+  );
+
+  final streamedResponse = await request.send();
+  final response = await http.Response.fromStream(streamedResponse);
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Verification failed: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```
+POST /api/v1/pets/verify/file
+Authorization: Bearer <access_token>
+Content-Type: multipart/form-data
+
+petId: 66b637c0-a982-432c-a9a6-f14810a851c9
+image: <binary_image_file>
+useETTA: false
+topK: 5
+```
+
+**Response:** Same as base64 verification endpoint.
+
+---
+
+### 3️⃣ Verify Pet Breed (Image URL)
+
+**Endpoint:** `POST /api/v1/pets/verify/url`
+
+Provide an image URL for the backend to download and verify.
+
+**Flutter Example:**
+```dart
+Future<Map<String, dynamic>> verifyPetBreedFromURL({
+  required String accessToken,
+  required String petId,
+  required String imageUrl,
+  bool useETTA = false,
+  int topK = 5,
+}) async {
+  final response = await http.post(
+    Uri.parse('http://localhost:8081/api/v1/pets/verify/url'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $accessToken',
+    },
+    body: jsonEncode({
+      'petId': petId,
+      'imageUrl': imageUrl,
+      'useETTA': useETTA,
+      'topK': topK,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Verification failed: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```json
+POST /api/v1/pets/verify/url
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "petId": "66b637c0-a982-432c-a9a6-f14810a851c9",
+  "imageUrl": "https://example.com/my-pet-image.jpg",
+  "useETTA": false,
+  "topK": 5
+}
+```
+
+**Response:** Same as base64 verification endpoint.
+
+---
+
+### 4️⃣ Upload Pet Image
+
+**Endpoint:** `POST /api/v1/uploads/image`
+
+Upload a single pet image to the server.
+
+**Flutter Example:**
+```dart
+Future<Map<String, dynamic>> uploadPetImage({
+  required String accessToken,
+  required File imageFile,
+}) async {
+  var request = http.MultipartRequest(
+    'POST',
+    Uri.parse('http://localhost:8081/api/v1/uploads/image'),
+  );
+
+  request.headers['Authorization'] = 'Bearer $accessToken';
+  request.files.add(
+    await http.MultipartFile.fromPath('image', imageFile.path),
+  );
+
+  final streamedResponse = await request.send();
+  final response = await http.Response.fromStream(streamedResponse);
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Upload failed: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```
+POST /api/v1/uploads/image
+Authorization: Bearer <access_token>
+Content-Type: multipart/form-data
+
+image: <binary_image_file>
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Image uploaded successfully",
+  "filename": "a1b2c3d4e5f6.jpg",
+  "url": "http://localhost:8081/uploads/a1b2c3d4e5f6.jpg",
+  "path": "./assets/uploads/a1b2c3d4e5f6.jpg",
+  "size": 204800
+}
+```
+
+---
+
+### 5️⃣ Upload Multiple Pet Images
+
+**Endpoint:** `POST /api/v1/uploads/images`
+
+Upload up to 5 pet images at once.
+
+**Flutter Example:**
+```dart
+Future<Map<String, dynamic>> uploadMultiplePetImages({
+  required String accessToken,
+  required List<File> imageFiles,
+}) async {
+  if (imageFiles.length > 5) {
+    throw Exception('Maximum 5 images allowed');
+  }
+
+  var request = http.MultipartRequest(
+    'POST',
+    Uri.parse('http://localhost:8081/api/v1/uploads/images'),
+  );
+
+  request.headers['Authorization'] = 'Bearer $accessToken';
+  
+  for (var file in imageFiles) {
+    request.files.add(
+      await http.MultipartFile.fromPath('images', file.path),
+    );
+  }
+
+  final streamedResponse = await request.send();
+  final response = await http.Response.fromStream(streamedResponse);
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Upload failed: ${response.body}');
+  }
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Uploaded 3 image(s) successfully",
+  "count": 3,
+  "files": [
+    {
+      "filename": "a1b2c3d4e5f6.jpg",
+      "url": "http://localhost:8081/uploads/a1b2c3d4e5f6.jpg",
+      "path": "./assets/uploads/a1b2c3d4e5f6.jpg",
+      "size": 204800
+    },
+    {
+      "filename": "b2c3d4e5f6a7.jpg",
+      "url": "http://localhost:8081/uploads/b2c3d4e5f6a7.jpg",
+      "path": "./assets/uploads/b2c3d4e5f6a7.jpg",
+      "size": 198400
+    }
+  ]
+}
+```
+
+---
+
+### 6️⃣ Delete Uploaded Image
+
+**Endpoint:** `DELETE /api/v1/uploads/image/:filename`
+
+Delete a previously uploaded image.
+
+**Flutter Example:**
+```dart
+Future<void> deleteUploadedImage({
+  required String accessToken,
+  required String filename,
+}) async {
+  final response = await http.delete(
+    Uri.parse('http://localhost:8081/api/v1/uploads/image/$filename'),
+    headers: {
+      'Authorization': 'Bearer $accessToken',
+    },
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Delete failed: ${response.body}');
+  }
+}
+```
+
+**Request:**
+```
+DELETE /api/v1/uploads/image/a1b2c3d4e5f6.jpg
+Authorization: Bearer <access_token>
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Image deleted successfully"
+}
+```
+
+---
+
+### 🛠️ Complete AI Verification Service Class
+
+```dart
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:io';
+
+class AIVerificationService {
+  final String baseUrl = 'http://localhost:8081/api/v1';
+  
+  // Verify from base64
+  Future<Map<String, dynamic>> verifyFromBase64({
+    required String accessToken,
+    required String petId,
+    required String base64Image,
+    bool useETTA = false,
+    int topK = 5,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/pets/verify'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode({
+        'petId': petId,
+        'image': base64Image,
+        'useETTA': useETTA,
+        'topK': topK,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Verification failed: ${response.body}');
+    }
+  }
+
+  // Verify from file
+  Future<Map<String, dynamic>> verifyFromFile({
+    required String accessToken,
+    required String petId,
+    required File imageFile,
+    bool useETTA = false,
+    int topK = 5,
+  }) async {
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/pets/verify/file'),
+    );
+
+    request.headers['Authorization'] = 'Bearer $accessToken';
+    request.fields['petId'] = petId;
+    request.fields['useETTA'] = useETTA.toString();
+    request.fields['topK'] = topK.toString();
+    request.files.add(
+      await http.MultipartFile.fromPath('image', imageFile.path),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Verification failed: ${response.body}');
+    }
+  }
+
+  // Verify from URL
+  Future<Map<String, dynamic>> verifyFromURL({
+    required String accessToken,
+    required String petId,
+    required String imageUrl,
+    bool useETTA = false,
+    int topK = 5,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/pets/verify/url'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode({
+        'petId': petId,
+        'imageUrl': imageUrl,
+        'useETTA': useETTA,
+        'topK': topK,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Verification failed: ${response.body}');
+    }
+  }
+
+  // Upload single image
+  Future<Map<String, dynamic>> uploadImage({
+    required String accessToken,
+    required File imageFile,
+  }) async {
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/uploads/image'),
+    );
+
+    request.headers['Authorization'] = 'Bearer $accessToken';
+    request.files.add(
+      await http.MultipartFile.fromPath('image', imageFile.path),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Upload failed: ${response.body}');
+    }
+  }
+
+  // Upload multiple images
+  Future<Map<String, dynamic>> uploadMultipleImages({
+    required String accessToken,
+    required List<File> imageFiles,
+  }) async {
+    if (imageFiles.length > 5) {
+      throw Exception('Maximum 5 images allowed');
+    }
+
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/uploads/images'),
+    );
+
+    request.headers['Authorization'] = 'Bearer $accessToken';
+    
+    for (var file in imageFiles) {
+      request.files.add(
+        await http.MultipartFile.fromPath('images', file.path),
+      );
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Upload failed: ${response.body}');
+    }
+  }
+
+  // Delete image
+  Future<void> deleteImage({
+    required String accessToken,
+    required String filename,
+  }) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/uploads/image/$filename'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Delete failed: ${response.body}');
+    }
+  }
+}
+```
+
+---
+
+### 🧪 Testing AI Breed Verification
+
+Run the PowerShell test script:
+```powershell
+.\Backend\scripts\test_ai_verification.ps1
+```
+
+This will test:
+- ✅ User registration and login
+- ✅ Pet creation
+- ✅ AI breed verification from URL
+- ✅ Verification results with confidence scores
+- ✅ Database updates (isVerified, verificationConfidence, verifiedBreed)
+- ✅ Top-5 breed predictions
+
+**Expected Output:**
+```
+============================================================
+STEP 4: Verify Pet Breed with AI
+============================================================
+✅ PASS - Pet breed verified!
+
+--- Verification Results ---
+Is Verified: True
+Verified Breed: Golden Retriever
+Confidence: 95.34%
+
+--- AI Prediction Details ---
+Predicted Breed: Golden Retriever
+Confidence: 95.34%
+Process Time: 1234.56 ms
+Used TTA: False
+
+--- Top 5 Predictions ---
+1. Golden Retriever - 95.34%
+2. Labrador Retriever - 3.12%
+3. Flat Coated Retriever - 0.89%
+4. Chesapeake Bay Retriever - 0.34%
+5. Irish Setter - 0.21%
+```
+
+---
+
+### 📊 Supported Parameters
+
+**`useETTA`** (bool):
+- `false`: Standard prediction (faster, ~1-2 seconds)
+- `true`: Test-Time Augmentation (more accurate, ~5-10 seconds)
+
+**`topK`** (int):
+- Number of top predictions to return (1-10)
+- Default: 5
+- Recommended: 3-5 for best UX
+
+---
+
+### 🎯 Model Information
+
+**Dog Breed Classifier:**
+- Model: ConvNeXt V2 Base
+- Classes: 120 breeds
+- Accuracy: 92-95%
+- Input Size: 384x384 pixels
+
+**Cat Breed Classifier:**
+- Model: ConvNeXt V2 Base
+- Classes: Multiple breeds
+- Accuracy: 88-92%
+- Input Size: 384x384 pixels
+
+---
+
+### 🔒 Authorization & Validation
+
+All verification endpoints:
+- ✅ Require authentication (JWT token)
+- ✅ Validate pet ownership (only owner can verify)
+- ✅ Validate image format (JPEG, PNG, WebP)
+- ✅ Validate file size (max 10MB)
+- ✅ Validate pet type (dog/cat)
+- ✅ Return 403 Forbidden if user doesn't own the pet
+- ✅ Return 404 Not Found if pet doesn't exist
+
+---
+
 ## 🏗️ Architecture
 
 ### Database (Supabase PostgreSQL)

@@ -15,12 +15,12 @@ import (
 type ChatHandlers struct {
 	chatRepo    *repositories.ChatRepository
 	messageRepo *repositories.MessageRepository
-	userRepo    *repositories.UserRepository
+	userRepo    repositories.UserRepository
 	vetRepo     *repositories.VetRepository
 }
 
 // NewChatHandlers creates new ChatHandlers
-func NewChatHandlers(chatRepo *repositories.ChatRepository, messageRepo *repositories.MessageRepository, userRepo *repositories.UserRepository, vetRepo *repositories.VetRepository) *ChatHandlers {
+func NewChatHandlers(chatRepo *repositories.ChatRepository, messageRepo *repositories.MessageRepository, userRepo repositories.UserRepository, vetRepo *repositories.VetRepository) *ChatHandlers {
 	return &ChatHandlers{
 		chatRepo:    chatRepo,
 		messageRepo: messageRepo,

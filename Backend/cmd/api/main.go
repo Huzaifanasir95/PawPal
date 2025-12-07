@@ -25,28 +25,24 @@ func main() {
 		log.Fatal("Failed to load configuration:", err)
 	}
 
-	// Initialize database connection
-	dbEnabled := true
+	// Initialize Supabase connection
 	if err := database.Initialize(); err != nil {
-		log.Printf("Warning: Failed to initialize database: %v", err)
-		log.Println("Running without database support - PostgreSQL endpoints will not work")
-		dbEnabled = false
+		log.Fatal("Failed to initialize Supabase:", err)
 	}
-	if dbEnabled {
-		defer database.Close()
-	}
+	defer database.Close()
 
-	// Get database pool (may be nil if database not available)
-	db := database.GetDB()
-
-	// Initialize repositories
-	userRepo := repositories.NewUserRepository(db)
-	petRepo := repositories.NewPetRepository(db)
-	healthRepo := repositories.NewHealthRepository(db)
-	communityRepo := repositories.NewCommunityRepository(db)
-	vetRepo := repositories.NewVetRepository(db)
-	chatRepo := repositories.NewChatRepository(db)
-	messageRepo := repositories.NewMessageRepository(db)
+	// Initialize repositories using Supabase REST API
+	userRepo := repositories.NewUserRepositorySupabase(database.Supabase)
+	logger.Info("Using Supabase REST API for all database operations")
+	
+	// TODO: Implement Supabase versions for other repositories
+	// For now, pass nil to handlers that need them
+	var petRepo *repositories.PetRepository = nil
+	var healthRepo *repositories.HealthRepository = nil
+	var communityRepo *repositories.CommunityRepository = nil
+	var vetRepo *repositories.VetRepository = nil
+	var chatRepo *repositories.ChatRepository = nil
+	var messageRepo *repositories.MessageRepository = nil
 
 	// Initialize auth service
 	authService := services.NewAuthService(userRepo)

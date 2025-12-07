@@ -1,0 +1,215 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.chats (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  pet_owner_id uuid NOT NULL,
+  vet_id uuid NOT NULL,
+  pet_id uuid,
+  last_message text,
+  last_message_at timestamp with time zone,
+  unread_count_owner integer DEFAULT 0,
+  unread_count_vet integer DEFAULT 0,
+  status USER-DEFINED DEFAULT 'active'::chat_status,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT chats_pkey PRIMARY KEY (id),
+  CONSTRAINT chats_pet_owner_id_fkey FOREIGN KEY (pet_owner_id) REFERENCES public.users(id),
+  CONSTRAINT chats_vet_id_fkey FOREIGN KEY (vet_id) REFERENCES public.users(id),
+  CONSTRAINT chats_pet_id_fkey FOREIGN KEY (pet_id) REFERENCES public.pets(id)
+);
+CREATE TABLE public.comments (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  post_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  parent_comment_id uuid,
+  content text NOT NULL,
+  likes_count integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT comments_pkey PRIMARY KEY (id),
+  CONSTRAINT comments_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id),
+  CONSTRAINT comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT comments_parent_comment_id_fkey FOREIGN KEY (parent_comment_id) REFERENCES public.comments(id)
+);
+CREATE TABLE public.health_journals (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  pet_id uuid NOT NULL,
+  owner_id uuid NOT NULL,
+  date date NOT NULL,
+  weight numeric,
+  weight_unit character varying DEFAULT 'kg'::character varying,
+  activity_level character varying,
+  energy_level character varying,
+  mood character varying,
+  appetite character varying,
+  symptoms jsonb DEFAULT '[]'::jsonb,
+  medications_taken jsonb DEFAULT '[]'::jsonb,
+  vet_visit boolean DEFAULT false,
+  vet_visit_reason text,
+  vet_notes text,
+  general_notes text,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT health_journals_pkey PRIMARY KEY (id),
+  CONSTRAINT health_journals_pet_id_fkey FOREIGN KEY (pet_id) REFERENCES public.pets(id),
+  CONSTRAINT health_journals_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.health_records (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  pet_id uuid NOT NULL,
+  owner_id uuid NOT NULL,
+  is_vaccinated boolean DEFAULT false,
+  vaccination_date date,
+  vaccination_details text,
+  medical_conditions jsonb DEFAULT '[]'::jsonb,
+  allergies jsonb DEFAULT '[]'::jsonb,
+  medications jsonb DEFAULT '[]'::jsonb,
+  vet_name character varying,
+  vet_clinic character varying,
+  vet_phone character varying,
+  vet_address text,
+  emergency_contact_name character varying,
+  emergency_contact_phone character varying,
+  insurance_provider character varying,
+  insurance_policy_number character varying,
+  additional_notes text,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT health_records_pkey PRIMARY KEY (id),
+  CONSTRAINT health_records_pet_id_fkey FOREIGN KEY (pet_id) REFERENCES public.pets(id),
+  CONSTRAINT health_records_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.likes (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  target_id uuid NOT NULL,
+  target_type character varying NOT NULL CHECK (target_type::text = ANY (ARRAY['post'::character varying, 'comment'::character varying]::text[])),
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT likes_pkey PRIMARY KEY (id),
+  CONSTRAINT likes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.messages (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  chat_id uuid NOT NULL,
+  sender_id uuid NOT NULL,
+  content text NOT NULL,
+  is_read boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT messages_pkey PRIMARY KEY (id),
+  CONSTRAINT messages_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chats(id),
+  CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.password_reset_tokens (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  token text NOT NULL UNIQUE,
+  expires_at timestamp with time zone NOT NULL,
+  used boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT password_reset_tokens_pkey PRIMARY KEY (id),
+  CONSTRAINT password_reset_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.pets (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  owner_id uuid NOT NULL,
+  name character varying NOT NULL,
+  type character varying NOT NULL CHECK (type::text = ANY (ARRAY['dog'::character varying, 'cat'::character varying]::text[])),
+  breed character varying NOT NULL,
+  age integer NOT NULL,
+  age_unit character varying DEFAULT 'years'::character varying CHECK (age_unit::text = ANY (ARRAY['months'::character varying, 'years'::character varying]::text[])),
+  gender character varying NOT NULL CHECK (gender::text = ANY (ARRAY['male'::character varying, 'female'::character varying]::text[])),
+  color character varying,
+  weight numeric,
+  weight_unit character varying DEFAULT 'kg'::character varying CHECK (weight_unit::text = ANY (ARRAY['kg'::character varying, 'lbs'::character varying]::text[])),
+  image_url text,
+  image_local_path text,
+  image_urls jsonb DEFAULT '[]'::jsonb,
+  is_verified boolean DEFAULT false,
+  verification_confidence numeric,
+  verified_breed character varying,
+  bio text,
+  is_adopted boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT pets_pkey PRIMARY KEY (id),
+  CONSTRAINT pets_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.posts (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  title character varying NOT NULL,
+  content text NOT NULL,
+  image_urls jsonb DEFAULT '[]'::jsonb,
+  likes_count integer DEFAULT 0,
+  comments_count integer DEFAULT 0,
+  visibility USER-DEFINED DEFAULT 'public'::post_visibility,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT posts_pkey PRIMARY KEY (id),
+  CONSTRAINT posts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.refresh_tokens (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  token text NOT NULL UNIQUE,
+  expires_at timestamp with time zone NOT NULL,
+  revoked boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT refresh_tokens_pkey PRIMARY KEY (id),
+  CONSTRAINT refresh_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.users (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  email character varying NOT NULL UNIQUE,
+  password_hash text NOT NULL,
+  display_name character varying,
+  account_type character varying DEFAULT 'standard'::character varying,
+  user_role USER-DEFINED DEFAULT 'petowner'::user_role,
+  avatar_url text,
+  is_active boolean DEFAULT true,
+  email_verified boolean DEFAULT false,
+  google_id character varying UNIQUE,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT users_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.vet_profiles (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL UNIQUE,
+  full_name character varying NOT NULL,
+  degree character varying NOT NULL,
+  license_number character varying,
+  specialization jsonb DEFAULT '[]'::jsonb,
+  experience integer DEFAULT 0,
+  clinic_name character varying,
+  clinic_address text,
+  city character varying,
+  state character varying,
+  zip_code character varying,
+  phone character varying NOT NULL,
+  consultation_fee numeric DEFAULT 0.00,
+  currency character varying DEFAULT 'USD'::character varying,
+  bio text,
+  profile_photo_url text,
+  availability_hours jsonb,
+  rating numeric DEFAULT 0.00,
+  total_reviews integer DEFAULT 0,
+  is_verified boolean DEFAULT false,
+  is_available boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT vet_profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT vet_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.vet_reviews (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  vet_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT vet_reviews_pkey PRIMARY KEY (id),
+  CONSTRAINT vet_reviews_vet_id_fkey FOREIGN KEY (vet_id) REFERENCES public.users(id),
+  CONSTRAINT vet_reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);

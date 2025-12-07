@@ -11,18 +11,18 @@ import (
 	"pawpal-backend/internal/models"
 )
 
-// UserRepository handles user database operations
-type UserRepository struct {
+// UserRepositoryPG handles user database operations using PostgreSQL
+type UserRepositoryPG struct {
 	db *pgxpool.Pool
 }
 
-// NewUserRepository creates a new UserRepository
-func NewUserRepository(db *pgxpool.Pool) *UserRepository {
-	return &UserRepository{db: db}
+// NewUserRepository creates a new UserRepositoryPG
+func NewUserRepository(db *pgxpool.Pool) UserRepository {
+	return &UserRepositoryPG{db: db}
 }
 
 // Create creates a new user
-func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
+func (r *UserRepositoryPG) Create(ctx context.Context, user *models.User) error {
 	query := `
 		INSERT INTO users (id, email, password_hash, display_name, account_type, avatar_url, is_active, email_verified, google_id, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -54,7 +54,7 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 }
 
 // GetByID gets a user by ID
-func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+func (r *UserRepositoryPG) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	query := `
 		SELECT id, email, password_hash, display_name, account_type, avatar_url, is_active, email_verified, google_id, created_at, updated_at
 		FROM users WHERE id = $1 AND is_active = true`
@@ -83,7 +83,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 }
 
 // GetByEmail gets a user by email
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+func (r *UserRepositoryPG) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
 		SELECT id, email, password_hash, display_name, account_type, avatar_url, is_active, email_verified, google_id, created_at, updated_at
 		FROM users WHERE email = $1`
@@ -112,7 +112,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 }
 
 // Update updates a user
-func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
+func (r *UserRepositoryPG) Update(ctx context.Context, user *models.User) error {
 	query := `
 		UPDATE users 
 		SET display_name = $2, account_type = $3, avatar_url = $4, google_id = $5, email_verified = $6, updated_at = $7
@@ -131,21 +131,21 @@ func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
 }
 
 // UpdatePassword updates a user's password
-func (r *UserRepository) UpdatePassword(ctx context.Context, userID uuid.UUID, passwordHash string) error {
+func (r *UserRepositoryPG) UpdatePassword(ctx context.Context, userID uuid.UUID, passwordHash string) error {
 	query := `UPDATE users SET password_hash = $2, updated_at = $3 WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, userID, passwordHash, time.Now())
 	return err
 }
 
 // Delete soft deletes a user
-func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *UserRepositoryPG) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `UPDATE users SET is_active = false, updated_at = $2 WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, id, time.Now())
 	return err
 }
 
 // SetUserRole sets the user's role (petowner or vet)
-func (r *UserRepository) SetUserRole(ctx context.Context, userID uuid.UUID, role string) error {
+func (r *UserRepositoryPG) SetUserRole(ctx context.Context, userID uuid.UUID, role string) error {
 	// Update both account_type and user_role to keep them in sync
 	query := `UPDATE users SET account_type = $2, user_role = $2, updated_at = $3 WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, userID, role, time.Now())
@@ -153,7 +153,7 @@ func (r *UserRepository) SetUserRole(ctx context.Context, userID uuid.UUID, role
 }
 
 // CreateRefreshToken creates a new refresh token
-func (r *UserRepository) CreateRefreshToken(ctx context.Context, token *models.RefreshToken) error {
+func (r *UserRepositoryPG) CreateRefreshToken(ctx context.Context, token *models.RefreshToken) error {
 	query := `
 		INSERT INTO refresh_tokens (id, user_id, token, expires_at, revoked, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6)`
@@ -174,7 +174,7 @@ func (r *UserRepository) CreateRefreshToken(ctx context.Context, token *models.R
 }
 
 // GetRefreshToken gets a refresh token
-func (r *UserRepository) GetRefreshToken(ctx context.Context, token string) (*models.RefreshToken, error) {
+func (r *UserRepositoryPG) GetRefreshToken(ctx context.Context, token string) (*models.RefreshToken, error) {
 	query := `
 		SELECT id, user_id, token, expires_at, revoked, created_at
 		FROM refresh_tokens WHERE token = $1 AND revoked = false AND expires_at > NOW()`
@@ -198,21 +198,21 @@ func (r *UserRepository) GetRefreshToken(ctx context.Context, token string) (*mo
 }
 
 // RevokeRefreshToken revokes a refresh token
-func (r *UserRepository) RevokeRefreshToken(ctx context.Context, token string) error {
+func (r *UserRepositoryPG) RevokeRefreshToken(ctx context.Context, token string) error {
 	query := `UPDATE refresh_tokens SET revoked = true WHERE token = $1`
 	_, err := r.db.Exec(ctx, query, token)
 	return err
 }
 
 // RevokeAllUserRefreshTokens revokes all refresh tokens for a user
-func (r *UserRepository) RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error {
+func (r *UserRepositoryPG) RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error {
 	query := `UPDATE refresh_tokens SET revoked = true WHERE user_id = $1`
 	_, err := r.db.Exec(ctx, query, userID)
 	return err
 }
 
 // CreatePasswordResetToken creates a password reset token
-func (r *UserRepository) CreatePasswordResetToken(ctx context.Context, token *models.PasswordResetToken) error {
+func (r *UserRepositoryPG) CreatePasswordResetToken(ctx context.Context, token *models.PasswordResetToken) error {
 	query := `
 		INSERT INTO password_reset_tokens (id, user_id, token, expires_at, used, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6)`
@@ -233,7 +233,7 @@ func (r *UserRepository) CreatePasswordResetToken(ctx context.Context, token *mo
 }
 
 // GetPasswordResetToken gets a password reset token
-func (r *UserRepository) GetPasswordResetToken(ctx context.Context, token string) (*models.PasswordResetToken, error) {
+func (r *UserRepositoryPG) GetPasswordResetToken(ctx context.Context, token string) (*models.PasswordResetToken, error) {
 	query := `
 		SELECT id, user_id, token, expires_at, used, created_at
 		FROM password_reset_tokens WHERE token = $1 AND used = false AND expires_at > NOW()`
@@ -257,8 +257,50 @@ func (r *UserRepository) GetPasswordResetToken(ctx context.Context, token string
 }
 
 // MarkPasswordResetTokenUsed marks a password reset token as used
-func (r *UserRepository) MarkPasswordResetTokenUsed(ctx context.Context, token string) error {
+func (r *UserRepositoryPG) MarkPasswordResetTokenUsed(ctx context.Context, token string) error {
 	query := `UPDATE password_reset_tokens SET used = true WHERE token = $1`
 	_, err := r.db.Exec(ctx, query, token)
 	return err
+}
+
+// Adapter methods to match the UserRepository interface
+
+// CreateUser is an adapter for Create method
+func (r *UserRepositoryPG) CreateUser(ctx context.Context, user *models.User) error {
+	return r.Create(ctx, user)
+}
+
+// GetUserByID is an adapter for GetByID method
+func (r *UserRepositoryPG) GetUserByID(ctx context.Context, userID uuid.UUID) (*models.User, error) {
+	return r.GetByID(ctx, userID)
+}
+
+// GetUserByEmail is an adapter for GetByEmail method
+func (r *UserRepositoryPG) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	return r.GetByEmail(ctx, email)
+}
+
+// UpdateUser is an adapter for Update method
+func (r *UserRepositoryPG) UpdateUser(ctx context.Context, user *models.User) error {
+	return r.Update(ctx, user)
+}
+
+// DeleteUser is an adapter for Delete method
+func (r *UserRepositoryPG) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+	return r.Delete(ctx, userID)
+}
+
+// StoreRefreshToken is an adapter for CreateRefreshToken method
+func (r *UserRepositoryPG) StoreRefreshToken(ctx context.Context, token *models.RefreshToken) error {
+	return r.CreateRefreshToken(ctx, token)
+}
+
+// DeleteRefreshToken is an adapter for RevokeRefreshToken method
+func (r *UserRepositoryPG) DeleteRefreshToken(ctx context.Context, token string) error {
+	return r.RevokeRefreshToken(ctx, token)
+}
+
+// DeleteUserRefreshTokens is an adapter for RevokeAllUserRefreshTokens method
+func (r *UserRepositoryPG) DeleteUserRefreshTokens(ctx context.Context, userID uuid.UUID) error {
+	return r.RevokeAllUserRefreshTokens(ctx, userID)
 }

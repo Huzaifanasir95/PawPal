@@ -29,14 +29,14 @@ var (
 
 // AuthService handles authentication operations
 type AuthService struct {
-	userRepo     *repositories.UserRepository
+	userRepo     repositories.UserRepository
 	jwtSecret    []byte
 	accessExpiry time.Duration
 	refreshExpiry time.Duration
 }
 
 // NewAuthService creates a new AuthService
-func NewAuthService(userRepo *repositories.UserRepository) *AuthService {
+func NewAuthService(userRepo repositories.UserRepository) *AuthService {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		secret = "pawpal-super-secret-jwt-key-change-in-production"

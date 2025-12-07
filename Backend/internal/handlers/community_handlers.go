@@ -13,11 +13,11 @@ import (
 // CommunityHandlers handles community endpoints
 type CommunityHandlers struct {
 	communityRepo *repositories.CommunityRepository
-	userRepo      *repositories.UserRepository
+	userRepo      repositories.UserRepository
 }
 
 // NewCommunityHandlers creates new CommunityHandlers
-func NewCommunityHandlers(communityRepo *repositories.CommunityRepository, userRepo *repositories.UserRepository) *CommunityHandlers {
+func NewCommunityHandlers(communityRepo *repositories.CommunityRepository, userRepo repositories.UserRepository) *CommunityHandlers {
 	return &CommunityHandlers{
 		communityRepo: communityRepo,
 		userRepo:      userRepo,

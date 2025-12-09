@@ -216,7 +216,7 @@ class CustomDrawer extends StatelessWidget {
                 children: [
                   // User Name
                   Text(
-                    user.displayName ?? user.email?.split('@')[0] ?? 'User',
+                    user.displayName ?? user.email.split('@')[0],
                     style: AppTextStyles.onboardingTitle.copyWith(
                       fontSize: 18.sp,
                       color: AppColors.accent,
@@ -228,7 +228,7 @@ class CustomDrawer extends StatelessWidget {
                   SizedBox(height: 2.h),
                   // User Email
                   Text(
-                    user.email ?? '',
+                    user.email,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 12.sp,
                       color: AppColors.accent.withOpacity(0.8),
@@ -246,6 +246,7 @@ class CustomDrawer extends StatelessWidget {
       unauthenticated: () => _buildGuestHeader(),
       error: (message) => _buildGuestHeader(),
       passwordResetSent: () => _buildGuestHeader(),
+      accountTypeRequired: (idToken, displayName, photoUrl) => _buildGuestHeader(),
     );
   }
 

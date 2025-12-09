@@ -205,13 +205,32 @@ func (r *VetRepository) List(ctx context.Context, filters map[string]interface{}
 
 // CheckUserIsVet checks if a user has vet role
 func (r *VetRepository) CheckUserIsVet(ctx context.Context, userID uuid.UUID) (bool, error) {
-	var role string
-	err := r.db.QueryRow(ctx, "SELECT user_role FROM users WHERE id = $1", userID).Scan(&role)
+	var role sql.NullString
+	var accountType sql.NullString
+	
+	// Check both user_role and account_type fields for backward compatibility
+	err := r.db.QueryRow(ctx, `
+		SELECT user_role, account_type 
+		FROM users 
+		WHERE id = $1
+	`, userID).Scan(&role, &accountType)
+	
 	if err != nil {
 		if err == sql.ErrNoRows || err == pgx.ErrNoRows {
 			return false, nil
 		}
 		return false, err
 	}
-	return role == "vet", nil
+	
+	// Check user_role field (for email sign-ups)
+	if role.Valid && role.String == "vet" {
+		return true, nil
+	}
+	
+	// Check account_type field (for Google Sign-In)
+	if accountType.Valid && accountType.String == "vet" {
+		return true, nil
+	}
+	
+	return false, nil
 }

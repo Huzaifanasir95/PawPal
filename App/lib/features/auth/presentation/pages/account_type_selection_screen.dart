@@ -10,10 +10,16 @@ import '../bloc/auth_bloc.dart';
 
 class AccountTypeSelectionScreen extends StatefulWidget {
   final VoidCallback? onAccountTypeSelected;
+  final String? idToken;
+  final String? displayName;
+  final String? photoUrl;
   
   const AccountTypeSelectionScreen({
     super.key,
     this.onAccountTypeSelected,
+    this.idToken,
+    this.displayName,
+    this.photoUrl,
   });
 
   @override
@@ -25,23 +31,40 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.authBackground,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Column(
-            children: [
-              SizedBox(height: 50.h),
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        state.when(
+          initial: () {},
+          loading: () {},
+          authenticated: (user) {
+            // Don't handle here - let AuthFlow handle navigation
+            print('🏠 AccountTypeSelection: Authenticated - letting AuthFlow handle it');
+          },
+          unauthenticated: () {},
+          error: (message) {
+            CustomSnackbar.showError(context, message);
+          },
+          passwordResetSent: () {},
+          accountTypeRequired: (idToken, displayName, photoUrl) {},
+        );
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.authBackground,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Column(
+              children: [
+                SizedBox(height: 50.h),
 
-              // Primary Logo
-              Row(
-                children: [
-                  Image.asset(
-                    AppImages.primaryLogo,
-                    width: 58.w,
-                    height: 58.h,
-                    errorBuilder: (context, error, stackTrace) {
+                // Primary Logo
+                Row(
+                  children: [
+                    Image.asset(
+                      AppImages.primaryLogo,
+                      width: 58.w,
+                      height: 58.h,
+                      errorBuilder: (context, error, stackTrace) {
                       return Container(
                         width: 58.w,
                         height: 58.h,
@@ -90,8 +113,8 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
                 title: AppStrings.veterinary,
                 description: 'Provide professional care for pets',
                 icon: Icons.local_hospital,
-                isSelected: _selectedAccountType == 'veterinary',
-                onTap: () => _selectAccountType('veterinary'),
+                isSelected: _selectedAccountType == 'vet',
+                onTap: () => _selectAccountType('vet'),
               ),
 
               SizedBox(height: 20.h),
@@ -114,6 +137,7 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -250,15 +274,22 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
     }
 
     try {
-      // Save account type to user profile
       final authBloc = context.read<AuthBloc>();
-      authBloc.add(AuthEvent.updateAccountType(_selectedAccountType!));
-
-      // Call the callback if provided
-      widget.onAccountTypeSelected?.call();
-
-      // Show success message
-      CustomSnackbar.showSuccess(context, 'Account type saved successfully!');
+      
+      // If we have idToken, this is from Google Sign-In - complete the flow
+      if (widget.idToken != null) {
+        authBloc.add(AuthEvent.completeGoogleSignIn(
+          widget.idToken!,
+          _selectedAccountType!,
+          widget.displayName,
+          widget.photoUrl,
+        ));
+      } else {
+        // Otherwise just update the account type (existing flow)
+        authBloc.add(AuthEvent.updateAccountType(_selectedAccountType!));
+        widget.onAccountTypeSelected?.call();
+        CustomSnackbar.showSuccess(context, 'Account type saved successfully!');
+      }
     } catch (e) {
       CustomSnackbar.showError(context, 'Failed to save account type. Please try again.');
     }

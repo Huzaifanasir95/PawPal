@@ -30,6 +30,7 @@ class AuthResponse with _$AuthResponse {
     required AuthUser user,
     required String accessToken,
     required String refreshToken,
+    @Default(false) bool isNewUser,
   }) = _AuthResponse;
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) => _$AuthResponseFromJson(json);
@@ -62,6 +63,7 @@ class GoogleSignInRequest with _$GoogleSignInRequest {
     required String idToken,
     String? displayName,
     String? photoUrl,
+    String? accountType,
   }) = _GoogleSignInRequest;
 
   factory GoogleSignInRequest.fromJson(Map<String, dynamic> json) => _$GoogleSignInRequestFromJson(json);

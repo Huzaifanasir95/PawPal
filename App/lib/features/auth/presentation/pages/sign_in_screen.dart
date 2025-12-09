@@ -45,7 +45,8 @@ class _SignInScreenState extends State<SignInScreen> {
               initial: () {},
               loading: () {},
               authenticated: (user) {
-                // No manual navigation - AuthFlow will handle this
+                // Don't handle here - let AuthFlow handle navigation
+                print('🏠 SignIn: Authenticated - letting AuthFlow handle it');
               },
               unauthenticated: () {},
               error: (message) {
@@ -56,6 +57,9 @@ class _SignInScreenState extends State<SignInScreen> {
               },
               passwordResetSent: () {
                 CustomSnackbar.showSuccess(context, 'Password reset email sent!');
+              },
+              accountTypeRequired: (idToken, displayName, photoUrl) {
+                // Navigation handled by AuthFlow
               },
             );
           },

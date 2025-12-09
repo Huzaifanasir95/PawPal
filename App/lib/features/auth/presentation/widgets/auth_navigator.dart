@@ -35,6 +35,9 @@ class _AuthNavigatorState extends State<AuthNavigator> {
             // Error handling is done in individual screens
           },
           passwordResetSent: () {},
+          accountTypeRequired: (idToken, displayName, photoUrl) {
+            // Navigation handled by AuthFlow
+          },
         );
       },
       child: AnimatedSwitcher(

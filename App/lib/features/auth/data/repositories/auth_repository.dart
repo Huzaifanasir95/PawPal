@@ -91,43 +91,38 @@ class AuthRepository {
   }
 
   // Sign in with Google
-  Future<AuthUser> signInWithGoogle() async {
+  Future<AuthResponse> signInWithGoogle({
+    required String idToken,
+    String? displayName,
+    String? photoUrl,
+    String? accountType,
+  }) async {
     try {
-      // Sign out from Google first to ensure fresh login
-      await _googleSignIn.signOut();
-      
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
-      if (googleUser == null) {
-        throw Exception('Google sign in was cancelled by user');
-      }
-
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      // Verify we have the required tokens
-      if (googleAuth.idToken == null) {
-        throw Exception('Failed to obtain Google ID token');
-      }
-
+      print('🔐 signInWithGoogle called with accountType: $accountType');
       // Send the ID token to our backend
       final response = await _apiClient.post('/api/v1/auth/google', data: {
-        'idToken': googleAuth.idToken,
-        'displayName': googleUser.displayName,
-        'photoUrl': googleUser.photoUrl,
+        'idToken': idToken,
+        if (displayName != null) 'displayName': displayName,
+        if (photoUrl != null) 'photoUrl': photoUrl,
+        if (accountType != null) 'accountType': accountType,
       });
 
+      print('📦 Backend response: ${response.data}');
       final authResponse = _parseAuthResponse(response.data);
-      await _handleAuthSuccess(authResponse);
-      return _currentUser!;
+      
+      // If accountType was provided, this is completing registration - always save auth
+      // If no accountType and isNewUser=true, skip saving (they need to select account type)
+      if (accountType != null || !authResponse.isNewUser) {
+        print('💾 Saving auth tokens and user data');
+        await _handleAuthSuccess(authResponse);
+      } else {
+        print('⏸️ Skipping auth save - user needs to select account type');
+      }
+      
+      return authResponse;
     } on DioException catch (e) {
       throw _handleDioError(e);
     } catch (e) {
-      // Don't throw an error for user cancellation
-      if (e.toString().contains('cancelled') || e.toString().contains('canceled')) {
-        throw 'Google sign in was cancelled';
-      }
       throw 'Failed to sign in with Google: ${e.toString()}';
     }
   }
@@ -296,26 +291,36 @@ class AuthRepository {
   // Helper: Parse auth response
   AuthResponse _parseAuthResponse(Map<String, dynamic> data) {
     final user = data['user'];
+    final isNewUser = data['isNewUser'] ?? false;
+    
     return AuthResponse(
       user: AuthUser(
-        id: user['uid'] ?? user['id'],
-        email: user['email'],
+        id: user['uid'] ?? user['id'] ?? '',
+        email: user['email'] ?? '',
         displayName: user['displayName'],
         accountType: user['accountType'],
         photoUrl: user['avatarUrl'],
-        createdAt: user['createdAt'] != null ? DateTime.parse(user['createdAt']) : null,
-        updatedAt: user['updatedAt'] != null ? DateTime.parse(user['updatedAt']) : null,
+        createdAt: user['createdAt'] != null && user['createdAt'] != '0001-01-01T00:00:00Z' 
+            ? DateTime.parse(user['createdAt']) 
+            : null,
+        updatedAt: user['updatedAt'] != null && user['updatedAt'] != '0001-01-01T00:00:00Z'
+            ? DateTime.parse(user['updatedAt']) 
+            : null,
       ),
-      accessToken: data['accessToken'],
-      refreshToken: data['refreshToken'],
+      accessToken: data['accessToken'] ?? '',
+      refreshToken: data['refreshToken'] ?? '',
+      isNewUser: isNewUser,
     );
   }
 
   // Helper: Handle successful auth
   Future<void> _handleAuthSuccess(AuthResponse authResponse) async {
+    print('🎯 _handleAuthSuccess: Saving tokens and updating user');
     await _apiClient.setTokens(authResponse.accessToken, authResponse.refreshToken);
     _currentUser = authResponse.user;
+    print('📢 Broadcasting auth state: ${_currentUser!.email}');
     _authStateController.add(_currentUser);
+    print('✅ Auth state broadcasted');
   }
 
   // Helper: Handle Dio errors

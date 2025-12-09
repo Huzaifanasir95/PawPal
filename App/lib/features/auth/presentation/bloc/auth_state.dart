@@ -8,4 +8,5 @@ class AuthState with _$AuthState {
   const factory AuthState.unauthenticated() = _Unauthenticated;
   const factory AuthState.error(String message) = _Error;
   const factory AuthState.passwordResetSent() = _PasswordResetSent;
+  const factory AuthState.accountTypeRequired(String idToken, String? displayName, String? photoUrl) = _AccountTypeRequired;
 }

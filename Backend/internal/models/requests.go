@@ -23,6 +23,7 @@ type GoogleSignInRequest struct {
 	IDToken     string  `json:"idToken" binding:"required"`
 	DisplayName *string `json:"displayName,omitempty"`
 	PhotoURL    *string `json:"photoUrl,omitempty"`
+	AccountType *string `json:"accountType,omitempty"`
 }
 
 // AuthResponse represents an authentication response
@@ -33,6 +34,7 @@ type AuthResponse struct {
 	AccessToken  string       `json:"accessToken,omitempty"`
 	RefreshToken string       `json:"refreshToken,omitempty"`
 	ExpiresIn    int64        `json:"expiresIn,omitempty"` // Token expiry in seconds
+	IsNewUser    bool         `json:"isNewUser,omitempty"`  // Indicates if this is a new user needing account setup
 }
 
 // RefreshTokenRequest represents a token refresh request

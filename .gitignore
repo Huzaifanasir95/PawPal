@@ -47,9 +47,9 @@ App/android/captures/
 App/android/gradlew.bat
 
 # Generated files (only ignore in root and specific generated locations)
-App/**/*.g.dart
-App/**/*.freezed.dart
-App/**/*.config.dart
+# App/**/*.g.dart
+# App/**/*.freezed.dart
+# App/**/*.config.dart
 
 /TEMP
 /PLANTUML

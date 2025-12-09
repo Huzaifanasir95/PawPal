@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/widgets/user_avatar.dart';
+import '../../../../core/services/websocket_service.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../data/models/chat_model.dart';
 import '../bloc/chat_bloc.dart';
@@ -31,7 +33,12 @@ class ChatConversationScreen extends StatefulWidget {
 class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  final _wsService = WebSocketService();
+  StreamSubscription? _wsMessageSubscription;
+  StreamSubscription? _wsConnectionSubscription;
   bool _isSending = false;
+  bool _isConnected = false;
+  bool _isLoadingMessages = true;
   Chat? _lastChat;
   List<ChatMessage> _lastMessages = [];
 
@@ -50,13 +57,67 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         updatedAt: DateTime.now(),
       );
     }
+    
+    // Connect WebSocket
+    _connectWebSocket();
+    
+    // Load chat messages
     context.read<ChatBloc>().add(ChatEvent.loadChat(widget.chatId));
+  }
+
+  void _connectWebSocket() async {
+    // Connect to WebSocket
+    await _wsService.connect(widget.chatId);
+    
+    // Listen to connection status
+    _wsConnectionSubscription = _wsService.connectionStream.listen((isConnected) {
+      if (mounted) {
+        setState(() {
+          _isConnected = isConnected;
+          print('🔌 WebSocket connection status: $isConnected');
+        });
+      }
+    });
+    
+    // Listen to incoming messages
+    _wsMessageSubscription = _wsService.messageStream.listen((data) {
+      final type = data['type'] as String?;
+      
+      if (type == 'new_message') {
+        // New message received
+        final messageData = data['message'] as Map<String, dynamic>;
+        final newMessage = ChatMessage.fromJson(messageData);
+        
+        setState(() {
+          _lastMessages = [..._lastMessages, newMessage];
+        });
+        
+        // Scroll to bottom
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      } else if (type == 'typing') {
+        // Handle typing indicator
+        final isTyping = data['isTyping'] as bool? ?? false;
+        // You can show typing indicator UI here
+        print('Other user is typing: $isTyping');
+      }
+    });
   }
 
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _wsMessageSubscription?.cancel();
+    _wsConnectionSubscription?.cancel();
+    _wsService.disconnect();
     super.dispose();
   }
 
@@ -135,6 +196,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               // Replace temp messages with real ones
               _lastMessages = messages;
               _isSending = false;
+              _isLoadingMessages = false; // Messages loaded
             });
           },
           orElse: () {},
@@ -154,43 +216,106 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     children: [
                       UserAvatar(
                         imageUrl: _lastChat!.otherUserPhoto,
-                        size: 36.r,
+                        size: 40.r,
                       ),
                       SizedBox(width: 12.w),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               _lastChat!.otherUserName ?? 'User',
-                              style: const TextStyle(
-                                fontSize: 16,
+                              style: TextStyle(
+                                fontSize: 17.sp,
                                 fontWeight: FontWeight.w600,
+                                color: Colors.white,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            // You could show online status here
+                            SizedBox(height: 2.h),
+                            // Connection status - only show when both connected and messages loaded
+                            if (_isConnected && !_isLoadingMessages)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    margin: EdgeInsets.only(right: 6.w),
+                                    decoration: BoxDecoration(
+                                      color: Colors.greenAccent,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.greenAccent.withOpacity(0.5),
+                                          blurRadius: 4,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    'Connected',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      color: Colors.greenAccent,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else
+                              Text(
+                                'Connecting...',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: Colors.white70,
+                                ),
+                              ),
                           ],
                         ),
                       ),
                     ],
                   )
-                : const Row(
+                : Row(
                     children: [
                       CircleAvatar(
-                        radius: 18,
-                        child: Icon(Icons.person, size: 20),
+                        radius: 20,
+                        backgroundColor: Colors.white24,
+                        child: Icon(Icons.person, size: 22, color: Colors.white70),
                       ),
-                      SizedBox(width: 12),
-                      Text('Loading...'),
+                      SizedBox(width: 12.w),
+                      Text(
+                        'Loading...',
+                        style: TextStyle(fontSize: 16.sp),
+                      ),
                     ],
                   ),
           ),
           body: state.when(
             initial: () => const Center(child: Text('Loading...')),
             loading: () {
-              // If we have cached data, show it while loading
+              // Show loading indicator until messages are fully loaded
+              if (_isLoadingMessages) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'Loading messages...',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              // If we have cached data and loading is complete, show it
               if (_lastChat != null && _lastMessages.isNotEmpty) {
                 return _buildChatView(_lastChat!, _lastMessages);
               }
@@ -304,49 +429,86 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
             offset: const Offset(0, -2),
           ),
         ],
       ),
       child: SafeArea(
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
-              child: TextField(
-                controller: _messageController,
-                maxLines: null,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  hintText: 'Type a message...',
-                  filled: true,
-                  fillColor: AppColors.background,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24.r),
-                    borderSide: BorderSide.none,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(24.r),
+                  border: Border.all(
+                    color: AppColors.border.withOpacity(0.3),
+                    width: 1,
                   ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
                 ),
-                onSubmitted: (_) => _sendMessage(),
+                child: TextField(
+                  controller: _messageController,
+                  maxLines: null,
+                  minLines: 1,
+                  maxLength: 1000,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: TextStyle(fontSize: 15.sp),
+                  decoration: InputDecoration(
+                    hintText: 'Type a message...',
+                    hintStyle: TextStyle(
+                      color: AppColors.textSecondary.withOpacity(0.6),
+                      fontSize: 15.sp,
+                    ),
+                    filled: false,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 12.h,
+                    ),
+                    counterText: '',
+                  ),
+                  onSubmitted: (_) => _sendMessage(),
+                ),
               ),
             ),
             SizedBox(width: 12.w),
             Container(
+              width: 48.w,
+              height: 48.w,
               decoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
-                  _isSending ? Icons.hourglass_empty : Icons.send,
-                  color: AppColors.textOnPrimary,
-                  size: 22.sp,
+                gradient: LinearGradient(
+                  colors: _isSending
+                      ? [Colors.grey.shade400, Colors.grey.shade500]
+                      : [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                onPressed: _isSending ? null : _sendMessage,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _isSending ? null : _sendMessage,
+                  borderRadius: BorderRadius.circular(24.r),
+                  child: Icon(
+                    _isSending ? Icons.hourglass_empty : Icons.send_rounded,
+                    color: Colors.white,
+                    size: 22.sp,
+                  ),
+                ),
               ),
             ),
           ],
@@ -388,16 +550,22 @@ class _MessageBubble extends StatelessWidget {
           ],
           Flexible(
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
               decoration: BoxDecoration(
-                color: isSentByMe ? AppColors.primary : AppColors.surface,
+                color: isSentByMe ? AppColors.primary : Colors.white,
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16.r),
-                  topRight: Radius.circular(16.r),
-                  bottomLeft: Radius.circular(isSentByMe ? 16.r : 4.r),
-                  bottomRight: Radius.circular(isSentByMe ? 4.r : 16.r),
+                  topLeft: Radius.circular(18.r),
+                  topRight: Radius.circular(18.r),
+                  bottomLeft: Radius.circular(isSentByMe ? 18.r : 4.r),
+                  bottomRight: Radius.circular(isSentByMe ? 4.r : 18.r),
                 ),
-                border: isSentByMe ? null : Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,6 +574,8 @@ class _MessageBubble extends StatelessWidget {
                     message.content,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: isSentByMe ? AppColors.textOnPrimary : AppColors.textPrimary,
+                      fontSize: 15.sp,
+                      height: 1.4,
                     ),
                   ),
                   if (showSenderInfo) ...[
@@ -417,18 +587,19 @@ class _MessageBubble extends StatelessWidget {
                           timeago.format(message.createdAt),
                           style: AppTextStyles.bodySmall.copyWith(
                             color: isSentByMe
-                                ? AppColors.textOnPrimary.withOpacity(0.7)
+                                ? AppColors.textOnPrimary.withOpacity(0.8)
                                 : AppColors.textSecondary,
                             fontSize: 11.sp,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         if (isSentByMe) ...[
-                          SizedBox(width: 4.w),
+                          SizedBox(width: 5.w),
                           Icon(
                             message.isRead ? Icons.done_all : Icons.done,
-                            size: 14.sp,
+                            size: 16.sp,
                             color: message.isRead
-                                ? Colors.blue
+                                ? Color(0xFF4FC3F7)
                                 : AppColors.textOnPrimary.withOpacity(0.7),
                           ),
                         ],

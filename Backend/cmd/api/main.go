@@ -68,9 +68,10 @@ func main() {
 	communityHandlers := handlers.NewCommunityHandlers(communityRepo, userRepo)
 	vetHandlers := handlers.NewVetHandlers(vetRepo)
 	chatHandlers := handlers.NewChatHandlers(chatRepo, messageRepo, userRepo, vetRepo)
+	wsHandler := handlers.NewWebSocketHandler(messageRepo, chatRepo)
 	
 	// Setup router
-	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, authService, cfg)
+	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, wsHandler, authService, cfg)
 	
 	// Start server
 	port := os.Getenv("PORT")
@@ -87,7 +88,7 @@ func main() {
 	}
 }
 
-func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
+func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, wsHandler *handlers.WebSocketHandler, authService *services.AuthService, cfg *config.Config) *gin.Engine {
 	// Set Gin mode
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -171,6 +172,13 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				messages.POST("", chatHandlers.SendMessage)               // Send message
 				messages.GET("/:chatId", chatHandlers.GetChatMessages)    // Get chat messages
 				messages.PUT("/:id/read", chatHandlers.MarkMessageAsRead) // Mark as read
+			}
+
+			// WebSocket for real-time messaging (uses its own auth middleware)
+			ws := v1.Group("/ws")
+			ws.Use(middleware.WebSocketAuthMiddleware(authService))
+			{
+				ws.GET("/chat/:chatId", wsHandler.HandleWebSocket) // WebSocket connection
 			}
 
 			// Pets

@@ -190,6 +190,17 @@ func (h *ChatHandlers) SendMessage(c *gin.Context) {
 		return
 	}
 
+	// Broadcast message via WebSocket to other users in the chat
+	messageData := map[string]interface{}{
+		"id":        message.ID.String(),
+		"chatId":    message.ChatID.String(),
+		"senderId":  message.SenderID.String(),
+		"content":   message.Content,
+		"isRead":    message.IsRead,
+		"createdAt": message.CreatedAt,
+	}
+	BroadcastNewMessage(req.ChatID.String(), messageData, userUUID.String())
+
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "Message sent successfully",

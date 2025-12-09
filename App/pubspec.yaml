@@ -96,6 +96,9 @@ dependencies:
   # HTTP Client (already have dio)
   http: ^1.2.0
 
+  # WebSocket for real-time chat
+  web_socket_channel: ^3.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

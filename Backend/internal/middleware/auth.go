@@ -87,3 +87,51 @@ func OptionalAuthMiddleware(authService *services.AuthService) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// WebSocketAuthMiddleware creates authentication middleware for WebSocket connections
+// It supports token from query parameter for WebSocket upgrade requests
+func WebSocketAuthMiddleware(authService *services.AuthService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var tokenStr string
+
+		// First, try to get token from query parameter (for WebSocket connections)
+		tokenStr = c.Query("token")
+
+		// If not in query, try Authorization header
+		if tokenStr == "" {
+			authHeader := c.GetHeader("Authorization")
+			if authHeader != "" {
+				// Check Bearer token format
+				parts := strings.Split(authHeader, " ")
+				if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
+					tokenStr = parts[1]
+				}
+			}
+		}
+
+		// If no token found, reject
+		if tokenStr == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, models.GenericResponse{
+				Success: false,
+				Message: "Authorization token is required",
+			})
+			return
+		}
+
+		// Validate token
+		claims, err := authService.ValidateAccessToken(tokenStr)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, models.GenericResponse{
+				Success: false,
+				Message: "Invalid or expired token",
+			})
+			return
+		}
+
+		// Set user info in context
+		c.Set("userID", claims.UserID.String())
+		c.Set("email", claims.Email)
+
+		c.Next()
+	}
+}

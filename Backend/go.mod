@@ -4,6 +4,8 @@ go 1.25.1
 
 require github.com/gin-gonic/gin v1.11.0
 
+require github.com/gorilla/websocket v1.5.3 // indirect
+
 require (
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect

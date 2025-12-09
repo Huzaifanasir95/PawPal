@@ -81,9 +81,27 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
               }
               return const SizedBox();
             },
-            messageSent: (_) => const SizedBox(),
-            messageMarkedAsRead: (_) => const SizedBox(),
-            chatDeleted: (_) => const SizedBox(),
+            messageSent: (_) {
+              // Show cached list when message is sent
+              if (_cachedChats.isNotEmpty) {
+                return _buildChatsList(_cachedChats);
+              }
+              return const SizedBox();
+            },
+            messageMarkedAsRead: (_) {
+              // Show cached list when message is marked as read
+              if (_cachedChats.isNotEmpty) {
+                return _buildChatsList(_cachedChats);
+              }
+              return const SizedBox();
+            },
+            chatDeleted: (_) {
+              // Show cached list after deletion
+              if (_cachedChats.isNotEmpty) {
+                return _buildChatsList(_cachedChats);
+              }
+              return const SizedBox();
+            },
             error: (message) => Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

@@ -40,12 +40,16 @@ class AppNavigator {
   static Future<void> navigateToConversation(
     BuildContext context, {
     required String chatId,
+    String? otherUserName,
+    String? otherUserPhoto,
   }) {
     return Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChatConversationScreen(
           chatId: chatId,
+          otherUserName: otherUserName,
+          otherUserPhoto: otherUserPhoto,
         ),
       ),
     );

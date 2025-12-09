@@ -4,29 +4,71 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:injectable/injectable.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 @injectable
 class ImageService {
-  // Maximum size for base64 encoded image (100KB reasonable for avatars)
-  static const int maxAvatarSizeBytes = 100000;
+  // Recommended size after compression (200KB max for base64 in JSON)
+  static const int maxAvatarSizeBytes = 200000;
 
-  /// Convert image file to base64 data URL with size optimization
-  Future<String?> _imageToBase64DataUrl(XFile imageFile) async {
-    final bytes = await File(imageFile.path).readAsBytes();
-    
-    // Warn if image is too large
-    if (bytes.length > maxAvatarSizeBytes) {
-      debugPrint('⚠️  Image size (${(bytes.length / 1024).toStringAsFixed(1)}KB) exceeds 100KB recommended size for avatars');
-      debugPrint('Recommendation: Use a smaller image or implement proper file upload to backend');
-      // For now, still proceed but be aware this is a temporary solution
+  /// Compress image before uploading
+  Future<XFile?> _compressImage(XFile imageFile) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final targetPath = path.join(
+        dir.path,
+        '${DateTime.now().millisecondsSinceEpoch}_compressed.jpg',
+      );
+
+      final result = await FlutterImageCompress.compressAndGetFile(
+        imageFile.path,
+        targetPath,
+        quality: 70,
+        minWidth: 800,
+        minHeight: 800,
+        format: CompressFormat.jpeg,
+      );
+
+      if (result != null) {
+        final originalSize = await File(imageFile.path).length();
+        final compressedSize = await File(result.path).length();
+        debugPrint(
+            '✅ Image compressed: ${(originalSize / 1024).round()}KB → ${(compressedSize / 1024).round()}KB');
+        return result;
+      }
+      return imageFile;
+    } catch (e) {
+      debugPrint('⚠️  Compression failed: $e, using original');
+      return imageFile;
     }
-    
+  }
+
+  /// Convert image file to base64 data URL with compression
+  Future<String?> _imageToBase64DataUrl(XFile imageFile) async {
+    // Compress the image first
+    final compressedFile = await _compressImage(imageFile);
+    if (compressedFile == null) {
+      return null;
+    }
+
+    final bytes = await File(compressedFile.path).readAsBytes();
+
+    // Check final size
+    if (bytes.length > maxAvatarSizeBytes) {
+      debugPrint(
+          '⚠️  Compressed image (${(bytes.length / 1024).toStringAsFixed(1)}KB) still exceeds 200KB');
+      debugPrint('💡 Consider using an even smaller image or implement proper file upload');
+    } else {
+      debugPrint('✅ Image ready: ${(bytes.length / 1024).round()}KB');
+    }
+
     final base64String = base64Encode(bytes);
-    
-    // Determine MIME type from file extension
-    final extension = imageFile.path.split('.').last.toLowerCase();
-    final mimeType = _getMimeType(extension);
-    
+
+    // Determine MIME type - always use JPEG after compression
+    final mimeType = 'image/jpeg';
+
     // Return as data URL (data:image/jpeg;base64,...)
     return 'data:$mimeType;base64,$base64String';
   }

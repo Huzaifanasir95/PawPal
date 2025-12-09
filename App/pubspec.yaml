@@ -86,6 +86,9 @@ dependencies:
 
   # Image Picker
   image_picker: ^1.2.0
+  
+  # Image Compression
+  flutter_image_compress: ^2.1.0
 
   # Path Provider
   path_provider: ^2.1.2

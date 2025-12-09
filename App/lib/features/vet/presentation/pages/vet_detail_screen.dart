@@ -16,10 +16,12 @@ import '../../../chat/presentation/bloc/chat_state.dart';
 
 class VetDetailScreen extends StatefulWidget {
   final String vetId;
+  final String? profilePhotoUrl;
 
   const VetDetailScreen({
     super.key,
     required this.vetId,
+    this.profilePhotoUrl,
   });
 
   @override
@@ -100,7 +102,25 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
                     setState(() {
                       _isStartingChat = false;
                     });
-                    AppNavigator.navigateToConversation(context, chatId: chat.id);
+                    // Use passed profile photo first, then fall back to BLoC data
+                    String? vetName;
+                    String? vetPhoto = widget.profilePhotoUrl;
+                    
+                    final vetState = context.read<VetBloc>().state;
+                    vetState.maybeWhen(
+                      profileLoaded: (vet) {
+                        vetName = vet.fullName;
+                        // Only use BLoC photo if we don't have passed photo
+                        vetPhoto ??= vet.profilePhotoUrl;
+                      },
+                      orElse: () {},
+                    );
+                    AppNavigator.navigateToConversation(
+                      context,
+                      chatId: chat.id,
+                      otherUserName: vetName,
+                      otherUserPhoto: vetPhoto,
+                    );
                   }
                 },
                 error: (message) {
@@ -164,7 +184,7 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
               color: AppColors.primary.withOpacity(0.2),
               child: Center(
                 child: UserAvatar(
-                  imageUrl: vet.profilePhotoUrl,
+                  imageUrl: widget.profilePhotoUrl ?? vet.profilePhotoUrl,
                   size: 160.sp,
                   fallbackIcon: Icons.person,
                 ),

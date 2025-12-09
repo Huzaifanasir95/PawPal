@@ -25,6 +25,13 @@ class _VetsListScreenState extends State<VetsListScreen> {
   String? _filterCity;
   String? _filterSpecialization;
   double? _filterMinRating;
+  
+  // Cache the last loaded vets list
+  List<VetProfile> _cachedVets = [];
+  int _cachedTotal = 0;
+  int _cachedPage = 1;
+  int _cachedLimit = 20;
+  bool _cachedHasMore = false;
 
   @override
   void initState() {
@@ -141,6 +148,16 @@ class _VetsListScreenState extends State<VetsListScreen> {
             child: BlocConsumer<VetBloc, VetState>(
               listener: (context, state) {
                 state.maybeWhen(
+                  vetsListLoaded: (vets, total, page, limit, hasMore, _, __, ___) {
+                    // Cache the list
+                    setState(() {
+                      _cachedVets = vets;
+                      _cachedTotal = total;
+                      _cachedPage = page;
+                      _cachedLimit = limit;
+                      _cachedHasMore = hasMore;
+                    });
+                  },
                   error: (message) => CustomSnackbar.showError(context, message),
                   orElse: () {},
                 );
@@ -148,67 +165,30 @@ class _VetsListScreenState extends State<VetsListScreen> {
               builder: (context, state) {
                 return state.when(
                   initial: () => const Center(child: Text('Search for vets')),
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  profileLoaded: (_) => const SizedBox(),
-                  vetsListLoaded: (vets, total, page, limit, hasMore, _, __, ___) {
-                    if (vets.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.search_off, size: 64.sp, color: AppColors.neutral400),
-                            SizedBox(height: 16.h),
-                            Text(
-                              'No vets found',
-                              style: AppTextStyles.titleMedium.copyWith(color: AppColors.textSecondary),
-                            ),
-                            if (_filterCity != null || _filterSpecialization != null || _filterMinRating != null) ...[
-                              SizedBox(height: 8.h),
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _filterCity = null;
-                                    _filterSpecialization = null;
-                                    _filterMinRating = null;
-                                  });
-                                  context.read<VetBloc>().add(const VetEvent.clearFilters());
-                                },
-                                child: const Text('Clear Filters'),
-                              ),
-                            ],
-                          ],
-                        ),
-                      );
+                  loading: () {
+                    // Show cached list if available while loading
+                    if (_cachedVets.isNotEmpty) {
+                      return _buildVetsList(_cachedVets, _cachedTotal, _cachedPage, _cachedLimit, _cachedHasMore);
                     }
-
-                    return RefreshIndicator(
-                      onRefresh: () async {
-                        context.read<VetBloc>().add(VetEvent.listVets(
-                          city: _filterCity,
-                          specialization: _filterSpecialization,
-                          minRating: _filterMinRating,
-                        ));
-                      },
-                      child: GridView.builder(
-                        controller: _scrollController,
-                        padding: EdgeInsets.all(16.w),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.75,
-                          crossAxisSpacing: 12.w,
-                          mainAxisSpacing: 12.h,
-                        ),
-                        itemCount: vets.length + (hasMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= vets.length) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-                          return _VetCard(vet: vets[index]);
-                        },
-                      ),
-                    );
+                    return const Center(child: CircularProgressIndicator());
                   },
-                  profileSaved: (_) => const SizedBox(),
+                  profileLoaded: (_) {
+                    // Show cached list when viewing a profile
+                    if (_cachedVets.isNotEmpty) {
+                      return _buildVetsList(_cachedVets, _cachedTotal, _cachedPage, _cachedLimit, _cachedHasMore);
+                    }
+                    return const SizedBox();
+                  },
+                  vetsListLoaded: (vets, total, page, limit, hasMore, _, __, ___) {
+                    return _buildVetsList(vets, total, page, limit, hasMore);
+                  },
+                  profileSaved: (_) {
+                    // Show cached list after saving profile
+                    if (_cachedVets.isNotEmpty) {
+                      return _buildVetsList(_cachedVets, _cachedTotal, _cachedPage, _cachedLimit, _cachedHasMore);
+                    }
+                    return const SizedBox();
+                  },
                   error: (message) => Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -241,6 +221,65 @@ class _VetsListScreenState extends State<VetsListScreen> {
       ),
     );
   }
+
+  Widget _buildVetsList(List<VetProfile> vets, int total, int page, int limit, bool hasMore) {
+    if (vets.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64.sp, color: AppColors.neutral400),
+            SizedBox(height: 16.h),
+            Text(
+              'No vets found',
+              style: AppTextStyles.titleMedium.copyWith(color: AppColors.textSecondary),
+            ),
+            if (_filterCity != null || _filterSpecialization != null || _filterMinRating != null) ...[
+              SizedBox(height: 8.h),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _filterCity = null;
+                    _filterSpecialization = null;
+                    _filterMinRating = null;
+                  });
+                  context.read<VetBloc>().add(const VetEvent.clearFilters());
+                },
+                child: const Text('Clear Filters'),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<VetBloc>().add(VetEvent.listVets(
+          city: _filterCity,
+          specialization: _filterSpecialization,
+          minRating: _filterMinRating,
+        ));
+      },
+      child: GridView.builder(
+        controller: _scrollController,
+        padding: EdgeInsets.all(16.w),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 12.w,
+          mainAxisSpacing: 12.h,
+        ),
+        itemCount: vets.length + (hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index >= vets.length) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return _VetCard(vet: vets[index]);
+        },
+      ),
+    );
+  }
 }
 
 class _VetCard extends StatelessWidget {
@@ -251,13 +290,17 @@ class _VetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => VetDetailScreen(vetId: vet.userId),
+            builder: (context) => VetDetailScreen(
+              vetId: vet.userId,
+              profilePhotoUrl: vet.profilePhotoUrl,
+            ),
           ),
         );
+        // Keep the current list state - don't reload
       },
       child: Container(
         decoration: BoxDecoration(
@@ -276,16 +319,21 @@ class _VetCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Image
-            ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-              child: SizedBox(
-                height: 120.h,
-                width: double.infinity,
+            // Profile Image - Circular at top
+            Container(
+              padding: EdgeInsets.only(top: 16.h),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.05),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+              ),
+              child: Center(
                 child: UserAvatar(
                   imageUrl: vet.profilePhotoUrl,
-                  size: 120.h,
+                  size: 80.w,
                   fallbackIcon: Icons.person,
+                  showBorder: true,
+                  borderColor: AppColors.surface,
+                  borderWidth: 3,
                 ),
               ),
             ),
@@ -317,7 +365,7 @@ class _VetCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 8.h),
+                  SizedBox(height: 6.h),
 
                   // Experience
                   Row(
@@ -332,7 +380,7 @@ class _VetCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: 2.h),
 
                   // Rating (commented out - fields not in model yet)
                   // if (vet.averageRating != null && vet.totalRatings != null)

@@ -14,10 +14,14 @@ import 'package:timeago/timeago.dart' as timeago;
 
 class ChatConversationScreen extends StatefulWidget {
   final String chatId;
+  final String? otherUserName;
+  final String? otherUserPhoto;
 
   const ChatConversationScreen({
     super.key,
     required this.chatId,
+    this.otherUserName,
+    this.otherUserPhoto,
   });
 
   @override
@@ -34,6 +38,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   @override
   void initState() {
     super.initState();
+    // If we have user data passed from list, set it immediately
+    if (widget.otherUserName != null || widget.otherUserPhoto != null) {
+      _lastChat = Chat(
+        id: widget.chatId,
+        petOwnerId: '',
+        vetId: '',
+        otherUserName: widget.otherUserName,
+        otherUserPhoto: widget.otherUserPhoto,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
     context.read<ChatBloc>().add(ChatEvent.loadChat(widget.chatId));
   }
 
@@ -70,46 +86,84 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 18.r,
-              backgroundColor: AppColors.surface,
-              child: Icon(Icons.person, size: 20.sp, color: AppColors.primary),
+    return BlocConsumer<ChatBloc, ChatState>(
+      listener: (context, state) {
+        state.maybeWhen(
+          error: (message) => CustomSnackbar.showError(context, message),
+          messageSent: (_) {
+            setState(() => _isSending = false);
+          },
+          chatLoaded: (chat, messages, hasMore, currentPage) {
+            // Update cached messages only, keep passed user data
+            setState(() {
+              // If we have passed data, preserve it. Don't overwrite with API data
+              if (widget.otherUserName != null || widget.otherUserPhoto != null) {
+                _lastChat = Chat(
+                  id: chat.id,
+                  petOwnerId: chat.petOwnerId,
+                  vetId: chat.vetId,
+                  otherUserName: widget.otherUserName,
+                  otherUserPhoto: widget.otherUserPhoto,
+                  createdAt: chat.createdAt,
+                  updatedAt: chat.updatedAt,
+                );
+              } else {
+                _lastChat = chat;
+              }
+              _lastMessages = messages;
+            });
+          },
+          orElse: () {},
+        );
+      },
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            backgroundColor: AppColors.primary,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
             ),
-            SizedBox(width: 12.w),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Vet'),
-                  // You could show online status here
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: BlocConsumer<ChatBloc, ChatState>(
-        listener: (context, state) {
-          state.maybeWhen(
-            error: (message) => CustomSnackbar.showError(context, message),
-            messageSent: (_) {
-              setState(() => _isSending = false);
-            },
-            orElse: () {},
-          );
-        },
-        builder: (context, state) {
-          return state.when(
+            title: _lastChat != null
+                ? Row(
+                    children: [
+                      UserAvatar(
+                        imageUrl: _lastChat!.otherUserPhoto,
+                        size: 36.r,
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _lastChat!.otherUserName ?? 'User',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            // You could show online status here
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : const Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        child: Icon(Icons.person, size: 20),
+                      ),
+                      SizedBox(width: 12),
+                      Text('Loading...'),
+                    ],
+                  ),
+          ),
+          body: state.when(
             initial: () => const Center(child: Text('Loading...')),
             loading: () {
               // If we have cached data, show it while loading
@@ -120,9 +174,6 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             },
             chatsLoaded: (_) => const SizedBox(),
             chatLoaded: (chat, messages, hasMore, currentPage) {
-              // Cache the latest chat state
-              _lastChat = chat;
-              _lastMessages = messages;
               return _buildChatView(chat, messages);
             },
             chatStarted: (_) => const SizedBox(),
@@ -158,9 +209,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 

@@ -20,6 +20,9 @@ class ChatsListScreen extends StatefulWidget {
 }
 
 class _ChatsListScreenState extends State<ChatsListScreen> {
+  // Cache the last loaded chats list
+  List<Chat> _cachedChats = [];
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +40,12 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
       body: BlocConsumer<ChatBloc, ChatState>(
         listener: (context, state) {
           state.maybeWhen(
+            chatsLoaded: (chats) {
+              // Cache the chats list
+              setState(() {
+                _cachedChats = chats;
+              });
+            },
             error: (message) => CustomSnackbar.showError(context, message),
             chatDeleted: (_) {
               CustomSnackbar.showSuccess(context, 'Chat deleted');
@@ -48,56 +57,30 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
         builder: (context, state) {
           return state.when(
             initial: () => const Center(child: Text('Loading...')),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            chatsLoaded: (chats) {
-              if (chats.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.chat_bubble_outline,
-                        size: 64.sp,
-                        color: AppColors.neutral400,
-                      ),
-                      SizedBox(height: 16.h),
-                      Text(
-                        'No chats yet',
-                        style: AppTextStyles.titleMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        'Start a conversation with a vet',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+            loading: () {
+              // Show cached list if available while loading
+              if (_cachedChats.isNotEmpty) {
+                return _buildChatsList(_cachedChats);
               }
-
-              return RefreshIndicator(
-                onRefresh: () async {
-                  context.read<ChatBloc>().add(const ChatEvent.refreshChats());
-                },
-                child: ListView.separated(
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  itemCount: chats.length,
-                  separatorBuilder: (context, index) => Divider(
-                    height: 1.h,
-                    color: AppColors.border,
-                  ),
-                  itemBuilder: (context, index) {
-                    return _ChatTile(chat: chats[index]);
-                  },
-                ),
-              );
+              return const Center(child: CircularProgressIndicator());
             },
-            chatLoaded: (_, __, ___, ____) => const SizedBox(),
-            chatStarted: (_) => const SizedBox(),
+            chatsLoaded: (chats) {
+              return _buildChatsList(chats);
+            },
+            chatLoaded: (_, __, ___, ____) {
+              // Show cached list when viewing a chat
+              if (_cachedChats.isNotEmpty) {
+                return _buildChatsList(_cachedChats);
+              }
+              return const SizedBox();
+            },
+            chatStarted: (_) {
+              // Show cached list after starting a chat
+              if (_cachedChats.isNotEmpty) {
+                return _buildChatsList(_cachedChats);
+              }
+              return const SizedBox();
+            },
             messageSent: (_) => const SizedBox(),
             messageMarkedAsRead: (_) => const SizedBox(),
             chatDeleted: (_) => const SizedBox(),
@@ -119,6 +102,54 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
               ),
             ),
           );
+        },
+      ),
+    );
+  }
+
+  Widget _buildChatsList(List<Chat> chats) {
+    if (chats.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 64.sp,
+              color: AppColors.neutral400,
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'No chats yet',
+              style: AppTextStyles.titleMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'Start a conversation with a vet',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<ChatBloc>().add(const ChatEvent.loadChats());
+      },
+      child: ListView.separated(
+        padding: EdgeInsets.symmetric(vertical: 12.h),
+        itemCount: chats.length,
+        separatorBuilder: (context, index) => Divider(
+          height: 1.h,
+          color: AppColors.border,
+        ),
+        itemBuilder: (context, index) {
+          return _ChatTile(chat: chats[index]);
         },
       ),
     );
@@ -222,13 +253,21 @@ class _ChatTile extends StatelessWidget {
             ],
           ],
         ),
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ChatConversationScreen(chatId: chat.id),
+              builder: (context) => ChatConversationScreen(
+                chatId: chat.id,
+                otherUserName: chat.otherUserName,
+                otherUserPhoto: chat.otherUserPhoto,
+              ),
             ),
           );
+          // Reload chats when returning from conversation
+          if (context.mounted) {
+            context.read<ChatBloc>().add(const ChatEvent.loadChats());
+          }
         },
       ),
     );

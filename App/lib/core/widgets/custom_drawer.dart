@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
+import '../widgets/user_avatar.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/community/presentation/pages/community_page.dart';
 import '../../features/chatbot/presentation/pages/chatbot_screen.dart';
@@ -199,39 +200,12 @@ class CustomDrawer extends StatelessWidget {
         child: Row(
           children: [
             // User Avatar - Smaller circle on the left
-            Container(
-              width: 50.w,
-              height: 50.h,
-              decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(25.r),
-                border: Border.all(
-                  color: AppColors.accent.withOpacity(0.2),
-                  width: 2.w,
-                ),
-              ),
-              child: user.photoURL != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(25.r),
-                      child: Image.network(
-                        user.photoURL!,
-                        width: 50.w,
-                        height: 50.h,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.person,
-                            color: AppColors.accent,
-                            size: 25.w,
-                          );
-                        },
-                      ),
-                    )
-                  : Icon(
-                      Icons.person,
-                      color: AppColors.accent,
-                      size: 25.w,
-                    ),
+            UserAvatar(
+              imageUrl: user.photoURL,
+              size: 50.w,
+              showBorder: true,
+              borderColor: AppColors.accent.withOpacity(0.2),
+              borderWidth: 2.w,
             ),
             SizedBox(width: 16.w),
             // User Info

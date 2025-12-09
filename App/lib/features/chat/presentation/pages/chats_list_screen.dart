@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../../data/models/chat_model.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
@@ -168,17 +169,13 @@ class _ChatTile extends StatelessWidget {
       },
       child: ListTile(
         contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-        leading: CircleAvatar(
-          radius: 28.r,
-          backgroundColor: AppColors.primary.withOpacity(0.1),
-          child: Icon(
-            Icons.person,
-            size: 28.sp,
-            color: AppColors.primary,
-          ),
+        leading: UserAvatar(
+          imageUrl: chat.otherUserPhoto,
+          size: 56.w,
+          showBorder: true,
         ),
         title: Text(
-          'Vet Chat', // You could fetch vet name from vetId
+          chat.otherUserName ?? 'Chat',
           style: AppTextStyles.titleMedium.copyWith(
             fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w500,
             color: AppColors.textPrimary,

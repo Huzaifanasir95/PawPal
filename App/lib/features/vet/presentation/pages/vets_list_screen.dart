@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../../data/models/vet_profile_model.dart';
 import '../bloc/vet_bloc.dart';
 import '../bloc/vet_event.dart';
@@ -276,17 +277,15 @@ class _VetCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Profile Image
-            Container(
-              height: 120.h,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.person,
-                  size: 48.sp,
-                  color: AppColors.primary,
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+              child: SizedBox(
+                height: 120.h,
+                width: double.infinity,
+                child: UserAvatar(
+                  imageUrl: vet.profilePhotoUrl,
+                  size: 120.h,
+                  fallbackIcon: Icons.person,
                 ),
               ),
             ),

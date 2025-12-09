@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:convert';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/utils/image_service.dart';
@@ -132,9 +133,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
         try {
           final imageService = getIt<ImageService>();
           avatarUrl = await imageService.uploadImage(_selectedImage!);
+          if (avatarUrl == null) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Image upload failed - please use a smaller image'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+            setState(() => _isUpdating = false);
+            return;
+          }
         } catch (e) {
           debugPrint('Failed to upload avatar: $e');
-          // Continue with profile update even if image upload fails
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Image upload error: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          setState(() => _isUpdating = false);
+          return;
         }
       }
 
@@ -169,6 +189,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     } finally {
       setState(() => _isUpdating = false);
+    }
+  }
+
+  bool _isBase64DataUrl(String url) {
+    return url.startsWith('data:image/');
+  }
+
+  Widget _buildProfileImage() {
+    final imageUrl = _userProfile?.photoURL;
+
+    if (_selectedImage != null) {
+      return Image.file(
+        File(_selectedImage!.path),
+        fit: BoxFit.cover,
+      );
+    } else if (imageUrl != null && imageUrl.isNotEmpty) {
+      // Check if it's a base64 data URL
+      if (_isBase64DataUrl(imageUrl)) {
+        try {
+          final base64String = imageUrl.split(',').last;
+          final bytes = base64Decode(base64String);
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(
+                Icons.person,
+                size: 50.sp,
+                color: AppColors.primary,
+              );
+            },
+          );
+        } catch (e) {
+          debugPrint('Failed to decode base64 image: $e');
+          return Icon(
+            Icons.person,
+            size: 50.sp,
+            color: AppColors.primary,
+          );
+        }
+      } else {
+        // Regular HTTP URL
+        return Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(
+              Icons.person,
+              size: 50.sp,
+              color: AppColors.primary,
+            );
+          },
+        );
+      }
+    } else {
+      return Icon(
+        Icons.person,
+        size: 50.sp,
+        color: AppColors.primary,
+      );
     }
   }
 

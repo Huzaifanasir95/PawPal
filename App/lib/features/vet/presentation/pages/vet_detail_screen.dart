@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../../../../core/navigation/app_navigator.dart';
 import '../../data/models/vet_profile_model.dart';
 import '../bloc/vet_bloc.dart';
@@ -162,10 +163,10 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
             background: Container(
               color: AppColors.primary.withOpacity(0.2),
               child: Center(
-                child: Icon(
-                  Icons.person,
-                  size: 80.sp,
-                  color: AppColors.primary,
+                child: UserAvatar(
+                  imageUrl: vet.profilePhotoUrl,
+                  size: 160.sp,
+                  fallbackIcon: Icons.person,
                 ),
               ),
             ),

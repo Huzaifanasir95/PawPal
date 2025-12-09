@@ -1,96 +1,96 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:injectable/injectable.dart';
 
 @injectable
 class ImageService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Maximum size for base64 encoded image (100KB reasonable for avatars)
+  static const int maxAvatarSizeBytes = 100000;
 
-  /// Convert image file to base64 string
-  Future<String> _imageToBase64(XFile imageFile) async {
+  /// Convert image file to base64 data URL with size optimization
+  Future<String?> _imageToBase64DataUrl(XFile imageFile) async {
     final bytes = await File(imageFile.path).readAsBytes();
-    return base64Encode(bytes);
+    
+    // Warn if image is too large
+    if (bytes.length > maxAvatarSizeBytes) {
+      debugPrint('⚠️  Image size (${(bytes.length / 1024).toStringAsFixed(1)}KB) exceeds 100KB recommended size for avatars');
+      debugPrint('Recommendation: Use a smaller image or implement proper file upload to backend');
+      // For now, still proceed but be aware this is a temporary solution
+    }
+    
+    final base64String = base64Encode(bytes);
+    
+    // Determine MIME type from file extension
+    final extension = imageFile.path.split('.').last.toLowerCase();
+    final mimeType = _getMimeType(extension);
+    
+    // Return as data URL (data:image/jpeg;base64,...)
+    return 'data:$mimeType;base64,$base64String';
+  }
+
+  /// Get MIME type from file extension
+  String _getMimeType(String extension) {
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/jpeg';
+    }
   }
 
   /// Convert base64 string to image bytes (for display)
   Uint8List base64ToImage(String base64String) {
+    // Handle data URLs
+    if (base64String.startsWith('data:')) {
+      final base64Data = base64String.split(',').last;
+      return base64Decode(base64Data);
+    }
     return base64Decode(base64String);
   }
 
-  /// Upload a single image to Firestore as base64
-  Future<String> uploadImage(XFile imageFile, {String? folder = 'posts'}) async {
+  /// Upload a single image - returns base64 data URL
+  /// TEMPORARY SOLUTION: Uses base64 encoding. In production, implement multipart file upload to backend.
+  /// This is not scalable for large images or high volume. 
+  /// TODO: Implement proper file upload endpoint in backend:
+  /// - POST /api/upload with multipart/form-data
+  /// - Store files on disk or cloud storage (S3, GCS, etc)
+  /// - Return URL instead of embedding base64
+  Future<String?> uploadImage(XFile imageFile, {String? folder}) async {
     try {
-      // Convert image to base64
-      final base64String = await _imageToBase64(imageFile);
-
-      // Create a unique document ID
-      final docId = '${DateTime.now().millisecondsSinceEpoch}_${imageFile.name.hashCode}';
-
-      // Store in Firestore
-      await _firestore.collection('images').doc(docId).set({
-        'base64Data': base64String,
-        'fileName': imageFile.name,
-        'folder': folder,
-        'uploadedAt': FieldValue.serverTimestamp(),
-        'size': base64String.length,
-      });
-
-      // Return the document ID as the "URL"
-      return docId;
+      // Convert image to base64 data URL with size warnings
+      return await _imageToBase64DataUrl(imageFile);
     } catch (e) {
-      throw 'Failed to upload image: $e';
+      debugPrint('❌ Failed to upload image: $e');
+      return null;
     }
   }
 
-  /// Upload multiple images to Firestore as base64
-  Future<List<String>> uploadImages(List<XFile> imageFiles, {String? folder = 'posts'}) async {
+  /// Upload multiple images - returns list of base64 data URLs
+  Future<List<String>> uploadImages(List<XFile> imageFiles, {String? folder}) async {
     try {
-      final List<String> imageIds = [];
+      final List<String> imageUrls = [];
 
       for (final imageFile in imageFiles) {
-        final imageId = await uploadImage(imageFile, folder: folder);
-        imageIds.add(imageId);
+        final imageUrl = await uploadImage(imageFile, folder: folder);
+        if (imageUrl != null) {
+          imageUrls.add(imageUrl);
+        }
       }
 
-      return imageIds;
+      return imageUrls;
     } catch (e) {
-      throw 'Failed to upload images: $e';
-    }
-  }
-
-  /// Get image data from Firestore
-  Future<String?> getImageBase64(String imageId) async {
-    try {
-      final doc = await _firestore.collection('images').doc(imageId).get();
-      if (doc.exists) {
-        return doc.data()?['base64Data'] as String?;
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Delete an image from Firestore
-  Future<void> deleteImage(String imageId) async {
-    try {
-      await _firestore.collection('images').doc(imageId).delete();
-    } catch (e) {
-      throw 'Failed to delete image: $e';
-    }
-  }
-
-  /// Delete multiple images from Firestore
-  Future<void> deleteImages(List<String> imageIds) async {
-    try {
-      for (final imageId in imageIds) {
-        await deleteImage(imageId);
-      }
-    } catch (e) {
-      throw 'Failed to delete images: $e';
+      debugPrint('❌ Failed to upload images: $e');
+      return [];
     }
   }
 }

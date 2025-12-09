@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
+import '../../../../core/widgets/user_avatar.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../data/models/chat_model.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
@@ -288,22 +290,24 @@ class _MessageBubble extends StatelessWidget {
     required this.showSenderInfo,
   });
 
-  // For now, assuming current user is always sender
-  // You'd need to get actual user ID from auth state
-  bool get isSentByMe => true; // Replace with actual logic
-
   @override
   Widget build(BuildContext context) {
+    // Get current user ID from auth state
+    final currentUserId = context.read<AuthBloc>().state.maybeWhen(
+      authenticated: (user) => user.uid,
+      orElse: () => '',
+    );
+    
+    final isSentByMe = message.senderId == currentUserId;
     return Padding(
       padding: EdgeInsets.only(bottom: showSenderInfo ? 12.h : 4.h),
       child: Row(
         mainAxisAlignment: isSentByMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isSentByMe) ...[
-            CircleAvatar(
-              radius: 16.r,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
-              child: Icon(Icons.person, size: 16.sp, color: AppColors.primary),
+            UserAvatar(
+              imageUrl: message.senderPhoto,
+              size: 32.w,
             ),
             SizedBox(width: 8.w),
           ],

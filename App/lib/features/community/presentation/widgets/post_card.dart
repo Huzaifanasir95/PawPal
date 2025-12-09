@@ -1,11 +1,11 @@
-import 'dart:typed_data';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
-import '../../../../core/utils/image_service.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../../../../core/services/api_client.dart';
 import '../../data/models/post.dart';
 import '../bloc/community_bloc.dart';
@@ -92,19 +92,10 @@ class _PostCardState extends State<PostCard> {
             child: Row(
               children: [
                 // User Avatar
-                CircleAvatar(
-                  radius: 20.r,
-                  backgroundColor: AppColors.primary,
-                  child: Text(
-                    (widget.post.userName?.isNotEmpty == true 
-                        ? widget.post.userName![0].toUpperCase() 
-                        : 'U'),
-                    style: AppTextStyles.onboardingBody.copyWith(
-                      color: AppColors.surface,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16.sp,
-                    ),
-                  ),
+                UserAvatar(
+                  imageUrl: widget.post.userAvatar,
+                  size: 40.w,
+                  fallbackIcon: Icons.person,
                 ),
                 SizedBox(width: 12.w),
                 // User name and timestamp
@@ -206,11 +197,7 @@ class _PostCardState extends State<PostCard> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12.r),
-                child: FirestoreImage(
-                  imageId: widget.post.imageUrls!.first,
-                  height: 200.h,
-                  fit: BoxFit.cover,
-                ),
+                child: _buildPostImage(widget.post.imageUrls!.first),
               ),
             ),
 
@@ -311,17 +298,10 @@ class _PostCardState extends State<PostCard> {
               child: Row(
                 children: [
                   // User Avatar for comment
-                  CircleAvatar(
-                    radius: 16.r,
-                    backgroundColor: AppColors.primary,
-                    child: Text(
-                      'U', // TODO: Use current user initial
-                      style: AppTextStyles.onboardingBody.copyWith(
-                        color: AppColors.surface,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12.sp,
-                      ),
-                    ),
+                  UserAvatar(
+                    imageUrl: null,
+                    size: 32.w,
+                    fallbackIcon: Icons.person,
                   ),
                   SizedBox(width: 12.w),
                   // Comment Text Field
@@ -522,89 +502,36 @@ class _PostCardState extends State<PostCard> {
       ),
     );
   }
-}
 
-/// Widget to display images stored in Firestore as base64
-class FirestoreImage extends StatefulWidget {
-  final String imageId;
-  final double? width;
-  final double? height;
-  final BoxFit fit;
-
-  const FirestoreImage({
-    super.key,
-    required this.imageId,
-    this.width,
-    this.height,
-    this.fit = BoxFit.cover,
-  });
-
-  @override
-  State<FirestoreImage> createState() => _FirestoreImageState();
-}
-
-class _FirestoreImageState extends State<FirestoreImage> {
-  Uint8List? _imageData;
-  bool _isLoading = true;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadImage();
-  }
-
-  Future<void> _loadImage() async {
-    try {
-      final imageService = context.read<ImageService>();
-      final base64Data = await imageService.getImageBase64(widget.imageId);
-
-      if (base64Data != null) {
-        setState(() {
-          _imageData = imageService.base64ToImage(base64Data);
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _error = 'Image not found';
-          _isLoading = false;
-        });
+  Widget _buildPostImage(String imageUrl) {
+    // Handle base64 data URLs
+    if (imageUrl.startsWith('data:image/')) {
+      try {
+        final base64String = imageUrl.split(',').last;
+        return Image.memory(
+          const Base64Decoder().convert(base64String),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: Colors.grey[300],
+            child: const Icon(Icons.broken_image, size: 50),
+          ),
+        );
+      } catch (e) {
+        return Container(
+          color: Colors.grey[300],
+          child: const Icon(Icons.broken_image, size: 50),
+        );
       }
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Container(
-        width: widget.width,
-        height: widget.height ?? 200.h,
-        color: Colors.grey[300],
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    if (_error != null || _imageData == null) {
-      return Container(
-        width: widget.width,
-        height: widget.height ?? 200.h,
+    
+    // Handle regular URLs
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Container(
         color: Colors.grey[300],
         child: const Icon(Icons.broken_image, size: 50),
-      );
-    }
-
-    return Image.memory(
-      _imageData!,
-      width: widget.width,
-      height: widget.height,
-      fit: widget.fit,
+      ),
     );
   }
 }

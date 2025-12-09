@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/di/service_locator.dart';
+import '../../data/repositories/chatbot_repository.dart';
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
@@ -13,6 +15,7 @@ class ChatbotScreen extends StatefulWidget {
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final TextEditingController _messageController = TextEditingController();
   final List<ChatMessage> _messages = [];
+  final ChatbotRepository _chatbotRepo = getIt<ChatbotRepository>();
   bool _isLoading = false;
 
   @override
@@ -28,7 +31,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     );
   }
 
-  void _sendMessage(String message) {
+  void _sendMessage(String message) async {
     if (message.trim().isEmpty) return;
 
     setState(() {
@@ -43,13 +46,32 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _isLoading = true;
     });
 
-    // Simulate bot response delay
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      // Call real RAG chatbot API
+      final response = await _chatbotRepo.query(message);
+      
       if (mounted) {
         setState(() {
           _messages.add(
             ChatMessage(
-              text: _getBotResponse(message),
+              text: response.answer,
+              isUser: false,
+              timestamp: DateTime.now(),
+              sources: response.sources
+                  .map((s) => s.metadata['source']?.toString() ?? '')
+                  .where((s) => s.isNotEmpty)
+                  .toList(),
+            ),
+          );
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _messages.add(
+            ChatMessage(
+              text: 'Sorry, I encountered an error. Please try again.',
               isUser: false,
               timestamp: DateTime.now(),
             ),
@@ -57,26 +79,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           _isLoading = false;
         });
       }
-    });
-  }
-
-  String _getBotResponse(String message) {
-    final lowerMessage = message.toLowerCase();
-
-    if (lowerMessage.contains('vaccin')) {
-      return 'Vaccinations are important for your pet\'s health. Most pets need core vaccines like DHPP (dogs) or FVRCP (cats). Consult your vet for a vaccination schedule tailored to your pet.';
-    } else if (lowerMessage.contains('food') || lowerMessage.contains('diet')) {
-      return 'A balanced diet is crucial for your pet\'s health. Different ages and breeds have different nutritional needs. I recommend consulting your veterinarian for personalized dietary recommendations.';
-    } else if (lowerMessage.contains('sick') || lowerMessage.contains('ill')) {
-      return 'If your pet seems sick, it\'s best to consult a veterinarian as soon as possible. Common signs include lethargy, loss of appetite, vomiting, or diarrhea. Please seek professional help!';
-    } else if (lowerMessage.contains('training') || lowerMessage.contains('behavior')) {
-      return 'Pet training takes patience and consistency. Positive reinforcement works best. For specific behavioral issues, consider consulting a professional trainer or veterinary behaviorist.';
-    } else if (lowerMessage.contains('exercise') || lowerMessage.contains('activity')) {
-      return 'Daily exercise is essential for pets. Dogs typically need 30 minutes to 2 hours depending on breed, while cats benefit from interactive play sessions. Ensure your pet gets adequate physical activity!';
-    } else if (lowerMessage.contains('vet') || lowerMessage.contains('doctor')) {
-      return 'Regular vet check-ups are important. Most pets should visit the vet at least once a year, or more frequently for senior pets or those with health issues.';
-    } else {
-      return 'That\'s a great question! For detailed advice about your specific pet\'s needs, I recommend consulting with your veterinarian. They can provide personalized guidance based on your pet\'s health history.';
     }
   }
 
@@ -286,10 +288,12 @@ class ChatMessage {
   final String text;
   final bool isUser;
   final DateTime timestamp;
+  final List<String>? sources;
 
   ChatMessage({
     required this.text,
     required this.isUser,
     required this.timestamp,
+    this.sources,
   });
 }

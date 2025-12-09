@@ -20,6 +20,8 @@ import 'package:pawpawl/features/chat/data/repositories/chat_repository.dart'
     as _i218;
 import 'package:pawpawl/features/chat/presentation/bloc/chat_bloc.dart'
     as _i638;
+import 'package:pawpawl/features/chatbot/data/repositories/chatbot_repository.dart'
+    as _i922;
 import 'package:pawpawl/features/community/data/repositories/community_repository.dart'
     as _i37;
 import 'package:pawpawl/features/community/data/repositories/community_repository_api.dart'
@@ -41,16 +43,19 @@ extension GetItInjectableX on _i174.GetIt {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final apiClientModule = _$ApiClientModule();
     gh.factory<_i480.ImageService>(() => _i480.ImageService());
-    gh.factory<_i11.PetRepositoryApi>(() => _i11.PetRepositoryApi());
     gh.factory<_i37.CommunityRepository>(() => _i37.CommunityRepository());
     gh.factory<_i7.CommunityRepositoryApi>(() => _i7.CommunityRepositoryApi());
-    gh.lazySingleton<_i681.AuthRepository>(() => _i681.AuthRepository());
+    gh.factory<_i11.PetRepositoryApi>(() => _i11.PetRepositoryApi());
     gh.lazySingleton<_i428.ApiClient>(() => apiClientModule.apiClient);
-    gh.lazySingleton<_i217.VetRepository>(
-      () => _i217.VetRepository(gh<_i428.ApiClient>()),
-    );
+    gh.lazySingleton<_i681.AuthRepository>(() => _i681.AuthRepository());
     gh.lazySingleton<_i218.ChatRepository>(
       () => _i218.ChatRepository(gh<_i428.ApiClient>()),
+    );
+    gh.lazySingleton<_i922.ChatbotRepository>(
+      () => _i922.ChatbotRepository(gh<_i428.ApiClient>()),
+    );
+    gh.lazySingleton<_i217.VetRepository>(
+      () => _i217.VetRepository(gh<_i428.ApiClient>()),
     );
     gh.factory<_i638.ChatBloc>(
       () => _i638.ChatBloc(gh<_i218.ChatRepository>()),

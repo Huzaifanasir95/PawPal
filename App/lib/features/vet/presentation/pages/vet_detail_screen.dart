@@ -172,115 +172,173 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
   }
 
   Widget _buildProfileContent(BuildContext context, VetProfile vet) {
-    return CustomScrollView(
-      slivers: [
-        // App Bar with Image
-        SliverAppBar(
-          expandedHeight: 200.h,
-          pinned: true,
-          backgroundColor: AppColors.primary,
-          flexibleSpace: FlexibleSpaceBar(
-            background: Container(
-              color: AppColors.primary.withOpacity(0.2),
-              child: Center(
-                child: UserAvatar(
-                  imageUrl: widget.profilePhotoUrl ?? vet.profilePhotoUrl,
-                  size: 160.sp,
-                  fallbackIcon: Icons.person,
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 4,
+        shadowColor: Colors.black.withOpacity(0.3),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          vet.fullName,
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Profile Image Section
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: 24.h),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.primary.withOpacity(0.1),
+                    AppColors.background,
+                  ],
                 ),
+              ),
+              child: Column(
+                children: [
+                  // Profile Image
+                  UserAvatar(
+                    imageUrl: widget.profilePhotoUrl ?? vet.profilePhotoUrl,
+                    size: 120.sp,
+                    fallbackIcon: Icons.person,
+                    showBorder: true,
+                    borderColor: AppColors.primary,
+                    borderWidth: 4,
+                  ),
+                  SizedBox(height: 16.h),
+                  // Name and Degree
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
+                    child: Column(
+                      children: [
+                        Text(
+                          vet.fullName,
+                          style: AppTextStyles.headlineMedium.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          vet.degree,
+                          style: AppTextStyles.titleMedium.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 8.h),
+
+          // Qualifications Card
+          Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Container(
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Qualifications',
+                    style: AppTextStyles.titleLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 20.h),
+                  _buildQualificationItem(Icons.school, 'Degree', vet.degree),
+                  if (vet.licenseNumber != null) ...[
+                    SizedBox(height: 16.h),
+                    _buildQualificationItem(Icons.badge, 'License', vet.licenseNumber!),
+                  ],
+                  SizedBox(height: 16.h),
+                  _buildQualificationItem(Icons.work_outline, 'Experience', '${vet.experience} years'),
+                ],
               ),
             ),
           ),
-        ),
 
-        // Profile Content
-        SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Name and Basic Info
-              Container(
+          // Specializations Card
+          if (vet.specialization.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Container(
                 padding: EdgeInsets.all(20.w),
-                color: AppColors.surface,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      vet.fullName,
-                      style: AppTextStyles.headlineMedium.copyWith(
+                      'Specializations',
+                      style: AppTextStyles.titleLarge.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      vet.degree,
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
-
-                    // Rating (commented out - fields not in model yet)
-                    // if (vet.averageRating != null && vet.totalRatings != null)
-                    //   Row(
-                    //     children: [
-                    //       ...List.generate(5, (index) {
-                    //         return Icon(
-                    //           index < vet.averageRating!.round()
-                    //               ? Icons.star
-                    //               : Icons.star_border,
-                    //           color: Colors.amber,
-                    //           size: 20.sp,
-                    //         );
-                    //       }),
-                    //       SizedBox(width: 8.w),
-                    //       Text(
-                    //         '${vet.averageRating!.toStringAsFixed(1)} (${vet.totalRatings} reviews)',
-                    //         style: AppTextStyles.bodyMedium.copyWith(
-                    //           color: AppColors.textSecondary,
-                    //         ),
-                    //       ),
-                    //     ],
-                    //   ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 12.h),
-
-              // Qualifications
-              _buildSection(
-                'Qualifications',
-                [
-                  _buildInfoRow(Icons.school, 'Degree', vet.degree),
-                  if (vet.licenseNumber != null)
-                    _buildInfoRow(Icons.badge, 'License', vet.licenseNumber!),
-                  _buildInfoRow(Icons.work, 'Experience', '${vet.experience} years'),
-                ],
-              ),
-
-              SizedBox(height: 12.h),
-
-              // Specializations
-              if (vet.specialization.isNotEmpty)
-                _buildSection(
-                  'Specializations',
-                  [
+                    SizedBox(height: 16.h),
                     Wrap(
-                      spacing: 8.w,
-                      runSpacing: 8.h,
+                      spacing: 10.w,
+                      runSpacing: 10.h,
                       children: vet.specialization.map((spec) {
                         return Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20.r),
-                            border: Border.all(color: AppColors.primary),
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary.withOpacity(0.15),
+                                AppColors.primary.withOpacity(0.08),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(24.r),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.3),
+                              width: 1.5,
+                            ),
                           ),
                           child: Text(
                             spec,
-                            style: AppTextStyles.bodySmall.copyWith(
+                            style: AppTextStyles.bodyMedium.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
                             ),
@@ -290,153 +348,269 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
                     ),
                   ],
                 ),
+              ),
+            ),
+          SizedBox(height: 16.h),
 
-              SizedBox(height: 12.h),
-
-              // Clinic Information
-              if (vet.clinicName != null || vet.clinicAddress != null)
-                _buildSection(
-                  'Clinic Information',
-                  [
-                    if (vet.clinicName != null)
-                      _buildInfoRow(Icons.local_hospital, 'Clinic', vet.clinicName!),
-                    if (vet.clinicAddress != null)
-                      _buildInfoRow(Icons.location_on, 'Address', vet.clinicAddress!),
-                    if (vet.city != null && vet.state != null)
-                      _buildInfoRow(Icons.place, 'Location', '${vet.city}, ${vet.state}'),
-                    _buildInfoRow(Icons.phone, 'Phone', vet.phone),
-                  ],
-                ),
-
-              SizedBox(height: 12.h),
-
-              // Availability
-              if (vet.availabilityHours != null)
-                _buildSection(
-                  'Availability',
-                  [
-                    _buildInfoRow(Icons.access_time, 'Hours', vet.availabilityHours!),
-                    _buildInfoRow(
-                      Icons.circle,
-                      'Status',
-                      vet.isAvailable ? 'Available' : 'Not Available',
-                      valueColor: vet.isAvailable ? AppColors.success : AppColors.error,
+          // Clinic Information Card
+          if (vet.clinicName != null || vet.clinicAddress != null)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Container(
+                padding: EdgeInsets.all(20.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-
-              SizedBox(height: 12.h),
-
-              // About
-              if (vet.bio != null)
-                _buildSection(
-                  'About',
-                  [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      vet.bio!,
-                      style: AppTextStyles.bodyMedium.copyWith(
+                      'Clinic Information',
+                      style: AppTextStyles.titleLarge.copyWith(
+                        fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
-                        height: 1.5,
                       ),
                     ),
+                    SizedBox(height: 20.h),
+                    if (vet.clinicName != null)
+                      _buildQualificationItem(Icons.local_hospital, 'Clinic', vet.clinicName!),
+                    if (vet.clinicAddress != null) ...[
+                      SizedBox(height: 16.h),
+                      _buildQualificationItem(Icons.location_on, 'Address', vet.clinicAddress!),
+                    ],
+                    if (vet.city != null && vet.state != null) ...[
+                      SizedBox(height: 16.h),
+                      _buildQualificationItem(Icons.place, 'Location', '${vet.city}, ${vet.state}'),
+                    ],
+                    SizedBox(height: 16.h),
+                    _buildQualificationItem(Icons.phone, 'Phone', vet.phone),
                   ],
                 ),
+              ),
+            ),
+          SizedBox(height: 16.h),
 
-              SizedBox(height: 12.h),
-
-              // Consultation Fee
-              _buildSection(
-                'Consultation Fee',
-                [
-                  Container(
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: AppColors.primary),
+          // Availability Card
+          if (vet.availabilityHours != null)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Container(
+                padding: EdgeInsets.all(20.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Availability',
+                      style: AppTextStyles.titleLarge.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 20.h),
+                    _buildQualificationItem(Icons.access_time, 'Hours', vet.availabilityHours!),
+                    SizedBox(height: 16.h),
+                    Row(
                       children: [
-                        Text(
-                          'Consultation Fee',
-                          style: AppTextStyles.titleMedium.copyWith(
-                            color: AppColors.textPrimary,
+                        Container(
+                          padding: EdgeInsets.all(10.w),
+                          decoration: BoxDecoration(
+                            color: (vet.isAvailable ? AppColors.success : AppColors.error).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                          child: Icon(
+                            Icons.circle,
+                            size: 18.sp,
+                            color: vet.isAvailable ? AppColors.success : AppColors.error,
                           ),
                         ),
-                        Text(
-                          '${vet.currency} \$${vet.consultationFee.toStringAsFixed(0)}',
-                          style: AppTextStyles.titleLarge.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        SizedBox(width: 12.w),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Status',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              vet.isAvailable ? 'Available' : 'Not Available',
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                color: vet.isAvailable ? AppColors.success : AppColors.error,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          SizedBox(height: 16.h),
+
+          // Consultation Fee Card
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(
+                  color: AppColors.primary.withOpacity(0.3),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Consultation Fee',
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        'Per Session',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    '${vet.currency} \$${vet.consultationFee.toStringAsFixed(0)}',
+                    style: AppTextStyles.headlineMedium.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
+            ),
+          ),
+          SizedBox(height: 16.h),
 
-              SizedBox(height: 100.h), // Space for floating button
+          // About Card
+          if (vet.bio != null)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Container(
+                padding: EdgeInsets.all(20.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'About',
+                      style: AppTextStyles.titleLarge.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    Text(
+                      vet.bio!,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textPrimary,
+                        height: 1.6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          SizedBox(height: 16.h),
+
+          SizedBox(height: 100.h), // Space for floating button
+        ],
+      ),
+      ),
+    );
+  }
+
+  Widget _buildQualificationItem(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(10.w),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          child: Icon(
+            icon,
+            size: 20.sp,
+            color: AppColors.primary,
+          ),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                value,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSection(String title, List<Widget> children) {
-    return Container(
-      padding: EdgeInsets.all(20.w),
-      color: AppColors.surface,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: AppTextStyles.titleLarge.copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 16.h),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value, {Color? valueColor}) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20.sp, color: AppColors.textSecondary),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  value,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: valueColor ?? AppColors.textPrimary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

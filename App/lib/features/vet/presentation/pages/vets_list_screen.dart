@@ -342,6 +342,7 @@ class _VetCard extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.all(12.w),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Name
@@ -380,26 +381,10 @@ class _VetCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 2.h),
 
-                  // Rating (commented out - fields not in model yet)
-                  // if (vet.averageRating != null && vet.totalRatings != null)
-                  //   Row(
-                  //     children: [
-                  //       Icon(Icons.star, size: 14.sp, color: Colors.amber),
-                  //       SizedBox(width: 4.w),
-                  //       Text(
-                  //         '${vet.averageRating!.toStringAsFixed(1)} (${vet.totalRatings})',
-                  //         style: AppTextStyles.bodySmall.copyWith(
-                  //           color: AppColors.textSecondary,
-                  //         ),
-                  //       ),
-                  //     ],
-                  //   ),
-                  SizedBox(height: 8.h),
+                  const Spacer(),
 
                   // Consultation Fee
-                  const Spacer(),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                     decoration: BoxDecoration(

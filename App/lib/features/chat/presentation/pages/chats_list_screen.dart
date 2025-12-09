@@ -34,8 +34,11 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Messages'),
-        backgroundColor: AppColors.primary,
+        title: const Text('Messages', style: TextStyle(color: Colors.black)),
+        backgroundColor: Colors.white,
+        elevation: 4,
+        shadowColor: Colors.black.withOpacity(0.3),
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: BlocConsumer<ChatBloc, ChatState>(
         listener: (context, state) {

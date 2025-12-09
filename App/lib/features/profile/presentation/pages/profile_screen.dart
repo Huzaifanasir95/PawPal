@@ -478,28 +478,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                               child: ClipOval(
-                                child: _selectedImage != null
-                                    ? Image.file(
-                                        File(_selectedImage!.path),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : _userProfile?.photoURL != null
-                                        ? Image.network(
-                                            _userProfile!.photoURL!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Icon(
-                                                Icons.person,
-                                                size: 50.sp,
-                                                color: AppColors.primary,
-                                              );
-                                            },
-                                          )
-                                        : Icon(
-                                            Icons.person,
-                                            size: 50.sp,
-                                            color: AppColors.primary,
-                                          ),
+                                child: _buildProfileImage(),
                               ),
                             ),
                             Positioned(

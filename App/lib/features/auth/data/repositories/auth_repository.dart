@@ -265,11 +265,13 @@ class AuthRepository {
   Future<void> updateUserProfile({
     String? displayName,
     String? accountType,
+    String? avatarUrl,
   }) async {
     try {
       final data = <String, dynamic>{};
       if (displayName != null) data['displayName'] = displayName;
       if (accountType != null) data['accountType'] = accountType;
+      if (avatarUrl != null) data['avatarUrl'] = avatarUrl;
 
       await _apiClient.put('/api/v1/profile', data: data);
 
@@ -280,7 +282,7 @@ class AuthRepository {
           email: _currentUser!.email,
           displayName: displayName ?? _currentUser!.displayName,
           accountType: accountType ?? _currentUser!.accountType,
-          photoUrl: _currentUser!.photoUrl,
+          photoUrl: avatarUrl ?? _currentUser!.photoUrl,
           createdAt: _currentUser!.createdAt,
           updatedAt: DateTime.now(),
         );

@@ -46,8 +46,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i11.PetRepositoryApi>(() => _i11.PetRepositoryApi());
     gh.factory<_i37.CommunityRepository>(() => _i37.CommunityRepository());
     gh.factory<_i7.CommunityRepositoryApi>(() => _i7.CommunityRepositoryApi());
-    gh.lazySingleton<_i681.AuthRepository>(() => _i681.AuthRepository());
     gh.lazySingleton<_i428.ApiClient>(() => apiClientModule.apiClient);
+    gh.lazySingleton<_i681.AuthRepository>(() => _i681.AuthRepository());
     gh.lazySingleton<_i217.VetRepository>(
       () => _i217.VetRepository(gh<_i428.ApiClient>()),
     );

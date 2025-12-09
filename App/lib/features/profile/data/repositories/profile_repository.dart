@@ -15,10 +15,12 @@ class ProfileRepository {
   Future<void> updateUserProfile({
     String? displayName,
     String? accountType,
+    String? avatarUrl,
   }) async {
     return await _authRepository.updateUserProfile(
       displayName: displayName,
       accountType: accountType,
+      avatarUrl: avatarUrl,
     );
   }
 

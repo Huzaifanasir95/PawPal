@@ -64,16 +64,37 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final content = _messageController.text.trim();
     if (content.isEmpty || _isSending) return;
 
+    // Get current user ID
+    final currentUserId = context.read<AuthBloc>().state.maybeWhen(
+      authenticated: (user) => user.uid,
+      orElse: () => '',
+    );
+
     setState(() => _isSending = true);
     _messageController.clear();
 
+    // Optimistic update - add message to UI immediately
+    final tempMessage = ChatMessage(
+      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      chatId: widget.chatId,
+      senderId: currentUserId,
+      content: content,
+      isRead: false,
+      createdAt: DateTime.now(),
+    );
+
+    setState(() {
+      _lastMessages = [..._lastMessages, tempMessage];
+    });
+
+    // Send the actual message
     context.read<ChatBloc>().add(ChatEvent.sendMessage(
       chatId: widget.chatId,
       content: content,
     ));
 
-    // Scroll to bottom after sending
-    Future.delayed(const Duration(milliseconds: 300), () {
+    // Scroll to bottom immediately
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -92,6 +113,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           error: (message) => CustomSnackbar.showError(context, message),
           messageSent: (_) {
             setState(() => _isSending = false);
+            // Don't reload chat here - we already have optimistic update
           },
           chatLoaded: (chat, messages, hasMore, currentPage) {
             // Update cached messages only, keep passed user data
@@ -110,7 +132,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               } else {
                 _lastChat = chat;
               }
+              // Replace temp messages with real ones
               _lastMessages = messages;
+              _isSending = false;
             });
           },
           orElse: () {},

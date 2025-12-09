@@ -93,25 +93,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       
       emit(ChatState.messageSent(message));
       
-      // Reload messages in background without showing loading
-      try {
-        final chat = await _repository.getChat(chatId);
-        final messages = await _repository.getChatMessages(
-          chatId,
-          page: 1,
-          limit: 50,
-        );
-        
-        emit(ChatState.chatLoaded(
-          chat: chat,
-          messages: messages,
-          hasMore: messages.length >= 50,
-          currentPage: 1,
-        ));
-      } catch (e) {
-        // If reload fails, keep the messageSent state
-        print('Failed to reload messages: $e');
-      }
+      // Don't reload messages here - UI already has optimistic update
+      // Messages will be reloaded when user returns to chat list or refreshes
     } catch (e) {
       emit(ChatState.error(e.toString().replaceAll('Exception: ', '')));
     }

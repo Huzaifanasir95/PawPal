@@ -55,42 +55,37 @@ func (r *ChatRepository) GetChatBetweenUsers(ctx context.Context, petOwnerID, ve
 
 // GetChatByID retrieves a chat by ID with other user info
 func (r *ChatRepository) GetChatByID(ctx context.Context, chatID uuid.UUID, chat *models.Chat) error {
-	// First get the basic chat info to determine if user is vet or owner
-	basicQuery := `SELECT pet_owner_id, vet_id FROM chats WHERE id = $1`
-	var petOwnerID, vetID uuid.UUID
-	if err := r.db.QueryRow(ctx, basicQuery, chatID).Scan(&petOwnerID, &vetID); err != nil {
-		return err
-	}
-
-	// Now get full chat info with other user details
 	query := `
 		SELECT c.id, c.pet_owner_id, c.vet_id, c.pet_id, c.last_message, c.last_message_at,
 			c.unread_count_owner, c.unread_count_vet, c.created_at, c.updated_at,
-			COALESCE(u_owner.display_name, vp.full_name) as other_user_name,
-			COALESCE(u_vet.avatar_url, vp.profile_photo_url, u_owner.avatar_url) as other_user_photo
+			u_vet.display_name as vet_name,
+			u_owner.display_name as owner_name,
+			COALESCE(u_vet.avatar_url, vp.profile_photo_url) as vet_photo,
+			u_owner.avatar_url as owner_photo
 		FROM chats c
 		LEFT JOIN users u_owner ON c.pet_owner_id = u_owner.id
 		LEFT JOIN users u_vet ON c.vet_id = u_vet.id
 		LEFT JOIN vet_profiles vp ON c.vet_id = vp.user_id
 		WHERE c.id = $1`
 
-	var otherUserName, otherUserPhoto *string
+	var vetName, ownerName, vetPhoto, ownerPhoto *string
 	err := r.db.QueryRow(ctx, query, chatID).Scan(
 		&chat.ID, &chat.PetOwnerID, &chat.VetID, &chat.PetID, &chat.LastMessage,
 		&chat.LastMessageAt, &chat.UnreadCountOwner, &chat.UnreadCountVet,
-		&chat.CreatedAt, &chat.UpdatedAt, &otherUserName, &otherUserPhoto,
+		&chat.CreatedAt, &chat.UpdatedAt, &vetName, &ownerName, &vetPhoto, &ownerPhoto,
 	)
 
 	if err != nil {
 		return err
 	}
 
-	// Set the other user info
-	if otherUserName != nil {
-		chat.OtherUserName = *otherUserName
+	// Determine other user based on context - default to showing vet info
+	// (since most calls are from pet owners viewing vet)
+	if vetName != nil {
+		chat.OtherUserName = *vetName
 	}
-	if otherUserPhoto != nil {
-		chat.OtherUserPhoto = *otherUserPhoto
+	if vetPhoto != nil {
+		chat.OtherUserPhoto = *vetPhoto
 	}
 
 	return nil

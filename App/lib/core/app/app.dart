@@ -95,33 +95,13 @@ class _AuthFlowState extends State<AuthFlow> {
         return state.when(
           initial: () => const AuthNavigator(),
           loading: () => const AuthNavigator(), // Don't show full-screen loading
-          authenticated: (user) => FutureBuilder<String?>(
-            future: widget.authRepository.getAccountType(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  body: Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-              }
-              
-              final accountType = snapshot.data;
-              if (accountType == null || accountType.isEmpty) {
-                // User needs to select account type
-                return AccountTypeSelectionScreen(
-                  onAccountTypeSelected: () {
-                    // Trigger a rebuild by updating the auth state
-                    // The FutureBuilder will re-run and show appropriate home
-                    setState(() {});
-                  },
-                );
-              } else {
-                // User has account type, show role-based home
-                return const RoleBasedHome();
-              }
-            },
-          ),
+          authenticated: (user) {
+            // Force immediate rebuild by creating new widget key
+            return RoleBasedHomeWrapper(
+              key: ValueKey(user.uid),
+              authRepository: widget.authRepository,
+            );
+          },
           unauthenticated: () => const AuthNavigator(),
           error: (message) => const AuthNavigator(), // Show auth with error
           passwordResetSent: () => const AuthNavigator(),
@@ -143,6 +123,47 @@ class OnboardingScreenWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return OnboardingScreen(
       onComplete: onComplete,
+    );
+  }
+}
+
+class RoleBasedHomeWrapper extends StatelessWidget {
+  final AuthRepository authRepository;
+
+  const RoleBasedHomeWrapper({
+    super.key,
+    required this.authRepository,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: authRepository.getAccountType(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        
+        final accountType = snapshot.data;
+        if (accountType == null || accountType.isEmpty) {
+          // User needs to select account type
+          return AccountTypeSelectionScreen(
+            onAccountTypeSelected: () {
+              // Navigate to home after selection
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const RoleBasedHome()),
+              );
+            },
+          );
+        } else {
+          // User has account type, show role-based home
+          return const RoleBasedHome();
+        }
+      },
     );
   }
 }

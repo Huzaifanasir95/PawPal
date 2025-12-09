@@ -45,6 +45,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   @override
   void initState() {
     super.initState();
+    // Reset state on init to ensure fresh load
+    _isLoadingMessages = true;
+    _lastMessages = [];
+    
     // If we have user data passed from list, set it immediately
     if (widget.otherUserName != null || widget.otherUserPhoto != null) {
       _lastChat = Chat(
@@ -234,46 +238,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            SizedBox(height: 2.h),
-                            // Connection status - only show when both connected and messages loaded
-                            if (_isConnected && !_isLoadingMessages)
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    margin: EdgeInsets.only(right: 6.w),
-                                    decoration: BoxDecoration(
-                                      color: Colors.greenAccent,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.greenAccent.withOpacity(0.5),
-                                          blurRadius: 4,
-                                          spreadRadius: 1,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Text(
-                                    'Connected',
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      color: Colors.greenAccent,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            else
-                              Text(
-                                'Connecting...',
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  color: Colors.white70,
-                                ),
-                              ),
+                            // Remove connection status text completely
                           ],
                         ),
                       ),
@@ -295,9 +260,42 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   ),
           ),
           body: state.when(
-            initial: () => const Center(child: Text('Loading...')),
+            initial: () => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(),
+                  SizedBox(height: 16.h),
+                  Text(
+                    'Loading chat...',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             loading: () {
-              // Show loading indicator until messages are fully loaded
+              // Always show loading indicator when loading
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(),
+                    SizedBox(height: 16.h),
+                    Text(
+                      'Loading messages...',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+            chatsLoaded: (_) => const SizedBox(),
+            chatLoaded: (chat, messages, hasMore, currentPage) {
+              // Show loading if still loading messages
               if (_isLoadingMessages) {
                 return Center(
                   child: Column(
@@ -315,14 +313,6 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   ),
                 );
               }
-              // If we have cached data and loading is complete, show it
-              if (_lastChat != null && _lastMessages.isNotEmpty) {
-                return _buildChatView(_lastChat!, _lastMessages);
-              }
-              return const Center(child: CircularProgressIndicator());
-            },
-            chatsLoaded: (_) => const SizedBox(),
-            chatLoaded: (chat, messages, hasMore, currentPage) {
               return _buildChatView(chat, messages);
             },
             chatStarted: (_) => const SizedBox(),

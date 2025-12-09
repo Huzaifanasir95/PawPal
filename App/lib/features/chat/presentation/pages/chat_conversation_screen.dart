@@ -210,14 +210,25 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
-            backgroundColor: AppColors.primary,
+            backgroundColor: Colors.white,
+            elevation: 4,
+            shadowColor: Colors.black.withOpacity(0.3),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
               onPressed: () => Navigator.pop(context),
             ),
             title: _lastChat != null
                 ? Row(
                     children: [
+                      Container(
+                        width: 4.w,
+                        height: 48.h,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(2.r),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
                       UserAvatar(
                         imageUrl: _lastChat!.otherUserPhoto,
                         size: 40.r,
@@ -232,8 +243,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                               _lastChat!.otherUserName ?? 'User',
                               style: TextStyle(
                                 fontSize: 17.sp,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -246,15 +257,27 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   )
                 : Row(
                     children: [
+                      Container(
+                        width: 4.w,
+                        height: 48.h,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(2.r),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: Colors.white24,
-                        child: Icon(Icons.person, size: 22, color: Colors.white70),
+                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        child: Icon(Icons.person, size: 22, color: AppColors.primary),
                       ),
                       SizedBox(width: 12.w),
                       Text(
                         'Loading...',
-                        style: TextStyle(fontSize: 16.sp),
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          color: Colors.black,
+                        ),
                       ),
                     ],
                   ),

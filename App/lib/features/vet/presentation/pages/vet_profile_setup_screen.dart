@@ -16,7 +16,6 @@ class VetProfileSetupScreen extends StatefulWidget {
 }
 
 class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _pageController = PageController();
   int _currentStep = 0;
   
@@ -479,6 +478,36 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
   }
 
   Widget _buildNavigationButtons() {
+    // Check if current step has all required fields filled
+    bool isStepComplete = false;
+    
+    switch (_currentStep) {
+      case 0: // Personal Info - Required fields
+        isStepComplete = _fullNameController.text.trim().isNotEmpty &&
+            _degreeController.text.trim().isNotEmpty &&
+            _experienceController.text.trim().isNotEmpty &&
+            int.tryParse(_experienceController.text.trim()) != null;
+        break;
+      
+      case 1: // Specializations - At least one required
+        isStepComplete = _selectedSpecializations.isNotEmpty;
+        break;
+      
+      case 2: // Clinic Info - Optional, always complete
+        isStepComplete = true;
+        break;
+      
+      case 3: // Contact & Fees - Required fields
+        isStepComplete = _phoneController.text.trim().isNotEmpty &&
+            _consultationFeeController.text.trim().isNotEmpty &&
+            double.tryParse(_consultationFeeController.text.trim()) != null;
+        break;
+      
+      case 4: // About - Optional, always complete
+        isStepComplete = true;
+        break;
+    }
+    
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
@@ -518,51 +547,68 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
             if (_currentStep > 0) SizedBox(width: 12.w),
             Expanded(
               flex: _currentStep == 0 ? 1 : 1,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : () {
-                  if (_validateCurrentStep()) {
-                    if (_currentStep < 4) {
-                      _nextStep();
-                    } else {
-                      _handleSubmit();
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16.h),
-                  backgroundColor: AppColors.primary,
-                  disabledBackgroundColor: AppColors.neutral300,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  elevation: 2,
-                ),
-                child: _isLoading
-                    ? SizedBox(
-                        width: 24.w,
-                        height: 24.h,
-                        child: const CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _currentStep < 4 ? 'Continue' : 'Complete Profile',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w600,
-                            ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.r),
+                  boxShadow: isStepComplete
+                      ? [
+                          BoxShadow(
+                            color: Color(0xFF00838F).withOpacity(0.4),
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
                           ),
-                          if (_currentStep < 4) ...[
-                            SizedBox(width: 8.w),
-                            Icon(Icons.arrow_forward_rounded, size: 20.sp),
+                        ]
+                      : [],
+                ),
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : () {
+                    if (_validateCurrentStep()) {
+                      if (_currentStep < 4) {
+                        _nextStep();
+                      } else {
+                        _handleSubmit();
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    backgroundColor: isStepComplete 
+                        ? Color(0xFF00838F)
+                        : AppColors.neutral400,
+                    disabledBackgroundColor: AppColors.neutral300,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    elevation: isStepComplete ? 4 : 1,
+                  ),
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 24.w,
+                          height: 24.h,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _currentStep < 4 ? 'Continue' : 'Complete Profile',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (_currentStep < 4) ...[
+                              SizedBox(width: 8.w),
+                              Icon(Icons.arrow_forward_rounded, size: 20.sp, color: Colors.white),
+                            ],
                           ],
-                        ],
-                      ),
+                        ),
+                ),
               ),
             ),
           ],
@@ -619,70 +665,86 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
   }
 
   Widget _buildSpecializationChips() {
-    return Wrap(
-      spacing: 12.w,
-      runSpacing: 12.h,
+    return Column(
       children: _availableSpecializations.map((spec) {
         final isSelected = _selectedSpecializations.contains(spec);
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              setState(() {
-                if (isSelected) {
-                  _selectedSpecializations.remove(spec);
-                } else {
-                  _selectedSpecializations.add(spec);
-                }
-              });
-            },
-            borderRadius: BorderRadius.circular(25.r),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
-              decoration: BoxDecoration(
-                gradient: isSelected
-                    ? LinearGradient(
-                        colors: [
-                          AppColors.primary,
-                          AppColors.primary.withOpacity(0.8),
+        return Padding(
+          padding: EdgeInsets.only(bottom: 12.h),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  if (isSelected) {
+                    _selectedSpecializations.remove(spec);
+                  } else {
+                    _selectedSpecializations.add(spec);
+                  }
+                });
+              },
+              borderRadius: BorderRadius.circular(16.r),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                decoration: BoxDecoration(
+                  color: isSelected ? Color(0xFF00838F) : Colors.white,
+                  borderRadius: BorderRadius.circular(16.r),
+                  border: Border.all(
+                    color: isSelected ? Color(0xFF00838F) : AppColors.border.withOpacity(0.3),
+                    width: 2,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Color(0xFF00838F).withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
                         ],
-                      )
-                    : null,
-                color: isSelected ? null : Colors.white,
-                borderRadius: BorderRadius.circular(25.r),
-                border: Border.all(
-                  color: isSelected ? Colors.transparent : AppColors.border.withOpacity(0.3),
-                  width: 1.5,
                 ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                child: Row(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 24.w,
+                      height: 24.w,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected ? Colors.white : Colors.transparent,
+                        border: Border.all(
+                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                          width: 2,
                         ),
-                      ]
-                    : [],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                    color: isSelected ? Colors.white : AppColors.textSecondary,
-                    size: 20.sp,
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    spec,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      fontSize: 14.sp,
+                      ),
+                      child: isSelected
+                          ? Icon(
+                              Icons.check_rounded,
+                              size: 16.sp,
+                              color: Color(0xFF00838F),
+                            )
+                          : null,
                     ),
-                  ),
-                ],
+                    SizedBox(width: 16.w),
+                    Expanded(
+                      child: Text(
+                        spec,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : AppColors.textPrimary,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -692,7 +754,48 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
   }
 
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) {
+    // Validate all required fields before submitting
+    if (_fullNameController.text.trim().isEmpty) {
+      CustomSnackbar.showError(context, 'Please enter your full name');
+      setState(() => _currentStep = 0);
+      _pageController.jumpToPage(0);
+      return;
+    }
+    
+    if (_degreeController.text.trim().isEmpty) {
+      CustomSnackbar.showError(context, 'Please enter your degree');
+      setState(() => _currentStep = 0);
+      _pageController.jumpToPage(0);
+      return;
+    }
+    
+    if (_experienceController.text.trim().isEmpty || 
+        int.tryParse(_experienceController.text.trim()) == null) {
+      CustomSnackbar.showError(context, 'Please enter valid years of experience');
+      setState(() => _currentStep = 0);
+      _pageController.jumpToPage(0);
+      return;
+    }
+    
+    if (_selectedSpecializations.isEmpty) {
+      CustomSnackbar.showError(context, 'Please select at least one specialization');
+      setState(() => _currentStep = 1);
+      _pageController.jumpToPage(1);
+      return;
+    }
+    
+    if (_phoneController.text.trim().isEmpty) {
+      CustomSnackbar.showError(context, 'Please enter your phone number');
+      setState(() => _currentStep = 3);
+      _pageController.jumpToPage(3);
+      return;
+    }
+    
+    if (_consultationFeeController.text.trim().isEmpty ||
+        double.tryParse(_consultationFeeController.text.trim()) == null) {
+      CustomSnackbar.showError(context, 'Please enter valid consultation fee');
+      setState(() => _currentStep = 3);
+      _pageController.jumpToPage(3);
       return;
     }
 

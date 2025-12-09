@@ -46,7 +46,8 @@ App/android/.gradle/
 App/android/captures/
 App/android/gradlew.bat
 
-# Generated files
-App/.g.dart
-App/*.g.dart
+# Generated files (only ignore in root and specific generated locations)
+App/**/*.g.dart
+App/**/*.freezed.dart
+App/**/*.config.dart
 

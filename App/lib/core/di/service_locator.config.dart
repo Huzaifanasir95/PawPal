@@ -20,6 +20,8 @@ import 'package:pawpawl/features/chat/data/repositories/chat_repository.dart'
     as _i218;
 import 'package:pawpawl/features/chat/presentation/bloc/chat_bloc.dart'
     as _i638;
+import 'package:pawpawl/features/chatbot/data/repositories/chatbot_repository.dart'
+    as _i922;
 import 'package:pawpawl/features/community/data/repositories/community_repository.dart'
     as _i37;
 import 'package:pawpawl/features/community/data/repositories/community_repository_api.dart'
@@ -51,6 +53,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i218.ChatRepository>(
       () => _i218.ChatRepository(gh<_i428.ApiClient>()),
+    );
+    gh.lazySingleton<_i922.ChatbotRepository>(
+      () => _i922.ChatbotRepository(gh<_i428.ApiClient>()),
     );
     gh.factory<_i638.ChatBloc>(
       () => _i638.ChatBloc(gh<_i218.ChatRepository>()),

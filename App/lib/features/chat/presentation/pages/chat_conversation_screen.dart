@@ -363,21 +363,29 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 64.sp,
-                    color: AppColors.neutral400,
+                  Container(
+                    padding: EdgeInsets.all(24.r),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primary.withOpacity(0.1),
+                    ),
+                    child: Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 64.sp,
+                      color: AppColors.primary.withOpacity(0.6),
+                    ),
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 24.h),
                   Text(
                     'No messages yet',
                     style: AppTextStyles.titleMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    'Start the conversation',
+                    'Start the conversation with a message',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -396,7 +404,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         Expanded(
           child: ListView.builder(
             controller: _scrollController,
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
             itemCount: messages.length,
             itemBuilder: (context, index) {
               final message = messages[index];
@@ -417,13 +425,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   Widget _buildMessageInput() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
             offset: const Offset(0, -2),
           ),
         ],
@@ -432,14 +440,40 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // Attach button
+            Container(
+              width: 44.w,
+              height: 44.w,
+              margin: EdgeInsets.only(bottom: 2.h),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                shape: BoxShape.circle,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    // TODO: Implement attachment
+                    CustomSnackbar.showInfo(context, 'Attachment feature coming soon');
+                  },
+                  borderRadius: BorderRadius.circular(22.r),
+                  child: Icon(
+                    Icons.add_circle_outline_rounded,
+                    color: AppColors.primary,
+                    size: 26.sp,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 8.w),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
                   color: AppColors.background,
-                  borderRadius: BorderRadius.circular(24.r),
+                  borderRadius: BorderRadius.circular(26.r),
                   border: Border.all(
-                    color: AppColors.border.withOpacity(0.3),
-                    width: 1,
+                    color: AppColors.primary.withOpacity(0.2),
+                    width: 1.5,
                   ),
                 ),
                 child: TextField(
@@ -448,17 +482,21 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   minLines: 1,
                   maxLength: 1000,
                   textCapitalization: TextCapitalization.sentences,
-                  style: TextStyle(fontSize: 15.sp),
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    color: AppColors.textPrimary,
+                    height: 1.4,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Type a message...',
                     hintStyle: TextStyle(
-                      color: AppColors.textSecondary.withOpacity(0.6),
+                      color: AppColors.textSecondary.withOpacity(0.5),
                       fontSize: 15.sp,
                     ),
                     filled: false,
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
-                      horizontal: 20.w,
+                      horizontal: 18.w,
                       vertical: 12.h,
                     ),
                     counterText: '',
@@ -467,23 +505,26 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 ),
               ),
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: 8.w),
             Container(
               width: 48.w,
               height: 48.w,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: _isSending
-                      ? [Colors.grey.shade400, Colors.grey.shade500]
-                      : [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                      ? [Colors.grey.shade300, Colors.grey.shade400]
+                      : [
+                          AppColors.primary,
+                          AppColors.primary.withBlue(255).withGreen(200),
+                        ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 shape: BoxShape.circle,
-                boxShadow: [
+                boxShadow: _isSending ? [] : [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
-                    blurRadius: 8,
+                    color: AppColors.primary.withOpacity(0.4),
+                    blurRadius: 12,
                     offset: Offset(0, 4),
                   ),
                 ],
@@ -494,7 +535,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   onTap: _isSending ? null : _sendMessage,
                   borderRadius: BorderRadius.circular(24.r),
                   child: Icon(
-                    _isSending ? Icons.hourglass_empty : Icons.send_rounded,
+                    _isSending ? Icons.hourglass_empty_rounded : Icons.send_rounded,
                     color: Colors.white,
                     size: 22.sp,
                   ),
@@ -526,34 +567,56 @@ class _MessageBubble extends StatelessWidget {
     );
     
     final isSentByMe = message.senderId == currentUserId;
+    final showAvatar = !isSentByMe && showSenderInfo;
+    
     return Padding(
-      padding: EdgeInsets.only(bottom: showSenderInfo ? 12.h : 4.h),
+      padding: EdgeInsets.only(
+        bottom: showSenderInfo ? 16.h : 3.h,
+        left: isSentByMe ? 48.w : 0,
+        right: isSentByMe ? 0 : 48.w,
+      ),
       child: Row(
         mainAxisAlignment: isSentByMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isSentByMe) ...[
-            UserAvatar(
-              imageUrl: message.senderPhoto,
-              size: 32.w,
-            ),
+            if (showAvatar)
+              UserAvatar(
+                imageUrl: message.senderPhoto,
+                size: 36.w,
+              )
+            else
+              SizedBox(width: 36.w),
             SizedBox(width: 8.w),
           ],
           Flexible(
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
               decoration: BoxDecoration(
-                color: isSentByMe ? AppColors.primary : Colors.white,
+                gradient: isSentByMe
+                    ? LinearGradient(
+                        colors: [
+                          Color(0xFF0097A7), // Darker teal/cyan
+                          Color(0xFF00838F), // Even darker teal
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: isSentByMe ? null : Colors.white,
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(18.r),
-                  topRight: Radius.circular(18.r),
-                  bottomLeft: Radius.circular(isSentByMe ? 18.r : 4.r),
-                  bottomRight: Radius.circular(isSentByMe ? 4.r : 18.r),
+                  topLeft: Radius.circular(isSentByMe ? 20.r : 4.r),
+                  topRight: Radius.circular(isSentByMe ? 4.r : 20.r),
+                  bottomLeft: Radius.circular(20.r),
+                  bottomRight: Radius.circular(20.r),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: Offset(0, 2),
+                    color: isSentByMe 
+                        ? Color(0xFF0097A7).withOpacity(0.3)
+                        : Colors.black.withOpacity(0.06),
+                    blurRadius: isSentByMe ? 12 : 8,
+                    offset: Offset(0, isSentByMe ? 3 : 2),
                   ),
                 ],
               ),
@@ -563,13 +626,14 @@ class _MessageBubble extends StatelessWidget {
                   Text(
                     message.content,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isSentByMe ? AppColors.textOnPrimary : AppColors.textPrimary,
+                      color: isSentByMe ? Colors.white : AppColors.textPrimary,
                       fontSize: 15.sp,
-                      height: 1.4,
+                      height: 1.45,
+                      letterSpacing: 0.1,
                     ),
                   ),
                   if (showSenderInfo) ...[
-                    SizedBox(height: 4.h),
+                    SizedBox(height: 6.h),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -577,20 +641,20 @@ class _MessageBubble extends StatelessWidget {
                           timeago.format(message.createdAt),
                           style: AppTextStyles.bodySmall.copyWith(
                             color: isSentByMe
-                                ? AppColors.textOnPrimary.withOpacity(0.8)
-                                : AppColors.textSecondary,
+                                ? Colors.white.withOpacity(0.75)
+                                : AppColors.textSecondary.withOpacity(0.8),
                             fontSize: 11.sp,
-                            fontWeight: FontWeight.w400,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         if (isSentByMe) ...[
-                          SizedBox(width: 5.w),
+                          SizedBox(width: 6.w),
                           Icon(
-                            message.isRead ? Icons.done_all : Icons.done,
-                            size: 16.sp,
+                            message.isRead ? Icons.done_all_rounded : Icons.done_rounded,
+                            size: 15.sp,
                             color: message.isRead
-                                ? Color(0xFF4FC3F7)
-                                : AppColors.textOnPrimary.withOpacity(0.7),
+                                ? Color(0xFF80DEEA) // Light cyan for read
+                                : Colors.white.withOpacity(0.7),
                           ),
                         ],
                       ],
@@ -600,8 +664,6 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
           ),
-          if (isSentByMe) SizedBox(width: 48.w), // For alignment
-          if (!isSentByMe) SizedBox(width: 48.w), // For alignment
         ],
       ),
     );

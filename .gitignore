@@ -51,3 +51,9 @@ App/**/*.g.dart
 App/**/*.freezed.dart
 App/**/*.config.dart
 
+/TEMP
+/PLANTUML
+Backend/main.exe
+Backend/test_build.exe
+PawPal-models-RAG.zip
+Backend/pawpal_backend.exe

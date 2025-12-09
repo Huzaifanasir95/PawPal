@@ -43,7 +43,6 @@ extension GetItInjectableX on _i174.GetIt {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final apiClientModule = _$ApiClientModule();
     gh.factory<_i480.ImageService>(() => _i480.ImageService());
-    gh.factory<_i11.PetRepositoryApi>(() => _i11.PetRepositoryApi());
     gh.factory<_i37.CommunityRepository>(() => _i37.CommunityRepository());
     gh.factory<_i7.CommunityRepositoryApi>(() => _i7.CommunityRepositoryApi());
     gh.lazySingleton<_i428.ApiClient>(() => apiClientModule.apiClient);

@@ -1,0 +1,13 @@
+﻿{
+    "TestSuites":  [
+                       {
+                           "Duration":  8.77,
+                           "ExitCode":  1,
+                           "Name":  "Authentication Tests",
+                           "Passed":  false
+                       }
+                   ],
+    "TotalTests":  0,
+    "PassedTests":  0,
+    "FailedTests":  0
+}

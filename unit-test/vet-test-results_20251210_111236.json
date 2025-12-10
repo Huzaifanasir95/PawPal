@@ -1,0 +1,92 @@
+﻿[
+    {
+        "Passed":  true,
+        "Message":  "User created: vet.test.20251210111215@pawpal.com",
+        "Timestamp":  "2025-12-10 11:12:17",
+        "TestName":  "Create Test Vet User"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Token obtained: eyJhbGciOiJIUzI1NiIs...",
+        "Timestamp":  "2025-12-10 11:12:18",
+        "TestName":  "Sign In Test User"
+    },
+    {
+        "Passed":  true,
+        "Message":  "User role set to vet",
+        "Timestamp":  "2025-12-10 11:12:19",
+        "TestName":  "Set User Role to Vet"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Vet profile created successfully",
+        "Timestamp":  "2025-12-10 11:12:20",
+        "Response":  {
+                         "message":  "Vet profile saved successfully",
+                         "success":  true,
+                         "vetProfile":  {
+                                            "id":  "1eaceb56-a599-423a-b6a9-ac63bd71f779",
+                                            "userId":  "f2756ccc-7443-48cd-8078-e9bd0a74e4c3",
+                                            "fullName":  "Dr. Sarah Johnson",
+                                            "degree":  "DVM, PhD",
+                                            "licenseNumber":  "VET-2024-001234",
+                                            "specialization":  "Internal Medicine Surgery Emergency Care",
+                                            "experience":  8,
+                                            "clinicName":  "PawPal Veterinary Clinic",
+                                            "clinicAddress":  "123 Pet Street",
+                                            "city":  "San Francisco",
+                                            "state":  "CA",
+                                            "zipCode":  "94102",
+                                            "phone":  "+1-555-VET-CARE",
+                                            "consultationFee":  75,
+                                            "currency":  "USD",
+                                            "bio":  "Experienced veterinarian specializing in internal medicine and emergency care. Passionate about providing compassionate care to all pets.",
+                                            "profilePhotoUrl":  "https://example.com/dr-sarah-johnson.jpg",
+                                            "availabilityHours":  "Mon-Fri: 9:00 AM - 6:00 PM, Sat: 10:00 AM - 4:00 PM",
+                                            "rating":  0,
+                                            "totalReviews":  0,
+                                            "isVerified":  false,
+                                            "isAvailable":  true,
+                                            "createdAt":  "2025-12-10T11:12:20.465406+05:00",
+                                            "updatedAt":  "2025-12-10T11:12:20.465406+05:00"
+                                        }
+                     },
+        "TestName":  "Create Complete Vet Profile"
+    },
+    {
+        "Passed":  false,
+        "Message":  "The remote server returned an error: (404) Not Found.",
+        "Timestamp":  "2025-12-10 11:12:22",
+        "TestName":  "Retrieve Vet Profile"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Profile updated: Fee changed to 85, Specializations: 4",
+        "Timestamp":  "2025-12-10 11:12:23",
+        "TestName":  "Update Vet Profile"
+    },
+    {
+        "Passed":  false,
+        "Message":  "The remote server returned an error: (404) Not Found.",
+        "Timestamp":  "2025-12-10 11:12:25",
+        "TestName":  "Verify Profile Update"
+    },
+    {
+        "Passed":  false,
+        "Message":  "Total vets: 10, Our vet found: False",
+        "Timestamp":  "2025-12-10 11:12:28",
+        "TestName":  "List All Vets"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Minimal profile created with required fields only",
+        "Timestamp":  "2025-12-10 11:12:32",
+        "TestName":  "Minimal Vet Profile"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected non-vet user (403 Forbidden)",
+        "Timestamp":  "2025-12-10 11:12:36",
+        "TestName":  "Non-Vet User Restriction"
+    }
+]

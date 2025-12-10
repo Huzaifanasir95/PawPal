@@ -9,7 +9,7 @@
 
 > A comprehensive cross-platform mobile application for pet owners to manage, monitor, and care for their beloved companions using AI-powered features.
 
-## 📊 Research Datasets & Resources
+## Research Datasets & Resources
 
 This project leverages several research datasets and APIs for enhanced pet care features:
 

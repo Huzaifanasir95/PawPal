@@ -226,7 +226,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            
+
+            SizedBox(height: 12.h),
+
+            // Marketplace & Orders Actions
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Pet Shop',
+                    icon: Icons.shopping_bag_outlined,
+                    color: const Color(0xFF8D6E63),
+                    onTap: () {
+                      AppNavigator.navigateToMarketplace(context);
+                    },
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'My Orders',
+                    icon: Icons.receipt_long_outlined,
+                    color: const Color(0xFF5C6BC0),
+                    onTap: () {
+                      AppNavigator.navigateToOrders(context);
+                    },
+                  ),
+                ),
+              ],
+            ),
+
             SizedBox(height: 30.h),
             
             // Categories

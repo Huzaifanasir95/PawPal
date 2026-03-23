@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pawpawl/features/marketplace/presentation/pages/marketplace_screen.dart';
+import 'package:pawpawl/features/marketplace/presentation/pages/orders_screen.dart';
 import 'package:pawpawl/features/vet/presentation/pages/vets_list_screen.dart';
 import 'package:pawpawl/features/vet/presentation/pages/vet_detail_screen.dart';
 import 'package:pawpawl/features/chat/presentation/pages/chats_list_screen.dart';
@@ -60,6 +62,22 @@ class AppNavigator {
     return Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const VetHomeScreen()),
+    );
+  }
+
+  /// Navigate to the marketplace/pet shop screen
+  static Future<void> navigateToMarketplace(BuildContext context) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const MarketplaceScreen()),
+    );
+  }
+
+  /// Navigate to the user's orders screen
+  static Future<void> navigateToOrders(BuildContext context) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const OrdersScreen()),
     );
   }
 

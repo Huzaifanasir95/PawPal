@@ -5,6 +5,8 @@ import {
   Heart,
   Search,
   Stethoscope,
+  Dog,
+  MessageSquare,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +28,8 @@ async function getStats() {
     { count: adoptions },
     { count: lostFound },
     { count: vets },
+    { count: pets },
+    { count: chats },
     { data: recentPosts },
     { data: recentUsers },
   ] = await Promise.all([
@@ -35,6 +39,8 @@ async function getStats() {
     supabase.from('adoption_listings').select('*', { count: 'exact', head: true }),
     supabase.from('lost_found_posts').select('*', { count: 'exact', head: true }),
     supabase.from('vet_profiles').select('*', { count: 'exact', head: true }),
+    supabase.from('pets').select('*', { count: 'exact', head: true }),
+    supabase.from('chats').select('*', { count: 'exact', head: true }),
     supabase
       .from('posts')
       .select('id, content, category, created_at')
@@ -72,6 +78,8 @@ async function getStats() {
     adoptions: adoptions ?? 0,
     lostFound: lostFound ?? 0,
     vets: vets ?? 0,
+    pets: pets ?? 0,
+    chats: chats ?? 0,
     recentPosts: recentPosts ?? [],
     recentUsers: recentUsers ?? [],
     chartData,
@@ -131,6 +139,18 @@ export default async function DashboardPage() {
           icon={Stethoscope}
           color="green"
           trend={8}
+        />
+        <StatCard
+          title="Registered Pets"
+          value={stats.pets.toLocaleString()}
+          icon={Dog}
+          color="teal"
+        />
+        <StatCard
+          title="Chat Conversations"
+          value={stats.chats.toLocaleString()}
+          icon={MessageSquare}
+          color="blue"
         />
       </div>
 

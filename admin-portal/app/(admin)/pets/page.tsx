@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import LostFoundClient from './LostFoundClient';
+import PetsClient from './PetsClient';
 
 export const dynamic = 'force-dynamic';
 
-async function getLostFound() {
+async function getPets() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -11,18 +11,19 @@ async function getLostFound() {
   );
 
   const { data, error } = await supabase
-    .from('lost_found_posts')
-    .select('id, type, pet_name, pet_type, breed, description, last_seen_location, status, urgency, contact_phone, contact_email, image_urls, created_at, user_id')
+    .from('pets')
+    .select('id, owner_id, name, type, breed, age, age_unit, gender, color, weight, weight_unit, image_url, image_urls, is_verified, verification_confidence, verified_breed, bio, is_adopted, created_at, updated_at')
     .order('created_at', { ascending: false })
-    .limit(200);
+    .limit(300);
 
   if (error) throw error;
 
-  const userIds = Array.from(new Set((data ?? []).map((i: { user_id: string }) => i.user_id)));
+  // Enrich with owner data
+  const ownerIds = Array.from(new Set((data ?? []).map((p: { owner_id: string }) => p.owner_id)));
   const { data: users } = await supabase
     .from('users')
     .select('id, display_name, email')
-    .in('id', userIds);
+    .in('id', ownerIds);
   const userMap = Object.fromEntries(
     (users ?? []).map((u: { id: string; display_name: string | null; email: string | null }) => [
       u.id,
@@ -31,13 +32,13 @@ async function getLostFound() {
   );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data ?? []).map((i: any) => ({
-    ...i,
-    reporter: userMap[i.user_id] ?? null,
+  return (data ?? []).map((p: any) => ({
+    ...p,
+    owner: userMap[p.owner_id] ?? null,
   }));
 }
 
-export default async function LostFoundPage() {
-  const items = await getLostFound();
-  return <LostFoundClient items={items} />;
+export default async function PetsPage() {
+  const pets = await getPets();
+  return <PetsClient pets={pets} />;
 }

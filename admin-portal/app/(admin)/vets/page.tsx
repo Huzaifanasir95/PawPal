@@ -26,6 +26,7 @@ async function getVets() {
     .in('id', userIds);
   const userMap = Object.fromEntries((users ?? []).map((u: { id: string; email: string | null }) => [u.id, u.email]));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data ?? []).map((v: any) => ({
     ...v,
     name: v.full_name,

@@ -13,6 +13,8 @@ import {
   LogOut,
   PawPrint,
   ChevronRight,
+  Dog,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +26,8 @@ const navItems = [
   { href: '/vets', label: 'Vets', icon: Stethoscope },
   { href: '/adoptions', label: 'Adoptions', icon: Heart },
   { href: '/lost-found', label: 'Lost & Found', icon: Search },
+  { href: '/pets', label: 'Pets', icon: Dog },
+  { href: '/chats', label: 'Chats', icon: MessageSquare },
 ];
 
 export default function Sidebar() {

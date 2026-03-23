@@ -22,17 +22,26 @@ class EventsCubit extends Cubit<EventsState> {
   }
 
   Future<void> loadEventDetail(String id) async {
-    emit(state.copyWith(isLoadingDetail: true, selectedEvent: null, error: null));
+    // Clear previous event's RSVP state before loading new one
+    emit(state.copyWith(
+      isLoadingDetail: true,
+      selectedEvent: null,
+      clearMyRsvp: true,
+      eventRsvps: const [],
+      error: null,
+    ));
     try {
       final results = await Future.wait([
         _repo.getEventById(id),
         _repo.getMyRSVP(id),
         _repo.getEventRSVPs(id),
       ]);
+      final fetchedRsvp = results[1] as EventRSVP?;
       emit(state.copyWith(
         isLoadingDetail: false,
         selectedEvent: results[0] as PetEvent,
-        myRsvp: results[1] as EventRSVP?,
+        myRsvp: fetchedRsvp,
+        clearMyRsvp: fetchedRsvp == null,
         eventRsvps: results[2] as List<EventRSVP>,
       ));
     } catch (e) {
@@ -105,10 +114,13 @@ class EventsCubit extends Cubit<EventsState> {
     emit(state.copyWith(isRsvping: true, error: null));
     try {
       await _repo.cancelRSVP(eventId);
-      emit(state.copyWith(isRsvping: false));
-      // Refresh
+      // Clear myRsvp and refresh RSVPs list
       final rsvps = await _repo.getEventRSVPs(eventId);
-      emit(state.copyWith(eventRsvps: rsvps));
+      emit(state.copyWith(
+        isRsvping: false,
+        clearMyRsvp: true,
+        eventRsvps: rsvps,
+      ));
     } catch (e) {
       emit(state.copyWith(
         isRsvping: false,

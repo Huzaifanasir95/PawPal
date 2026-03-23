@@ -121,7 +121,7 @@ class MarketplaceRepository {
     try {
       final response = await _apiClient.post(
         '/api/v1/marketplace/cart',
-        data: {'product_id': productId, 'quantity': quantity},
+        data: {'ProductID': productId, 'Quantity': quantity},
       );
       if (response.data['success'] == true) {
         return CartItem.fromJson(

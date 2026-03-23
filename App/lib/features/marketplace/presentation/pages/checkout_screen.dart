@@ -504,8 +504,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final request = PlaceOrderRequest(
       items: widget.cartItems
           .map((i) => {
-                'product_id': i.productId,
-                'quantity': i.quantity,
+                'ProductID': i.productId,
+                'Quantity': i.quantity,
               })
           .toList(),
       shippingAddress: address,

@@ -5,7 +5,7 @@ import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 import '../widgets/user_avatar.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
-import '../../features/community/presentation/pages/community_page.dart';
+import '../../features/community/presentation/pages/community_hub_page.dart';
 import '../../features/chatbot/presentation/pages/chatbot_screen.dart';
 
 class CustomDrawer extends StatelessWidget {
@@ -92,24 +92,16 @@ class CustomDrawer extends StatelessWidget {
                       // Community Section
                       _buildDrawerSection('Community'),
                       _buildDrawerItem(
-                        icon: Icons.group,
-                        title: 'Community Forum',
+                        icon: Icons.groups,
+                        title: 'Community Hub',
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const CommunityPage(),
+                              builder: (context) => const CommunityHubPage(),
                             ),
                           );
-                        },
-                      ),
-                      _buildDrawerItem(
-                        icon: Icons.event,
-                        title: 'Events',
-                        onTap: () {
-                          Navigator.pop(context);
-                          // Navigate to events
                         },
                       ),
             

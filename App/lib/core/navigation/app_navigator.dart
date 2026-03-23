@@ -6,6 +6,7 @@ import 'package:pawpawl/features/vet/presentation/pages/vet_detail_screen.dart';
 import 'package:pawpawl/features/chat/presentation/pages/chats_list_screen.dart';
 import 'package:pawpawl/features/chat/presentation/pages/chat_conversation_screen.dart';
 import 'package:pawpawl/features/vet/presentation/pages/vet_home_screen.dart';
+import 'package:pawpawl/features/community/presentation/pages/community_hub_page.dart';
 
 /// Navigation helper for app-wide routing
 class AppNavigator {
@@ -92,6 +93,14 @@ class AppNavigator {
     // should happen in the VetDetailScreen using ChatBloc
     await navigateToChats(context);
     return true;
+  }
+
+  /// Navigate to the Community Hub (forum, lost & found, adoption, events)
+  static Future<void> navigateToCommunityHub(BuildContext context) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CommunityHubPage()),
+    );
   }
 
   /// Pop back to previous screen

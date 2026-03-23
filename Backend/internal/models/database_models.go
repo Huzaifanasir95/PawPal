@@ -233,3 +233,91 @@ type VetReview struct {
 	UpdatedAt  time.Time  `json:"updatedAt"`
 }
 
+// LostFoundPost represents a lost or found pet alert
+type LostFoundPost struct {
+	ID               uuid.UUID  `json:"id"`
+	UserID           uuid.UUID  `json:"userId"`
+	Type             string     `json:"type"` // lost or found
+	PetName          *string    `json:"petName,omitempty"`
+	PetType          *string    `json:"petType,omitempty"`
+	Breed            *string    `json:"breed,omitempty"`
+	Color            *string    `json:"color,omitempty"`
+	Description      string     `json:"description"`
+	ImageURLs        []string   `json:"imageUrls,omitempty"`
+	LastSeenLocation *string    `json:"lastSeenLocation,omitempty"`
+	LastSeenLat      *float64   `json:"lastSeenLat,omitempty"`
+	LastSeenLng      *float64   `json:"lastSeenLng,omitempty"`
+	Urgency          string     `json:"urgency"`
+	ContactPhone     *string    `json:"contactPhone,omitempty"`
+	ContactEmail     *string    `json:"contactEmail,omitempty"`
+	Status           string     `json:"status"`
+	UserName         *string    `json:"userName,omitempty"`
+	UserAvatar       *string    `json:"userAvatar,omitempty"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
+}
+
+// AdoptionListing represents a pet available for adoption
+type AdoptionListing struct {
+	ID            uuid.UUID  `json:"id"`
+	UserID        uuid.UUID  `json:"userId"`
+	PetName       string     `json:"petName"`
+	PetType       string     `json:"petType"`
+	Breed         *string    `json:"breed,omitempty"`
+	Age           *string    `json:"age,omitempty"`
+	Gender        *string    `json:"gender,omitempty"`
+	Size          *string    `json:"size,omitempty"`
+	Color         *string    `json:"color,omitempty"`
+	Description   string     `json:"description"`
+	MedicalInfo   *string    `json:"medicalInfo,omitempty"`
+	IsVaccinated  bool       `json:"isVaccinated"`
+	IsNeutered    bool       `json:"isNeutered"`
+	IsTrained     bool       `json:"isTrained"`
+	GoodWithKids  *bool      `json:"goodWithKids,omitempty"`
+	GoodWithPets  *bool      `json:"goodWithPets,omitempty"`
+	ImageURLs     []string   `json:"imageUrls,omitempty"`
+	Location      *string    `json:"location,omitempty"`
+	ContactPhone  *string    `json:"contactPhone,omitempty"`
+	ContactEmail  *string    `json:"contactEmail,omitempty"`
+	AdoptionFee   float64    `json:"adoptionFee"`
+	Status        string     `json:"status"`
+	UserName      *string    `json:"userName,omitempty"`
+	UserAvatar    *string    `json:"userAvatar,omitempty"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	UpdatedAt     time.Time  `json:"updatedAt"`
+}
+
+// Event represents a community event or meetup
+type Event struct {
+	ID              uuid.UUID  `json:"id"`
+	OrganizerID     uuid.UUID  `json:"organizerId"`
+	Title           string     `json:"title"`
+	Description     string     `json:"description"`
+	EventType       string     `json:"eventType"`
+	ImageURL        *string    `json:"imageUrl,omitempty"`
+	Location        *string    `json:"location,omitempty"`
+	LocationLat     *float64   `json:"locationLat,omitempty"`
+	LocationLng     *float64   `json:"locationLng,omitempty"`
+	StartDate       time.Time  `json:"startDate"`
+	EndDate         *time.Time `json:"endDate,omitempty"`
+	MaxAttendees    *int       `json:"maxAttendees,omitempty"`
+	IsPetFriendly   bool       `json:"isPetFriendly"`
+	PetTypesAllowed []string   `json:"petTypesAllowed,omitempty"`
+	Status          string     `json:"status"`
+	OrganizerName   *string    `json:"organizerName,omitempty"`
+	OrganizerAvatar *string    `json:"organizerAvatar,omitempty"`
+	RSVPCount       int        `json:"rsvpCount"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	UpdatedAt       time.Time  `json:"updatedAt"`
+}
+
+// EventRSVP represents a user's RSVP to an event
+type EventRSVP struct {
+	ID         uuid.UUID `json:"id"`
+	EventID    uuid.UUID `json:"eventId"`
+	UserID     uuid.UUID `json:"userId"`
+	Status     string    `json:"status"` // going, interested, waitlisted
+	UserName   *string   `json:"userName,omitempty"`
+	UserAvatar *string   `json:"userAvatar,omitempty"`
+	CreatedAt  time.Time `json:"createdAt"`
+}

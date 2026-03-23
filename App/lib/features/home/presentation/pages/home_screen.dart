@@ -256,6 +256,26 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
 
+            SizedBox(height: 12.h),
+
+            // Community Hub
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Community',
+                    icon: Icons.groups_outlined,
+                    color: const Color(0xFF2C6E69),
+                    onTap: () {
+                      AppNavigator.navigateToCommunityHub(context);
+                    },
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(child: SizedBox(height: 100.h)),
+              ],
+            ),
+
             SizedBox(height: 30.h),
             
             // Categories

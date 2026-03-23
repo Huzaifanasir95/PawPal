@@ -266,3 +266,92 @@ type GenericResponse struct {
 	Message string      `json:"message,omitempty"`
 	Data    interface{} `json:"data,omitempty"`
 }
+// ─── Lost & Found Request/Response ──────────────────────────────
+
+type CreateLostFoundRequest struct {
+	Type             string   `json:"type" binding:"required,oneof=lost found"`
+	PetName          *string  `json:"petName,omitempty"`
+	PetType          *string  `json:"petType,omitempty"`
+	Breed            *string  `json:"breed,omitempty"`
+	Color            *string  `json:"color,omitempty"`
+	Description      string   `json:"description" binding:"required,min=1"`
+	ImageURLs        []string `json:"imageUrls,omitempty"`
+	LastSeenLocation *string  `json:"lastSeenLocation,omitempty"`
+	LastSeenLat      *float64 `json:"lastSeenLat,omitempty"`
+	LastSeenLng      *float64 `json:"lastSeenLng,omitempty"`
+	Urgency          string   `json:"urgency" binding:"omitempty,oneof=low medium high critical"`
+	ContactPhone     *string  `json:"contactPhone,omitempty"`
+	ContactEmail     *string  `json:"contactEmail,omitempty"`
+}
+
+type UpdateLostFoundRequest struct {
+	Description      *string  `json:"description,omitempty"`
+	LastSeenLocation *string  `json:"lastSeenLocation,omitempty"`
+	Urgency          *string  `json:"urgency,omitempty"`
+	ContactPhone     *string  `json:"contactPhone,omitempty"`
+	ContactEmail     *string  `json:"contactEmail,omitempty"`
+	Status           *string  `json:"status,omitempty"`
+}
+
+// ─── Adoption Request/Response ──────────────────────────────────
+
+type CreateAdoptionRequest struct {
+	PetName      string   `json:"petName" binding:"required,min=1,max=100"`
+	PetType      string   `json:"petType" binding:"required"`
+	Breed        *string  `json:"breed,omitempty"`
+	Age          *string  `json:"age,omitempty"`
+	Gender       *string  `json:"gender,omitempty" binding:"omitempty,oneof=male female unknown"`
+	Size         *string  `json:"size,omitempty" binding:"omitempty,oneof=small medium large xlarge"`
+	Color        *string  `json:"color,omitempty"`
+	Description  string   `json:"description" binding:"required,min=1"`
+	MedicalInfo  *string  `json:"medicalInfo,omitempty"`
+	IsVaccinated bool     `json:"isVaccinated"`
+	IsNeutered   bool     `json:"isNeutered"`
+	IsTrained    bool     `json:"isTrained"`
+	GoodWithKids *bool    `json:"goodWithKids,omitempty"`
+	GoodWithPets *bool    `json:"goodWithPets,omitempty"`
+	ImageURLs    []string `json:"imageUrls,omitempty"`
+	Location     *string  `json:"location,omitempty"`
+	ContactPhone *string  `json:"contactPhone,omitempty"`
+	ContactEmail *string  `json:"contactEmail,omitempty"`
+	AdoptionFee  float64  `json:"adoptionFee"`
+}
+
+type UpdateAdoptionRequest struct {
+	Description  *string  `json:"description,omitempty"`
+	MedicalInfo  *string  `json:"medicalInfo,omitempty"`
+	IsVaccinated *bool    `json:"isVaccinated,omitempty"`
+	IsNeutered   *bool    `json:"isNeutered,omitempty"`
+	IsTrained    *bool    `json:"isTrained,omitempty"`
+	AdoptionFee  *float64 `json:"adoptionFee,omitempty"`
+	Status       *string  `json:"status,omitempty"`
+	ContactPhone *string  `json:"contactPhone,omitempty"`
+}
+
+// ─── Event Request/Response ─────────────────────────────────────
+
+type CreateEventRequest struct {
+	Title           string   `json:"title" binding:"required,min=1,max=255"`
+	Description     string   `json:"description" binding:"required,min=1"`
+	EventType       string   `json:"eventType" binding:"omitempty,oneof=meetup adoption_drive training competition charity other"`
+	ImageURL        *string  `json:"imageUrl,omitempty"`
+	Location        *string  `json:"location,omitempty"`
+	LocationLat     *float64 `json:"locationLat,omitempty"`
+	LocationLng     *float64 `json:"locationLng,omitempty"`
+	StartDate       string   `json:"startDate" binding:"required"` // ISO 8601
+	EndDate         *string  `json:"endDate,omitempty"`
+	MaxAttendees    *int     `json:"maxAttendees,omitempty"`
+	IsPetFriendly   bool     `json:"isPetFriendly"`
+	PetTypesAllowed []string `json:"petTypesAllowed,omitempty"`
+}
+
+type UpdateEventRequest struct {
+	Title       *string `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Location    *string `json:"location,omitempty"`
+	Status      *string `json:"status,omitempty"`
+}
+
+type RSVPRequest struct {
+	Status string `json:"status" binding:"required,oneof=going interested"`
+}

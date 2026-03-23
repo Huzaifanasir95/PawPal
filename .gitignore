@@ -21,7 +21,7 @@ images/
 oxford_pet_dataset/
 ML_Models/cats/code/cat_breed_classifier.pth
 ML_Models/data/
-model/
+
 ML_Models/cats/model_cats.zip
 ML_Models/dogs/model.zip
 

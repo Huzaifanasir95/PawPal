@@ -48,6 +48,7 @@ func main() {
 	chatRepo := repositories.NewChatRepository(db)
 	messageRepo := repositories.NewMessageRepository(db)
 	marketplaceRepo := repositories.NewMarketplaceRepository(db)
+	communityHubRepo := repositories.NewCommunityHubRepository(db)
 
 	// Initialize auth service
 	authService := services.NewAuthService(userRepo)
@@ -71,9 +72,10 @@ func main() {
 	chatHandlers := handlers.NewChatHandlers(chatRepo, messageRepo, userRepo, vetRepo)
 	wsHandler := handlers.NewWebSocketHandler(messageRepo, chatRepo)
 	marketplaceHandlers := handlers.NewMarketplaceHandlers(marketplaceRepo)
+	communityHubHandlers := handlers.NewCommunityHubHandlers(communityHubRepo, userRepo)
 	
 	// Setup router
-	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, wsHandler, marketplaceHandlers, authService, cfg)
+	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, wsHandler, marketplaceHandlers, communityHubHandlers, authService, cfg)
 	
 	// Start server
 	port := os.Getenv("PORT")
@@ -90,7 +92,7 @@ func main() {
 	}
 }
 
-func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, wsHandler *handlers.WebSocketHandler, marketplaceHandlers *handlers.MarketplaceHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
+func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, wsHandler *handlers.WebSocketHandler, marketplaceHandlers *handlers.MarketplaceHandlers, communityHubHandlers *handlers.CommunityHubHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
 	// Set Gin mode
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -272,6 +274,43 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 
 				// Seller orders view
 				market.GET("/seller/orders", marketplaceHandlers.GetSellerOrders)
+			}
+
+			// Community Hub - Lost & Found
+			lostFound := protected.Group("/lost-found")
+			{
+				lostFound.POST("", communityHubHandlers.CreateLostFound)
+				lostFound.GET("", communityHubHandlers.GetLostFoundPosts)
+				lostFound.GET("/me", communityHubHandlers.GetMyLostFoundPosts)
+				lostFound.GET("/:id", communityHubHandlers.GetLostFoundByID)
+				lostFound.PUT("/:id", communityHubHandlers.UpdateLostFound)
+				lostFound.DELETE("/:id", communityHubHandlers.DeleteLostFound)
+			}
+
+			// Community Hub - Adoption Listings
+			adoptions := protected.Group("/adoptions")
+			{
+				adoptions.POST("", communityHubHandlers.CreateAdoption)
+				adoptions.GET("", communityHubHandlers.GetAdoptionListings)
+				adoptions.GET("/me", communityHubHandlers.GetMyAdoptionListings)
+				adoptions.GET("/:id", communityHubHandlers.GetAdoptionByID)
+				adoptions.PUT("/:id", communityHubHandlers.UpdateAdoption)
+				adoptions.DELETE("/:id", communityHubHandlers.DeleteAdoption)
+			}
+
+			// Community Hub - Events & Meetups
+			events := protected.Group("/events")
+			{
+				events.POST("", communityHubHandlers.CreateEvent)
+				events.GET("", communityHubHandlers.GetEvents)
+				events.GET("/me", communityHubHandlers.GetMyEvents)
+				events.GET("/:id", communityHubHandlers.GetEventByID)
+				events.PUT("/:id", communityHubHandlers.UpdateEvent)
+				events.DELETE("/:id", communityHubHandlers.DeleteEvent)
+				events.POST("/:id/rsvp", communityHubHandlers.RSVPEvent)
+				events.DELETE("/:id/rsvp", communityHubHandlers.CancelRSVP)
+				events.GET("/:id/rsvps", communityHubHandlers.GetEventRSVPs)
+				events.GET("/:id/rsvp/me", communityHubHandlers.GetMyRSVP)
 			}
 		}
 	}

@@ -153,7 +153,7 @@ class _ForumTabState extends State<_ForumTab> {
       builder: (context, state) {
         return state.maybeWhen(
           loading: () => const Center(child: CircularProgressIndicator()),
-          loaded: (posts, comments, sortBy, descending, selectedPostId) =>
+          loaded: (posts, comments, sortBy, descending, category, selectedPostId) =>
               _buildForumContent(posts),
           error: (message) => Center(
             child: Column(

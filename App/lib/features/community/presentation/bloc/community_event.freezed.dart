@@ -19,10 +19,12 @@ final _privateConstructorUsedError = UnsupportedError(
 mixin _$CommunityEvent {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -45,8 +47,14 @@ mixin _$CommunityEvent {
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -62,8 +70,14 @@ mixin _$CommunityEvent {
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -155,7 +169,7 @@ abstract class _$$LoadPostsImplCopyWith<$Res> {
     $Res Function(_$LoadPostsImpl) then,
   ) = __$$LoadPostsImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({String sortBy, bool descending});
+  $Res call({String sortBy, bool descending, String? category});
 }
 
 /// @nodoc
@@ -171,7 +185,11 @@ class __$$LoadPostsImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? sortBy = null, Object? descending = null}) {
+  $Res call({
+    Object? sortBy = null,
+    Object? descending = null,
+    Object? category = freezed,
+  }) {
     return _then(
       _$LoadPostsImpl(
         sortBy:
@@ -184,6 +202,11 @@ class __$$LoadPostsImplCopyWithImpl<$Res>
                 ? _value.descending
                 : descending // ignore: cast_nullable_to_non_nullable
                     as bool,
+        category:
+            freezed == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -192,7 +215,11 @@ class __$$LoadPostsImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$LoadPostsImpl implements _LoadPosts {
-  const _$LoadPostsImpl({this.sortBy = 'createdAt', this.descending = true});
+  const _$LoadPostsImpl({
+    this.sortBy = 'createdAt',
+    this.descending = true,
+    this.category,
+  });
 
   @override
   @JsonKey()
@@ -200,10 +227,12 @@ class _$LoadPostsImpl implements _LoadPosts {
   @override
   @JsonKey()
   final bool descending;
+  @override
+  final String? category;
 
   @override
   String toString() {
-    return 'CommunityEvent.loadPosts(sortBy: $sortBy, descending: $descending)';
+    return 'CommunityEvent.loadPosts(sortBy: $sortBy, descending: $descending, category: $category)';
   }
 
   @override
@@ -213,11 +242,13 @@ class _$LoadPostsImpl implements _LoadPosts {
             other is _$LoadPostsImpl &&
             (identical(other.sortBy, sortBy) || other.sortBy == sortBy) &&
             (identical(other.descending, descending) ||
-                other.descending == descending));
+                other.descending == descending) &&
+            (identical(other.category, category) ||
+                other.category == category));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, sortBy, descending);
+  int get hashCode => Object.hash(runtimeType, sortBy, descending, category);
 
   /// Create a copy of CommunityEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -230,10 +261,12 @@ class _$LoadPostsImpl implements _LoadPosts {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -254,14 +287,20 @@ class _$LoadPostsImpl implements _LoadPosts {
     required TResult Function(List<Comment> comments) commentsUpdated,
     required TResult Function(List<Post> posts) postsUpdated,
   }) {
-    return loadPosts(sortBy, descending);
+    return loadPosts(sortBy, descending, category);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -275,14 +314,20 @@ class _$LoadPostsImpl implements _LoadPosts {
     TResult? Function(List<Comment> comments)? commentsUpdated,
     TResult? Function(List<Post> posts)? postsUpdated,
   }) {
-    return loadPosts?.call(sortBy, descending);
+    return loadPosts?.call(sortBy, descending, category);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -298,7 +343,7 @@ class _$LoadPostsImpl implements _LoadPosts {
     required TResult orElse(),
   }) {
     if (loadPosts != null) {
-      return loadPosts(sortBy, descending);
+      return loadPosts(sortBy, descending, category);
     }
     return orElse();
   }
@@ -366,11 +411,15 @@ class _$LoadPostsImpl implements _LoadPosts {
 }
 
 abstract class _LoadPosts implements CommunityEvent {
-  const factory _LoadPosts({final String sortBy, final bool descending}) =
-      _$LoadPostsImpl;
+  const factory _LoadPosts({
+    final String sortBy,
+    final bool descending,
+    final String? category,
+  }) = _$LoadPostsImpl;
 
   String get sortBy;
   bool get descending;
+  String? get category;
 
   /// Create a copy of CommunityEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -386,7 +435,12 @@ abstract class _$$CreatePostImplCopyWith<$Res> {
     $Res Function(_$CreatePostImpl) then,
   ) = __$$CreatePostImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({String title, String content, List<String>? imageUrls});
+  $Res call({
+    String title,
+    String content,
+    String category,
+    List<String>? imageUrls,
+  });
 }
 
 /// @nodoc
@@ -405,6 +459,7 @@ class __$$CreatePostImplCopyWithImpl<$Res>
   $Res call({
     Object? title = null,
     Object? content = null,
+    Object? category = null,
     Object? imageUrls = freezed,
   }) {
     return _then(
@@ -418,6 +473,11 @@ class __$$CreatePostImplCopyWithImpl<$Res>
             null == content
                 ? _value.content
                 : content // ignore: cast_nullable_to_non_nullable
+                    as String,
+        category:
+            null == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
                     as String,
         imageUrls:
             freezed == imageUrls
@@ -435,6 +495,7 @@ class _$CreatePostImpl implements _CreatePost {
   const _$CreatePostImpl({
     required this.title,
     required this.content,
+    this.category = 'general',
     final List<String>? imageUrls,
   }) : _imageUrls = imageUrls;
 
@@ -442,6 +503,9 @@ class _$CreatePostImpl implements _CreatePost {
   final String title;
   @override
   final String content;
+  @override
+  @JsonKey()
+  final String category;
   final List<String>? _imageUrls;
   @override
   List<String>? get imageUrls {
@@ -454,7 +518,7 @@ class _$CreatePostImpl implements _CreatePost {
 
   @override
   String toString() {
-    return 'CommunityEvent.createPost(title: $title, content: $content, imageUrls: $imageUrls)';
+    return 'CommunityEvent.createPost(title: $title, content: $content, category: $category, imageUrls: $imageUrls)';
   }
 
   @override
@@ -464,6 +528,8 @@ class _$CreatePostImpl implements _CreatePost {
             other is _$CreatePostImpl &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.content, content) || other.content == content) &&
+            (identical(other.category, category) ||
+                other.category == category) &&
             const DeepCollectionEquality().equals(
               other._imageUrls,
               _imageUrls,
@@ -475,6 +541,7 @@ class _$CreatePostImpl implements _CreatePost {
     runtimeType,
     title,
     content,
+    category,
     const DeepCollectionEquality().hash(_imageUrls),
   );
 
@@ -489,10 +556,12 @@ class _$CreatePostImpl implements _CreatePost {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -513,14 +582,20 @@ class _$CreatePostImpl implements _CreatePost {
     required TResult Function(List<Comment> comments) commentsUpdated,
     required TResult Function(List<Post> posts) postsUpdated,
   }) {
-    return createPost(title, content, imageUrls);
+    return createPost(title, content, category, imageUrls);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -534,14 +609,20 @@ class _$CreatePostImpl implements _CreatePost {
     TResult? Function(List<Comment> comments)? commentsUpdated,
     TResult? Function(List<Post> posts)? postsUpdated,
   }) {
-    return createPost?.call(title, content, imageUrls);
+    return createPost?.call(title, content, category, imageUrls);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -557,7 +638,7 @@ class _$CreatePostImpl implements _CreatePost {
     required TResult orElse(),
   }) {
     if (createPost != null) {
-      return createPost(title, content, imageUrls);
+      return createPost(title, content, category, imageUrls);
     }
     return orElse();
   }
@@ -628,11 +709,13 @@ abstract class _CreatePost implements CommunityEvent {
   const factory _CreatePost({
     required final String title,
     required final String content,
+    final String category,
     final List<String>? imageUrls,
   }) = _$CreatePostImpl;
 
   String get title;
   String get content;
+  String get category;
   List<String>? get imageUrls;
 
   /// Create a copy of CommunityEvent
@@ -712,10 +795,12 @@ class _$LikePostImpl implements _LikePost {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -742,8 +827,14 @@ class _$LikePostImpl implements _LikePost {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -763,8 +854,14 @@ class _$LikePostImpl implements _LikePost {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -956,10 +1053,12 @@ class _$AddCommentImpl implements _AddComment {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -986,8 +1085,14 @@ class _$AddCommentImpl implements _AddComment {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -1007,8 +1112,14 @@ class _$AddCommentImpl implements _AddComment {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -1180,10 +1291,12 @@ class _$LikeCommentImpl implements _LikeComment {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -1210,8 +1323,14 @@ class _$LikeCommentImpl implements _LikeComment {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -1231,8 +1350,14 @@ class _$LikeCommentImpl implements _LikeComment {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -1418,10 +1543,12 @@ class _$EditPostImpl implements _EditPost {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -1448,8 +1575,14 @@ class _$EditPostImpl implements _EditPost {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -1469,8 +1602,14 @@ class _$EditPostImpl implements _EditPost {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -1641,10 +1780,12 @@ class _$DeletePostImpl implements _DeletePost {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -1671,8 +1812,14 @@ class _$DeletePostImpl implements _DeletePost {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -1692,8 +1839,14 @@ class _$DeletePostImpl implements _DeletePost {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -1868,10 +2021,12 @@ class _$EditCommentImpl implements _EditComment {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -1898,8 +2053,14 @@ class _$EditCommentImpl implements _EditComment {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -1919,8 +2080,14 @@ class _$EditCommentImpl implements _EditComment {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -2090,10 +2257,12 @@ class _$DeleteCommentImpl implements _DeleteComment {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -2120,8 +2289,14 @@ class _$DeleteCommentImpl implements _DeleteComment {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -2141,8 +2316,14 @@ class _$DeleteCommentImpl implements _DeleteComment {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -2307,10 +2488,12 @@ class _$LoadCommentsImpl implements _LoadComments {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -2337,8 +2520,14 @@ class _$LoadCommentsImpl implements _LoadComments {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -2358,8 +2547,14 @@ class _$LoadCommentsImpl implements _LoadComments {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -2534,10 +2729,12 @@ class _$CommentsUpdatedImpl implements _CommentsUpdated {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -2564,8 +2761,14 @@ class _$CommentsUpdatedImpl implements _CommentsUpdated {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -2585,8 +2788,14 @@ class _$CommentsUpdatedImpl implements _CommentsUpdated {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?
@@ -2758,10 +2967,12 @@ class _$PostsUpdatedImpl implements _PostsUpdated {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String sortBy, bool descending) loadPosts,
+    required TResult Function(String sortBy, bool descending, String? category)
+    loadPosts,
     required TResult Function(
       String title,
       String content,
+      String category,
       List<String>? imageUrls,
     )
     createPost,
@@ -2788,8 +2999,14 @@ class _$PostsUpdatedImpl implements _PostsUpdated {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String sortBy, bool descending)? loadPosts,
-    TResult? Function(String title, String content, List<String>? imageUrls)?
+    TResult? Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult? Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult? Function(String postId)? likePost,
     TResult? Function(String postId, String content, String? parentCommentId)?
@@ -2809,8 +3026,14 @@ class _$PostsUpdatedImpl implements _PostsUpdated {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String sortBy, bool descending)? loadPosts,
-    TResult Function(String title, String content, List<String>? imageUrls)?
+    TResult Function(String sortBy, bool descending, String? category)?
+    loadPosts,
+    TResult Function(
+      String title,
+      String content,
+      String category,
+      List<String>? imageUrls,
+    )?
     createPost,
     TResult Function(String postId)? likePost,
     TResult Function(String postId, String content, String? parentCommentId)?

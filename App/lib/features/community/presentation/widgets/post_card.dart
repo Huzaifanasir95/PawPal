@@ -159,16 +159,38 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
 
-          // Post Title
+          // Category Badge and Post Title
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: Text(
-              widget.post.title,
-              style: AppTextStyles.onboardingBody.copyWith(
-                fontSize: 18.sp,
-                color: const Color(0xFF324B49),
-                fontWeight: FontWeight.w600,
-              ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Text(
+                    PostCategory.getLabel(widget.post.category),
+                    style: AppTextStyles.onboardingBody.copyWith(
+                      fontSize: 10.sp,
+                      color: const Color(0xFF2C6E69),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: Text(
+                    widget.post.title,
+                    style: AppTextStyles.onboardingBody.copyWith(
+                      fontSize: 18.sp,
+                      color: const Color(0xFF324B49),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 

@@ -25,14 +25,28 @@ class _CommunityPageState extends State<CommunityPage> {
   final TextEditingController _searchController = TextEditingController();
   String _sortBy = 'createdAt';
   bool _descending = true;
+  String _selectedCategory = PostCategory.all;
 
   @override
   void initState() {
     super.initState();
     // Load posts when the page initializes
+    _loadPosts();
+  }
+
+  void _loadPosts() {
     context.read<CommunityBloc>().add(
-      CommunityEvent.loadPosts(sortBy: _sortBy, descending: _descending),
+      CommunityEvent.loadPosts(
+        sortBy: _sortBy,
+        descending: _descending,
+        category: _selectedCategory == PostCategory.all ? null : _selectedCategory,
+      ),
     );
+  }
+
+  void _onCategorySelected(String category) {
+    setState(() => _selectedCategory = category);
+    _loadPosts();
   }
 
   @override
@@ -89,7 +103,7 @@ class _CommunityPageState extends State<CommunityPage> {
             child: state.maybeWhen(
               initial: () => const Center(child: CircularProgressIndicator()),
               loading: () => const Center(child: CircularProgressIndicator()),
-              loaded: (posts, comments, sortBy, descending, selectedPostId) =>
+              loaded: (posts, comments, sortBy, descending, category, selectedPostId) =>
                 _buildLoadedContent(posts),
               error: (message) => Center(
                 child: Column(
@@ -97,11 +111,7 @@ class _CommunityPageState extends State<CommunityPage> {
                   children: [
                     Text('Error: $message'),
                     ElevatedButton(
-                      onPressed: () {
-                        context.read<CommunityBloc>().add(
-                          CommunityEvent.loadPosts(sortBy: _sortBy, descending: _descending),
-                        );
-                      },
+                      onPressed: _loadPosts,
                       child: const Text('Retry'),
                     ),
                   ],
@@ -236,6 +246,10 @@ class _CommunityPageState extends State<CommunityPage> {
           SizedBox(height: 24.h),
           _buildSearchAndFilter(),
 
+          // Category Filter Chips
+          SizedBox(height: 16.h),
+          _buildCategoryChips(),
+
           // Create Post Card
           SizedBox(height: 20.h),
           const CreatePostCard(),
@@ -244,6 +258,44 @@ class _CommunityPageState extends State<CommunityPage> {
           SizedBox(height: 20.h),
           _buildPostsSection(posts),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChips() {
+    return SizedBox(
+      height: 40.h,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: PostCategory.values.length,
+        itemBuilder: (context, index) {
+          final category = PostCategory.values[index];
+          final isSelected = _selectedCategory == category;
+          
+          return Padding(
+            padding: EdgeInsets.only(right: 8.w),
+            child: FilterChip(
+              label: Text(
+                PostCategory.getLabel(category),
+                style: AppTextStyles.onboardingBody.copyWith(
+                  fontSize: 12.sp,
+                  color: isSelected ? Colors.white : const Color(0xFF324B49),
+                ),
+              ),
+              selected: isSelected,
+              onSelected: (_) => _onCategorySelected(category),
+              backgroundColor: Colors.white,
+              selectedColor: AppColors.primary,
+              checkmarkColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.r),
+                side: BorderSide(
+                  color: isSelected ? AppColors.primary : const Color(0xFFAAD5D1),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

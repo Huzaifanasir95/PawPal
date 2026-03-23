@@ -108,7 +108,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       return state.when(
                         initial: () => const Center(child: CircularProgressIndicator()),
                         loading: () => const Center(child: CircularProgressIndicator()),
-                        loaded: (posts, comments, sortBy, descending, selectedPostId) {
+                        loaded: (posts, comments, sortBy, descending, category, selectedPostId) {
                           if (comments.isEmpty) {
                             return Center(
                               child: Padding(

@@ -88,7 +88,7 @@ class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
     try {
       // Get current posts for optimistic updates
       final currentPosts = state.maybeWhen(
-        loaded: (posts, _, __, ___, ____) => posts,
+        loaded: (posts, _, __, ___, ____, _____) => posts,
         orElse: () => <Post>[],
       );
 
@@ -99,22 +99,27 @@ class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
 
       // Get other state data
       final currentComments = state.maybeWhen(
-        loaded: (_, comments, __, ___, ____) => comments,
+        loaded: (_, comments, __, ___, ____, _____) => comments,
         orElse: () => <Comment>[],
       );
 
       final currentSortBy = state.maybeWhen(
-        loaded: (_, __, sortBy, ___, ____) => sortBy,
+        loaded: (_, __, sortBy, ___, ____, _____) => sortBy,
         orElse: () => 'createdAt',
       );
 
       final currentDescending = state.maybeWhen(
-        loaded: (_, __, ___, descending, _____) => descending,
+        loaded: (_, __, ___, descending, ____, _____) => descending,
         orElse: () => true,
       );
 
+      final currentCategory = state.maybeWhen(
+        loaded: (_, __, ___, ____, category, _____) => category,
+        orElse: () => null,
+      );
+
       final currentSelectedPostId = state.maybeWhen(
-        loaded: (_, __, ___, ____, selectedPostId) => selectedPostId,
+        loaded: (_, __, ___, ____, _____, selectedPostId) => selectedPostId,
         orElse: () => null,
       );
 
@@ -148,6 +153,7 @@ class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
         comments: currentComments,
         sortBy: currentSortBy,
         descending: currentDescending,
+        category: currentCategory,
         selectedPostId: currentSelectedPostId,
       ));
 
@@ -185,7 +191,7 @@ class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
     try {
       // Get current comments for optimistic updates
       final currentComments = state.maybeWhen(
-        loaded: (_, comments, __, ___, ____) => comments,
+        loaded: (_, comments, __, ___, ____, _____) => comments,
         orElse: () => <Comment>[],
       );
 
@@ -196,22 +202,27 @@ class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
 
       // Get other state data
       final currentPosts = state.maybeWhen(
-        loaded: (posts, _, __, ___, ____) => posts,
+        loaded: (posts, _, __, ___, ____, _____) => posts,
         orElse: () => <Post>[],
       );
 
       final currentSortBy = state.maybeWhen(
-        loaded: (_, __, sortBy, ___, ____) => sortBy,
+        loaded: (_, __, sortBy, ___, ____, _____) => sortBy,
         orElse: () => 'createdAt',
       );
 
       final currentDescending = state.maybeWhen(
-        loaded: (_, __, ___, descending2, _____) => descending2,
+        loaded: (_, __, ___, descending2, ____, _____) => descending2,
         orElse: () => true,
       );
 
+      final currentCategory2 = state.maybeWhen(
+        loaded: (_, __, ___, ____, category2, _____) => category2,
+        orElse: () => null,
+      );
+
       final currentSelectedPostId = state.maybeWhen(
-        loaded: (_, __, ___, ____, selectedPostId2) => selectedPostId2,
+        loaded: (_, __, ___, ____, _____, selectedPostId2) => selectedPostId2,
         orElse: () => null,
       );
 
@@ -244,6 +255,7 @@ class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
         comments: optimisticComments,
         sortBy: currentSortBy,
         descending: currentDescending,
+        category: currentCategory2,
         selectedPostId: currentSelectedPostId,
       ));
 
@@ -303,18 +315,23 @@ class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
   Future<void> _onLoadComments(dynamic event, Emitter<CommunityState> emit) async {
     // Get current state data
     final currentPosts = state.maybeWhen(
-      loaded: (posts, _, __, ___, ____) => posts,
+      loaded: (posts, _, __, ___, ____, _____) => posts,
       orElse: () => <Post>[],
     );
 
     final currentSortBy = state.maybeWhen(
-      loaded: (_, __, sortBy, ___, ____) => sortBy,
+      loaded: (_, __, sortBy, ___, ____, _____) => sortBy,
       orElse: () => 'createdAt',
     );
 
     final currentDescending = state.maybeWhen(
-      loaded: (_, __, ___, descending, ____) => descending,
+      loaded: (_, __, ___, descending, ____, _____) => descending,
       orElse: () => true,
+    );
+
+    final currentCategory3 = state.maybeWhen(
+      loaded: (_, __, ___, ____, category3, _____) => category3,
+      orElse: () => null,
     );
 
     // Early return if not in loaded state
@@ -344,6 +361,7 @@ class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
         comments: newComments,
         sortBy: currentSortBy,
         descending: currentDescending,
+        category: currentCategory3,
         selectedPostId: event.postId,
       ));
     } catch (e) {
@@ -354,12 +372,13 @@ class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
   Future<void> _onCommentsUpdated(dynamic event, Emitter<CommunityState> emit) async {
     final currentState = state;
     currentState.maybeWhen(
-      loaded: (posts, comments, sortBy, descending, selectedPostId) {
+      loaded: (posts, comments, sortBy, descending, category, selectedPostId) {
         emit(CommunityState.loaded(
           posts: posts,
           comments: event.comments,
           sortBy: sortBy,
           descending: descending,
+          category: category,
           selectedPostId: selectedPostId,
         ));
       },

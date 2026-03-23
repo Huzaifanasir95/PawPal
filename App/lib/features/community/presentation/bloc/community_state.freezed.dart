@@ -26,6 +26,7 @@ mixin _$CommunityState {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )
     loaded,
@@ -40,6 +41,7 @@ mixin _$CommunityState {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )?
     loaded,
@@ -54,6 +56,7 @@ mixin _$CommunityState {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )?
     loaded,
@@ -156,6 +159,7 @@ class _$InitialImpl implements _Initial {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )
     loaded,
@@ -174,6 +178,7 @@ class _$InitialImpl implements _Initial {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )?
     loaded,
@@ -192,6 +197,7 @@ class _$InitialImpl implements _Initial {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )?
     loaded,
@@ -296,6 +302,7 @@ class _$LoadingImpl implements _Loading {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )
     loaded,
@@ -314,6 +321,7 @@ class _$LoadingImpl implements _Loading {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )?
     loaded,
@@ -332,6 +340,7 @@ class _$LoadingImpl implements _Loading {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )?
     loaded,
@@ -398,6 +407,7 @@ abstract class _$$LoadedImplCopyWith<$Res> {
     List<Comment> comments,
     String sortBy,
     bool descending,
+    String? category,
     String? selectedPostId,
   });
 }
@@ -420,6 +430,7 @@ class __$$LoadedImplCopyWithImpl<$Res>
     Object? comments = null,
     Object? sortBy = null,
     Object? descending = null,
+    Object? category = freezed,
     Object? selectedPostId = freezed,
   }) {
     return _then(
@@ -444,6 +455,11 @@ class __$$LoadedImplCopyWithImpl<$Res>
                 ? _value.descending
                 : descending // ignore: cast_nullable_to_non_nullable
                     as bool,
+        category:
+            freezed == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
+                    as String?,
         selectedPostId:
             freezed == selectedPostId
                 ? _value.selectedPostId
@@ -462,6 +478,7 @@ class _$LoadedImpl implements _Loaded {
     required final List<Comment> comments,
     required this.sortBy,
     required this.descending,
+    this.category,
     this.selectedPostId,
   }) : _posts = posts,
        _comments = comments;
@@ -487,11 +504,13 @@ class _$LoadedImpl implements _Loaded {
   @override
   final bool descending;
   @override
+  final String? category;
+  @override
   final String? selectedPostId;
 
   @override
   String toString() {
-    return 'CommunityState.loaded(posts: $posts, comments: $comments, sortBy: $sortBy, descending: $descending, selectedPostId: $selectedPostId)';
+    return 'CommunityState.loaded(posts: $posts, comments: $comments, sortBy: $sortBy, descending: $descending, category: $category, selectedPostId: $selectedPostId)';
   }
 
   @override
@@ -504,6 +523,8 @@ class _$LoadedImpl implements _Loaded {
             (identical(other.sortBy, sortBy) || other.sortBy == sortBy) &&
             (identical(other.descending, descending) ||
                 other.descending == descending) &&
+            (identical(other.category, category) ||
+                other.category == category) &&
             (identical(other.selectedPostId, selectedPostId) ||
                 other.selectedPostId == selectedPostId));
   }
@@ -515,6 +536,7 @@ class _$LoadedImpl implements _Loaded {
     const DeepCollectionEquality().hash(_comments),
     sortBy,
     descending,
+    category,
     selectedPostId,
   );
 
@@ -536,12 +558,20 @@ class _$LoadedImpl implements _Loaded {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )
     loaded,
     required TResult Function(String message) error,
   }) {
-    return loaded(posts, comments, sortBy, descending, selectedPostId);
+    return loaded(
+      posts,
+      comments,
+      sortBy,
+      descending,
+      category,
+      selectedPostId,
+    );
   }
 
   @override
@@ -554,12 +584,20 @@ class _$LoadedImpl implements _Loaded {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )?
     loaded,
     TResult? Function(String message)? error,
   }) {
-    return loaded?.call(posts, comments, sortBy, descending, selectedPostId);
+    return loaded?.call(
+      posts,
+      comments,
+      sortBy,
+      descending,
+      category,
+      selectedPostId,
+    );
   }
 
   @override
@@ -572,6 +610,7 @@ class _$LoadedImpl implements _Loaded {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )?
     loaded,
@@ -579,7 +618,14 @@ class _$LoadedImpl implements _Loaded {
     required TResult orElse(),
   }) {
     if (loaded != null) {
-      return loaded(posts, comments, sortBy, descending, selectedPostId);
+      return loaded(
+        posts,
+        comments,
+        sortBy,
+        descending,
+        category,
+        selectedPostId,
+      );
     }
     return orElse();
   }
@@ -628,6 +674,7 @@ abstract class _Loaded implements CommunityState {
     required final List<Comment> comments,
     required final String sortBy,
     required final bool descending,
+    final String? category,
     final String? selectedPostId,
   }) = _$LoadedImpl;
 
@@ -635,6 +682,7 @@ abstract class _Loaded implements CommunityState {
   List<Comment> get comments;
   String get sortBy;
   bool get descending;
+  String? get category;
   String? get selectedPostId;
 
   /// Create a copy of CommunityState
@@ -721,6 +769,7 @@ class _$ErrorImpl implements _Error {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )
     loaded,
@@ -739,6 +788,7 @@ class _$ErrorImpl implements _Error {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )?
     loaded,
@@ -757,6 +807,7 @@ class _$ErrorImpl implements _Error {
       List<Comment> comments,
       String sortBy,
       bool descending,
+      String? category,
       String? selectedPostId,
     )?
     loaded,

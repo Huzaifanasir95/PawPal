@@ -14,8 +14,8 @@ async function getEvents() {
 
   const { data, error } = await supabase
     .from('events')
-    .select('id, title, description, location, event_date, max_attendees, rsvp_count, status, created_at, organizer_id')
-    .order('event_date', { ascending: true })
+    .select('id, title, description, location, start_date, max_attendees, rsvp_count, status, created_at, organizer_id')
+    .order('start_date', { ascending: true })
     .limit(100);
 
   if (error) throw error;
@@ -30,6 +30,7 @@ async function getEvents() {
 
   return (data ?? []).map((e: any) => ({
     ...e,
+    event_date: e.start_date,
     profiles: organizerMap[e.organizer_id] ?? null,
   }));
 }

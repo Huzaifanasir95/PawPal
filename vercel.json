@@ -1,5 +1,3 @@
 {
-  "buildCommand": "cd admin-portal && npm run build",
-  "outputDirectory": "admin-portal/.next",
-  "installCommand": "cd admin-portal && npm install"
+  "version": 2
 }

@@ -25,6 +25,7 @@ mixin _$Post {
   String get userId => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
   String get content => throw _privateConstructorUsedError;
+  String get category => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
@@ -54,6 +55,7 @@ abstract class $PostCopyWith<$Res> {
     String userId,
     String title,
     String content,
+    String category,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
     String? userName,
@@ -83,6 +85,7 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
     Object? userId = null,
     Object? title = null,
     Object? content = null,
+    Object? category = null,
     Object? createdAt = null,
     Object? updatedAt = null,
     Object? userName = freezed,
@@ -112,6 +115,11 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
                 null == content
                     ? _value.content
                     : content // ignore: cast_nullable_to_non_nullable
+                        as String,
+            category:
+                null == category
+                    ? _value.category
+                    : category // ignore: cast_nullable_to_non_nullable
                         as String,
             createdAt:
                 null == createdAt
@@ -167,6 +175,7 @@ abstract class _$$PostImplCopyWith<$Res> implements $PostCopyWith<$Res> {
     String userId,
     String title,
     String content,
+    String category,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
     String? userName,
@@ -193,6 +202,7 @@ class __$$PostImplCopyWithImpl<$Res>
     Object? userId = null,
     Object? title = null,
     Object? content = null,
+    Object? category = null,
     Object? createdAt = null,
     Object? updatedAt = null,
     Object? userName = freezed,
@@ -222,6 +232,11 @@ class __$$PostImplCopyWithImpl<$Res>
             null == content
                 ? _value.content
                 : content // ignore: cast_nullable_to_non_nullable
+                    as String,
+        category:
+            null == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
                     as String,
         createdAt:
             null == createdAt
@@ -271,6 +286,7 @@ class _$PostImpl implements _Post {
     required this.userId,
     required this.title,
     required this.content,
+    this.category = 'general',
     @TimestampConverter() required this.createdAt,
     @TimestampConverter() required this.updatedAt,
     this.userName,
@@ -291,6 +307,9 @@ class _$PostImpl implements _Post {
   final String title;
   @override
   final String content;
+  @override
+  @JsonKey()
+  final String category;
   @override
   @TimestampConverter()
   final DateTime createdAt;
@@ -320,7 +339,7 @@ class _$PostImpl implements _Post {
 
   @override
   String toString() {
-    return 'Post(id: $id, userId: $userId, title: $title, content: $content, createdAt: $createdAt, updatedAt: $updatedAt, userName: $userName, userAvatar: $userAvatar, imageUrls: $imageUrls, likesCount: $likesCount, commentsCount: $commentsCount)';
+    return 'Post(id: $id, userId: $userId, title: $title, content: $content, category: $category, createdAt: $createdAt, updatedAt: $updatedAt, userName: $userName, userAvatar: $userAvatar, imageUrls: $imageUrls, likesCount: $likesCount, commentsCount: $commentsCount)';
   }
 
   @override
@@ -332,6 +351,8 @@ class _$PostImpl implements _Post {
             (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.content, content) || other.content == content) &&
+            (identical(other.category, category) ||
+                other.category == category) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -358,6 +379,7 @@ class _$PostImpl implements _Post {
     userId,
     title,
     content,
+    category,
     createdAt,
     updatedAt,
     userName,
@@ -387,6 +409,7 @@ abstract class _Post implements Post {
     required final String userId,
     required final String title,
     required final String content,
+    final String category,
     @TimestampConverter() required final DateTime createdAt,
     @TimestampConverter() required final DateTime updatedAt,
     final String? userName,
@@ -406,6 +429,8 @@ abstract class _Post implements Post {
   String get title;
   @override
   String get content;
+  @override
+  String get category;
   @override
   @TimestampConverter()
   DateTime get createdAt;

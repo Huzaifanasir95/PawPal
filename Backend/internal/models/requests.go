@@ -201,6 +201,7 @@ type HealthJournalsResponse struct {
 type CreatePostRequest struct {
 	Title     string   `json:"title" binding:"required,min=1,max=500"`
 	Content   string   `json:"content" binding:"required,min=1"`
+	Category  string   `json:"category"`
 	ImageURLs []string `json:"imageUrls,omitempty"`
 }
 

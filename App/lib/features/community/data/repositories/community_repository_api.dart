@@ -9,7 +9,7 @@ import '../models/comment.dart';
 class CommunityRepositoryApi {
   final ApiClient _apiClient = ApiClient.instance;
   
-  // Cache for stream controllers
+  // Cache for broadcast stream controllers (broadcast allows multiple listeners)
   final Map<String, StreamController<List<Post>>> _postsStreamControllers = {};
   final Map<String, StreamController<List<Comment>>> _commentsStreamControllers = {};
   Timer? _postsRefreshTimer;
@@ -18,33 +18,36 @@ class CommunityRepositoryApi {
   // ==================== STREAM METHODS ====================
 
   /// Get posts as a stream that updates periodically
-  Stream<List<Post>> getPostsStream({String sortBy = 'createdAt', bool descending = true}) {
-    final key = '$sortBy-$descending';
+  Stream<List<Post>> getPostsStream({String sortBy = 'createdAt', bool descending = true, String? category}) {
+    final key = '$sortBy-$descending-${category ?? 'all'}';
     
-    // Return existing stream controller if it exists
+    // Close existing stream controller if key changed
     if (_postsStreamControllers.containsKey(key)) {
       return _postsStreamControllers[key]!.stream;
     }
     
-    final controller = StreamController<List<Post>>();
+    // Close old timers when creating new stream with different parameters
+    _postsRefreshTimer?.cancel();
+    
+    final controller = StreamController<List<Post>>.broadcast();
     _postsStreamControllers[key] = controller;
     
     // Initial load
-    _loadPostsIntoStream(controller, sortBy: sortBy, descending: descending);
+    _loadPostsIntoStream(controller, sortBy: sortBy, descending: descending, category: category);
     
     // Refresh every 5 seconds
     _postsRefreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!controller.isClosed) {
-        _loadPostsIntoStream(controller, sortBy: sortBy, descending: descending);
+        _loadPostsIntoStream(controller, sortBy: sortBy, descending: descending, category: category);
       }
     });
     
     return controller.stream;
   }
   
-  Future<void> _loadPostsIntoStream(StreamController<List<Post>> controller, {required String sortBy, required bool descending}) async {
+  Future<void> _loadPostsIntoStream(StreamController<List<Post>> controller, {required String sortBy, required bool descending, String? category}) async {
     try {
-      final posts = await getPosts();
+      final posts = await getPosts(category: category);
       if (!controller.isClosed) {
         controller.add(posts);
       }
@@ -62,7 +65,7 @@ class CommunityRepositoryApi {
       return _commentsStreamControllers[postId]!.stream;
     }
     
-    final controller = StreamController<List<Comment>>();
+    final controller = StreamController<List<Comment>>.broadcast();
     _commentsStreamControllers[postId] = controller;
     
     // Initial load
@@ -97,6 +100,7 @@ class CommunityRepositoryApi {
   Future<Post> createPost({
     required String title,
     required String content,
+    String category = 'general',
     List<String>? imageUrls,
   }) async {
     if (!_apiClient.isAuthenticated) {
@@ -107,25 +111,31 @@ class CommunityRepositoryApi {
       final postData = {
         'title': title,
         'content': content,
+        'category': category,
         if (imageUrls != null) 'imageUrls': imageUrls,
       };
 
       final response = await _apiClient.post('/api/v1/posts', data: postData);
-      return Post.fromJson(response.data as Map<String, dynamic>);
+      return Post.fromJson(response.data['post'] as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
   }
 
   /// Get all posts (feed)
-  Future<List<Post>> getPosts({int page = 1, int limit = 10}) async {
+  Future<List<Post>> getPosts({int page = 1, int limit = 10, String? category}) async {
     try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
+      if (category != null && category.isNotEmpty && category != 'all') {
+        queryParams['category'] = category;
+      }
+      
       final response = await _apiClient.get(
         '/api/v1/posts',
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-        },
+        queryParameters: queryParams,
       );
 
       final List<dynamic> postsData = response.data['posts'] ?? [];
@@ -267,7 +277,7 @@ class CommunityRepositoryApi {
       };
 
       final response = await _apiClient.post('/api/v1/comments', data: commentData);
-      return Comment.fromJson(response.data as Map<String, dynamic>);
+      return Comment.fromJson(response.data['comment'] as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

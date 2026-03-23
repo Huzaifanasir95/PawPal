@@ -56,10 +56,17 @@ func (h *CommunityHandlers) CreatePost(c *gin.Context) {
 		userName = "Anonymous User"
 	}
 
+	// Default category if not provided
+	category := req.Category
+	if category == "" {
+		category = "general"
+	}
+
 	post := &models.Post{
 		UserID:     parseUUID(userID),
 		Title:      req.Title,
 		Content:    req.Content,
+		Category:   category,
 		UserName:   &userName,
 		UserAvatar: user.AvatarURL,
 		ImageURLs:  req.ImageURLs,
@@ -86,6 +93,7 @@ func (h *CommunityHandlers) GetPosts(c *gin.Context) {
 	descendingStr := c.DefaultQuery("descending", "true")
 	limitStr := c.DefaultQuery("limit", "20")
 	offsetStr := c.DefaultQuery("offset", "0")
+	category := c.DefaultQuery("category", "") // Empty means all categories
 
 	descending := descendingStr == "true"
 	limit, _ := strconv.Atoi(limitStr)
@@ -95,7 +103,7 @@ func (h *CommunityHandlers) GetPosts(c *gin.Context) {
 		limit = 20
 	}
 
-	posts, err := h.communityRepo.GetAllPosts(c.Request.Context(), sortBy, descending, limit, offset)
+	posts, err := h.communityRepo.GetAllPosts(c.Request.Context(), sortBy, descending, limit, offset, category)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.PostsResponse{
 			Success: false,

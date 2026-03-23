@@ -111,6 +111,7 @@ type Post struct {
 	UserID        uuid.UUID  `json:"userId"`
 	Title         string     `json:"title"`
 	Content       string     `json:"content"`
+	Category      string     `json:"category"`
 	UserName      *string    `json:"userName,omitempty"`
 	UserAvatar    *string    `json:"userAvatar,omitempty"`
 	ImageURLs     []string   `json:"imageUrls,omitempty"`

@@ -44,17 +44,18 @@ class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
   dynamic _onLoadPosts(dynamic event, Emitter<CommunityState> emit) {
     emit(const CommunityState.loading());
     return emit.forEach<List<Post>>(
-      _repository.getPostsStream(sortBy: event.sortBy, descending: event.descending),
+      _repository.getPostsStream(sortBy: event.sortBy, descending: event.descending, category: event.category),
       onData: (posts) => CommunityState.loaded(
         posts: posts,
         comments: state.maybeWhen(
-          loaded: (_, comments, __, ___, ____) => comments,
+          loaded: (_, comments, __, ___, _____, ______) => comments,
           orElse: () => const [],
         ),
         sortBy: event.sortBy,
         descending: event.descending,
+        category: event.category,
         selectedPostId: state.maybeWhen(
-          loaded: (_, __, ___, ____, selectedPostId) => selectedPostId,
+          loaded: (_, __, ___, ____, _____, selectedPostId) => selectedPostId,
           orElse: () => null,
         ),
       ),
@@ -67,6 +68,7 @@ class CommunityBloc extends Bloc<CommunityEvent, CommunityState> {
       await _repository.createPost(
         title: event.title,
         content: event.content,
+        category: event.category,
         imageUrls: event.imageUrls,
       );
       // Post creation will be reflected through the stream

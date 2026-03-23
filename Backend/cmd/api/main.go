@@ -47,6 +47,7 @@ func main() {
 	vetRepo := repositories.NewVetRepository(db)
 	chatRepo := repositories.NewChatRepository(db)
 	messageRepo := repositories.NewMessageRepository(db)
+	marketplaceRepo := repositories.NewMarketplaceRepository(db)
 
 	// Initialize auth service
 	authService := services.NewAuthService(userRepo)
@@ -69,9 +70,10 @@ func main() {
 	vetHandlers := handlers.NewVetHandlers(vetRepo)
 	chatHandlers := handlers.NewChatHandlers(chatRepo, messageRepo, userRepo, vetRepo)
 	wsHandler := handlers.NewWebSocketHandler(messageRepo, chatRepo)
+	marketplaceHandlers := handlers.NewMarketplaceHandlers(marketplaceRepo)
 	
 	// Setup router
-	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, wsHandler, authService, cfg)
+	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, wsHandler, marketplaceHandlers, authService, cfg)
 	
 	// Start server
 	port := os.Getenv("PORT")
@@ -88,7 +90,7 @@ func main() {
 	}
 }
 
-func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, wsHandler *handlers.WebSocketHandler, authService *services.AuthService, cfg *config.Config) *gin.Engine {
+func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, wsHandler *handlers.WebSocketHandler, marketplaceHandlers *handlers.MarketplaceHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
 	// Set Gin mode
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -122,6 +124,15 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 		
 		// Utility endpoints
 		v1.GET("/breeds", h.GetSupportedBreeds)
+
+		// Public marketplace routes
+		publicMarket := v1.Group("/marketplace")
+		{
+			publicMarket.GET("/categories", marketplaceHandlers.GetCategories)
+			publicMarket.GET("/products", marketplaceHandlers.GetProducts)
+			publicMarket.GET("/products/:id", marketplaceHandlers.GetProduct)
+			publicMarket.GET("/products/:id/reviews", marketplaceHandlers.GetProductReviews)
+		}
 
 		// Public vet browsing (no auth required)
 		publicVets := v1.Group("/vets")
@@ -233,6 +244,34 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				comments.GET("/post/:postId", communityHandlers.GetComments)
 				comments.DELETE("/:id", communityHandlers.DeleteComment)
 				comments.POST("/:id/like", communityHandlers.ToggleCommentLike)
+			}
+
+			// Marketplace - protected routes
+			market := protected.Group("/marketplace")
+			{
+				// Seller: manage own products
+				market.POST("/products", marketplaceHandlers.CreateProduct)
+				market.GET("/products/mine", marketplaceHandlers.GetMyProducts)
+				market.PUT("/products/:id", marketplaceHandlers.UpdateProduct)
+				market.DELETE("/products/:id", marketplaceHandlers.DeleteProduct)
+
+				// Product reviews
+				market.POST("/products/:id/reviews", marketplaceHandlers.AddProductReview)
+
+				// Shopping cart
+				market.GET("/cart", marketplaceHandlers.GetCart)
+				market.POST("/cart", marketplaceHandlers.AddToCart)
+				market.PUT("/cart/:itemId", marketplaceHandlers.UpdateCartItem)
+				market.DELETE("/cart/:itemId", marketplaceHandlers.RemoveCartItem)
+
+				// Orders
+				market.POST("/orders", marketplaceHandlers.PlaceOrder)
+				market.GET("/orders", marketplaceHandlers.GetOrders)
+				market.GET("/orders/:id", marketplaceHandlers.GetOrder)
+				market.PUT("/orders/:id/status", marketplaceHandlers.UpdateOrderStatus)
+
+				// Seller orders view
+				market.GET("/seller/orders", marketplaceHandlers.GetSellerOrders)
 			}
 		}
 	}

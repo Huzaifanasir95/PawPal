@@ -43,6 +43,7 @@ func main() {
 		{"002 - Vet and Chat System", "internal/database/migrations/002_add_vet_and_chat_system.sql"},
 		{"003 - Fix Chat Schema", "internal/database/migrations/003_fix_chat_schema.sql"},
 		{"004 - Fix Availability Hours", "internal/database/migrations/004_fix_availability_hours.sql"},
+		{"005 - Marketplace", "internal/database/migrations/005_marketplace.sql"},
 	}
 
 	for _, m := range migrations {

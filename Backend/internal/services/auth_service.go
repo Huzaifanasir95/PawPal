@@ -37,7 +37,10 @@ type AuthService struct {
 
 // NewAuthService creates a new AuthService
 func NewAuthService(userRepo *repositories.UserRepository) *AuthService {
-	secret := os.Getenv("JWT_SECRET")
+	secret := os.Getenv("SUPABASE_JWT_SECRET")
+	if secret == "" {
+		secret = os.Getenv("JWT_SECRET")
+	}
 	if secret == "" {
 		secret = "pawpal-super-secret-jwt-key-change-in-production"
 	}

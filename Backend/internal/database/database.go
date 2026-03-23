@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -21,75 +22,28 @@ type Config struct {
 	MaxConnIdleTime  time.Duration
 }
 
-// Initialize initializes the database connection pool
-// It attempts to connect in this order: Aiven -> Supabase -> Local PostgreSQL
+// Initialize initializes the database connection pool using Supabase
 func Initialize() error {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("Warning: .env file not found, using environment variables")
 	}
 
-	// Try Aiven first
-	aivenConnString := os.Getenv("aivenConnectionString")
-	if aivenConnString != "" {
-		pool, err := tryConnect(aivenConnString, "Aiven")
-		if err == nil {
-			DB = pool
-			fmt.Println("✅ Successfully connected to Aiven PostgreSQL database")
-			return nil
-		}
-		fmt.Printf("⚠️  Failed to connect to Aiven: %v\n", err)
+	connString := os.Getenv("SupabaseConnectionString")
+	if connString == "" {
+		connString = os.Getenv("SUPABASE_CONNECTION_STRING")
+	}
+	if connString == "" {
+		return fmt.Errorf("SupabaseConnectionString is not set in environment")
 	}
 
-	// Try Supabase second
-	supabaseConnString := os.Getenv("SupabaseConnectionString")
-	if supabaseConnString != "" {
-		pool, err := tryConnect(supabaseConnString, "Supabase")
-		if err == nil {
-			DB = pool
-			fmt.Println("✅ Successfully connected to Supabase PostgreSQL database")
-			return nil
-		}
-		fmt.Printf("⚠️  Failed to connect to Supabase: %v\n", err)
-	}
-
-	// Fallback to local PostgreSQL
-	localConnString := os.Getenv("DATABASE_URL")
-	if localConnString == "" {
-		// Build local connection string from environment variables or use defaults
-		user := os.Getenv("DB_USER")
-		if user == "" {
-			user = "postgres"
-		}
-		password := os.Getenv("DB_PASSWORD")
-		host := os.Getenv("DB_HOST")
-		if host == "" {
-			host = "localhost"
-		}
-		port := os.Getenv("DB_PORT")
-		if port == "" {
-			port = "5432"
-		}
-		dbname := os.Getenv("DB_NAME")
-		if dbname == "" {
-			dbname = "pawpal"
-		}
-
-		// Build PostgreSQL connection string
-		if password != "" {
-			localConnString = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbname)
-		} else {
-			localConnString = fmt.Sprintf("postgres://%s@%s:%s/%s?sslmode=disable", user, host, port, dbname)
-		}
-	}
-
-	pool, err := tryConnect(localConnString, "Local PostgreSQL")
+	pool, err := tryConnect(connString, "Supabase")
 	if err != nil {
-		return fmt.Errorf("failed to connect to all databases (Aiven, Supabase, Local PostgreSQL): %w", err)
+		return fmt.Errorf("failed to connect to Supabase: %w", err)
 	}
 
 	DB = pool
-	fmt.Println("✅ Successfully connected to local PostgreSQL database")
+	fmt.Println("✅ Successfully connected to Supabase PostgreSQL database")
 	return nil
 }
 
@@ -105,6 +59,9 @@ func tryConnect(connString, dbName string) (*pgxpool.Pool, error) {
 	config.MinConns = 5
 	config.MaxConnLifetime = time.Hour
 	config.MaxConnIdleTime = 30 * time.Minute
+
+	// Use simple protocol to avoid prepared statement conflicts with Supabase transaction pooler
+	config.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 
 	// Create the connection pool
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

@@ -10,7 +10,7 @@ import (
 func main() {
 	ctx := context.Background()
 	
-	connStr := "postgresql://avnadmin:AVNS_5fPLf9WbwTNqPUz_HtO@pawpal-firebase-pawpal-firebase.l.aivencloud.com:13812/pawpal-firebase?sslmode=require"
+	connStr := "postgresql://postgres.uicsjgjpvzajvbnvaygb:hz5L8q-5c5z_2UL@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres"
 	
 	pool, err := pgxpool.New(ctx, connStr)
 	if err != nil {

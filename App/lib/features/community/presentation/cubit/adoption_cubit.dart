@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/repositories/community_hub_repository.dart';
+import '../../data/models/community_hub_models.dart';
 import 'adoption_state.dart';
 
 class AdoptionCubit extends Cubit<AdoptionState> {

@@ -83,12 +83,16 @@ class ChatRepository {
       if (response.data['success'] == true) {
         return ChatMessage.fromJson(response.data['data']);
       } else {
-        throw Exception(response.data['error'] ?? 'Failed to send message');
+        final error = response.data['error'] ?? 'Failed to send message';
+        final details = response.data['details'];
+        throw Exception(details != null ? '$error: $details' : error);
       }
     } on DioException catch (e) {
       if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to send message';
-        throw Exception(error);
+        final data = e.response!.data;
+        final error = data is Map ? (data['error'] ?? 'Failed to send message') : 'Failed to send message';
+        final details = data is Map ? data['details'] : null;
+        throw Exception(details != null ? '$error: $details' : error);
       }
       throw Exception('Network error: ${e.message}');
     }

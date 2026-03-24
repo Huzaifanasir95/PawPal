@@ -4,9 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 import '../widgets/user_avatar.dart';
+import '../navigation/app_navigator.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/community/presentation/pages/community_hub_page.dart';
 import '../../features/chatbot/presentation/pages/chatbot_screen.dart';
+import '../../features/pets/presentation/pages/my_pets_screen.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});
@@ -49,14 +51,6 @@ class CustomDrawer extends StatelessWidget {
                           Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                         },
                       ),
-                      _buildDrawerItem(
-                        icon: Icons.search,
-                        title: 'Search Pets',
-                        onTap: () {
-                          Navigator.pop(context);
-                          // Navigate to search
-                        },
-                      ),
             
                       SizedBox(height: 20.h),
             
@@ -67,23 +61,33 @@ class CustomDrawer extends StatelessWidget {
                         title: 'My Pets',
                         onTap: () {
                           Navigator.pop(context);
-                          // Navigate to my pets
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MyPetsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+            
+                      SizedBox(height: 20.h),
+            
+                      // Services Section
+                      _buildDrawerSection('Services'),
+                      _buildDrawerItem(
+                        icon: Icons.local_hospital,
+                        title: 'Find Vets',
+                        onTap: () {
+                          Navigator.pop(context);
+                          AppNavigator.navigateToVetsList(context);
                         },
                       ),
                       _buildDrawerItem(
-                        icon: Icons.favorite,
-                        title: 'Favorites',
+                        icon: Icons.shopping_bag,
+                        title: 'Marketplace',
                         onTap: () {
                           Navigator.pop(context);
-                          // Navigate to favorites
-                        },
-                      ),
-                      _buildDrawerItem(
-                        icon: Icons.add_circle_outline,
-                        title: 'Add Pet',
-                        onTap: () {
-                          Navigator.pop(context);
-                          // Navigate to add pet
+                          AppNavigator.navigateToMarketplace(context);
                         },
                       ),
             

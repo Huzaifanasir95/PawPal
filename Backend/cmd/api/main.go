@@ -330,8 +330,8 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				
 				// Service management (for caregivers)
 				caregivers.POST("/services", caregiverHandlers.AddService)
-				caregivers.PUT("/services/:service_id", caregiverHandlers.UpdateService)
-				caregivers.DELETE("/services/:service_id", caregiverHandlers.DeleteService)
+				caregivers.PUT("/services/:id", caregiverHandlers.UpdateService)
+				caregivers.DELETE("/services/:id", caregiverHandlers.DeleteService)
 				
 				// Availability management (for caregivers)
 				caregivers.POST("/availability", caregiverHandlers.SetAvailability)
@@ -341,14 +341,14 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				
 				// Gallery management (for caregivers)
 				caregivers.POST("/gallery", caregiverHandlers.AddGalleryImage)
-				caregivers.DELETE("/gallery/:image_id", caregiverHandlers.DeleteGalleryImage)
+				caregivers.DELETE("/gallery/:id", caregiverHandlers.DeleteGalleryImage)
 				
 				// Search caregivers (for pet owners)
 				caregivers.GET("/search", caregiverHandlers.SearchCaregivers)
 				
 				// View specific caregiver (public within auth)
-				caregivers.GET("/:caregiver_id", caregiverHandlers.GetCaregiverByID)
-				caregivers.GET("/:caregiver_id/reviews", caregiverHandlers.GetReviews)
+				caregivers.GET("/:id", caregiverHandlers.GetCaregiverByID)
+				caregivers.GET("/:id/reviews", caregiverHandlers.GetReviews)
 			}
 
 			// Booking management
@@ -357,31 +357,31 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				// Create and view bookings
 				bookings.POST("", bookingHandlers.CreateBooking)
 				bookings.GET("", bookingHandlers.GetMyBookings)
-				bookings.GET("/:booking_id", bookingHandlers.GetBooking)
+				bookings.GET("/:id", bookingHandlers.GetBooking)
 				
 				// Booking lifecycle
-				bookings.POST("/:booking_id/respond", bookingHandlers.RespondToBooking)
-				bookings.POST("/:booking_id/cancel", bookingHandlers.CancelBooking)
-				bookings.POST("/:booking_id/start", bookingHandlers.StartService)
+				bookings.POST("/:id/respond", bookingHandlers.RespondToBooking)
+				bookings.POST("/:id/cancel", bookingHandlers.CancelBooking)
+				bookings.POST("/:id/start", bookingHandlers.StartService)
 				
 				// Tracking during service
-				bookings.POST("/:booking_id/tracking", bookingHandlers.UpdateTracking)
-				bookings.GET("/:booking_id/tracking", bookingHandlers.GetTracking)
+				bookings.POST("/:id/tracking", bookingHandlers.UpdateTracking)
+				bookings.GET("/:id/tracking", bookingHandlers.GetTracking)
 				
 				// Service completion
-				bookings.POST("/:booking_id/complete", bookingHandlers.SubmitCompletionReport)
+				bookings.POST("/:id/complete", bookingHandlers.SubmitCompletionReport)
 				
 				// Reviews
-				bookings.POST("/:booking_id/review/owner", bookingHandlers.SubmitOwnerReview)
-				bookings.POST("/:booking_id/review/caregiver", bookingHandlers.SubmitCaregiverReview)
+				bookings.POST("/:id/review/owner", bookingHandlers.SubmitOwnerReview)
+				bookings.POST("/:id/review/caregiver", bookingHandlers.SubmitCaregiverReview)
 				
 				// Incidents
-				bookings.POST("/:booking_id/incidents", bookingHandlers.ReportIncident)
-				bookings.GET("/:booking_id/incidents", bookingHandlers.GetIncidents)
+				bookings.POST("/:id/incidents", bookingHandlers.ReportIncident)
+				bookings.GET("/:id/incidents", bookingHandlers.GetIncidents)
 				
 				// Payments
-				bookings.POST("/:booking_id/payments", bookingHandlers.ProcessPayment)
-				bookings.GET("/:booking_id/payments", bookingHandlers.GetPayments)
+				bookings.POST("/:id/payments", bookingHandlers.ProcessPayment)
+				bookings.GET("/:id/payments", bookingHandlers.GetPayments)
 			}
 		}
 	}

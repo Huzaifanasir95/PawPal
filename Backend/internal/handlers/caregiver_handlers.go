@@ -55,7 +55,11 @@ func (h *CaregiverHandler) CreateProfile(c *gin.Context) {
 		return
 	}
 
-	uid := userID.(uuid.UUID)
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
 
 	// Check if profile already exists
 	existing, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
@@ -118,7 +122,13 @@ func (h *CaregiverHandler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profile"})
 		return
@@ -224,13 +234,19 @@ func (h *CaregiverHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	var req models.UpdateCaregiverProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profile"})
 		return
@@ -257,13 +273,19 @@ func (h *CaregiverHandler) AddService(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	var req models.AddCaregiverServiceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profile"})
 		return
@@ -302,6 +324,12 @@ func (h *CaregiverHandler) UpdateService(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	serviceIDStr := c.Param("id")
 	serviceID, err := uuid.Parse(serviceIDStr)
 	if err != nil {
@@ -316,7 +344,7 @@ func (h *CaregiverHandler) UpdateService(c *gin.Context) {
 	}
 
 	// Verify ownership
-	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil || profile == nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
@@ -339,6 +367,12 @@ func (h *CaregiverHandler) DeleteService(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	serviceIDStr := c.Param("id")
 	serviceID, err := uuid.Parse(serviceIDStr)
 	if err != nil {
@@ -347,7 +381,7 @@ func (h *CaregiverHandler) DeleteService(c *gin.Context) {
 	}
 
 	// Verify ownership
-	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil || profile == nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
@@ -370,13 +404,19 @@ func (h *CaregiverHandler) SetAvailability(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	var req models.SetCaregiverAvailabilityRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profile"})
 		return
@@ -394,23 +434,38 @@ func (h *CaregiverHandler) SetAvailability(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Availability updated successfully"})
 }
 
-// GetAvailability returns the weekly availability schedule
-// GET /api/v1/caregivers/:id/availability
+// GetAvailability returns the weekly availability schedule for current user
+// GET /api/v1/caregivers/availability
 func (h *CaregiverHandler) GetAvailability(c *gin.Context) {
-	idStr := c.Param("id")
-	profileID, err := uuid.Parse(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid caregiver ID"})
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	availability, err := h.repo.GetAvailability(c.Request.Context(), profileID)
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profile"})
+		return
+	}
+	if profile == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Caregiver profile not found"})
+		return
+	}
+
+	availability, err := h.repo.GetAvailability(c.Request.Context(), profile.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch availability"})
 		return
 	}
 
-	blockedDates, err := h.repo.GetBlockedDates(c.Request.Context(), profileID)
+	blockedDates, err := h.repo.GetBlockedDates(c.Request.Context(), profile.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch blocked dates"})
 		return
@@ -431,13 +486,19 @@ func (h *CaregiverHandler) AddBlockedDate(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	var req models.AddBlockedDateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profile"})
 		return
@@ -470,6 +531,12 @@ func (h *CaregiverHandler) RemoveBlockedDate(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	dateStr := c.Param("date")
 	date, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
@@ -477,7 +544,7 @@ func (h *CaregiverHandler) RemoveBlockedDate(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profile"})
 		return
@@ -567,6 +634,12 @@ func (h *CaregiverHandler) AddGalleryImage(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	var req struct {
 		ImageURL  string  `json:"imageUrl" binding:"required"`
 		Caption   *string `json:"caption,omitempty"`
@@ -577,7 +650,7 @@ func (h *CaregiverHandler) AddGalleryImage(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profile"})
 		return
@@ -605,6 +678,12 @@ func (h *CaregiverHandler) DeleteGalleryImage(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	imageIDStr := c.Param("id")
 	imageID, err := uuid.Parse(imageIDStr)
 	if err != nil {
@@ -613,7 +692,7 @@ func (h *CaregiverHandler) DeleteGalleryImage(c *gin.Context) {
 	}
 
 	// Verify ownership
-	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil || profile == nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return

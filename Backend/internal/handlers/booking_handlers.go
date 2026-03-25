@@ -35,6 +35,12 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	var req models.CreateBookingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -106,7 +112,7 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	totalAmount := baseAmount + additionalPetsFee + serviceFee
 
 	booking := &models.ServiceBooking{
-		PetOwnerID:            userID.(uuid.UUID),
+		PetOwnerID:            uid,
 		CaregiverID:           req.CaregiverID,
 		ServiceID:             req.ServiceID,
 		PetIDs:                req.PetIDs,
@@ -143,6 +149,12 @@ func (h *BookingHandler) GetBooking(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	bookingIDStr := c.Param("id")
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
@@ -161,7 +173,6 @@ func (h *BookingHandler) GetBooking(c *gin.Context) {
 	}
 
 	// Verify access (owner or caregiver)
-	uid := userID.(uuid.UUID)
 	profile, _ := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
 
 	if booking.PetOwnerID != uid && (profile == nil || profile.ID != booking.CaregiverID) {
@@ -199,7 +210,11 @@ func (h *BookingHandler) GetMyBookings(c *gin.Context) {
 		return
 	}
 
-	uid := userID.(uuid.UUID)
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
 	role := c.Query("role") // "owner" or "caregiver"
 	status := c.Query("status")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -212,20 +227,20 @@ func (h *BookingHandler) GetMyBookings(c *gin.Context) {
 
 	var bookings []models.ServiceBooking
 	var total int
-	var err error
+	var fetchErr error
 
 	if role == "caregiver" {
-		profile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
-		if err != nil || profile == nil {
+		profile, profErr := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
+		if profErr != nil || profile == nil {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Not a caregiver"})
 			return
 		}
-		bookings, total, err = h.repo.GetBookingsByCaregiver(c.Request.Context(), profile.ID, statusPtr, page, limit)
+		bookings, total, fetchErr = h.repo.GetBookingsByCaregiver(c.Request.Context(), profile.ID, statusPtr, page, limit)
 	} else {
-		bookings, total, err = h.repo.GetBookingsByOwner(c.Request.Context(), uid, statusPtr, page, limit)
+		bookings, total, fetchErr = h.repo.GetBookingsByOwner(c.Request.Context(), uid, statusPtr, page, limit)
 	}
 
-	if err != nil {
+	if fetchErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bookings"})
 		return
 	}
@@ -244,6 +259,12 @@ func (h *BookingHandler) RespondToBooking(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
 		return
 	}
 
@@ -267,7 +288,7 @@ func (h *BookingHandler) RespondToBooking(c *gin.Context) {
 	}
 
 	// Verify caregiver ownership
-	profile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil || profile == nil || profile.ID != booking.CaregiverID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
@@ -300,6 +321,12 @@ func (h *BookingHandler) CancelBooking(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	bookingIDStr := c.Param("id")
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
@@ -318,8 +345,6 @@ func (h *BookingHandler) CancelBooking(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-
-	uid := userID.(uuid.UUID)
 	isOwner := booking.PetOwnerID == uid
 
 	if !isOwner {
@@ -353,6 +378,12 @@ func (h *BookingHandler) StartService(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	bookingIDStr := c.Param("id")
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
@@ -373,7 +404,7 @@ func (h *BookingHandler) StartService(c *gin.Context) {
 	}
 
 	// Verify caregiver
-	profile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil || profile == nil || profile.ID != booking.CaregiverID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
@@ -401,6 +432,12 @@ func (h *BookingHandler) UpdateTracking(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	bookingIDStr := c.Param("id")
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
@@ -421,7 +458,7 @@ func (h *BookingHandler) UpdateTracking(c *gin.Context) {
 	}
 
 	// Verify caregiver
-	profile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil || profile == nil || profile.ID != booking.CaregiverID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
@@ -472,7 +509,11 @@ func (h *BookingHandler) GetTracking(c *gin.Context) {
 	}
 
 	// Verify access
-	uid := userID.(uuid.UUID)
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
 	profile, _ := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
 
 	if booking.PetOwnerID != uid && (profile == nil || profile.ID != booking.CaregiverID) {
@@ -498,6 +539,12 @@ func (h *BookingHandler) SubmitCompletionReport(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	bookingIDStr := c.Param("id")
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
@@ -518,7 +565,7 @@ func (h *BookingHandler) SubmitCompletionReport(c *gin.Context) {
 	}
 
 	// Verify caregiver
-	profile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil || profile == nil || profile.ID != booking.CaregiverID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
@@ -566,6 +613,12 @@ func (h *BookingHandler) SubmitOwnerReview(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	bookingIDStr := c.Param("id")
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
@@ -586,7 +639,7 @@ func (h *BookingHandler) SubmitOwnerReview(c *gin.Context) {
 	}
 
 	// Verify owner
-	if booking.PetOwnerID != userID.(uuid.UUID) {
+	if booking.PetOwnerID != uid {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
 	}
@@ -615,6 +668,12 @@ func (h *BookingHandler) SubmitCaregiverReview(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	bookingIDStr := c.Param("id")
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
@@ -635,7 +694,7 @@ func (h *BookingHandler) SubmitCaregiverReview(c *gin.Context) {
 	}
 
 	// Verify caregiver
-	profile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), userID.(uuid.UUID))
+	profile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil || profile == nil || profile.ID != booking.CaregiverID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
@@ -683,7 +742,11 @@ func (h *BookingHandler) ReportIncident(c *gin.Context) {
 		return
 	}
 
-	uid := userID.(uuid.UUID)
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
 	profile, _ := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
 
 	// Verify access
@@ -727,6 +790,12 @@ func (h *BookingHandler) GetIncidents(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	bookingIDStr := c.Param("id")
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
@@ -740,7 +809,6 @@ func (h *BookingHandler) GetIncidents(c *gin.Context) {
 		return
 	}
 
-	uid := userID.(uuid.UUID)
 	profile, _ := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
 
 	if booking.PetOwnerID != uid && (profile == nil || profile.ID != booking.CaregiverID) {
@@ -766,6 +834,12 @@ func (h *BookingHandler) ProcessPayment(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	bookingIDStr := c.Param("id")
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
@@ -786,7 +860,7 @@ func (h *BookingHandler) ProcessPayment(c *gin.Context) {
 	}
 
 	// Verify owner
-	if booking.PetOwnerID != userID.(uuid.UUID) {
+	if booking.PetOwnerID != uid {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
 	}
@@ -818,6 +892,12 @@ func (h *BookingHandler) GetPayments(c *gin.Context) {
 		return
 	}
 
+	uid, err := uuid.Parse(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	bookingIDStr := c.Param("id")
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
@@ -831,7 +911,6 @@ func (h *BookingHandler) GetPayments(c *gin.Context) {
 		return
 	}
 
-	uid := userID.(uuid.UUID)
 	profile, _ := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), uid)
 
 	if booking.PetOwnerID != uid && (profile == nil || profile.ID != booking.CaregiverID) {

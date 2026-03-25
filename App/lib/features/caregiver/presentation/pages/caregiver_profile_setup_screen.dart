@@ -136,10 +136,9 @@ class _CaregiverProfileSetupScreenState extends State<CaregiverProfileSetupScree
       await _repository.createProfile(request);
 
       if (mounted) {
-        CustomSnackbar.show(
-          context: context,
-          message: 'Profile created successfully!',
-          isError: false,
+        CustomSnackbar.showSuccess(
+          context,
+          'Profile created successfully!',
         );
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const CaregiverHomeScreen()),
@@ -147,10 +146,9 @@ class _CaregiverProfileSetupScreenState extends State<CaregiverProfileSetupScree
       }
     } catch (e) {
       if (mounted) {
-        CustomSnackbar.show(
-          context: context,
-          message: e.toString().replaceFirst('Exception: ', ''),
-          isError: true,
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
         );
       }
     } finally {

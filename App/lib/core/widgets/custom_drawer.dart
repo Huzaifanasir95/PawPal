@@ -9,6 +9,7 @@ import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/community/presentation/pages/community_hub_page.dart';
 import '../../features/chatbot/presentation/pages/chatbot_screen.dart';
 import '../../features/pets/presentation/pages/my_pets_screen.dart';
+import '../../features/caregiver/presentation/pages/caregivers_list_screen.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});
@@ -88,6 +89,19 @@ class CustomDrawer extends StatelessWidget {
                         onTap: () {
                           Navigator.pop(context);
                           AppNavigator.navigateToMarketplace(context);
+                        },
+                      ),
+                      _buildDrawerItem(
+                        icon: Icons.home_work_outlined,
+                        title: 'Pet Sitting',
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CaregiversListScreen(),
+                            ),
+                          );
                         },
                       ),
             

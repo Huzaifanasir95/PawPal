@@ -386,7 +386,11 @@ func main() {
 
 			// Step 20: Start Service
 			fmt.Println("\n📝 Step 20: Starting service...")
-			result = makeRequest("POST", "/bookings/"+bookingID+"/start", token, nil)
+			startBody := map[string]interface{}{
+				"latitude":  31.5204,
+				"longitude": 74.3587,
+			}
+			result = makeRequest("POST", "/bookings/"+bookingID+"/start", token, startBody)
 			printResult(result)
 
 			// Step 21: Update Tracking

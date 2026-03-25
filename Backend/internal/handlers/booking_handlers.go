@@ -307,7 +307,8 @@ func (h *BookingHandler) RespondToBooking(c *gin.Context) {
 	}
 
 	if err := h.repo.RespondToBooking(c.Request.Context(), bookingID, status, req.Reason); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to respond to booking"})
+		log.Printf("ERROR RespondToBooking: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to respond to booking", "details": err.Error()})
 		return
 	}
 

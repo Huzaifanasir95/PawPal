@@ -213,7 +213,7 @@ func (r *BookingRepository) RespondToBooking(ctx context.Context, bookingID uuid
 	query := `
 		UPDATE service_bookings 
 		SET status = $2, 
-			caregiver_response_at = CURRENT_TIMESTAMP,
+			responded_at = CURRENT_TIMESTAMP,
 			updated_at = CURRENT_TIMESTAMP
 		WHERE id = $1
 	`

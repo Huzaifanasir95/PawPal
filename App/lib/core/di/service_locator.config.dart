@@ -16,6 +16,10 @@ import 'package:pawpawl/core/services/api_client.dart' as _i428;
 import 'package:pawpawl/core/utils/image_service.dart' as _i480;
 import 'package:pawpawl/features/auth/data/repositories/auth_repository.dart'
     as _i681;
+import 'package:pawpawl/features/caregiver/data/repositories/booking_repository.dart'
+    as _i537;
+import 'package:pawpawl/features/caregiver/data/repositories/caregiver_repository.dart'
+    as _i238;
 import 'package:pawpawl/features/chat/data/repositories/chat_repository.dart'
     as _i218;
 import 'package:pawpawl/features/chat/presentation/bloc/chat_bloc.dart'
@@ -56,6 +60,12 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i217.VetRepository>(
       () => _i217.VetRepository(gh<_i428.ApiClient>()),
+    );
+    gh.lazySingleton<_i537.BookingRepository>(
+      () => _i537.BookingRepository(gh<_i428.ApiClient>()),
+    );
+    gh.lazySingleton<_i238.CaregiverRepository>(
+      () => _i238.CaregiverRepository(gh<_i428.ApiClient>()),
     );
     gh.factory<_i638.ChatBloc>(
       () => _i638.ChatBloc(gh<_i218.ChatRepository>()),

@@ -4,8 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../../../../core/navigation/app_navigator.dart';
 import '../../data/models/vet_profile_model.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../chat/data/models/chat_model.dart';
 import '../bloc/vet_bloc.dart';
 import '../bloc/vet_event.dart';
@@ -197,6 +199,12 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
   }
 
   Widget _buildWelcomeHeader(VetProfile profile) {
+    // Get user's photo from auth state
+    final userPhotoUrl = context.read<AuthBloc>().state.maybeWhen(
+      authenticated: (user) => user.photoUrl,
+      orElse: () => null,
+    );
+    
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
@@ -216,10 +224,10 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 32.r,
-                  backgroundColor: AppColors.surface,
-                  child: Icon(Icons.person, size: 32.sp, color: AppColors.primary),
+                UserAvatar(
+                  imageUrl: userPhotoUrl ?? profile.profilePhotoUrl,
+                  size: 64.r,
+                  showBorder: true,
                 ),
                 SizedBox(width: 16.w),
                 Expanded(

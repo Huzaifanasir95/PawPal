@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pawpawl/features/auth/data/repositories/auth_repository.dart';
-import 'package:pawpawl/features/home/presentation/pages/home_screen.dart';
+import 'package:pawpawl/features/home/presentation/pages/pet_owner_dashboard.dart';
 import 'package:pawpawl/features/vet/presentation/pages/vet_home_screen.dart';
 import 'package:pawpawl/core/di/service_locator.dart';
 
@@ -55,8 +55,8 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
         if (accountType == 'vet') {
           return const VetHomeScreen();
         } else {
-          // Default to regular home screen for pet owners or unknown roles
-          return const HomeScreen();
+          // Default to new dashboard for pet owners or unknown roles
+          return const PetOwnerDashboard();
         }
       },
     );

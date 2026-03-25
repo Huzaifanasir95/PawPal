@@ -29,15 +29,18 @@ var (
 
 // AuthService handles authentication operations
 type AuthService struct {
-	userRepo     repositories.UserRepository
+	userRepo     *repositories.UserRepository
 	jwtSecret    []byte
 	accessExpiry time.Duration
 	refreshExpiry time.Duration
 }
 
 // NewAuthService creates a new AuthService
-func NewAuthService(userRepo repositories.UserRepository) *AuthService {
-	secret := os.Getenv("JWT_SECRET")
+func NewAuthService(userRepo *repositories.UserRepository) *AuthService {
+	secret := os.Getenv("SUPABASE_JWT_SECRET")
+	if secret == "" {
+		secret = os.Getenv("JWT_SECRET")
+	}
 	if secret == "" {
 		secret = "pawpal-super-secret-jwt-key-change-in-production"
 	}
@@ -402,14 +405,35 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 		return nil, err
 	}
 
+	isNewUser := false
 	if user == nil {
-		// Create new user with Google info
+		// For new users, check if account type is provided
+		if req.AccountType == nil || *req.AccountType == "" {
+			// Return response indicating user needs to select account type
+			return &models.AuthResponse{
+				Success:   true,
+				Message:   "Account type required for new user",
+				IsNewUser: true,
+				User: &models.UserProfile{
+					Email:       tokenInfo.Email,
+					DisplayName: &tokenInfo.Name,
+					AvatarURL:   &tokenInfo.Picture,
+				},
+			}, nil
+		}
+
+		// Create new user with Google info and selected account type
+		accountType := *req.AccountType
+		if accountType != "pet_owner" && accountType != "vet" {
+			accountType = "pet_owner" // Default to pet_owner if invalid
+		}
+
 		user = &models.User{
 			Email:          tokenInfo.Email,
 			DisplayName:    &tokenInfo.Name,
 			AvatarURL:      &tokenInfo.Picture,
 			PasswordHash:   "", // No password for Google users
-			AccountType:    "pet_owner",
+			AccountType:    accountType,
 			IsActive:       true,
 			EmailVerified:  tokenInfo.EmailVerified == "true",
 			GoogleID:       &tokenInfo.Sub,
@@ -425,6 +449,7 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 		if err := s.userRepo.Create(ctx, user); err != nil {
 			return nil, err
 		}
+		isNewUser = true
 	} else {
 		// Update existing user with Google info if needed
 		needsUpdate := false
@@ -474,6 +499,7 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    int64(s.accessExpiry.Seconds()),
+		IsNewUser:    isNewUser,
 	}, nil
 }
 

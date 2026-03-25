@@ -22,6 +22,7 @@ class AppColors {
   // Accent Colors
   static const Color accent = Color(0xFF0C0C0C);
   static const Color accentLight = Color(0xFFFEF7E9);
+  static const Color darkTeal = Color(0xFF2C6E69);
   
   // Status Colors
   static const Color success = Color(0xFF4CAF50);

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:convert';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/utils/image_service.dart';
+import '../../../../core/di/service_locator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/data/models/auth_user.dart';
 import '../../../auth/presentation/pages/sign_in_screen.dart';
@@ -19,20 +24,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   AuthUser? _userProfile;
   bool _isLoading = true;
   bool _isUpdating = false;
+  XFile? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
 
   // Form controllers
   final _displayNameController = TextEditingController();
   String? _selectedAccountType;
-
-  final List<String> _accountTypes = [
-    'Pet Owner',
-    'Breeder',
-    'Veterinarian',
-    'Pet Sitter',
-    'Pet Trainer',
-    'Shelter/Rescue',
-    'Other'
-  ];
 
   // Map backend values to display names
   String _mapAccountTypeToDisplay(String? backendType) {
@@ -60,26 +57,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return 'Shelter/Rescue';
       default:
         return 'Other';
-    }
-  }
-
-  // Map display names to backend values
-  String _mapDisplayToAccountType(String displayType) {
-    switch (displayType) {
-      case 'Veterinarian':
-        return 'vet';
-      case 'Pet Owner':
-        return 'petowner';
-      case 'Breeder':
-        return 'breeder';
-      case 'Pet Sitter':
-        return 'petsitter';
-      case 'Pet Trainer':
-        return 'pettrainer';
-      case 'Shelter/Rescue':
-        return 'shelter';
-      default:
-        return 'other';
     }
   }
 
@@ -149,25 +126,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isUpdating = true);
 
     try {
+      String? avatarUrl;
+      
+      // Upload image if selected
+      if (_selectedImage != null) {
+        try {
+          final imageService = getIt<ImageService>();
+          avatarUrl = await imageService.uploadImage(_selectedImage!);
+          if (avatarUrl == null) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Image upload failed - please use a smaller image'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+            setState(() => _isUpdating = false);
+            return;
+          }
+        } catch (e) {
+          debugPrint('Failed to upload avatar: $e');
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Image upload error: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          setState(() => _isUpdating = false);
+          return;
+        }
+      }
+
       final profileRepo = ProfileRepository(context.read<AuthBloc>().authRepository);
 
       await profileRepo.updateUserProfile(
         displayName: _displayNameController.text.trim(),
-        accountType: _selectedAccountType != null 
-            ? _mapDisplayToAccountType(_selectedAccountType!)
-            : null,
+        avatarUrl: avatarUrl,
       );
 
       // Reload profile
       await _loadUserProfile();
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profile updated successfully!'),
           backgroundColor: AppColors.success,
         ),
       );
+      
+      setState(() {
+        _selectedImage = null;
+      });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update profile: $e'),
@@ -177,6 +190,163 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } finally {
       setState(() => _isUpdating = false);
     }
+  }
+
+  bool _isBase64DataUrl(String url) {
+    return url.startsWith('data:image/');
+  }
+
+  Widget _buildProfileImage() {
+    final imageUrl = _userProfile?.photoURL;
+
+    if (_selectedImage != null) {
+      return Image.file(
+        File(_selectedImage!.path),
+        fit: BoxFit.cover,
+      );
+    } else if (imageUrl != null && imageUrl.isNotEmpty) {
+      // Check if it's a base64 data URL
+      if (_isBase64DataUrl(imageUrl)) {
+        try {
+          final base64String = imageUrl.split(',').last;
+          final bytes = base64Decode(base64String);
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(
+                Icons.person,
+                size: 50.sp,
+                color: AppColors.primary,
+              );
+            },
+          );
+        } catch (e) {
+          debugPrint('Failed to decode base64 image: $e');
+          return Icon(
+            Icons.person,
+            size: 50.sp,
+            color: AppColors.primary,
+          );
+        }
+      } else {
+        // Regular HTTP URL
+        return Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(
+              Icons.person,
+              size: 50.sp,
+              color: AppColors.primary,
+            );
+          },
+        );
+      }
+    } else {
+      return Icon(
+        Icons.person,
+        size: 50.sp,
+        color: AppColors.primary,
+      );
+    }
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImage = image;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to pick image: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImage = image;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to take photo: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.photo_library, color: AppColors.primary),
+                title: Text('Choose from Gallery', style: AppTextStyles.bodyMedium),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImageFromGallery();
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.camera_alt, color: AppColors.primary),
+                title: Text('Take a Photo', style: AppTextStyles.bodyMedium),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImageFromCamera();
+                },
+              ),
+              if (_userProfile?.photoURL != null || _selectedImage != null)
+                ListTile(
+                  leading: Icon(Icons.delete, color: AppColors.error),
+                  title: Text('Remove Photo', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _selectedImage = null;
+                    });
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _showLogoutDialog() async {
@@ -294,22 +464,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Center(
                     child: Column(
                       children: [
-                        Container(
-                          width: 100.w,
-                          height: 100.h,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.primary.withOpacity(0.1),
-                            border: Border.all(
-                              color: AppColors.primary,
-                              width: 3.w,
+                        Stack(
+                          children: [
+                            Container(
+                              width: 100.w,
+                              height: 100.h,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.primary.withOpacity(0.1),
+                                border: Border.all(
+                                  color: AppColors.primary,
+                                  width: 3.w,
+                                ),
+                              ),
+                              child: ClipOval(
+                                child: _buildProfileImage(),
+                              ),
                             ),
-                          ),
-                          child: Icon(
-                            Icons.person,
-                            size: 50.sp,
-                            color: AppColors.primary,
-                          ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _showImageSourceDialog,
+                                child: Container(
+                                  width: 32.w,
+                                  height: 32.h,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.background,
+                                      width: 2.w,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    size: 16.sp,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         SizedBox(height: 16.h),
                         Text(
@@ -377,53 +573,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   SizedBox(height: 20.h),
 
-                  // Account Type
-                  Text(
-                    'Account Type',
-                    style: AppTextStyles.onboardingTitle.copyWith(
-                      fontSize: 16.sp,
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(height: 12.h),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedAccountType,
-                        hint: Text(
-                          'Select account type',
-                          style: AppTextStyles.onboardingBody.copyWith(
-                            fontSize: 16.sp,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        isExpanded: true,
-                        items: _accountTypes.map((type) {
-                          return DropdownMenuItem<String>(
-                            value: type,
-                            child: Text(
-                              type,
-                              style: AppTextStyles.onboardingBody.copyWith(
-                                fontSize: 16.sp,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedAccountType = value;
-                          });
-                        },
-                      ),
-                    ),
+                  // Account Type (Read-only)
+                  _buildTextField(
+                    label: 'Account Type',
+                    initialValue: _selectedAccountType ?? '',
+                    hint: 'Your account type',
+                    icon: Icons.badge_outlined,
+                    readOnly: true,
                   ),
 
                   SizedBox(height: 20.h),

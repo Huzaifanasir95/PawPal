@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/models/auth_user.dart';
 
@@ -11,7 +12,6 @@ part 'auth_bloc.freezed.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
   late final StreamSubscription<AuthUser?> _authStateSubscription;
-  bool _isProcessingAuthChange = false;
 
   AuthBloc({required AuthRepository authRepository})
       : _authRepository = authRepository,
@@ -19,17 +19,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     
     // Listen to auth state changes with debouncing
     _authStateSubscription = _authRepository.authStateChanges.listen((user) {
-      if (!isClosed && !_isProcessingAuthChange) {
-        _isProcessingAuthChange = true;
+      print('👂 Auth state changed: user=${user?.email ?? "null"}');
+      if (!isClosed) {
+        // Remove debouncing check for more reliable auth state updates
         if (user != null) {
+          print('➕ Adding userChanged event');
           add(AuthEvent.userChanged(user));
         } else {
+          print('➖ Adding signedOut event');
           add(const AuthEvent.signedOut());
         }
-        // Reset flag after a short delay to prevent rapid state changes
-        Future.delayed(const Duration(milliseconds: 300), () {
-          _isProcessingAuthChange = false;
-        });
       }
     });
 
@@ -48,6 +47,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<_SignInWithGoogle>((event, emit) async {
       if (!isClosed) {
         await _onSignInWithGoogle(emit);
+      }
+    });
+
+    on<_CompleteGoogleSignIn>((event, emit) async {
+      if (!isClosed) {
+        await _onCompleteGoogleSignIn(event.idToken, event.accountType, event.displayName, event.photoUrl, emit);
       }
     });
 
@@ -160,10 +165,84 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onSignInWithGoogle(Emitter<AuthState> emit) async {
     if (isClosed) return;
     emit(const AuthState.loading());
+    
+    // Keep reference to Google Sign In instance
+    final googleSignIn = GoogleSignIn();
+    
     try {
-      await _authRepository.signInWithGoogle();
+      // Sign out first to ensure fresh login
+      await googleSignIn.signOut();
+      
+      // Get the Google user
+      final googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        if (!isClosed) {
+          emit(const AuthState.error('Google sign in was cancelled'));
+        }
+        return;
+      }
+      
+      // Get the authentication details
+      final googleAuth = await googleUser.authentication;
+      
+      if (googleAuth.idToken == null) {
+        if (!isClosed) {
+          emit(const AuthState.error('Failed to obtain Google ID token'));
+        }
+        return;
+      }
+      
+      // Now try to sign in with our backend
+      final authResponse = await _authRepository.signInWithGoogle(
+        idToken: googleAuth.idToken!,
+        displayName: googleUser.displayName,
+        photoUrl: googleUser.photoUrl,
+      );
+      
+      // Check if this is a new user who needs to select account type
+      if (authResponse.isNewUser) {
+        if (!isClosed) {
+          print('🆕 New user detected, showing account type selection');
+          emit(AuthState.accountTypeRequired(
+            googleAuth.idToken!,
+            googleUser.displayName,
+            googleUser.photoUrl,
+          ));
+        }
+      } else {
+        print('✅ Existing user, authentication complete');
+        // For existing users, the stream will handle emitting the authenticated state
+      }
+    } catch (e) {
+      print('❌ Google Sign-In error: $e');
+      if (!isClosed) {
+        emit(AuthState.error(e.toString()));
+      }
+    }
+  }
+
+  Future<void> _onCompleteGoogleSignIn(
+    String idToken,
+    String accountType,
+    String? displayName,
+    String? photoUrl,
+    Emitter<AuthState> emit,
+  ) async {
+    if (isClosed) return;
+    emit(const AuthState.loading());
+    try {
+      print('📝 Completing Google Sign-In with account type: $accountType');
+      await _authRepository.signInWithGoogle(
+        idToken: idToken,
+        displayName: displayName,
+        photoUrl: photoUrl,
+        accountType: accountType,
+      );
+      print('✅ Account creation complete');
       // The stream will handle emitting the authenticated state
     } catch (e) {
+      print('❌ Complete Google Sign-In error: $e');
       if (!isClosed) {
         emit(AuthState.error(e.toString()));
       }
@@ -202,12 +281,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onUserChanged(AuthUser user, Emitter<AuthState> emit) {
+    print('🔄 _onUserChanged called: ${user.email}, accountType: ${user.accountType}');
     if (!isClosed) {
+      print('✨ Emitting authenticated state');
       emit(AuthState.authenticated(user));
+    } else {
+      print('⚠️ Bloc is closed, cannot emit state');
     }
   }
 
   void _onSignedOut(Emitter<AuthState> emit) {
+    print('👋 _onSignedOut called');
     if (!isClosed) {
       emit(const AuthState.unauthenticated());
     }

@@ -1,0 +1,90 @@
+﻿[
+    {
+        "Passed":  true,
+        "Message":  "Answer length: 1370 chars, Sources: 2, Time: 3.35s",
+        "Timestamp":  "2025-12-10 11:16:14",
+        "Response":  {
+                         "answer":  "Feeding your dog the right food is essential for their overall health and well-being. According to the veterinary knowledge base, it\u0027s recommended to feed your dog a high-quality, brand-name food that\u0027s suitable for their breed, age, and size. For puppies, large breed puppy foods are ideal for large breeds. \n\nAs stated, \"Puppies should be fed a high-quality, brand-name puppy food (large breed puppy foods for large breeds).\" It\u0027s also important to limit \"people food\" as it can lead to vitamin and mineral imbalances, bone and teeth problems, and may cause picky eating habits and obesity.\n\nYou can, however, add small amounts of healthy treats like cottage cheese, cooked eggs, or fruits and vegetables to their meals, but remember that these additions should not exceed 10% of their daily food intake. As mentioned, \"Your dog may enjoy cottage cheese, cooked egg or fruits and vegetables, but these additions should not total more than ten percent of his daily food intake.\"\n\nRemember to always provide clean, fresh water and wash their food and water dishes frequently.\n\nPlease keep in mind that I\u0027m an AI assistant, and while I\u0027m here to provide guidance and support, if you have serious concerns about your dog\u0027s diet or health, it\u0027s always best to consult with a veterinarian for personalized advice.\n\nHow can I further assist you with your dog\u0027s dietary needs?",
+                         "enhanced_query":  "What should I feed my dog?",
+                         "query":  "What should I feed my dog?",
+                         "sources":  [
+                                         {
+                                             "content":  ". Your dog may enjoy cottage cheese, cooked egg or fruits and vegetables, but these additions should not total more than ten percent of his daily food...",
+                                             "metadata":  "@{source=knowledge_base\\aspca_pet_care_data.json}"
+                                         },
+                                         {
+                                             "content":  ". Your dog may enjoy cottage cheese, cooked egg or fruits and vegetables, but these additions should not total more than ten percent of his daily food...",
+                                             "metadata":  "@{source=knowledge_base\\aspca_pet_care_data.json}"
+                                         }
+                                     ],
+                         "success":  true
+                     },
+        "TestName":  "Basic Pet Care Query"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Contains vet/emergency advice: True, Time: 1.74s",
+        "Timestamp":  "2025-12-10 11:16:16",
+        "TestName":  "Health Question"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Contains breed-specific info: True, Time: 1.94s",
+        "Timestamp":  "2025-12-10 11:16:18",
+        "TestName":  "Breed-Specific Query"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Contains nutrition advice: True, Time: 1.72s",
+        "Timestamp":  "2025-12-10 11:16:20",
+        "TestName":  "Nutrition Question"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Contains cat-specific info: True, Time: 1.86s",
+        "Timestamp":  "2025-12-10 11:16:22",
+        "TestName":  "Cat Care Query"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Uses pet context: True, Time: 1.92s",
+        "Timestamp":  "2025-12-10 11:16:24",
+        "TestName":  "Query with Pet Profile"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Contains vaccine info: True, Time: 1.52s",
+        "Timestamp":  "2025-12-10 11:16:25",
+        "TestName":  "Vaccination Question"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Contains training advice: True, Time: 1.75s",
+        "Timestamp":  "2025-12-10 11:16:27",
+        "TestName":  "Training Question"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Contains emergency advice: True, Time: 1.63s",
+        "Timestamp":  "2025-12-10 11:16:29",
+        "TestName":  "Emergency Situation"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Contains grooming advice: True, Time: 1.85s",
+        "Timestamp":  "2025-12-10 11:16:30",
+        "TestName":  "Grooming Question"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected empty query (400 Bad Request)",
+        "Timestamp":  "2025-12-10 11:16:31",
+        "TestName":  "Empty Query Handling"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Response has required fields (success, answer, query)",
+        "Timestamp":  "2025-12-10 11:16:33",
+        "TestName":  "Response Structure"
+    }
+]

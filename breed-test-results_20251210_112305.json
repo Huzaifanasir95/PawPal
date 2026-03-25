@@ -1,0 +1,74 @@
+﻿[
+    {
+        "Passed":  true,
+        "Message":  "Predicted: N02099601 Golden Retriever (Confidence: 96.12%)",
+        "Timestamp":  "2025-12-10 11:19:51",
+        "TestName":  "Golden Retriever Detection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Predicted: N02088364 Beagle (Confidence: 82.79%)",
+        "Timestamp":  "2025-12-10 11:20:10",
+        "TestName":  "Beagle Detection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Predicted: N02099712 Labrador Retriever (Confidence: 97.55%)",
+        "Timestamp":  "2025-12-10 11:20:30",
+        "TestName":  "Labrador Detection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Predicted: N02106662 German Shepherd (Confidence: 90.11%)",
+        "Timestamp":  "2025-12-10 11:20:48",
+        "TestName":  "German Shepherd Detection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Predicted: N02113624 Toy Poodle (Confidence: 64.59%)",
+        "Timestamp":  "2025-12-10 11:21:12",
+        "TestName":  "Poodle Detection"
+    },
+    {
+        "Passed":  false,
+        "Message":  "Predicted: Ragdoll (Confidence: 56.01%)",
+        "Timestamp":  "2025-12-10 11:21:33",
+        "TestName":  "Persian Cat Detection"
+    },
+    {
+        "Passed":  false,
+        "Message":  "Predicted: Sphynx (Confidence: 88.02%)",
+        "Timestamp":  "2025-12-10 11:21:55",
+        "TestName":  "Siamese Cat Detection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Predicted: Maine Coon (Confidence: 84.54%)",
+        "Timestamp":  "2025-12-10 11:22:19",
+        "TestName":  "Maine Coon Detection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Predicted: British Shorthair (Confidence: 98.40%)",
+        "Timestamp":  "2025-12-10 11:22:42",
+        "TestName":  "British Shorthair Detection"
+    },
+    {
+        "Passed":  false,
+        "Message":  "Predicted: Egyptian Mau (Confidence: 81.00%)",
+        "Timestamp":  "2025-12-10 11:23:04",
+        "TestName":  "Bengal Cat Detection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Expected rejection of invalid pet type",
+        "Timestamp":  "2025-12-10 11:23:05",
+        "TestName":  "Invalid Pet Type Rejection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Expected failure for missing image",
+        "Timestamp":  "2025-12-10 11:23:05",
+        "TestName":  "Missing Image File Handling"
+    }
+]

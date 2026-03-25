@@ -27,9 +27,9 @@ func NewCommunityRepository(db *pgxpool.Pool) *CommunityRepository {
 func (r *CommunityRepository) CreatePost(ctx context.Context, post *models.Post) error {
 	query := `
 		INSERT INTO posts (
-			id, user_id, title, content, user_name, user_avatar, image_urls,
+			id, user_id, title, content, category, user_name, user_avatar, image_urls,
 			likes_count, comments_count, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING id, created_at, updated_at`
 
 	now := time.Now()
@@ -38,12 +38,18 @@ func (r *CommunityRepository) CreatePost(ctx context.Context, post *models.Post)
 	post.UpdatedAt = now
 	post.LikesCount = 0
 	post.CommentsCount = 0
+	
+	// Default category if not specified
+	if post.Category == "" {
+		post.Category = "general"
+	}
 
 	return r.db.QueryRow(ctx, query,
 		post.ID,
 		post.UserID,
 		post.Title,
 		post.Content,
+		post.Category,
 		post.UserName,
 		post.UserAvatar,
 		post.ImageURLs,
@@ -57,7 +63,7 @@ func (r *CommunityRepository) CreatePost(ctx context.Context, post *models.Post)
 // GetPostByID gets a post by ID
 func (r *CommunityRepository) GetPostByID(ctx context.Context, id uuid.UUID) (*models.Post, error) {
 	query := `
-		SELECT id, user_id, title, content, user_name, user_avatar, image_urls,
+		SELECT id, user_id, title, content, category, user_name, user_avatar, image_urls,
 			likes_count, comments_count, created_at, updated_at
 		FROM posts WHERE id = $1`
 
@@ -67,6 +73,7 @@ func (r *CommunityRepository) GetPostByID(ctx context.Context, id uuid.UUID) (*m
 		&post.UserID,
 		&post.Title,
 		&post.Content,
+		&post.Category,
 		&post.UserName,
 		&post.UserAvatar,
 		&post.ImageURLs,
@@ -84,8 +91,8 @@ func (r *CommunityRepository) GetPostByID(ctx context.Context, id uuid.UUID) (*m
 	return post, nil
 }
 
-// GetAllPosts gets all posts with pagination
-func (r *CommunityRepository) GetAllPosts(ctx context.Context, sortBy string, descending bool, limit int, offset int) ([]models.Post, error) {
+// GetAllPosts gets all posts with pagination and optional category filter
+func (r *CommunityRepository) GetAllPosts(ctx context.Context, sortBy string, descending bool, limit int, offset int, category string) ([]models.Post, error) {
 	order := "ASC"
 	if descending {
 		order = "DESC"
@@ -101,13 +108,26 @@ func (r *CommunityRepository) GetAllPosts(ctx context.Context, sortBy string, de
 		sortBy = "created_at"
 	}
 
-	query := `
-		SELECT id, user_id, title, content, user_name, user_avatar, image_urls,
-			likes_count, comments_count, created_at, updated_at
-		FROM posts ORDER BY ` + sortBy + ` ` + order + `
-		LIMIT $1 OFFSET $2`
+	var query string
+	var rows pgx.Rows
+	var err error
 
-	rows, err := r.db.Query(ctx, query, limit, offset)
+	if category != "" && category != "all" {
+		query = `
+			SELECT id, user_id, title, content, category, user_name, user_avatar, image_urls,
+				likes_count, comments_count, created_at, updated_at
+			FROM posts WHERE category = $3 ORDER BY ` + sortBy + ` ` + order + `
+			LIMIT $1 OFFSET $2`
+		rows, err = r.db.Query(ctx, query, limit, offset, category)
+	} else {
+		query = `
+			SELECT id, user_id, title, content, category, user_name, user_avatar, image_urls,
+				likes_count, comments_count, created_at, updated_at
+			FROM posts ORDER BY ` + sortBy + ` ` + order + `
+			LIMIT $1 OFFSET $2`
+		rows, err = r.db.Query(ctx, query, limit, offset)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +141,7 @@ func (r *CommunityRepository) GetAllPosts(ctx context.Context, sortBy string, de
 			&post.UserID,
 			&post.Title,
 			&post.Content,
+			&post.Category,
 			&post.UserName,
 			&post.UserAvatar,
 			&post.ImageURLs,

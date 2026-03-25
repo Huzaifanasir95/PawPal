@@ -25,24 +25,32 @@ func main() {
 		log.Fatal("Failed to load configuration:", err)
 	}
 
-	// Initialize Supabase connection
+	// Initialize database connection
+	dbEnabled := true
 	if err := database.Initialize(); err != nil {
-		log.Fatal("Failed to initialize Supabase:", err)
+		log.Printf("Warning: Failed to initialize database: %v", err)
+		log.Println("Running without database support - PostgreSQL endpoints will not work")
+		dbEnabled = false
 	}
-	defer database.Close()
+	if dbEnabled {
+		defer database.Close()
+	}
 
-	// Initialize repositories using Supabase REST API
-	userRepo := repositories.NewUserRepositorySupabase(database.Supabase)
-	petRepo := repositories.NewPetRepositorySupabase(database.Supabase)
-	logger.Info("Using Supabase REST API for all database operations")
-	
-	// TODO: Implement Supabase versions for other repositories
-	// For now, pass nil to handlers that need them
-	var healthRepo *repositories.HealthRepository = nil
-	var communityRepo *repositories.CommunityRepository = nil
-	var vetRepo *repositories.VetRepository = nil
-	var chatRepo *repositories.ChatRepository = nil
-	var messageRepo *repositories.MessageRepository = nil
+	// Get database pool (may be nil if database not available)
+	db := database.GetDB()
+
+	// Initialize repositories
+	userRepo := repositories.NewUserRepository(db)
+	petRepo := repositories.NewPetRepository(db)
+	healthRepo := repositories.NewHealthRepository(db)
+	communityRepo := repositories.NewCommunityRepository(db)
+	vetRepo := repositories.NewVetRepository(db)
+	chatRepo := repositories.NewChatRepository(db)
+	messageRepo := repositories.NewMessageRepository(db)
+	marketplaceRepo := repositories.NewMarketplaceRepository(db)
+	communityHubRepo := repositories.NewCommunityHubRepository(db)
+	caregiverRepo := repositories.NewCaregiverRepository(db)
+	bookingRepo := repositories.NewBookingRepository(db)
 
 	// Initialize auth service
 	authService := services.NewAuthService(userRepo)
@@ -64,11 +72,14 @@ func main() {
 	communityHandlers := handlers.NewCommunityHandlers(communityRepo, userRepo)
 	vetHandlers := handlers.NewVetHandlers(vetRepo)
 	chatHandlers := handlers.NewChatHandlers(chatRepo, messageRepo, userRepo, vetRepo)
-	uploadHandlers := handlers.NewUploadHandlers("./assets/uploads", "http://localhost:"+cfg.Server.Port)
-	petVerificationHandlers := handlers.NewPetVerificationHandlers(petRepo, predictionService)
+	wsHandler := handlers.NewWebSocketHandler(messageRepo, chatRepo)
+	marketplaceHandlers := handlers.NewMarketplaceHandlers(marketplaceRepo)
+	communityHubHandlers := handlers.NewCommunityHubHandlers(communityHubRepo, userRepo)
+	caregiverHandlers := handlers.NewCaregiverHandler(caregiverRepo, bookingRepo, userRepo)
+	bookingHandlers := handlers.NewBookingHandler(bookingRepo, caregiverRepo)
 	
 	// Setup router
-	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, uploadHandlers, petVerificationHandlers, authService, cfg)
+	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, wsHandler, marketplaceHandlers, communityHubHandlers, caregiverHandlers, bookingHandlers, authService, cfg)
 	
 	// Start server
 	port := os.Getenv("PORT")
@@ -85,7 +96,7 @@ func main() {
 	}
 }
 
-func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, uploadHandlers *handlers.UploadHandlers, petVerificationHandlers *handlers.PetVerificationHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
+func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, wsHandler *handlers.WebSocketHandler, marketplaceHandlers *handlers.MarketplaceHandlers, communityHubHandlers *handlers.CommunityHubHandlers, caregiverHandlers *handlers.CaregiverHandler, bookingHandlers *handlers.BookingHandler, authService *services.AuthService, cfg *config.Config) *gin.Engine {
 	// Set Gin mode
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -119,6 +130,15 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 		
 		// Utility endpoints
 		v1.GET("/breeds", h.GetSupportedBreeds)
+
+		// Public marketplace routes
+		publicMarket := v1.Group("/marketplace")
+		{
+			publicMarket.GET("/categories", marketplaceHandlers.GetCategories)
+			publicMarket.GET("/products", marketplaceHandlers.GetProducts)
+			publicMarket.GET("/products/:id", marketplaceHandlers.GetProduct)
+			publicMarket.GET("/products/:id/reviews", marketplaceHandlers.GetProductReviews)
+		}
 
 		// Public vet browsing (no auth required)
 		publicVets := v1.Group("/vets")
@@ -171,6 +191,13 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				messages.PUT("/:id/read", chatHandlers.MarkMessageAsRead) // Mark as read
 			}
 
+			// WebSocket for real-time messaging (uses its own auth middleware)
+			ws := v1.Group("/ws")
+			ws.Use(middleware.WebSocketAuthMiddleware(authService))
+			{
+				ws.GET("/chat/:chatId", wsHandler.HandleWebSocket) // WebSocket connection
+			}
+
 			// Pets
 			pets := protected.Group("/pets")
 			{
@@ -182,19 +209,6 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				pets.GET("/:id", petHandlers.GetPet)
 				pets.PUT("/:id", petHandlers.UpdatePet)
 				pets.DELETE("/:id", petHandlers.DeletePet)
-
-				// Pet Verification endpoints
-				pets.POST("/verify", petVerificationHandlers.VerifyPetBreed)
-				pets.POST("/verify/file", petVerificationHandlers.VerifyPetBreedFromFile)
-				pets.POST("/verify/url", petVerificationHandlers.VerifyPetBreedFromURL)
-			}
-
-			// Image Upload endpoints
-			uploads := protected.Group("/uploads")
-			{
-				uploads.POST("/image", uploadHandlers.UploadPetImage)
-				uploads.POST("/images", uploadHandlers.UploadMultiplePetImages)
-				uploads.DELETE("/image/:filename", uploadHandlers.DeleteUploadedImage)
 			}
 
 			// Health Records
@@ -236,6 +250,138 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				comments.GET("/post/:postId", communityHandlers.GetComments)
 				comments.DELETE("/:id", communityHandlers.DeleteComment)
 				comments.POST("/:id/like", communityHandlers.ToggleCommentLike)
+			}
+
+			// Marketplace - protected routes
+			market := protected.Group("/marketplace")
+			{
+				// Seller: manage own products
+				market.POST("/products", marketplaceHandlers.CreateProduct)
+				market.GET("/products/mine", marketplaceHandlers.GetMyProducts)
+				market.PUT("/products/:id", marketplaceHandlers.UpdateProduct)
+				market.DELETE("/products/:id", marketplaceHandlers.DeleteProduct)
+
+				// Product reviews
+				market.POST("/products/:id/reviews", marketplaceHandlers.AddProductReview)
+
+				// Shopping cart
+				market.GET("/cart", marketplaceHandlers.GetCart)
+				market.POST("/cart", marketplaceHandlers.AddToCart)
+				market.PUT("/cart/:itemId", marketplaceHandlers.UpdateCartItem)
+				market.DELETE("/cart/:itemId", marketplaceHandlers.RemoveCartItem)
+
+				// Orders
+				market.POST("/orders", marketplaceHandlers.PlaceOrder)
+				market.GET("/orders", marketplaceHandlers.GetOrders)
+				market.GET("/orders/:id", marketplaceHandlers.GetOrder)
+				market.PUT("/orders/:id/status", marketplaceHandlers.UpdateOrderStatus)
+
+				// Seller orders view
+				market.GET("/seller/orders", marketplaceHandlers.GetSellerOrders)
+			}
+
+			// Community Hub - Lost & Found
+			lostFound := protected.Group("/lost-found")
+			{
+				lostFound.POST("", communityHubHandlers.CreateLostFound)
+				lostFound.GET("", communityHubHandlers.GetLostFoundPosts)
+				lostFound.GET("/me", communityHubHandlers.GetMyLostFoundPosts)
+				lostFound.GET("/:id", communityHubHandlers.GetLostFoundByID)
+				lostFound.PUT("/:id", communityHubHandlers.UpdateLostFound)
+				lostFound.DELETE("/:id", communityHubHandlers.DeleteLostFound)
+			}
+
+			// Community Hub - Adoption Listings
+			adoptions := protected.Group("/adoptions")
+			{
+				adoptions.POST("", communityHubHandlers.CreateAdoption)
+				adoptions.GET("", communityHubHandlers.GetAdoptionListings)
+				adoptions.GET("/me", communityHubHandlers.GetMyAdoptionListings)
+				adoptions.GET("/:id", communityHubHandlers.GetAdoptionByID)
+				adoptions.PUT("/:id", communityHubHandlers.UpdateAdoption)
+				adoptions.DELETE("/:id", communityHubHandlers.DeleteAdoption)
+			}
+
+			// Community Hub - Events & Meetups
+			events := protected.Group("/events")
+			{
+				events.POST("", communityHubHandlers.CreateEvent)
+				events.GET("", communityHubHandlers.GetEvents)
+				events.GET("/me", communityHubHandlers.GetMyEvents)
+				events.GET("/:id", communityHubHandlers.GetEventByID)
+				events.PUT("/:id", communityHubHandlers.UpdateEvent)
+				events.DELETE("/:id", communityHubHandlers.DeleteEvent)
+				events.POST("/:id/rsvp", communityHubHandlers.RSVPEvent)
+				events.DELETE("/:id/rsvp", communityHubHandlers.CancelRSVP)
+				events.GET("/:id/rsvps", communityHubHandlers.GetEventRSVPs)
+				events.GET("/:id/rsvp/me", communityHubHandlers.GetMyRSVP)
+			}
+
+			// Caregiver Services
+			caregivers := protected.Group("/caregivers")
+			{
+				// Service Types (public within auth)
+				caregivers.GET("/service-types", caregiverHandlers.GetServiceTypes)
+				
+				// Profile management (for caregivers)
+				caregivers.POST("/profile", caregiverHandlers.CreateProfile)
+				caregivers.GET("/profile", caregiverHandlers.GetProfile)
+				caregivers.PUT("/profile", caregiverHandlers.UpdateProfile)
+				
+				// Service management (for caregivers)
+				caregivers.POST("/services", caregiverHandlers.AddService)
+				caregivers.PUT("/services/:id", caregiverHandlers.UpdateService)
+				caregivers.DELETE("/services/:id", caregiverHandlers.DeleteService)
+				
+				// Availability management (for caregivers)
+				caregivers.POST("/availability", caregiverHandlers.SetAvailability)
+				caregivers.GET("/availability", caregiverHandlers.GetAvailability)
+				caregivers.POST("/blocked-dates", caregiverHandlers.AddBlockedDate)
+				caregivers.DELETE("/blocked-dates/:date", caregiverHandlers.RemoveBlockedDate)
+				
+				// Gallery management (for caregivers)
+				caregivers.POST("/gallery", caregiverHandlers.AddGalleryImage)
+				caregivers.DELETE("/gallery/:id", caregiverHandlers.DeleteGalleryImage)
+				
+				// Search caregivers (for pet owners)
+				caregivers.GET("/search", caregiverHandlers.SearchCaregivers)
+				
+				// View specific caregiver (public within auth)
+				caregivers.GET("/:id", caregiverHandlers.GetCaregiverByID)
+				caregivers.GET("/:id/reviews", caregiverHandlers.GetReviews)
+			}
+
+			// Booking management
+			bookings := protected.Group("/bookings")
+			{
+				// Create and view bookings
+				bookings.POST("", bookingHandlers.CreateBooking)
+				bookings.GET("", bookingHandlers.GetMyBookings)
+				bookings.GET("/:id", bookingHandlers.GetBooking)
+				
+				// Booking lifecycle
+				bookings.POST("/:id/respond", bookingHandlers.RespondToBooking)
+				bookings.POST("/:id/cancel", bookingHandlers.CancelBooking)
+				bookings.POST("/:id/start", bookingHandlers.StartService)
+				
+				// Tracking during service
+				bookings.POST("/:id/tracking", bookingHandlers.UpdateTracking)
+				bookings.GET("/:id/tracking", bookingHandlers.GetTracking)
+				
+				// Service completion
+				bookings.POST("/:id/complete", bookingHandlers.SubmitCompletionReport)
+				
+				// Reviews
+				bookings.POST("/:id/review/owner", bookingHandlers.SubmitOwnerReview)
+				bookings.POST("/:id/review/caregiver", bookingHandlers.SubmitCaregiverReview)
+				
+				// Incidents
+				bookings.POST("/:id/incidents", bookingHandlers.ReportIncident)
+				bookings.GET("/:id/incidents", bookingHandlers.GetIncidents)
+				
+				// Payments
+				bookings.POST("/:id/payments", bookingHandlers.ProcessPayment)
+				bookings.GET("/:id/payments", bookingHandlers.GetPayments)
 			}
 		}
 	}

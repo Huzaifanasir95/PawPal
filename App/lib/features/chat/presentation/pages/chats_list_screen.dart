@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../data/models/chat_model.dart';
 import '../bloc/chat_bloc.dart';
@@ -19,6 +19,8 @@ class ChatsListScreen extends StatefulWidget {
 }
 
 class _ChatsListScreenState extends State<ChatsListScreen> {
+  List<Chat> _cachedChats = [];
+
   @override
   void initState() {
     super.initState();
@@ -27,98 +29,247 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Messages'),
-        backgroundColor: AppColors.primary,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
       ),
-      body: BlocConsumer<ChatBloc, ChatState>(
-        listener: (context, state) {
-          state.maybeWhen(
-            error: (message) => CustomSnackbar.showError(context, message),
-            chatDeleted: (_) {
-              CustomSnackbar.showSuccess(context, 'Chat deleted');
-              context.read<ChatBloc>().add(const ChatEvent.loadChats());
-            },
-            orElse: () {},
-          );
-        },
-        builder: (context, state) {
-          return state.when(
-            initial: () => const Center(child: Text('Loading...')),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            chatsLoaded: (chats) {
-              if (chats.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.chat_bubble_outline,
-                        size: 64.sp,
-                        color: AppColors.neutral400,
-                      ),
-                      SizedBox(height: 16.h),
-                      Text(
-                        'No chats yet',
-                        style: AppTextStyles.titleMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        'Start a conversation with a vet',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              return RefreshIndicator(
-                onRefresh: () async {
-                  context.read<ChatBloc>().add(const ChatEvent.refreshChats());
-                },
-                child: ListView.separated(
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  itemCount: chats.length,
-                  separatorBuilder: (context, index) => Divider(
-                    height: 1.h,
-                    color: AppColors.border,
-                  ),
-                  itemBuilder: (context, index) {
-                    return _ChatTile(chat: chats[index]);
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F7FA),
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: BlocConsumer<ChatBloc, ChatState>(
+                  listener: (context, state) {
+                    state.maybeWhen(
+                      chatsLoaded: (chats) {
+                        setState(() => _cachedChats = chats);
+                      },
+                      error: (message) => CustomSnackbar.showError(context, message),
+                      chatDeleted: (_) {
+                        CustomSnackbar.showSuccess(context, 'Chat deleted');
+                        context.read<ChatBloc>().add(const ChatEvent.loadChats());
+                      },
+                      orElse: () {},
+                    );
+                  },
+                  builder: (context, state) {
+                    return state.maybeWhen(
+                      loading: () {
+                        if (_cachedChats.isNotEmpty) {
+                          return _buildChatsList(_cachedChats);
+                        }
+                        return _buildLoadingState();
+                      },
+                      chatsLoaded: (chats) => _buildChatsList(chats),
+                      error: (message) {
+                        if (_cachedChats.isNotEmpty) {
+                          return _buildChatsList(_cachedChats);
+                        }
+                        return _buildErrorState(message);
+                      },
+                      orElse: () {
+                        if (_cachedChats.isNotEmpty) {
+                          return _buildChatsList(_cachedChats);
+                        }
+                        return _buildLoadingState();
+                      },
+                    );
                   },
                 ),
-              );
-            },
-            chatLoaded: (_, __, ___, ____) => const SizedBox(),
-            chatStarted: (_) => const SizedBox(),
-            messageSent: (_) => const SizedBox(),
-            messageMarkedAsRead: (_) => const SizedBox(),
-            chatDeleted: (_) => const SizedBox(),
-            error: (message) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 64.sp, color: AppColors.error),
-                  SizedBox(height: 16.h),
-                  Text('Error loading chats', style: AppTextStyles.titleMedium),
-                  SizedBox(height: 8.h),
-                  Text(message, style: AppTextStyles.bodyMedium),
-                  SizedBox(height: 16.h),
-                  ElevatedButton(
-                    onPressed: () => context.read<ChatBloc>().add(const ChatEvent.loadChats()),
-                    child: const Text('Retry'),
-                  ),
-                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(8.w, 8.h, 16.w, 16.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 44.w,
+              height: 44.h,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Icon(
+                Icons.arrow_back_rounded,
+                color: AppColors.textPrimary,
+                size: 24.sp,
               ),
             ),
+          ),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              'Messages',
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: AppColors.primary),
+          SizedBox(height: 16.h),
+          Text(
+            'Loading conversations...',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(32.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 64.sp,
+              color: const Color(0xFFEF4444),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'Error loading chats',
+              style: TextStyle(
+                fontSize: 18.sp,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 24.h),
+            GestureDetector(
+              onTap: () => context.read<ChatBloc>().add(const ChatEvent.loadChats()),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Text(
+                  'Retry',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChatsList(List<Chat> chats) {
+    if (chats.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async {
+        context.read<ChatBloc>().add(const ChatEvent.loadChats());
+      },
+      child: ListView.builder(
+        padding: EdgeInsets.all(16.w),
+        itemCount: chats.length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: 12.h),
+            child: _ChatTile(chat: chats[index]),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80.w,
+            height: 80.h,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(24.r),
+            ),
+            child: Icon(
+              Icons.forum_outlined,
+              size: 40.sp,
+              color: AppColors.primary,
+            ),
+          ),
+          SizedBox(height: 20.h),
+          Text(
+            'No conversations yet',
+            style: TextStyle(
+              fontSize: 18.sp,
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 48.w),
+            child: Text(
+              'Start chatting with vets to get expert advice for your pets',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -138,26 +289,57 @@ class _ChatTile extends StatelessWidget {
       key: Key(chat.id),
       direction: DismissDirection.endToStart,
       background: Container(
-        color: AppColors.error,
+        decoration: BoxDecoration(
+          color: const Color(0xFFEF4444),
+          borderRadius: BorderRadius.circular(16.r),
+        ),
         alignment: Alignment.centerRight,
-        padding: EdgeInsets.only(right: 20.w),
-        child: Icon(Icons.delete, color: Colors.white, size: 28.sp),
+        padding: EdgeInsets.only(right: 24.w),
+        child: Icon(
+          Icons.delete_rounded,
+          color: Colors.white,
+          size: 24.sp,
+        ),
       ),
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Delete Chat'),
-            content: const Text('Are you sure you want to delete this chat?'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            title: Text(
+              'Delete Chat',
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            content: Text(
+              'Are you sure you want to delete this conversation?',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                child: const Text('Delete'),
+                child: Text(
+                  'Delete',
+                  style: TextStyle(
+                    color: const Color(0xFFEF4444),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
@@ -166,73 +348,139 @@ class _ChatTile extends StatelessWidget {
       onDismissed: (direction) {
         context.read<ChatBloc>().add(ChatEvent.deleteChat(chat.id));
       },
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-        leading: CircleAvatar(
-          radius: 28.r,
-          backgroundColor: AppColors.primary.withOpacity(0.1),
-          child: Icon(
-            Icons.person,
-            size: 28.sp,
-            color: AppColors.primary,
-          ),
-        ),
-        title: Text(
-          'Vet Chat', // You could fetch vet name from vetId
-          style: AppTextStyles.titleMedium.copyWith(
-            fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        subtitle: chat.lastMessage != null
-            ? Text(
-                chat.lastMessage!,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: hasUnread ? AppColors.textPrimary : AppColors.textSecondary,
-                  fontWeight: hasUnread ? FontWeight.w500 : FontWeight.w400,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              )
-            : null,
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (chat.lastMessageAt != null)
-              Text(
-                timeago.format(chat.lastMessageAt!),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+      child: GestureDetector(
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatConversationScreen(
+                chatId: chat.id,
+                otherUserName: chat.otherUserName,
+                otherUserPhoto: chat.otherUserPhoto,
               ),
-            if (hasUnread) ...[
-              SizedBox(height: 4.h),
+            ),
+          );
+          if (context.mounted) {
+            context.read<ChatBloc>().add(const ChatEvent.loadChats());
+          }
+        },
+        child: Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: hasUnread
+                ? Border.all(color: AppColors.primary.withOpacity(0.3), width: 1.5)
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Avatar
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                width: 56.w,
+                height: 56.h,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(12.r),
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16.r),
+                  image: chat.otherUserPhoto != null
+                      ? DecorationImage(
+                          image: NetworkImage(chat.otherUserPhoto!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
-                child: Text(
-                  unreadCount.toString(),
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textOnPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: chat.otherUserPhoto == null
+                    ? Center(
+                        child: Icon(
+                          Icons.person_rounded,
+                          color: AppColors.primary,
+                          size: 28.sp,
+                        ),
+                      )
+                    : null,
+              ),
+              SizedBox(width: 14.w),
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            chat.otherUserName ?? 'Chat',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (chat.lastMessageAt != null)
+                          Text(
+                            timeago.format(chat.lastMessageAt!),
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: hasUnread ? AppColors.primary : AppColors.textSecondary,
+                              fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w400,
+                            ),
+                          ),
+                      ],
+                    ),
+                    SizedBox(height: 6.h),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            chat.lastMessage ?? 'No messages yet',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: chat.lastMessage != null
+                                  ? (hasUnread ? AppColors.textPrimary : AppColors.textSecondary)
+                                  : AppColors.textSecondary.withOpacity(0.6),
+                              fontWeight: hasUnread ? FontWeight.w500 : FontWeight.w400,
+                              fontStyle: chat.lastMessage == null ? FontStyle.italic : FontStyle.normal,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (hasUnread) ...[
+                          SizedBox(width: 12.w),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
+                            child: Text(
+                              unreadCount.toString(),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
-          ],
+          ),
         ),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ChatConversationScreen(chatId: chat.id),
-            ),
-          );
-        },
       ),
     );
   }

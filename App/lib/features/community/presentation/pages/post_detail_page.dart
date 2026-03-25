@@ -1,11 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/community_state.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../widgets/comment_widget.dart';
-import '../widgets/post_card.dart';
 import '../bloc/community_bloc.dart';
 import '../bloc/community_event.dart';
 import '../../data/models/post.dart';
@@ -107,7 +108,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       return state.when(
                         initial: () => const Center(child: CircularProgressIndicator()),
                         loading: () => const Center(child: CircularProgressIndicator()),
-                        loaded: (posts, comments, sortBy, descending, selectedPostId) {
+                        loaded: (posts, comments, sortBy, descending, category, selectedPostId) {
                           if (comments.isEmpty) {
                             return Center(
                               child: Padding(
@@ -200,19 +201,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
           Row(
             children: [
               // User Avatar
-              CircleAvatar(
-                radius: 20.r,
-                backgroundColor: AppColors.primary,
-                child: Text(
-                  widget.post.userName?.isNotEmpty == true
-                      ? widget.post.userName![0].toUpperCase()
-                      : 'U',
-                  style: AppTextStyles.onboardingBody.copyWith(
-                    color: AppColors.surface,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16.sp,
-                  ),
-                ),
+              UserAvatar(
+                imageUrl: widget.post.userAvatar,
+                size: 40.w,
+                fallbackIcon: Icons.person,
               ),
               SizedBox(width: 12.w),
               // User name and timestamp
@@ -277,11 +269,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12.r),
-                  child: FirestoreImage(
-                    imageId: widget.post.imageUrls!.first,
-                    height: 250.h,
-                    fit: BoxFit.cover,
-                  ),
+                  child: _buildPostImage(widget.post.imageUrls!.first),
                 ),
               ),
             ),
@@ -354,17 +342,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
       child: Row(
         children: [
           // User Avatar for comment
-          CircleAvatar(
-            radius: 16.r,
-            backgroundColor: AppColors.primary,
-            child: Text(
-              'U', // TODO: Use current user initial
-              style: AppTextStyles.onboardingBody.copyWith(
-                color: AppColors.surface,
-                fontWeight: FontWeight.w600,
-                fontSize: 12.sp,
-              ),
-            ),
+          UserAvatar(
+            imageUrl: null,
+            size: 32.w,
+            fallbackIcon: Icons.person,
           ),
           SizedBox(width: 12.w),
           // Comment Text Field
@@ -441,5 +422,37 @@ class _PostDetailPageState extends State<PostDetailPage> {
     } else {
       return 'Just now';
     }
+  }
+
+  Widget _buildPostImage(String imageUrl) {
+    // Handle base64 data URLs
+    if (imageUrl.startsWith('data:image/')) {
+      try {
+        final base64String = imageUrl.split(',').last;
+        return Image.memory(
+          const Base64Decoder().convert(base64String),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: Colors.grey[300],
+            child: const Icon(Icons.broken_image, size: 50),
+          ),
+        );
+      } catch (e) {
+        return Container(
+          color: Colors.grey[300],
+          child: const Icon(Icons.broken_image, size: 50),
+        );
+      }
+    }
+    
+    // Handle regular URLs
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Container(
+        color: Colors.grey[300],
+        child: const Icon(Icons.broken_image, size: 50),
+      ),
+    );
   }
 }

@@ -51,7 +51,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               initial: () {},
               loading: () {},
               authenticated: (user) {
-                // No manual navigation - AuthFlow will handle this
+                // Don't handle here - let AuthFlow handle navigation
+                print('🏠 SignUp: Authenticated - letting AuthFlow handle it');
               },
               unauthenticated: () {},
               error: (message) {
@@ -61,6 +62,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 }
               },
               passwordResetSent: () {},
+              accountTypeRequired: (idToken, displayName, photoUrl) {
+                // Navigation handled by AuthFlow
+              },
             );
           },
           child: SingleChildScrollView(

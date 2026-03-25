@@ -11,6 +11,7 @@ import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../pets/presentation/pages/add_pet_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
+import '../../../caregiver/presentation/pages/caregivers_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -226,7 +227,70 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            
+
+            SizedBox(height: 12.h),
+
+            // Marketplace & Orders Actions
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Pet Shop',
+                    icon: Icons.shopping_bag_outlined,
+                    color: const Color(0xFF8D6E63),
+                    onTap: () {
+                      AppNavigator.navigateToMarketplace(context);
+                    },
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'My Orders',
+                    icon: Icons.receipt_long_outlined,
+                    color: const Color(0xFF5C6BC0),
+                    onTap: () {
+                      AppNavigator.navigateToOrders(context);
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 12.h),
+
+            // Community Hub & Caregivers
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Community',
+                    icon: Icons.groups_outlined,
+                    color: const Color(0xFF2C6E69),
+                    onTap: () {
+                      AppNavigator.navigateToCommunityHub(context);
+                    },
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Pet Sitting',
+                    icon: Icons.home_work_outlined,
+                    color: const Color(0xFFFF6F00),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CaregiversListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+
             SizedBox(height: 30.h),
             
             // Categories

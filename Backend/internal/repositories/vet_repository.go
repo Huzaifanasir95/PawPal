@@ -112,37 +112,38 @@ func (r *VetRepository) GetByUserID(ctx context.Context, userID uuid.UUID, profi
 
 // List lists all available vets with filters
 func (r *VetRepository) List(ctx context.Context, filters map[string]interface{}, limit, offset int) ([]models.VetProfile, int, error) {
-	// Build query
+	// Build query - join with users table to get avatar_url
 	query := `
-		SELECT id, user_id, full_name, degree, license_number, specialization, experience,
-			clinic_name, clinic_address, city, state, zip_code, phone, consultation_fee,
-			currency, bio, profile_photo_url, availability_hours, rating, total_reviews,
-			is_verified, is_available, created_at, updated_at
-		FROM vet_profiles
-		WHERE is_available = true`
+		SELECT vp.id, vp.user_id, vp.full_name, vp.degree, vp.license_number, vp.specialization, vp.experience,
+			vp.clinic_name, vp.clinic_address, vp.city, vp.state, vp.zip_code, vp.phone, vp.consultation_fee,
+			vp.currency, vp.bio, COALESCE(u.avatar_url, vp.profile_photo_url) as profile_photo_url, vp.availability_hours, vp.rating, vp.total_reviews,
+			vp.is_verified, vp.is_available, vp.created_at, vp.updated_at
+		FROM vet_profiles vp
+		LEFT JOIN users u ON vp.user_id = u.id
+		WHERE vp.is_available = true`
 
 	args := []interface{}{}
 	argCount := 0
 
 	if city, ok := filters["city"].(string); ok && city != "" {
 		argCount++
-		query += " AND LOWER(city) = LOWER($" + strconv.Itoa(argCount) + ")"
+		query += " AND LOWER(vp.city) = LOWER($" + strconv.Itoa(argCount) + ")"
 		args = append(args, city)
 	}
 
 	if spec, ok := filters["specialization"].(string); ok && spec != "" {
 		argCount++
-		query += " AND $" + strconv.Itoa(argCount) + " = ANY(specialization)"
+		query += " AND $" + strconv.Itoa(argCount) + " = ANY(vp.specialization)"
 		args = append(args, spec)
 	}
 
 	if minRating, ok := filters["minRating"].(float64); ok && minRating > 0 {
 		argCount++
-		query += " AND rating >= $" + strconv.Itoa(argCount)
+		query += " AND vp.rating >= $" + strconv.Itoa(argCount)
 		args = append(args, minRating)
 	}
 
-	query += " ORDER BY rating DESC, total_reviews DESC"
+	query += " ORDER BY vp.rating DESC, vp.total_reviews DESC"
 	query += " LIMIT $" + strconv.Itoa(argCount+1) + " OFFSET $" + strconv.Itoa(argCount+2)
 	args = append(args, limit, offset)
 
@@ -204,13 +205,32 @@ func (r *VetRepository) List(ctx context.Context, filters map[string]interface{}
 
 // CheckUserIsVet checks if a user has vet role
 func (r *VetRepository) CheckUserIsVet(ctx context.Context, userID uuid.UUID) (bool, error) {
-	var role string
-	err := r.db.QueryRow(ctx, "SELECT user_role FROM users WHERE id = $1", userID).Scan(&role)
+	var role sql.NullString
+	var accountType sql.NullString
+	
+	// Check both user_role and account_type fields for backward compatibility
+	err := r.db.QueryRow(ctx, `
+		SELECT user_role, account_type 
+		FROM users 
+		WHERE id = $1
+	`, userID).Scan(&role, &accountType)
+	
 	if err != nil {
 		if err == sql.ErrNoRows || err == pgx.ErrNoRows {
 			return false, nil
 		}
 		return false, err
 	}
-	return role == "vet", nil
+	
+	// Check user_role field (for email sign-ups)
+	if role.Valid && role.String == "vet" {
+		return true, nil
+	}
+	
+	// Check account_type field (for Google Sign-In)
+	if accountType.Valid && accountType.String == "vet" {
+		return true, nil
+	}
+	
+	return false, nil
 }

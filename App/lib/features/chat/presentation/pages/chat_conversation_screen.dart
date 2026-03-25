@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
+import '../../../../core/services/websocket_service.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../data/models/chat_model.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
@@ -12,10 +15,14 @@ import 'package:timeago/timeago.dart' as timeago;
 
 class ChatConversationScreen extends StatefulWidget {
   final String chatId;
+  final String? otherUserName;
+  final String? otherUserPhoto;
 
   const ChatConversationScreen({
     super.key,
     required this.chatId,
+    this.otherUserName,
+    this.otherUserPhoto,
   });
 
   @override
@@ -25,37 +32,61 @@ class ChatConversationScreen extends StatefulWidget {
 class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  final _wsService = WebSocketService();
+  StreamSubscription? _wsMessageSubscription;
+  StreamSubscription? _wsConnectionSubscription;
   bool _isSending = false;
+  bool _isLoadingMessages = true;
   Chat? _lastChat;
   List<ChatMessage> _lastMessages = [];
 
   @override
   void initState() {
     super.initState();
+    _isLoadingMessages = true;
+    _lastMessages = [];
+    
+    if (widget.otherUserName != null || widget.otherUserPhoto != null) {
+      _lastChat = Chat(
+        id: widget.chatId,
+        petOwnerId: '',
+        vetId: '',
+        otherUserName: widget.otherUserName,
+        otherUserPhoto: widget.otherUserPhoto,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+    
+    _connectWebSocket();
     context.read<ChatBloc>().add(ChatEvent.loadChat(widget.chatId));
   }
 
-  @override
-  void dispose() {
-    _messageController.dispose();
-    _scrollController.dispose();
-    super.dispose();
+  void _connectWebSocket() async {
+    await _wsService.connect(widget.chatId);
+    
+    _wsConnectionSubscription = _wsService.connectionStream.listen((isConnected) {
+      if (mounted) setState(() {});
+    });
+    
+    _wsMessageSubscription = _wsService.messageStream.listen((data) {
+      final type = data['type'] as String?;
+      
+      if (type == 'new_message') {
+        final messageData = data['message'] as Map<String, dynamic>;
+        final newMessage = ChatMessage.fromJson(messageData);
+        
+        setState(() {
+          _lastMessages = [..._lastMessages, newMessage];
+        });
+        
+        _scrollToBottom();
+      }
+    });
   }
 
-  void _sendMessage() async {
-    final content = _messageController.text.trim();
-    if (content.isEmpty || _isSending) return;
-
-    setState(() => _isSending = true);
-    _messageController.clear();
-
-    context.read<ChatBloc>().add(ChatEvent.sendMessage(
-      chatId: widget.chatId,
-      content: content,
-    ));
-
-    // Scroll to bottom after sending
-    Future.delayed(const Duration(milliseconds: 300), () {
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -67,92 +98,98 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    _wsMessageSubscription?.cancel();
+    _wsConnectionSubscription?.cancel();
+    _wsService.disconnect();
+    super.dispose();
+  }
+
+  void _sendMessage() async {
+    final content = _messageController.text.trim();
+    if (content.isEmpty || _isSending) return;
+
+    final currentUserId = context.read<AuthBloc>().state.maybeWhen(
+      authenticated: (user) => user.uid,
+      orElse: () => '',
+    );
+
+    setState(() => _isSending = true);
+    _messageController.clear();
+
+    final tempMessage = ChatMessage(
+      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      chatId: widget.chatId,
+      senderId: currentUserId,
+      content: content,
+      isRead: false,
+      createdAt: DateTime.now(),
+    );
+
+    setState(() {
+      _lastMessages = [..._lastMessages, tempMessage];
+    });
+
+    context.read<ChatBloc>().add(ChatEvent.sendMessage(
+      chatId: widget.chatId,
+      content: content,
+    ));
+
+    _scrollToBottom();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 18.r,
-              backgroundColor: AppColors.surface,
-              child: Icon(Icons.person, size: 20.sp, color: AppColors.primary),
-            ),
-            SizedBox(width: 12.w),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Vet'),
-                  // You could show online status here
-                ],
-              ),
-            ),
-          ],
-        ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
       ),
-      body: BlocConsumer<ChatBloc, ChatState>(
+      child: BlocConsumer<ChatBloc, ChatState>(
         listener: (context, state) {
           state.maybeWhen(
-            error: (message) => CustomSnackbar.showError(context, message),
+            error: (message) {
+              setState(() => _isSending = false);
+              CustomSnackbar.showError(context, message);
+            },
             messageSent: (_) {
               setState(() => _isSending = false);
+            },
+            chatLoaded: (chat, messages, hasMore, currentPage) {
+              setState(() {
+                if (widget.otherUserName != null || widget.otherUserPhoto != null) {
+                  _lastChat = Chat(
+                    id: chat.id,
+                    petOwnerId: chat.petOwnerId,
+                    vetId: chat.vetId,
+                    otherUserName: widget.otherUserName,
+                    otherUserPhoto: widget.otherUserPhoto,
+                    createdAt: chat.createdAt,
+                    updatedAt: chat.updatedAt,
+                  );
+                } else {
+                  _lastChat = chat;
+                }
+                _lastMessages = messages;
+                _isSending = false;
+                _isLoadingMessages = false;
+              });
+              _scrollToBottom();
             },
             orElse: () {},
           );
         },
         builder: (context, state) {
-          return state.when(
-            initial: () => const Center(child: Text('Loading...')),
-            loading: () {
-              // If we have cached data, show it while loading
-              if (_lastChat != null && _lastMessages.isNotEmpty) {
-                return _buildChatView(_lastChat!, _lastMessages);
-              }
-              return const Center(child: CircularProgressIndicator());
-            },
-            chatsLoaded: (_) => const SizedBox(),
-            chatLoaded: (chat, messages, hasMore, currentPage) {
-              // Cache the latest chat state
-              _lastChat = chat;
-              _lastMessages = messages;
-              return _buildChatView(chat, messages);
-            },
-            chatStarted: (_) => const SizedBox(),
-            messageSent: (_) {
-              // Keep showing the cached chat view while message is being sent
-              if (_lastChat != null) {
-                return _buildChatView(_lastChat!, _lastMessages);
-              }
-              return const Center(child: CircularProgressIndicator());
-            },
-            messageMarkedAsRead: (_) {
-              // Keep showing the cached chat view
-              if (_lastChat != null) {
-                return _buildChatView(_lastChat!, _lastMessages);
-              }
-              return const SizedBox();
-            },
-            chatDeleted: (_) => const SizedBox(),
-            error: (message) => Center(
+          return Scaffold(
+            backgroundColor: const Color(0xFFF5F7FA),
+            body: SafeArea(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64.sp, color: AppColors.error),
-                  SizedBox(height: 16.h),
-                  Text('Error loading chat', style: AppTextStyles.titleMedium),
-                  SizedBox(height: 8.h),
-                  Text(message, style: AppTextStyles.bodyMedium),
-                  SizedBox(height: 16.h),
-                  ElevatedButton(
-                    onPressed: () => context.read<ChatBloc>().add(ChatEvent.loadChat(widget.chatId)),
-                    child: const Text('Retry'),
-                  ),
+                  _buildHeader(),
+                  Expanded(child: _buildBody(state)),
+                  _buildMessageInput(),
                 ],
               ),
             ),
@@ -162,118 +199,322 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     );
   }
 
-  Widget _buildChatView(Chat chat, List<ChatMessage> messages) {
-    if (messages.isEmpty) {
-      return Column(
+  Widget _buildHeader() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(8.w, 8.h, 16.w, 12.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
         children: [
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 64.sp,
-                    color: AppColors.neutral400,
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    'No messages yet',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'Start the conversation',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 44.w,
+              height: 44.h,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Icon(
+                Icons.arrow_back_rounded,
+                color: AppColors.textPrimary,
+                size: 24.sp,
               ),
             ),
           ),
-          _buildMessageInput(),
+          SizedBox(width: 8.w),
+          Container(
+            width: 48.w,
+            height: 48.h,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14.r),
+              image: (_lastChat?.otherUserPhoto ?? widget.otherUserPhoto) != null
+                  ? DecorationImage(
+                      image: NetworkImage(_lastChat?.otherUserPhoto ?? widget.otherUserPhoto!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: (_lastChat?.otherUserPhoto ?? widget.otherUserPhoto) == null
+                ? Center(
+                    child: Icon(
+                      Icons.person_rounded,
+                      color: AppColors.primary,
+                      size: 26.sp,
+                    ),
+                  )
+                : null,
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _lastChat?.otherUserName ?? widget.otherUserName ?? 'Chat',
+                  style: TextStyle(
+                    fontSize: 17.sp,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  'Tap for info',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              // TODO: Show options menu
+            },
+            child: Icon(
+              Icons.more_vert_rounded,
+              color: AppColors.textSecondary,
+              size: 24.sp,
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBody(ChatState state) {
+    if (_isLoadingMessages && _lastMessages.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: AppColors.primary),
+            SizedBox(height: 16.h),
+            Text(
+              'Loading messages...',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-            itemCount: messages.length,
-            itemBuilder: (context, index) {
-              final message = messages[index];
-              final isNextSameSender = index < messages.length - 1 &&
-                  messages[index + 1].senderId == message.senderId;
-              
-              return _MessageBubble(
-                message: message,
-                showSenderInfo: !isNextSameSender,
-              );
-            },
-          ),
+    return state.maybeWhen(
+      error: (message) {
+        if (_lastMessages.isNotEmpty) {
+          return _buildMessagesList();
+        }
+        return _buildErrorState(message);
+      },
+      orElse: () => _buildMessagesList(),
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(32.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 64.sp,
+              color: const Color(0xFFEF4444),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'Error loading chat',
+              style: TextStyle(
+                fontSize: 18.sp,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 24.h),
+            GestureDetector(
+              onTap: () => context.read<ChatBloc>().add(ChatEvent.loadChat(widget.chatId)),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Text(
+                  'Retry',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        _buildMessageInput(),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildMessagesList() {
+    if (_lastMessages.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80.w,
+              height: 80.h,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(24.r),
+              ),
+              child: Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 40.sp,
+                color: AppColors.primary,
+              ),
+            ),
+            SizedBox(height: 20.h),
+            Text(
+              'No messages yet',
+              style: TextStyle(
+                fontSize: 18.sp,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'Start the conversation',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+      itemCount: _lastMessages.length,
+      itemBuilder: (context, index) {
+        final message = _lastMessages[index];
+        final isLastInGroup = index == _lastMessages.length - 1 ||
+            _lastMessages[index + 1].senderId != message.senderId;
+
+        return _MessageBubble(
+          message: message,
+          showTime: isLastInGroup,
+        );
+      },
     );
   }
 
   Widget _buildMessageInput() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
             offset: const Offset(0, -2),
           ),
         ],
       ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F7FA),
+                borderRadius: BorderRadius.circular(24.r),
+              ),
               child: TextField(
                 controller: _messageController,
                 maxLines: null,
+                minLines: 1,
+                maxLength: 1000,
                 textCapitalization: TextCapitalization.sentences,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  color: AppColors.textPrimary,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Type a message...',
-                  filled: true,
-                  fillColor: AppColors.background,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24.r),
-                    borderSide: BorderSide.none,
+                  hintStyle: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 15.sp,
                   ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 12.h,
+                  ),
+                  counterText: '',
                 ),
                 onSubmitted: (_) => _sendMessage(),
               ),
             ),
-            SizedBox(width: 12.w),
-            Container(
+          ),
+          SizedBox(width: 12.w),
+          GestureDetector(
+            onTap: _isSending ? null : _sendMessage,
+            child: Container(
+              width: 48.w,
+              height: 48.h,
               decoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
+                color: _isSending ? AppColors.textSecondary : AppColors.primary,
+                borderRadius: BorderRadius.circular(14.r),
               ),
-              child: IconButton(
-                icon: Icon(
-                  _isSending ? Icons.hourglass_empty : Icons.send,
-                  color: AppColors.textOnPrimary,
-                  size: 22.sp,
-                ),
-                onPressed: _isSending ? null : _sendMessage,
+              child: Center(
+                child: _isSending
+                    ? SizedBox(
+                        width: 20.w,
+                        height: 20.h,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Icon(
+                        Icons.send_rounded,
+                        color: Colors.white,
+                        size: 22.sp,
+                      ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -281,87 +522,91 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
 class _MessageBubble extends StatelessWidget {
   final ChatMessage message;
-  final bool showSenderInfo;
+  final bool showTime;
 
   const _MessageBubble({
     required this.message,
-    required this.showSenderInfo,
+    required this.showTime,
   });
-
-  // For now, assuming current user is always sender
-  // You'd need to get actual user ID from auth state
-  bool get isSentByMe => true; // Replace with actual logic
 
   @override
   Widget build(BuildContext context) {
+    final currentUserId = context.read<AuthBloc>().state.maybeWhen(
+      authenticated: (user) => user.uid,
+      orElse: () => '',
+    );
+    
+    final isSentByMe = message.senderId == currentUserId;
+    
     return Padding(
-      padding: EdgeInsets.only(bottom: showSenderInfo ? 12.h : 4.h),
+      padding: EdgeInsets.only(bottom: showTime ? 12.h : 4.h),
       child: Row(
         mainAxisAlignment: isSentByMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
-          if (!isSentByMe) ...[
-            CircleAvatar(
-              radius: 16.r,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
-              child: Icon(Icons.person, size: 16.sp, color: AppColors.primary),
-            ),
-            SizedBox(width: 8.w),
-          ],
+          if (isSentByMe) SizedBox(width: 60.w),
           Flexible(
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-              decoration: BoxDecoration(
-                color: isSentByMe ? AppColors.primary : AppColors.surface,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16.r),
-                  topRight: Radius.circular(16.r),
-                  bottomLeft: Radius.circular(isSentByMe ? 16.r : 4.r),
-                  bottomRight: Radius.circular(isSentByMe ? 4.r : 16.r),
-                ),
-                border: isSentByMe ? null : Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+            child: Column(
+              crossAxisAlignment: isSentByMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                  decoration: BoxDecoration(
+                    color: isSentByMe ? AppColors.primary : Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20.r),
+                      topRight: Radius.circular(20.r),
+                      bottomLeft: Radius.circular(isSentByMe ? 20.r : 6.r),
+                      bottomRight: Radius.circular(isSentByMe ? 6.r : 20.r),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
                     message.content,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isSentByMe ? AppColors.textOnPrimary : AppColors.textPrimary,
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      color: isSentByMe ? Colors.white : AppColors.textPrimary,
+                      height: 1.4,
                     ),
                   ),
-                  if (showSenderInfo) ...[
-                    SizedBox(height: 4.h),
-                    Row(
+                ),
+                if (showTime) ...[
+                  SizedBox(height: 4.h),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4.w),
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           timeago.format(message.createdAt),
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: isSentByMe
-                                ? AppColors.textOnPrimary.withOpacity(0.7)
-                                : AppColors.textSecondary,
+                          style: TextStyle(
                             fontSize: 11.sp,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                         if (isSentByMe) ...[
                           SizedBox(width: 4.w),
                           Icon(
-                            message.isRead ? Icons.done_all : Icons.done,
+                            message.isRead ? Icons.done_all_rounded : Icons.done_rounded,
                             size: 14.sp,
                             color: message.isRead
-                                ? Colors.blue
-                                : AppColors.textOnPrimary.withOpacity(0.7),
+                                ? AppColors.primary
+                                : AppColors.textSecondary,
                           ),
                         ],
                       ],
                     ),
-                  ],
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
-          if (isSentByMe) SizedBox(width: 48.w), // For alignment
-          if (!isSentByMe) SizedBox(width: 48.w), // For alignment
+          if (!isSentByMe) SizedBox(width: 60.w),
         ],
       ),
     );

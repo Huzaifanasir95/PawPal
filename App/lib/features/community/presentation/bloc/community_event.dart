@@ -10,11 +10,13 @@ class CommunityEvent with _$CommunityEvent {
   const factory CommunityEvent.loadPosts({
     @Default('createdAt') String sortBy,
     @Default(true) bool descending,
+    String? category,
   }) = _LoadPosts;
 
   const factory CommunityEvent.createPost({
     required String title,
     required String content,
+    @Default('general') String category,
     List<String>? imageUrls,
   }) = _CreatePost;
 

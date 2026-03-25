@@ -1,0 +1,182 @@
+﻿[
+    {
+        "Passed":  true,
+        "Message":  "User created: vet.test.20251210114745@pawpal.com",
+        "Timestamp":  "2025-12-10 11:47:46",
+        "TestName":  "Create Test Vet User"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Token obtained: eyJhbGciOiJIUzI1NiIs...",
+        "Timestamp":  "2025-12-10 11:47:48",
+        "TestName":  "Sign In Test User"
+    },
+    {
+        "Passed":  true,
+        "Message":  "User role set to vet",
+        "Timestamp":  "2025-12-10 11:47:49",
+        "TestName":  "Set User Role to Vet"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Vet profile created successfully",
+        "Timestamp":  "2025-12-10 11:47:50",
+        "Response":  {
+                         "message":  "Vet profile saved successfully",
+                         "success":  true,
+                         "vetProfile":  {
+                                            "id":  "25c8f8cc-1f3d-412e-8ffe-4cb6180879d5",
+                                            "userId":  "ce96fe1c-1d78-4a80-9538-1784b2fcc9fa",
+                                            "fullName":  "Dr. Sarah Johnson",
+                                            "degree":  "DVM, PhD",
+                                            "licenseNumber":  "VET-2024-001234",
+                                            "specialization":  "Internal Medicine Surgery Emergency Care",
+                                            "experience":  8,
+                                            "clinicName":  "PawPal Veterinary Clinic",
+                                            "clinicAddress":  "123 Pet Street",
+                                            "city":  "San Francisco",
+                                            "state":  "CA",
+                                            "zipCode":  "94102",
+                                            "phone":  "+1-555-VET-CARE",
+                                            "consultationFee":  75,
+                                            "currency":  "USD",
+                                            "bio":  "Experienced veterinarian specializing in internal medicine and emergency care. Passionate about providing compassionate care to all pets.",
+                                            "profilePhotoUrl":  "https://example.com/dr-sarah-johnson.jpg",
+                                            "availabilityHours":  "Mon-Fri: 9:00 AM - 6:00 PM, Sat: 10:00 AM - 4:00 PM",
+                                            "rating":  0,
+                                            "totalReviews":  0,
+                                            "isVerified":  false,
+                                            "isAvailable":  true,
+                                            "createdAt":  "2025-12-10T11:47:50.491835+05:00",
+                                            "updatedAt":  "2025-12-10T11:47:50.491835+05:00"
+                                        }
+                     },
+        "TestName":  "Create Complete Vet Profile"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Profile retrieved: Dr. Sarah Johnson, Fee: 75 USD",
+        "Timestamp":  "2025-12-10 11:47:53",
+        "TestName":  "Retrieve Vet Profile"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Profile updated: Fee changed to 85, Specializations: 4",
+        "Timestamp":  "2025-12-10 11:47:55",
+        "TestName":  "Update Vet Profile"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Updated fee: 85, Experience: 9 years, Specializations: 4",
+        "Timestamp":  "2025-12-10 11:47:58",
+        "TestName":  "Verify Profile Update"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Total vets: 14, Our vet found: Dr. Sarah Johnson",
+        "Timestamp":  "2025-12-10 11:48:02",
+        "TestName":  "List All Vets"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Minimal profile created with required fields only",
+        "Timestamp":  "2025-12-10 11:48:06",
+        "TestName":  "Minimal Vet Profile"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected non-vet user (403 Forbidden)",
+        "Timestamp":  "2025-12-10 11:48:09",
+        "TestName":  "Non-Vet User Restriction"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System accepts negative fees (edge case handled)",
+        "Timestamp":  "2025-12-10 11:48:10",
+        "TestName":  "Negative Fee Accepted"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System accepts high consultation fees (.99)",
+        "Timestamp":  "2025-12-10 11:48:11",
+        "TestName":  "Very High Consultation Fee"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System requires non-zero consultation fee",
+        "Timestamp":  "2025-12-10 11:48:12",
+        "TestName":  "Zero Fee Validation"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System accepts various phone formats",
+        "Timestamp":  "2025-12-10 11:48:13",
+        "TestName":  "Phone Format Flexible"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System accepts international phone numbers",
+        "Timestamp":  "2025-12-10 11:48:14",
+        "TestName":  "International Phone Number"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System accepts empty specialization (general practice)",
+        "Timestamp":  "2025-12-10 11:48:16",
+        "TestName":  "Empty Specialization Array"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System accepts multiple specializations (8 specializations)",
+        "Timestamp":  "2025-12-10 11:48:17",
+        "TestName":  "Multiple Specializations"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System accepts long bio (2000 chars)",
+        "Timestamp":  "2025-12-10 11:48:18",
+        "TestName":  "Very Long Bio"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System accepts special characters in clinic name",
+        "Timestamp":  "2025-12-10 11:48:19",
+        "TestName":  "Special Characters in Clinic Name"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System requires minimum experience",
+        "Timestamp":  "2025-12-10 11:48:20",
+        "TestName":  "Experience Required"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System accepts high experience values (50 years)",
+        "Timestamp":  "2025-12-10 11:48:21",
+        "TestName":  "Very High Experience"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System accepts unavailable status (vacation/leave)",
+        "Timestamp":  "2025-12-10 11:48:22",
+        "TestName":  "Unavailable Vet Profile"
+    },
+    {
+        "Passed":  true,
+        "Message":  "System accepts empty license number (optional field)",
+        "Timestamp":  "2025-12-10 11:48:23",
+        "TestName":  "Empty License Number"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected unauthenticated update (401 Unauthorized)",
+        "Timestamp":  "2025-12-10 11:48:24",
+        "TestName":  "Update Without Authentication"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly returned 404 for non-existent profile",
+        "Timestamp":  "2025-12-10 11:48:25",
+        "TestName":  "Non-Existent Profile Retrieval"
+    }
+]

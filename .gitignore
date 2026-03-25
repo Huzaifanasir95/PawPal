@@ -11,6 +11,9 @@ __pycache__/
 AI_Chatbot/vector_db/
 vector_db/
 
+
+
+
 # Binary files
 *.bin
 *.pickle
@@ -20,8 +23,8 @@ vector_db/
 images/
 oxford_pet_dataset/
 ML_Models/cats/code/cat_breed_classifier.pth
-data/
-model/
+ML_Models/data/
+
 ML_Models/cats/model_cats.zip
 ML_Models/dogs/model.zip
 
@@ -46,8 +49,17 @@ App/android/.gradle/
 App/android/captures/
 App/android/gradlew.bat
 
-# Generated files
-App/.g.dart
-App/*.g.dart
+# Generated files (only ignore in root and specific generated locations)
+# App/**/*.g.dart
+# App/**/*.freezed.dart
+# App/**/*.config.dart
 
+/TEMP
 /PLANTUML
+Backend/main.exe
+Backend/test_build.exe
+PawPal-models-RAG.zip
+Backend/pawpal_backend.exe
+/ML_Models
+admin-portal/.env.production
+admin-portal/VERCEL_DEPLOYMENT.md

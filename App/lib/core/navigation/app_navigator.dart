@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:pawpawl/features/marketplace/presentation/pages/marketplace_screen.dart';
+import 'package:pawpawl/features/marketplace/presentation/pages/orders_screen.dart';
 import 'package:pawpawl/features/vet/presentation/pages/vets_list_screen.dart';
 import 'package:pawpawl/features/vet/presentation/pages/vet_detail_screen.dart';
 import 'package:pawpawl/features/chat/presentation/pages/chats_list_screen.dart';
 import 'package:pawpawl/features/chat/presentation/pages/chat_conversation_screen.dart';
 import 'package:pawpawl/features/vet/presentation/pages/vet_home_screen.dart';
+import 'package:pawpawl/features/community/presentation/pages/community_hub_page.dart';
 
 /// Navigation helper for app-wide routing
 class AppNavigator {
@@ -40,12 +43,16 @@ class AppNavigator {
   static Future<void> navigateToConversation(
     BuildContext context, {
     required String chatId,
+    String? otherUserName,
+    String? otherUserPhoto,
   }) {
     return Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChatConversationScreen(
           chatId: chatId,
+          otherUserName: otherUserName,
+          otherUserPhoto: otherUserPhoto,
         ),
       ),
     );
@@ -56,6 +63,22 @@ class AppNavigator {
     return Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const VetHomeScreen()),
+    );
+  }
+
+  /// Navigate to the marketplace/pet shop screen
+  static Future<void> navigateToMarketplace(BuildContext context) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const MarketplaceScreen()),
+    );
+  }
+
+  /// Navigate to the user's orders screen
+  static Future<void> navigateToOrders(BuildContext context) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const OrdersScreen()),
     );
   }
 
@@ -70,6 +93,14 @@ class AppNavigator {
     // should happen in the VetDetailScreen using ChatBloc
     await navigateToChats(context);
     return true;
+  }
+
+  /// Navigate to the Community Hub (forum, lost & found, adoption, events)
+  static Future<void> navigateToCommunityHub(BuildContext context) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CommunityHubPage()),
+    );
   }
 
   /// Pop back to previous screen

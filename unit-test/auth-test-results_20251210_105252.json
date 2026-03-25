@@ -1,0 +1,62 @@
+﻿[
+    {
+        "Passed":  true,
+        "Message":  "User created successfully. Token received.",
+        "Timestamp":  "2025-12-10 10:52:46",
+        "TestName":  "Valid User SignUp"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected duplicate email (409 Conflict)",
+        "Timestamp":  "2025-12-10 10:52:47",
+        "TestName":  "Duplicate Email Prevention"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected invalid email format (400 Bad Request)",
+        "Timestamp":  "2025-12-10 10:52:48",
+        "TestName":  "Invalid Email Validation"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected weak password (400 Bad Request)",
+        "Timestamp":  "2025-12-10 10:52:48",
+        "TestName":  "Weak Password Validation"
+    },
+    {
+        "Passed":  true,
+        "Message":  "User signed in successfully. New token received.",
+        "Timestamp":  "2025-12-10 10:52:50",
+        "TestName":  "Valid SignIn"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected wrong password (401 Unauthorized)",
+        "Timestamp":  "2025-12-10 10:52:51",
+        "TestName":  "Wrong Password Rejection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected non-existent user (401 Unauthorized)",
+        "Timestamp":  "2025-12-10 10:52:51",
+        "TestName":  "Non-existent User Rejection"
+    },
+    {
+        "Passed":  false,
+        "Message":  "The remote server returned an error: (404) Not Found.",
+        "Timestamp":  "2025-12-10 10:52:51",
+        "TestName":  "Token Validation"
+    },
+    {
+        "Passed":  false,
+        "Message":  "Should have rejected invalid token with 401 status",
+        "Timestamp":  "2025-12-10 10:52:52",
+        "TestName":  "Invalid Token Rejection"
+    },
+    {
+        "Passed":  false,
+        "Message":  "Should have rejected missing token with 401 status",
+        "Timestamp":  "2025-12-10 10:52:52",
+        "TestName":  "Missing Token Rejection"
+    }
+]

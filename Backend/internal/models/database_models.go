@@ -111,6 +111,7 @@ type Post struct {
 	UserID        uuid.UUID  `json:"userId"`
 	Title         string     `json:"title"`
 	Content       string     `json:"content"`
+	Category      string     `json:"category"`
 	UserName      *string    `json:"userName,omitempty"`
 	UserAvatar    *string    `json:"userAvatar,omitempty"`
 	ImageURLs     []string   `json:"imageUrls,omitempty"`
@@ -233,3 +234,356 @@ type VetReview struct {
 	UpdatedAt  time.Time  `json:"updatedAt"`
 }
 
+// LostFoundPost represents a lost or found pet alert
+type LostFoundPost struct {
+	ID               uuid.UUID  `json:"id"`
+	UserID           uuid.UUID  `json:"userId"`
+	Type             string     `json:"type"` // lost or found
+	PetName          *string    `json:"petName,omitempty"`
+	PetType          *string    `json:"petType,omitempty"`
+	Breed            *string    `json:"breed,omitempty"`
+	Color            *string    `json:"color,omitempty"`
+	Description      string     `json:"description"`
+	ImageURLs        []string   `json:"imageUrls,omitempty"`
+	LastSeenLocation *string    `json:"lastSeenLocation,omitempty"`
+	LastSeenLat      *float64   `json:"lastSeenLat,omitempty"`
+	LastSeenLng      *float64   `json:"lastSeenLng,omitempty"`
+	Urgency          string     `json:"urgency"`
+	ContactPhone     *string    `json:"contactPhone,omitempty"`
+	ContactEmail     *string    `json:"contactEmail,omitempty"`
+	Status           string     `json:"status"`
+	UserName         *string    `json:"userName,omitempty"`
+	UserAvatar       *string    `json:"userAvatar,omitempty"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
+}
+
+// AdoptionListing represents a pet available for adoption
+type AdoptionListing struct {
+	ID            uuid.UUID  `json:"id"`
+	UserID        uuid.UUID  `json:"userId"`
+	PetName       string     `json:"petName"`
+	PetType       string     `json:"petType"`
+	Breed         *string    `json:"breed,omitempty"`
+	Age           *string    `json:"age,omitempty"`
+	Gender        *string    `json:"gender,omitempty"`
+	Size          *string    `json:"size,omitempty"`
+	Color         *string    `json:"color,omitempty"`
+	Description   string     `json:"description"`
+	MedicalInfo   *string    `json:"medicalInfo,omitempty"`
+	IsVaccinated  bool       `json:"isVaccinated"`
+	IsNeutered    bool       `json:"isNeutered"`
+	IsTrained     bool       `json:"isTrained"`
+	GoodWithKids  *bool      `json:"goodWithKids,omitempty"`
+	GoodWithPets  *bool      `json:"goodWithPets,omitempty"`
+	ImageURLs     []string   `json:"imageUrls,omitempty"`
+	Location      *string    `json:"location,omitempty"`
+	ContactPhone  *string    `json:"contactPhone,omitempty"`
+	ContactEmail  *string    `json:"contactEmail,omitempty"`
+	AdoptionFee   float64    `json:"adoptionFee"`
+	Status        string     `json:"status"`
+	UserName      *string    `json:"userName,omitempty"`
+	UserAvatar    *string    `json:"userAvatar,omitempty"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	UpdatedAt     time.Time  `json:"updatedAt"`
+}
+
+// Event represents a community event or meetup
+type Event struct {
+	ID              uuid.UUID  `json:"id"`
+	OrganizerID     uuid.UUID  `json:"organizerId"`
+	Title           string     `json:"title"`
+	Description     string     `json:"description"`
+	EventType       string     `json:"eventType"`
+	ImageURL        *string    `json:"imageUrl,omitempty"`
+	Location        *string    `json:"location,omitempty"`
+	LocationLat     *float64   `json:"locationLat,omitempty"`
+	LocationLng     *float64   `json:"locationLng,omitempty"`
+	StartDate       time.Time  `json:"startDate"`
+	EndDate         *time.Time `json:"endDate,omitempty"`
+	MaxAttendees    *int       `json:"maxAttendees,omitempty"`
+	IsPetFriendly   bool       `json:"isPetFriendly"`
+	PetTypesAllowed []string   `json:"petTypesAllowed,omitempty"`
+	Status          string     `json:"status"`
+	OrganizerName   *string    `json:"organizerName,omitempty"`
+	OrganizerAvatar *string    `json:"organizerAvatar,omitempty"`
+	RSVPCount       int        `json:"rsvpCount"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	UpdatedAt       time.Time  `json:"updatedAt"`
+}
+
+// EventRSVP represents a user's RSVP to an event
+type EventRSVP struct {
+	ID         uuid.UUID `json:"id"`
+	EventID    uuid.UUID `json:"eventId"`
+	UserID     uuid.UUID `json:"userId"`
+	Status     string    `json:"status"` // going, interested, waitlisted
+	UserName   *string   `json:"userName,omitempty"`
+	UserAvatar *string   `json:"userAvatar,omitempty"`
+	CreatedAt  time.Time `json:"createdAt"`
+}
+
+// =====================================================
+// CAREGIVER MODULE MODELS
+// =====================================================
+
+// CaregiverServiceType represents a type of service (walking, sitting, etc.)
+type CaregiverServiceType struct {
+	ID             uuid.UUID `json:"id"`
+	Name           string    `json:"name"`
+	DisplayName    string    `json:"displayName"`
+	Description    *string   `json:"description,omitempty"`
+	BaseHourlyRate float64   `json:"baseHourlyRate"`
+	IconName       *string   `json:"iconName,omitempty"`
+	IsActive       bool      `json:"isActive"`
+	CreatedAt      time.Time `json:"createdAt"`
+}
+
+// CaregiverProfile represents a caregiver's professional profile
+type CaregiverProfile struct {
+	ID                    uuid.UUID  `json:"id"`
+	UserID                uuid.UUID  `json:"userId"`
+	Bio                   *string    `json:"bio,omitempty"`
+	YearsOfExperience     int        `json:"yearsOfExperience"`
+	Headline              *string    `json:"headline,omitempty"`
+	Address               *string    `json:"address,omitempty"`
+	City                  *string    `json:"city,omitempty"`
+	State                 *string    `json:"state,omitempty"`
+	PostalCode            *string    `json:"postalCode,omitempty"`
+	Country               string     `json:"country"`
+	Latitude              *float64   `json:"latitude,omitempty"`
+	Longitude             *float64   `json:"longitude,omitempty"`
+	ServiceRadiusKm       int        `json:"serviceRadiusKm"`
+	IsVerified            bool       `json:"isVerified"`
+	VerificationDate      *time.Time `json:"verificationDate,omitempty"`
+	BackgroundCheckStatus string     `json:"backgroundCheckStatus"`
+	BackgroundCheckDate   *time.Time `json:"backgroundCheckDate,omitempty"`
+	BackgroundCheckExpiry *time.Time `json:"backgroundCheckExpiry,omitempty"`
+	IDVerified            bool       `json:"idVerified"`
+	IDDocumentURL         *string    `json:"idDocumentUrl,omitempty"`
+	Certifications        []string   `json:"certifications,omitempty"`
+	PetFirstAidCertified  bool       `json:"petFirstAidCertified"`
+	InsuranceVerified     bool       `json:"insuranceVerified"`
+	InsurancePolicyNumber *string    `json:"insurancePolicyNumber,omitempty"`
+	InsuranceExpiry       *time.Time `json:"insuranceExpiry,omitempty"`
+	AcceptedPetTypes      []string   `json:"acceptedPetTypes"`
+	AcceptedPetSizes      []string   `json:"acceptedPetSizes"`
+	MaxPetsAtOnce         int        `json:"maxPetsAtOnce"`
+	HasFencedYard         bool       `json:"hasFencedYard"`
+	HasOwnTransport       bool       `json:"hasOwnTransport"`
+	SmokeFreeHome         bool       `json:"smokeFreeHome"`
+	HasChildren           bool       `json:"hasChildren"`
+	HasOtherPets          bool       `json:"hasOtherPets"`
+	OtherPetsDescription  *string    `json:"otherPetsDescription,omitempty"`
+	AverageRating         float64    `json:"averageRating"`
+	TotalReviews          int        `json:"totalReviews"`
+	TotalBookings         int        `json:"totalBookings"`
+	CompletionRate        float64    `json:"completionRate"`
+	ResponseTimeHours     int        `json:"responseTimeHours"`
+	IsActive              bool       `json:"isActive"`
+	IsAcceptingBookings   bool       `json:"isAcceptingBookings"`
+	CreatedAt             time.Time  `json:"createdAt"`
+	UpdatedAt             time.Time  `json:"updatedAt"`
+
+	// Joined fields
+	UserName   *string `json:"userName,omitempty"`
+	UserAvatar *string `json:"userAvatar,omitempty"`
+	UserEmail  *string `json:"userEmail,omitempty"`
+}
+
+// CaregiverService represents a service offered by a caregiver
+type CaregiverService struct {
+	ID                uuid.UUID  `json:"id"`
+	CaregiverID       uuid.UUID  `json:"caregiverId"`
+	ServiceTypeID     uuid.UUID  `json:"serviceTypeId"`
+	RateType          string     `json:"rateType"` // hourly, per_visit, daily, per_walk
+	RateAmount        float64    `json:"rateAmount"`
+	Currency          string     `json:"currency"`
+	Description       *string    `json:"description,omitempty"`
+	DurationMinutes   *int       `json:"durationMinutes,omitempty"`
+	Includes          []string   `json:"includes,omitempty"`
+	AdditionalPetRate float64    `json:"additionalPetRate"`
+	IsAvailable       bool       `json:"isAvailable"`
+	CreatedAt         time.Time  `json:"createdAt"`
+	UpdatedAt         time.Time  `json:"updatedAt"`
+
+	// Joined fields
+	ServiceTypeName        string  `json:"serviceTypeName,omitempty"`
+	ServiceTypeDisplayName string  `json:"serviceTypeDisplayName,omitempty"`
+	ServiceTypeIcon        *string `json:"serviceTypeIcon,omitempty"`
+}
+
+// CaregiverAvailability represents weekly availability slot
+type CaregiverAvailability struct {
+	ID          uuid.UUID `json:"id"`
+	CaregiverID uuid.UUID `json:"caregiverId"`
+	DayOfWeek   int       `json:"dayOfWeek"` // 0=Sunday, 6=Saturday
+	StartTime   string    `json:"startTime"` // HH:MM format
+	EndTime     string    `json:"endTime"`
+	IsAvailable bool      `json:"isAvailable"`
+	CreatedAt   time.Time `json:"createdAt"`
+}
+
+// CaregiverBlockedDate represents a blocked/unavailable date
+type CaregiverBlockedDate struct {
+	ID          uuid.UUID `json:"id"`
+	CaregiverID uuid.UUID `json:"caregiverId"`
+	BlockedDate time.Time `json:"blockedDate"`
+	Reason      *string   `json:"reason,omitempty"`
+	CreatedAt   time.Time `json:"createdAt"`
+}
+
+// ServiceBooking represents a booking for caregiver service
+type ServiceBooking struct {
+	ID                   uuid.UUID    `json:"id"`
+	BookingNumber        string       `json:"bookingNumber"`
+	PetOwnerID           uuid.UUID    `json:"petOwnerId"`
+	CaregiverID          uuid.UUID    `json:"caregiverId"`
+	ServiceID            uuid.UUID    `json:"serviceId"`
+	PetIDs               []uuid.UUID  `json:"petIds"`
+	StartDatetime        time.Time    `json:"startDatetime"`
+	EndDatetime          time.Time    `json:"endDatetime"`
+	ServiceLocationType  string       `json:"serviceLocationType"`
+	ServiceAddress       *string      `json:"serviceAddress,omitempty"`
+	ServiceLatitude      *float64     `json:"serviceLatitude,omitempty"`
+	ServiceLongitude     *float64     `json:"serviceLongitude,omitempty"`
+	SpecialInstructions  *string      `json:"specialInstructions,omitempty"`
+	EmergencyContactName *string      `json:"emergencyContactName,omitempty"`
+	EmergencyContactPhone *string     `json:"emergencyContactPhone,omitempty"`
+	BaseAmount           float64      `json:"baseAmount"`
+	AdditionalPetsFee    float64      `json:"additionalPetsFee"`
+	ServiceFee           float64      `json:"serviceFee"`
+	DiscountAmount       float64      `json:"discountAmount"`
+	TotalAmount          float64      `json:"totalAmount"`
+	Currency             string       `json:"currency"`
+	Status               string       `json:"status"`
+	RequestedAt          time.Time    `json:"requestedAt"`
+	RespondedAt          *time.Time   `json:"respondedAt,omitempty"`
+	StartedAt            *time.Time   `json:"startedAt,omitempty"`
+	CompletedAt          *time.Time   `json:"completedAt,omitempty"`
+	CancelledAt          *time.Time   `json:"cancelledAt,omitempty"`
+	CancellationReason   *string      `json:"cancellationReason,omitempty"`
+	CreatedAt            time.Time    `json:"createdAt"`
+	UpdatedAt            time.Time    `json:"updatedAt"`
+
+	// Joined fields
+	OwnerName            *string `json:"ownerName,omitempty"`
+	OwnerAvatar          *string `json:"ownerAvatar,omitempty"`
+	CaregiverName        *string `json:"caregiverName,omitempty"`
+	CaregiverAvatar      *string `json:"caregiverAvatar,omitempty"`
+	ServiceName          *string `json:"serviceName,omitempty"`
+	Pets                 []Pet   `json:"pets,omitempty"`
+}
+
+// BookingPayment represents payment for a booking
+type BookingPayment struct {
+	ID                   uuid.UUID  `json:"id"`
+	BookingID            uuid.UUID  `json:"bookingId"`
+	Amount               float64    `json:"amount"`
+	Currency             string     `json:"currency"`
+	PaymentType          string     `json:"paymentType"` // deposit, final, refund, tip
+	PaymentMethod        *string    `json:"paymentMethod,omitempty"`
+	TransactionID        *string    `json:"transactionId,omitempty"`
+	Status               string     `json:"status"`
+	EscrowHeldAt         *time.Time `json:"escrowHeldAt,omitempty"`
+	EscrowReleasedAt     *time.Time `json:"escrowReleasedAt,omitempty"`
+	PayoutStatus         string     `json:"payoutStatus"`
+	PayoutAmount         *float64   `json:"payoutAmount,omitempty"`
+	PlatformFee          *float64   `json:"platformFee,omitempty"`
+	PayoutTransactionID  *string    `json:"payoutTransactionId,omitempty"`
+	PayoutAt             *time.Time `json:"payoutAt,omitempty"`
+	CreatedAt            time.Time  `json:"createdAt"`
+	UpdatedAt            time.Time  `json:"updatedAt"`
+}
+
+// BookingTracking represents GPS tracking during service
+type BookingTracking struct {
+	ID             uuid.UUID `json:"id"`
+	BookingID      uuid.UUID `json:"bookingId"`
+	Latitude       float64   `json:"latitude"`
+	Longitude      float64   `json:"longitude"`
+	AccuracyMeters *float64  `json:"accuracyMeters,omitempty"`
+	ActivityType   *string   `json:"activityType,omitempty"`
+	Note           *string   `json:"note,omitempty"`
+	RecordedAt     time.Time `json:"recordedAt"`
+}
+
+// BookingCompletionReport represents service completion report
+type BookingCompletionReport struct {
+	ID                   uuid.UUID  `json:"id"`
+	BookingID            uuid.UUID  `json:"bookingId"`
+	Summary              string     `json:"summary"`
+	ActivitiesPerformed  []string   `json:"activitiesPerformed,omitempty"`
+	FeedingNotes         *string    `json:"feedingNotes,omitempty"`
+	BathroomNotes        *string    `json:"bathroomNotes,omitempty"`
+	BehaviorNotes        *string    `json:"behaviorNotes,omitempty"`
+	HealthObservations   *string    `json:"healthObservations,omitempty"`
+	PhotoURLs            []string   `json:"photoUrls,omitempty"`
+	VideoURLs            []string   `json:"videoUrls,omitempty"`
+	ActualDurationMinutes *int      `json:"actualDurationMinutes,omitempty"`
+	DistanceWalkedKm     *float64   `json:"distanceWalkedKm,omitempty"`
+	SubmittedAt          time.Time  `json:"submittedAt"`
+	OwnerAcknowledgedAt  *time.Time `json:"ownerAcknowledgedAt,omitempty"`
+}
+
+// ServiceReview represents reviews for a completed booking
+type ServiceReview struct {
+	ID                 uuid.UUID  `json:"id"`
+	BookingID          uuid.UUID  `json:"bookingId"`
+	OwnerRating        *int       `json:"ownerRating,omitempty"`
+	OwnerReview        *string    `json:"ownerReview,omitempty"`
+	OwnerReviewAt      *time.Time `json:"ownerReviewAt,omitempty"`
+	CommunicationRating *int      `json:"communicationRating,omitempty"`
+	ReliabilityRating  *int       `json:"reliabilityRating,omitempty"`
+	CareQualityRating  *int       `json:"careQualityRating,omitempty"`
+	CaregiverRating    *int       `json:"caregiverRating,omitempty"`
+	CaregiverReview    *string    `json:"caregiverReview,omitempty"`
+	CaregiverReviewAt  *time.Time `json:"caregiverReviewAt,omitempty"`
+	PetBehaviorRating  *int       `json:"petBehaviorRating,omitempty"`
+	IsPublic           bool       `json:"isPublic"`
+	CreatedAt          time.Time  `json:"createdAt"`
+	UpdatedAt          time.Time  `json:"updatedAt"`
+
+	// Joined fields
+	OwnerName       *string `json:"ownerName,omitempty"`
+	OwnerAvatar     *string `json:"ownerAvatar,omitempty"`
+	CaregiverName   *string `json:"caregiverName,omitempty"`
+}
+
+// ServiceIncident represents an incident during service
+type ServiceIncident struct {
+	ID                   uuid.UUID  `json:"id"`
+	IncidentNumber       string     `json:"incidentNumber"`
+	BookingID            uuid.UUID  `json:"bookingId"`
+	ReportedBy           uuid.UUID  `json:"reportedBy"`
+	IncidentType         string     `json:"incidentType"`
+	Severity             string     `json:"severity"`
+	Description          string     `json:"description"`
+	OccurredAt           time.Time  `json:"occurredAt"`
+	LocationDescription  *string    `json:"locationDescription,omitempty"`
+	PhotoURLs            []string   `json:"photoUrls,omitempty"`
+	VideoURLs            []string   `json:"videoUrls,omitempty"`
+	Status               string     `json:"status"`
+	ResolutionNotes      *string    `json:"resolutionNotes,omitempty"`
+	ResolvedAt           *time.Time `json:"resolvedAt,omitempty"`
+	ResolvedBy           *uuid.UUID `json:"resolvedBy,omitempty"`
+	InsuranceClaimFiled  bool       `json:"insuranceClaimFiled"`
+	InsuranceClaimNumber *string    `json:"insuranceClaimNumber,omitempty"`
+	InsuranceClaimStatus *string    `json:"insuranceClaimStatus,omitempty"`
+	CreatedAt            time.Time  `json:"createdAt"`
+	UpdatedAt            time.Time  `json:"updatedAt"`
+
+	// Joined fields
+	ReporterName *string `json:"reporterName,omitempty"`
+}
+
+// CaregiverGallery represents caregiver's portfolio images
+type CaregiverGallery struct {
+	ID           uuid.UUID `json:"id"`
+	CaregiverID  uuid.UUID `json:"caregiverId"`
+	ImageURL     string    `json:"imageUrl"`
+	Caption      *string   `json:"caption,omitempty"`
+	IsPrimary    bool      `json:"isPrimary"`
+	DisplayOrder int       `json:"displayOrder"`
+	CreatedAt    time.Time `json:"createdAt"`
+}

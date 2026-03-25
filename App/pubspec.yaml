@@ -61,6 +61,9 @@ dependencies:
   
   # Time formatting
   timeago: ^3.7.0
+
+  # Date formatting
+  intl: ^0.19.0
   
   # Local Storage
   shared_preferences: ^2.2.2
@@ -86,12 +89,18 @@ dependencies:
 
   # Image Picker
   image_picker: ^1.2.0
+  
+  # Image Compression
+  flutter_image_compress: ^2.1.0
 
   # Path Provider
   path_provider: ^2.1.2
 
   # HTTP Client (already have dio)
   http: ^1.2.0
+
+  # WebSocket for real-time chat
+  web_socket_channel: ^3.0.1
 
 dev_dependencies:
   flutter_test:

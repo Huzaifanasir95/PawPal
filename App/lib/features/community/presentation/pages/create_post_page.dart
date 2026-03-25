@@ -7,6 +7,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/utils/image_service.dart';
+import '../../data/models/post.dart';
 import '../bloc/community_bloc.dart';
 import '../bloc/community_event.dart';
 
@@ -23,6 +24,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _selectedImages = [];
   bool _isLoading = false;
+  String _selectedCategory = PostCategory.general;
 
   @override
   void dispose() {
@@ -93,6 +95,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
         CommunityEvent.createPost(
           title: _titleController.text.trim(),
           content: _contentController.text.trim(),
+          category: _selectedCategory,
           imageUrls: imageIds,
         ),
       );
@@ -190,6 +193,50 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   borderSide: const BorderSide(color: Color(0xFFAAD5D1), width: 2),
                 ),
                 contentPadding: EdgeInsets.all(16.w),
+              ),
+            ),
+
+            SizedBox(height: 20.h),
+
+            // Category Dropdown
+            Text(
+              'Category',
+              style: AppTextStyles.onboardingBody.copyWith(
+                fontSize: 16.sp,
+                color: const Color(0xFF324B49),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFAAD5D1)),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  value: _selectedCategory,
+                  items: PostCategory.values
+                      .where((cat) => cat != PostCategory.all) // Exclude 'all' from creation
+                      .map((category) => DropdownMenuItem(
+                            value: category,
+                            child: Text(
+                              PostCategory.getLabel(category),
+                              style: AppTextStyles.onboardingBody.copyWith(
+                                fontSize: 14.sp,
+                                color: const Color(0xFF324B49),
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _selectedCategory = value);
+                    }
+                  },
+                ),
               ),
             ),
 

@@ -1,0 +1,152 @@
+﻿[
+    {
+        "Passed":  true,
+        "Message":  "User created successfully. Token received.",
+        "Timestamp":  "2025-12-10 11:45:50",
+        "TestName":  "Valid User SignUp"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected duplicate email (409 Conflict)",
+        "Timestamp":  "2025-12-10 11:45:51",
+        "TestName":  "Duplicate Email Prevention"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected invalid email format (400 Bad Request)",
+        "Timestamp":  "2025-12-10 11:45:51",
+        "TestName":  "Invalid Email Validation"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected weak password (400 Bad Request)",
+        "Timestamp":  "2025-12-10 11:45:52",
+        "TestName":  "Weak Password Validation"
+    },
+    {
+        "Passed":  true,
+        "Message":  "User signed in successfully. New token received.",
+        "Timestamp":  "2025-12-10 11:45:53",
+        "TestName":  "Valid SignIn"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected wrong password (401 Unauthorized)",
+        "Timestamp":  "2025-12-10 11:45:53",
+        "TestName":  "Wrong Password Rejection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected non-existent user (401 Unauthorized)",
+        "Timestamp":  "2025-12-10 11:45:54",
+        "TestName":  "Non-existent User Rejection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Token is valid. Profile retrieved successfully.",
+        "Timestamp":  "2025-12-10 11:45:54",
+        "TestName":  "Token Validation"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected invalid token (401 Unauthorized)",
+        "Timestamp":  "2025-12-10 11:45:55",
+        "TestName":  "Invalid Token Rejection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected missing token (401 Unauthorized)",
+        "Timestamp":  "2025-12-10 11:45:55",
+        "TestName":  "Missing Token Rejection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected empty email",
+        "Timestamp":  "2025-12-10 11:45:56",
+        "TestName":  "Empty Email Validation"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected empty password",
+        "Timestamp":  "2025-12-10 11:45:56",
+        "TestName":  "Empty Password Validation"
+    },
+    {
+        "Passed":  true,
+        "Message":  "API allows empty full name (optional field)",
+        "Timestamp":  "2025-12-10 11:45:57",
+        "TestName":  "Empty Full Name Accepted"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly accepted valid email with special characters",
+        "Timestamp":  "2025-12-10 11:45:58",
+        "TestName":  "Special Characters in Email"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly accepted long email address",
+        "Timestamp":  "2025-12-10 11:45:59",
+        "TestName":  "Long Email Address"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly accepted password with special characters",
+        "Timestamp":  "2025-12-10 11:46:00",
+        "TestName":  "Password with Special Characters"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly accepted Unicode characters in name",
+        "Timestamp":  "2025-12-10 11:46:01",
+        "TestName":  "Unicode Characters in Name"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected empty email in sign-in",
+        "Timestamp":  "2025-12-10 11:46:01",
+        "TestName":  "SignIn Empty Email Validation"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected empty password in sign-in",
+        "Timestamp":  "2025-12-10 11:46:02",
+        "TestName":  "SignIn Empty Password Validation"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Email is case-sensitive (strict validation)",
+        "Timestamp":  "2025-12-10 11:46:02",
+        "TestName":  "Case Sensitive Email"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Token expires in 86400 seconds",
+        "Timestamp":  "2025-12-10 11:46:03",
+        "TestName":  "Token Expiry Information"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Correctly rejected malformed authorization header",
+        "Timestamp":  "2025-12-10 11:46:04",
+        "TestName":  "Malformed Auth Header Rejection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Multiple sign-ins handled successfully",
+        "Timestamp":  "2025-12-10 11:46:06",
+        "TestName":  "Multiple Consecutive SignIns"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Long password handled (Status: 500)",
+        "Timestamp":  "2025-12-10 11:46:06",
+        "TestName":  "Long Password Handling"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Profile accessible with fresh token after multiple sign-ins",
+        "Timestamp":  "2025-12-10 11:46:08",
+        "TestName":  "Profile Access After Multiple SignIns"
+    }
+]

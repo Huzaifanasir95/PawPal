@@ -24,6 +24,13 @@ mixin _$AuthEvent {
     required TResult Function(String email, String password, String? name)
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
+    required TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )
+    completeGoogleSignIn,
     required TResult Function() signOut,
     required TResult Function(String email) resetPassword,
     required TResult Function(String accountType) updateAccountType,
@@ -37,6 +44,13 @@ mixin _$AuthEvent {
     TResult? Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
+    TResult? Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult? Function()? signOut,
     TResult? Function(String email)? resetPassword,
     TResult? Function(String accountType)? updateAccountType,
@@ -50,6 +64,13 @@ mixin _$AuthEvent {
     TResult Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
+    TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult Function()? signOut,
     TResult Function(String email)? resetPassword,
     TResult Function(String accountType)? updateAccountType,
@@ -63,6 +84,7 @@ mixin _$AuthEvent {
     required TResult Function(_SignInWithEmail value) signInWithEmail,
     required TResult Function(_SignUpWithEmail value) signUpWithEmail,
     required TResult Function(_SignInWithGoogle value) signInWithGoogle,
+    required TResult Function(_CompleteGoogleSignIn value) completeGoogleSignIn,
     required TResult Function(_SignOut value) signOut,
     required TResult Function(_ResetPassword value) resetPassword,
     required TResult Function(_UpdateAccountType value) updateAccountType,
@@ -75,6 +97,7 @@ mixin _$AuthEvent {
     TResult? Function(_SignInWithEmail value)? signInWithEmail,
     TResult? Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult? Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult? Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult? Function(_SignOut value)? signOut,
     TResult? Function(_ResetPassword value)? resetPassword,
     TResult? Function(_UpdateAccountType value)? updateAccountType,
@@ -87,6 +110,7 @@ mixin _$AuthEvent {
     TResult Function(_SignInWithEmail value)? signInWithEmail,
     TResult Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult Function(_SignOut value)? signOut,
     TResult Function(_ResetPassword value)? resetPassword,
     TResult Function(_UpdateAccountType value)? updateAccountType,
@@ -164,6 +188,13 @@ class _$CheckAuthImpl implements _CheckAuth {
     required TResult Function(String email, String password, String? name)
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
+    required TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )
+    completeGoogleSignIn,
     required TResult Function() signOut,
     required TResult Function(String email) resetPassword,
     required TResult Function(String accountType) updateAccountType,
@@ -181,6 +212,13 @@ class _$CheckAuthImpl implements _CheckAuth {
     TResult? Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
+    TResult? Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult? Function()? signOut,
     TResult? Function(String email)? resetPassword,
     TResult? Function(String accountType)? updateAccountType,
@@ -198,6 +236,13 @@ class _$CheckAuthImpl implements _CheckAuth {
     TResult Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
+    TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult Function()? signOut,
     TResult Function(String email)? resetPassword,
     TResult Function(String accountType)? updateAccountType,
@@ -218,6 +263,7 @@ class _$CheckAuthImpl implements _CheckAuth {
     required TResult Function(_SignInWithEmail value) signInWithEmail,
     required TResult Function(_SignUpWithEmail value) signUpWithEmail,
     required TResult Function(_SignInWithGoogle value) signInWithGoogle,
+    required TResult Function(_CompleteGoogleSignIn value) completeGoogleSignIn,
     required TResult Function(_SignOut value) signOut,
     required TResult Function(_ResetPassword value) resetPassword,
     required TResult Function(_UpdateAccountType value) updateAccountType,
@@ -234,6 +280,7 @@ class _$CheckAuthImpl implements _CheckAuth {
     TResult? Function(_SignInWithEmail value)? signInWithEmail,
     TResult? Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult? Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult? Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult? Function(_SignOut value)? signOut,
     TResult? Function(_ResetPassword value)? resetPassword,
     TResult? Function(_UpdateAccountType value)? updateAccountType,
@@ -250,6 +297,7 @@ class _$CheckAuthImpl implements _CheckAuth {
     TResult Function(_SignInWithEmail value)? signInWithEmail,
     TResult Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult Function(_SignOut value)? signOut,
     TResult Function(_ResetPassword value)? resetPassword,
     TResult Function(_UpdateAccountType value)? updateAccountType,
@@ -354,6 +402,13 @@ class _$SignInWithEmailImpl implements _SignInWithEmail {
     required TResult Function(String email, String password, String? name)
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
+    required TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )
+    completeGoogleSignIn,
     required TResult Function() signOut,
     required TResult Function(String email) resetPassword,
     required TResult Function(String accountType) updateAccountType,
@@ -371,6 +426,13 @@ class _$SignInWithEmailImpl implements _SignInWithEmail {
     TResult? Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
+    TResult? Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult? Function()? signOut,
     TResult? Function(String email)? resetPassword,
     TResult? Function(String accountType)? updateAccountType,
@@ -388,6 +450,13 @@ class _$SignInWithEmailImpl implements _SignInWithEmail {
     TResult Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
+    TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult Function()? signOut,
     TResult Function(String email)? resetPassword,
     TResult Function(String accountType)? updateAccountType,
@@ -408,6 +477,7 @@ class _$SignInWithEmailImpl implements _SignInWithEmail {
     required TResult Function(_SignInWithEmail value) signInWithEmail,
     required TResult Function(_SignUpWithEmail value) signUpWithEmail,
     required TResult Function(_SignInWithGoogle value) signInWithGoogle,
+    required TResult Function(_CompleteGoogleSignIn value) completeGoogleSignIn,
     required TResult Function(_SignOut value) signOut,
     required TResult Function(_ResetPassword value) resetPassword,
     required TResult Function(_UpdateAccountType value) updateAccountType,
@@ -424,6 +494,7 @@ class _$SignInWithEmailImpl implements _SignInWithEmail {
     TResult? Function(_SignInWithEmail value)? signInWithEmail,
     TResult? Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult? Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult? Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult? Function(_SignOut value)? signOut,
     TResult? Function(_ResetPassword value)? resetPassword,
     TResult? Function(_UpdateAccountType value)? updateAccountType,
@@ -440,6 +511,7 @@ class _$SignInWithEmailImpl implements _SignInWithEmail {
     TResult Function(_SignInWithEmail value)? signInWithEmail,
     TResult Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult Function(_SignOut value)? signOut,
     TResult Function(_ResetPassword value)? resetPassword,
     TResult Function(_UpdateAccountType value)? updateAccountType,
@@ -565,6 +637,13 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
     required TResult Function(String email, String password, String? name)
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
+    required TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )
+    completeGoogleSignIn,
     required TResult Function() signOut,
     required TResult Function(String email) resetPassword,
     required TResult Function(String accountType) updateAccountType,
@@ -582,6 +661,13 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
     TResult? Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
+    TResult? Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult? Function()? signOut,
     TResult? Function(String email)? resetPassword,
     TResult? Function(String accountType)? updateAccountType,
@@ -599,6 +685,13 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
     TResult Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
+    TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult Function()? signOut,
     TResult Function(String email)? resetPassword,
     TResult Function(String accountType)? updateAccountType,
@@ -619,6 +712,7 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
     required TResult Function(_SignInWithEmail value) signInWithEmail,
     required TResult Function(_SignUpWithEmail value) signUpWithEmail,
     required TResult Function(_SignInWithGoogle value) signInWithGoogle,
+    required TResult Function(_CompleteGoogleSignIn value) completeGoogleSignIn,
     required TResult Function(_SignOut value) signOut,
     required TResult Function(_ResetPassword value) resetPassword,
     required TResult Function(_UpdateAccountType value) updateAccountType,
@@ -635,6 +729,7 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
     TResult? Function(_SignInWithEmail value)? signInWithEmail,
     TResult? Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult? Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult? Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult? Function(_SignOut value)? signOut,
     TResult? Function(_ResetPassword value)? resetPassword,
     TResult? Function(_UpdateAccountType value)? updateAccountType,
@@ -651,6 +746,7 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
     TResult Function(_SignInWithEmail value)? signInWithEmail,
     TResult Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult Function(_SignOut value)? signOut,
     TResult Function(_ResetPassword value)? resetPassword,
     TResult Function(_UpdateAccountType value)? updateAccountType,
@@ -731,6 +827,13 @@ class _$SignInWithGoogleImpl implements _SignInWithGoogle {
     required TResult Function(String email, String password, String? name)
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
+    required TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )
+    completeGoogleSignIn,
     required TResult Function() signOut,
     required TResult Function(String email) resetPassword,
     required TResult Function(String accountType) updateAccountType,
@@ -748,6 +851,13 @@ class _$SignInWithGoogleImpl implements _SignInWithGoogle {
     TResult? Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
+    TResult? Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult? Function()? signOut,
     TResult? Function(String email)? resetPassword,
     TResult? Function(String accountType)? updateAccountType,
@@ -765,6 +875,13 @@ class _$SignInWithGoogleImpl implements _SignInWithGoogle {
     TResult Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
+    TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult Function()? signOut,
     TResult Function(String email)? resetPassword,
     TResult Function(String accountType)? updateAccountType,
@@ -785,6 +902,7 @@ class _$SignInWithGoogleImpl implements _SignInWithGoogle {
     required TResult Function(_SignInWithEmail value) signInWithEmail,
     required TResult Function(_SignUpWithEmail value) signUpWithEmail,
     required TResult Function(_SignInWithGoogle value) signInWithGoogle,
+    required TResult Function(_CompleteGoogleSignIn value) completeGoogleSignIn,
     required TResult Function(_SignOut value) signOut,
     required TResult Function(_ResetPassword value) resetPassword,
     required TResult Function(_UpdateAccountType value) updateAccountType,
@@ -801,6 +919,7 @@ class _$SignInWithGoogleImpl implements _SignInWithGoogle {
     TResult? Function(_SignInWithEmail value)? signInWithEmail,
     TResult? Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult? Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult? Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult? Function(_SignOut value)? signOut,
     TResult? Function(_ResetPassword value)? resetPassword,
     TResult? Function(_UpdateAccountType value)? updateAccountType,
@@ -817,6 +936,7 @@ class _$SignInWithGoogleImpl implements _SignInWithGoogle {
     TResult Function(_SignInWithEmail value)? signInWithEmail,
     TResult Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult Function(_SignOut value)? signOut,
     TResult Function(_ResetPassword value)? resetPassword,
     TResult Function(_UpdateAccountType value)? updateAccountType,
@@ -833,6 +953,274 @@ class _$SignInWithGoogleImpl implements _SignInWithGoogle {
 
 abstract class _SignInWithGoogle implements AuthEvent {
   const factory _SignInWithGoogle() = _$SignInWithGoogleImpl;
+}
+
+/// @nodoc
+abstract class _$$CompleteGoogleSignInImplCopyWith<$Res> {
+  factory _$$CompleteGoogleSignInImplCopyWith(
+    _$CompleteGoogleSignInImpl value,
+    $Res Function(_$CompleteGoogleSignInImpl) then,
+  ) = __$$CompleteGoogleSignInImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({
+    String idToken,
+    String accountType,
+    String? displayName,
+    String? photoUrl,
+  });
+}
+
+/// @nodoc
+class __$$CompleteGoogleSignInImplCopyWithImpl<$Res>
+    extends _$AuthEventCopyWithImpl<$Res, _$CompleteGoogleSignInImpl>
+    implements _$$CompleteGoogleSignInImplCopyWith<$Res> {
+  __$$CompleteGoogleSignInImplCopyWithImpl(
+    _$CompleteGoogleSignInImpl _value,
+    $Res Function(_$CompleteGoogleSignInImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of AuthEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? idToken = null,
+    Object? accountType = null,
+    Object? displayName = freezed,
+    Object? photoUrl = freezed,
+  }) {
+    return _then(
+      _$CompleteGoogleSignInImpl(
+        null == idToken
+            ? _value.idToken
+            : idToken // ignore: cast_nullable_to_non_nullable
+                as String,
+        null == accountType
+            ? _value.accountType
+            : accountType // ignore: cast_nullable_to_non_nullable
+                as String,
+        freezed == displayName
+            ? _value.displayName
+            : displayName // ignore: cast_nullable_to_non_nullable
+                as String?,
+        freezed == photoUrl
+            ? _value.photoUrl
+            : photoUrl // ignore: cast_nullable_to_non_nullable
+                as String?,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$CompleteGoogleSignInImpl implements _CompleteGoogleSignIn {
+  const _$CompleteGoogleSignInImpl(
+    this.idToken,
+    this.accountType,
+    this.displayName,
+    this.photoUrl,
+  );
+
+  @override
+  final String idToken;
+  @override
+  final String accountType;
+  @override
+  final String? displayName;
+  @override
+  final String? photoUrl;
+
+  @override
+  String toString() {
+    return 'AuthEvent.completeGoogleSignIn(idToken: $idToken, accountType: $accountType, displayName: $displayName, photoUrl: $photoUrl)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$CompleteGoogleSignInImpl &&
+            (identical(other.idToken, idToken) || other.idToken == idToken) &&
+            (identical(other.accountType, accountType) ||
+                other.accountType == accountType) &&
+            (identical(other.displayName, displayName) ||
+                other.displayName == displayName) &&
+            (identical(other.photoUrl, photoUrl) ||
+                other.photoUrl == photoUrl));
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, idToken, accountType, displayName, photoUrl);
+
+  /// Create a copy of AuthEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$CompleteGoogleSignInImplCopyWith<_$CompleteGoogleSignInImpl>
+  get copyWith =>
+      __$$CompleteGoogleSignInImplCopyWithImpl<_$CompleteGoogleSignInImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() checkAuth,
+    required TResult Function(String email, String password) signInWithEmail,
+    required TResult Function(String email, String password, String? name)
+    signUpWithEmail,
+    required TResult Function() signInWithGoogle,
+    required TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )
+    completeGoogleSignIn,
+    required TResult Function() signOut,
+    required TResult Function(String email) resetPassword,
+    required TResult Function(String accountType) updateAccountType,
+    required TResult Function(AuthUser user) userChanged,
+    required TResult Function() signedOut,
+  }) {
+    return completeGoogleSignIn(idToken, accountType, displayName, photoUrl);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? checkAuth,
+    TResult? Function(String email, String password)? signInWithEmail,
+    TResult? Function(String email, String password, String? name)?
+    signUpWithEmail,
+    TResult? Function()? signInWithGoogle,
+    TResult? Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
+    TResult? Function()? signOut,
+    TResult? Function(String email)? resetPassword,
+    TResult? Function(String accountType)? updateAccountType,
+    TResult? Function(AuthUser user)? userChanged,
+    TResult? Function()? signedOut,
+  }) {
+    return completeGoogleSignIn?.call(
+      idToken,
+      accountType,
+      displayName,
+      photoUrl,
+    );
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? checkAuth,
+    TResult Function(String email, String password)? signInWithEmail,
+    TResult Function(String email, String password, String? name)?
+    signUpWithEmail,
+    TResult Function()? signInWithGoogle,
+    TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
+    TResult Function()? signOut,
+    TResult Function(String email)? resetPassword,
+    TResult Function(String accountType)? updateAccountType,
+    TResult Function(AuthUser user)? userChanged,
+    TResult Function()? signedOut,
+    required TResult orElse(),
+  }) {
+    if (completeGoogleSignIn != null) {
+      return completeGoogleSignIn(idToken, accountType, displayName, photoUrl);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(_CheckAuth value) checkAuth,
+    required TResult Function(_SignInWithEmail value) signInWithEmail,
+    required TResult Function(_SignUpWithEmail value) signUpWithEmail,
+    required TResult Function(_SignInWithGoogle value) signInWithGoogle,
+    required TResult Function(_CompleteGoogleSignIn value) completeGoogleSignIn,
+    required TResult Function(_SignOut value) signOut,
+    required TResult Function(_ResetPassword value) resetPassword,
+    required TResult Function(_UpdateAccountType value) updateAccountType,
+    required TResult Function(_UserChanged value) userChanged,
+    required TResult Function(_SignedOut value) signedOut,
+  }) {
+    return completeGoogleSignIn(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(_CheckAuth value)? checkAuth,
+    TResult? Function(_SignInWithEmail value)? signInWithEmail,
+    TResult? Function(_SignUpWithEmail value)? signUpWithEmail,
+    TResult? Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult? Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
+    TResult? Function(_SignOut value)? signOut,
+    TResult? Function(_ResetPassword value)? resetPassword,
+    TResult? Function(_UpdateAccountType value)? updateAccountType,
+    TResult? Function(_UserChanged value)? userChanged,
+    TResult? Function(_SignedOut value)? signedOut,
+  }) {
+    return completeGoogleSignIn?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(_CheckAuth value)? checkAuth,
+    TResult Function(_SignInWithEmail value)? signInWithEmail,
+    TResult Function(_SignUpWithEmail value)? signUpWithEmail,
+    TResult Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
+    TResult Function(_SignOut value)? signOut,
+    TResult Function(_ResetPassword value)? resetPassword,
+    TResult Function(_UpdateAccountType value)? updateAccountType,
+    TResult Function(_UserChanged value)? userChanged,
+    TResult Function(_SignedOut value)? signedOut,
+    required TResult orElse(),
+  }) {
+    if (completeGoogleSignIn != null) {
+      return completeGoogleSignIn(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class _CompleteGoogleSignIn implements AuthEvent {
+  const factory _CompleteGoogleSignIn(
+    final String idToken,
+    final String accountType,
+    final String? displayName,
+    final String? photoUrl,
+  ) = _$CompleteGoogleSignInImpl;
+
+  String get idToken;
+  String get accountType;
+  String? get displayName;
+  String? get photoUrl;
+
+  /// Create a copy of AuthEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$CompleteGoogleSignInImplCopyWith<_$CompleteGoogleSignInImpl>
+  get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -883,6 +1271,13 @@ class _$SignOutImpl implements _SignOut {
     required TResult Function(String email, String password, String? name)
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
+    required TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )
+    completeGoogleSignIn,
     required TResult Function() signOut,
     required TResult Function(String email) resetPassword,
     required TResult Function(String accountType) updateAccountType,
@@ -900,6 +1295,13 @@ class _$SignOutImpl implements _SignOut {
     TResult? Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
+    TResult? Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult? Function()? signOut,
     TResult? Function(String email)? resetPassword,
     TResult? Function(String accountType)? updateAccountType,
@@ -917,6 +1319,13 @@ class _$SignOutImpl implements _SignOut {
     TResult Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
+    TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult Function()? signOut,
     TResult Function(String email)? resetPassword,
     TResult Function(String accountType)? updateAccountType,
@@ -937,6 +1346,7 @@ class _$SignOutImpl implements _SignOut {
     required TResult Function(_SignInWithEmail value) signInWithEmail,
     required TResult Function(_SignUpWithEmail value) signUpWithEmail,
     required TResult Function(_SignInWithGoogle value) signInWithGoogle,
+    required TResult Function(_CompleteGoogleSignIn value) completeGoogleSignIn,
     required TResult Function(_SignOut value) signOut,
     required TResult Function(_ResetPassword value) resetPassword,
     required TResult Function(_UpdateAccountType value) updateAccountType,
@@ -953,6 +1363,7 @@ class _$SignOutImpl implements _SignOut {
     TResult? Function(_SignInWithEmail value)? signInWithEmail,
     TResult? Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult? Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult? Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult? Function(_SignOut value)? signOut,
     TResult? Function(_ResetPassword value)? resetPassword,
     TResult? Function(_UpdateAccountType value)? updateAccountType,
@@ -969,6 +1380,7 @@ class _$SignOutImpl implements _SignOut {
     TResult Function(_SignInWithEmail value)? signInWithEmail,
     TResult Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult Function(_SignOut value)? signOut,
     TResult Function(_ResetPassword value)? resetPassword,
     TResult Function(_UpdateAccountType value)? updateAccountType,
@@ -1062,6 +1474,13 @@ class _$ResetPasswordImpl implements _ResetPassword {
     required TResult Function(String email, String password, String? name)
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
+    required TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )
+    completeGoogleSignIn,
     required TResult Function() signOut,
     required TResult Function(String email) resetPassword,
     required TResult Function(String accountType) updateAccountType,
@@ -1079,6 +1498,13 @@ class _$ResetPasswordImpl implements _ResetPassword {
     TResult? Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
+    TResult? Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult? Function()? signOut,
     TResult? Function(String email)? resetPassword,
     TResult? Function(String accountType)? updateAccountType,
@@ -1096,6 +1522,13 @@ class _$ResetPasswordImpl implements _ResetPassword {
     TResult Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
+    TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult Function()? signOut,
     TResult Function(String email)? resetPassword,
     TResult Function(String accountType)? updateAccountType,
@@ -1116,6 +1549,7 @@ class _$ResetPasswordImpl implements _ResetPassword {
     required TResult Function(_SignInWithEmail value) signInWithEmail,
     required TResult Function(_SignUpWithEmail value) signUpWithEmail,
     required TResult Function(_SignInWithGoogle value) signInWithGoogle,
+    required TResult Function(_CompleteGoogleSignIn value) completeGoogleSignIn,
     required TResult Function(_SignOut value) signOut,
     required TResult Function(_ResetPassword value) resetPassword,
     required TResult Function(_UpdateAccountType value) updateAccountType,
@@ -1132,6 +1566,7 @@ class _$ResetPasswordImpl implements _ResetPassword {
     TResult? Function(_SignInWithEmail value)? signInWithEmail,
     TResult? Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult? Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult? Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult? Function(_SignOut value)? signOut,
     TResult? Function(_ResetPassword value)? resetPassword,
     TResult? Function(_UpdateAccountType value)? updateAccountType,
@@ -1148,6 +1583,7 @@ class _$ResetPasswordImpl implements _ResetPassword {
     TResult Function(_SignInWithEmail value)? signInWithEmail,
     TResult Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult Function(_SignOut value)? signOut,
     TResult Function(_ResetPassword value)? resetPassword,
     TResult Function(_UpdateAccountType value)? updateAccountType,
@@ -1253,6 +1689,13 @@ class _$UpdateAccountTypeImpl implements _UpdateAccountType {
     required TResult Function(String email, String password, String? name)
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
+    required TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )
+    completeGoogleSignIn,
     required TResult Function() signOut,
     required TResult Function(String email) resetPassword,
     required TResult Function(String accountType) updateAccountType,
@@ -1270,6 +1713,13 @@ class _$UpdateAccountTypeImpl implements _UpdateAccountType {
     TResult? Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
+    TResult? Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult? Function()? signOut,
     TResult? Function(String email)? resetPassword,
     TResult? Function(String accountType)? updateAccountType,
@@ -1287,6 +1737,13 @@ class _$UpdateAccountTypeImpl implements _UpdateAccountType {
     TResult Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
+    TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult Function()? signOut,
     TResult Function(String email)? resetPassword,
     TResult Function(String accountType)? updateAccountType,
@@ -1307,6 +1764,7 @@ class _$UpdateAccountTypeImpl implements _UpdateAccountType {
     required TResult Function(_SignInWithEmail value) signInWithEmail,
     required TResult Function(_SignUpWithEmail value) signUpWithEmail,
     required TResult Function(_SignInWithGoogle value) signInWithGoogle,
+    required TResult Function(_CompleteGoogleSignIn value) completeGoogleSignIn,
     required TResult Function(_SignOut value) signOut,
     required TResult Function(_ResetPassword value) resetPassword,
     required TResult Function(_UpdateAccountType value) updateAccountType,
@@ -1323,6 +1781,7 @@ class _$UpdateAccountTypeImpl implements _UpdateAccountType {
     TResult? Function(_SignInWithEmail value)? signInWithEmail,
     TResult? Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult? Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult? Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult? Function(_SignOut value)? signOut,
     TResult? Function(_ResetPassword value)? resetPassword,
     TResult? Function(_UpdateAccountType value)? updateAccountType,
@@ -1339,6 +1798,7 @@ class _$UpdateAccountTypeImpl implements _UpdateAccountType {
     TResult Function(_SignInWithEmail value)? signInWithEmail,
     TResult Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult Function(_SignOut value)? signOut,
     TResult Function(_ResetPassword value)? resetPassword,
     TResult Function(_UpdateAccountType value)? updateAccountType,
@@ -1453,6 +1913,13 @@ class _$UserChangedImpl implements _UserChanged {
     required TResult Function(String email, String password, String? name)
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
+    required TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )
+    completeGoogleSignIn,
     required TResult Function() signOut,
     required TResult Function(String email) resetPassword,
     required TResult Function(String accountType) updateAccountType,
@@ -1470,6 +1937,13 @@ class _$UserChangedImpl implements _UserChanged {
     TResult? Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
+    TResult? Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult? Function()? signOut,
     TResult? Function(String email)? resetPassword,
     TResult? Function(String accountType)? updateAccountType,
@@ -1487,6 +1961,13 @@ class _$UserChangedImpl implements _UserChanged {
     TResult Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
+    TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult Function()? signOut,
     TResult Function(String email)? resetPassword,
     TResult Function(String accountType)? updateAccountType,
@@ -1507,6 +1988,7 @@ class _$UserChangedImpl implements _UserChanged {
     required TResult Function(_SignInWithEmail value) signInWithEmail,
     required TResult Function(_SignUpWithEmail value) signUpWithEmail,
     required TResult Function(_SignInWithGoogle value) signInWithGoogle,
+    required TResult Function(_CompleteGoogleSignIn value) completeGoogleSignIn,
     required TResult Function(_SignOut value) signOut,
     required TResult Function(_ResetPassword value) resetPassword,
     required TResult Function(_UpdateAccountType value) updateAccountType,
@@ -1523,6 +2005,7 @@ class _$UserChangedImpl implements _UserChanged {
     TResult? Function(_SignInWithEmail value)? signInWithEmail,
     TResult? Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult? Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult? Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult? Function(_SignOut value)? signOut,
     TResult? Function(_ResetPassword value)? resetPassword,
     TResult? Function(_UpdateAccountType value)? updateAccountType,
@@ -1539,6 +2022,7 @@ class _$UserChangedImpl implements _UserChanged {
     TResult Function(_SignInWithEmail value)? signInWithEmail,
     TResult Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult Function(_SignOut value)? signOut,
     TResult Function(_ResetPassword value)? resetPassword,
     TResult Function(_UpdateAccountType value)? updateAccountType,
@@ -1613,6 +2097,13 @@ class _$SignedOutImpl implements _SignedOut {
     required TResult Function(String email, String password, String? name)
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
+    required TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )
+    completeGoogleSignIn,
     required TResult Function() signOut,
     required TResult Function(String email) resetPassword,
     required TResult Function(String accountType) updateAccountType,
@@ -1630,6 +2121,13 @@ class _$SignedOutImpl implements _SignedOut {
     TResult? Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
+    TResult? Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult? Function()? signOut,
     TResult? Function(String email)? resetPassword,
     TResult? Function(String accountType)? updateAccountType,
@@ -1647,6 +2145,13 @@ class _$SignedOutImpl implements _SignedOut {
     TResult Function(String email, String password, String? name)?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
+    TResult Function(
+      String idToken,
+      String accountType,
+      String? displayName,
+      String? photoUrl,
+    )?
+    completeGoogleSignIn,
     TResult Function()? signOut,
     TResult Function(String email)? resetPassword,
     TResult Function(String accountType)? updateAccountType,
@@ -1667,6 +2172,7 @@ class _$SignedOutImpl implements _SignedOut {
     required TResult Function(_SignInWithEmail value) signInWithEmail,
     required TResult Function(_SignUpWithEmail value) signUpWithEmail,
     required TResult Function(_SignInWithGoogle value) signInWithGoogle,
+    required TResult Function(_CompleteGoogleSignIn value) completeGoogleSignIn,
     required TResult Function(_SignOut value) signOut,
     required TResult Function(_ResetPassword value) resetPassword,
     required TResult Function(_UpdateAccountType value) updateAccountType,
@@ -1683,6 +2189,7 @@ class _$SignedOutImpl implements _SignedOut {
     TResult? Function(_SignInWithEmail value)? signInWithEmail,
     TResult? Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult? Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult? Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult? Function(_SignOut value)? signOut,
     TResult? Function(_ResetPassword value)? resetPassword,
     TResult? Function(_UpdateAccountType value)? updateAccountType,
@@ -1699,6 +2206,7 @@ class _$SignedOutImpl implements _SignedOut {
     TResult Function(_SignInWithEmail value)? signInWithEmail,
     TResult Function(_SignUpWithEmail value)? signUpWithEmail,
     TResult Function(_SignInWithGoogle value)? signInWithGoogle,
+    TResult Function(_CompleteGoogleSignIn value)? completeGoogleSignIn,
     TResult Function(_SignOut value)? signOut,
     TResult Function(_ResetPassword value)? resetPassword,
     TResult Function(_UpdateAccountType value)? updateAccountType,
@@ -1727,6 +2235,12 @@ mixin _$AuthState {
     required TResult Function() unauthenticated,
     required TResult Function(String message) error,
     required TResult Function() passwordResetSent,
+    required TResult Function(
+      String idToken,
+      String? displayName,
+      String? photoUrl,
+    )
+    accountTypeRequired,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
@@ -1736,6 +2250,8 @@ mixin _$AuthState {
     TResult? Function()? unauthenticated,
     TResult? Function(String message)? error,
     TResult? Function()? passwordResetSent,
+    TResult? Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
@@ -1745,6 +2261,8 @@ mixin _$AuthState {
     TResult Function()? unauthenticated,
     TResult Function(String message)? error,
     TResult Function()? passwordResetSent,
+    TResult Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -1755,6 +2273,7 @@ mixin _$AuthState {
     required TResult Function(_Unauthenticated value) unauthenticated,
     required TResult Function(_Error value) error,
     required TResult Function(_PasswordResetSent value) passwordResetSent,
+    required TResult Function(_AccountTypeRequired value) accountTypeRequired,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
@@ -1764,6 +2283,7 @@ mixin _$AuthState {
     TResult? Function(_Unauthenticated value)? unauthenticated,
     TResult? Function(_Error value)? error,
     TResult? Function(_PasswordResetSent value)? passwordResetSent,
+    TResult? Function(_AccountTypeRequired value)? accountTypeRequired,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
@@ -1773,6 +2293,7 @@ mixin _$AuthState {
     TResult Function(_Unauthenticated value)? unauthenticated,
     TResult Function(_Error value)? error,
     TResult Function(_PasswordResetSent value)? passwordResetSent,
+    TResult Function(_AccountTypeRequired value)? accountTypeRequired,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
 }
@@ -1846,6 +2367,12 @@ class _$InitialImpl implements _Initial {
     required TResult Function() unauthenticated,
     required TResult Function(String message) error,
     required TResult Function() passwordResetSent,
+    required TResult Function(
+      String idToken,
+      String? displayName,
+      String? photoUrl,
+    )
+    accountTypeRequired,
   }) {
     return initial();
   }
@@ -1859,6 +2386,8 @@ class _$InitialImpl implements _Initial {
     TResult? Function()? unauthenticated,
     TResult? Function(String message)? error,
     TResult? Function()? passwordResetSent,
+    TResult? Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
   }) {
     return initial?.call();
   }
@@ -1872,6 +2401,8 @@ class _$InitialImpl implements _Initial {
     TResult Function()? unauthenticated,
     TResult Function(String message)? error,
     TResult Function()? passwordResetSent,
+    TResult Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
     required TResult orElse(),
   }) {
     if (initial != null) {
@@ -1889,6 +2420,7 @@ class _$InitialImpl implements _Initial {
     required TResult Function(_Unauthenticated value) unauthenticated,
     required TResult Function(_Error value) error,
     required TResult Function(_PasswordResetSent value) passwordResetSent,
+    required TResult Function(_AccountTypeRequired value) accountTypeRequired,
   }) {
     return initial(this);
   }
@@ -1902,6 +2434,7 @@ class _$InitialImpl implements _Initial {
     TResult? Function(_Unauthenticated value)? unauthenticated,
     TResult? Function(_Error value)? error,
     TResult? Function(_PasswordResetSent value)? passwordResetSent,
+    TResult? Function(_AccountTypeRequired value)? accountTypeRequired,
   }) {
     return initial?.call(this);
   }
@@ -1915,6 +2448,7 @@ class _$InitialImpl implements _Initial {
     TResult Function(_Unauthenticated value)? unauthenticated,
     TResult Function(_Error value)? error,
     TResult Function(_PasswordResetSent value)? passwordResetSent,
+    TResult Function(_AccountTypeRequired value)? accountTypeRequired,
     required TResult orElse(),
   }) {
     if (initial != null) {
@@ -1977,6 +2511,12 @@ class _$LoadingImpl implements _Loading {
     required TResult Function() unauthenticated,
     required TResult Function(String message) error,
     required TResult Function() passwordResetSent,
+    required TResult Function(
+      String idToken,
+      String? displayName,
+      String? photoUrl,
+    )
+    accountTypeRequired,
   }) {
     return loading();
   }
@@ -1990,6 +2530,8 @@ class _$LoadingImpl implements _Loading {
     TResult? Function()? unauthenticated,
     TResult? Function(String message)? error,
     TResult? Function()? passwordResetSent,
+    TResult? Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
   }) {
     return loading?.call();
   }
@@ -2003,6 +2545,8 @@ class _$LoadingImpl implements _Loading {
     TResult Function()? unauthenticated,
     TResult Function(String message)? error,
     TResult Function()? passwordResetSent,
+    TResult Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
     required TResult orElse(),
   }) {
     if (loading != null) {
@@ -2020,6 +2564,7 @@ class _$LoadingImpl implements _Loading {
     required TResult Function(_Unauthenticated value) unauthenticated,
     required TResult Function(_Error value) error,
     required TResult Function(_PasswordResetSent value) passwordResetSent,
+    required TResult Function(_AccountTypeRequired value) accountTypeRequired,
   }) {
     return loading(this);
   }
@@ -2033,6 +2578,7 @@ class _$LoadingImpl implements _Loading {
     TResult? Function(_Unauthenticated value)? unauthenticated,
     TResult? Function(_Error value)? error,
     TResult? Function(_PasswordResetSent value)? passwordResetSent,
+    TResult? Function(_AccountTypeRequired value)? accountTypeRequired,
   }) {
     return loading?.call(this);
   }
@@ -2046,6 +2592,7 @@ class _$LoadingImpl implements _Loading {
     TResult Function(_Unauthenticated value)? unauthenticated,
     TResult Function(_Error value)? error,
     TResult Function(_PasswordResetSent value)? passwordResetSent,
+    TResult Function(_AccountTypeRequired value)? accountTypeRequired,
     required TResult orElse(),
   }) {
     if (loading != null) {
@@ -2147,6 +2694,12 @@ class _$AuthenticatedImpl implements _Authenticated {
     required TResult Function() unauthenticated,
     required TResult Function(String message) error,
     required TResult Function() passwordResetSent,
+    required TResult Function(
+      String idToken,
+      String? displayName,
+      String? photoUrl,
+    )
+    accountTypeRequired,
   }) {
     return authenticated(user);
   }
@@ -2160,6 +2713,8 @@ class _$AuthenticatedImpl implements _Authenticated {
     TResult? Function()? unauthenticated,
     TResult? Function(String message)? error,
     TResult? Function()? passwordResetSent,
+    TResult? Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
   }) {
     return authenticated?.call(user);
   }
@@ -2173,6 +2728,8 @@ class _$AuthenticatedImpl implements _Authenticated {
     TResult Function()? unauthenticated,
     TResult Function(String message)? error,
     TResult Function()? passwordResetSent,
+    TResult Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
     required TResult orElse(),
   }) {
     if (authenticated != null) {
@@ -2190,6 +2747,7 @@ class _$AuthenticatedImpl implements _Authenticated {
     required TResult Function(_Unauthenticated value) unauthenticated,
     required TResult Function(_Error value) error,
     required TResult Function(_PasswordResetSent value) passwordResetSent,
+    required TResult Function(_AccountTypeRequired value) accountTypeRequired,
   }) {
     return authenticated(this);
   }
@@ -2203,6 +2761,7 @@ class _$AuthenticatedImpl implements _Authenticated {
     TResult? Function(_Unauthenticated value)? unauthenticated,
     TResult? Function(_Error value)? error,
     TResult? Function(_PasswordResetSent value)? passwordResetSent,
+    TResult? Function(_AccountTypeRequired value)? accountTypeRequired,
   }) {
     return authenticated?.call(this);
   }
@@ -2216,6 +2775,7 @@ class _$AuthenticatedImpl implements _Authenticated {
     TResult Function(_Unauthenticated value)? unauthenticated,
     TResult Function(_Error value)? error,
     TResult Function(_PasswordResetSent value)? passwordResetSent,
+    TResult Function(_AccountTypeRequired value)? accountTypeRequired,
     required TResult orElse(),
   }) {
     if (authenticated != null) {
@@ -2286,6 +2846,12 @@ class _$UnauthenticatedImpl implements _Unauthenticated {
     required TResult Function() unauthenticated,
     required TResult Function(String message) error,
     required TResult Function() passwordResetSent,
+    required TResult Function(
+      String idToken,
+      String? displayName,
+      String? photoUrl,
+    )
+    accountTypeRequired,
   }) {
     return unauthenticated();
   }
@@ -2299,6 +2865,8 @@ class _$UnauthenticatedImpl implements _Unauthenticated {
     TResult? Function()? unauthenticated,
     TResult? Function(String message)? error,
     TResult? Function()? passwordResetSent,
+    TResult? Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
   }) {
     return unauthenticated?.call();
   }
@@ -2312,6 +2880,8 @@ class _$UnauthenticatedImpl implements _Unauthenticated {
     TResult Function()? unauthenticated,
     TResult Function(String message)? error,
     TResult Function()? passwordResetSent,
+    TResult Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
     required TResult orElse(),
   }) {
     if (unauthenticated != null) {
@@ -2329,6 +2899,7 @@ class _$UnauthenticatedImpl implements _Unauthenticated {
     required TResult Function(_Unauthenticated value) unauthenticated,
     required TResult Function(_Error value) error,
     required TResult Function(_PasswordResetSent value) passwordResetSent,
+    required TResult Function(_AccountTypeRequired value) accountTypeRequired,
   }) {
     return unauthenticated(this);
   }
@@ -2342,6 +2913,7 @@ class _$UnauthenticatedImpl implements _Unauthenticated {
     TResult? Function(_Unauthenticated value)? unauthenticated,
     TResult? Function(_Error value)? error,
     TResult? Function(_PasswordResetSent value)? passwordResetSent,
+    TResult? Function(_AccountTypeRequired value)? accountTypeRequired,
   }) {
     return unauthenticated?.call(this);
   }
@@ -2355,6 +2927,7 @@ class _$UnauthenticatedImpl implements _Unauthenticated {
     TResult Function(_Unauthenticated value)? unauthenticated,
     TResult Function(_Error value)? error,
     TResult Function(_PasswordResetSent value)? passwordResetSent,
+    TResult Function(_AccountTypeRequired value)? accountTypeRequired,
     required TResult orElse(),
   }) {
     if (unauthenticated != null) {
@@ -2444,6 +3017,12 @@ class _$ErrorImpl implements _Error {
     required TResult Function() unauthenticated,
     required TResult Function(String message) error,
     required TResult Function() passwordResetSent,
+    required TResult Function(
+      String idToken,
+      String? displayName,
+      String? photoUrl,
+    )
+    accountTypeRequired,
   }) {
     return error(message);
   }
@@ -2457,6 +3036,8 @@ class _$ErrorImpl implements _Error {
     TResult? Function()? unauthenticated,
     TResult? Function(String message)? error,
     TResult? Function()? passwordResetSent,
+    TResult? Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
   }) {
     return error?.call(message);
   }
@@ -2470,6 +3051,8 @@ class _$ErrorImpl implements _Error {
     TResult Function()? unauthenticated,
     TResult Function(String message)? error,
     TResult Function()? passwordResetSent,
+    TResult Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
     required TResult orElse(),
   }) {
     if (error != null) {
@@ -2487,6 +3070,7 @@ class _$ErrorImpl implements _Error {
     required TResult Function(_Unauthenticated value) unauthenticated,
     required TResult Function(_Error value) error,
     required TResult Function(_PasswordResetSent value) passwordResetSent,
+    required TResult Function(_AccountTypeRequired value) accountTypeRequired,
   }) {
     return error(this);
   }
@@ -2500,6 +3084,7 @@ class _$ErrorImpl implements _Error {
     TResult? Function(_Unauthenticated value)? unauthenticated,
     TResult? Function(_Error value)? error,
     TResult? Function(_PasswordResetSent value)? passwordResetSent,
+    TResult? Function(_AccountTypeRequired value)? accountTypeRequired,
   }) {
     return error?.call(this);
   }
@@ -2513,6 +3098,7 @@ class _$ErrorImpl implements _Error {
     TResult Function(_Unauthenticated value)? unauthenticated,
     TResult Function(_Error value)? error,
     TResult Function(_PasswordResetSent value)? passwordResetSent,
+    TResult Function(_AccountTypeRequired value)? accountTypeRequired,
     required TResult orElse(),
   }) {
     if (error != null) {
@@ -2583,6 +3169,12 @@ class _$PasswordResetSentImpl implements _PasswordResetSent {
     required TResult Function() unauthenticated,
     required TResult Function(String message) error,
     required TResult Function() passwordResetSent,
+    required TResult Function(
+      String idToken,
+      String? displayName,
+      String? photoUrl,
+    )
+    accountTypeRequired,
   }) {
     return passwordResetSent();
   }
@@ -2596,6 +3188,8 @@ class _$PasswordResetSentImpl implements _PasswordResetSent {
     TResult? Function()? unauthenticated,
     TResult? Function(String message)? error,
     TResult? Function()? passwordResetSent,
+    TResult? Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
   }) {
     return passwordResetSent?.call();
   }
@@ -2609,6 +3203,8 @@ class _$PasswordResetSentImpl implements _PasswordResetSent {
     TResult Function()? unauthenticated,
     TResult Function(String message)? error,
     TResult Function()? passwordResetSent,
+    TResult Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
     required TResult orElse(),
   }) {
     if (passwordResetSent != null) {
@@ -2626,6 +3222,7 @@ class _$PasswordResetSentImpl implements _PasswordResetSent {
     required TResult Function(_Unauthenticated value) unauthenticated,
     required TResult Function(_Error value) error,
     required TResult Function(_PasswordResetSent value) passwordResetSent,
+    required TResult Function(_AccountTypeRequired value) accountTypeRequired,
   }) {
     return passwordResetSent(this);
   }
@@ -2639,6 +3236,7 @@ class _$PasswordResetSentImpl implements _PasswordResetSent {
     TResult? Function(_Unauthenticated value)? unauthenticated,
     TResult? Function(_Error value)? error,
     TResult? Function(_PasswordResetSent value)? passwordResetSent,
+    TResult? Function(_AccountTypeRequired value)? accountTypeRequired,
   }) {
     return passwordResetSent?.call(this);
   }
@@ -2652,6 +3250,7 @@ class _$PasswordResetSentImpl implements _PasswordResetSent {
     TResult Function(_Unauthenticated value)? unauthenticated,
     TResult Function(_Error value)? error,
     TResult Function(_PasswordResetSent value)? passwordResetSent,
+    TResult Function(_AccountTypeRequired value)? accountTypeRequired,
     required TResult orElse(),
   }) {
     if (passwordResetSent != null) {
@@ -2663,4 +3262,216 @@ class _$PasswordResetSentImpl implements _PasswordResetSent {
 
 abstract class _PasswordResetSent implements AuthState {
   const factory _PasswordResetSent() = _$PasswordResetSentImpl;
+}
+
+/// @nodoc
+abstract class _$$AccountTypeRequiredImplCopyWith<$Res> {
+  factory _$$AccountTypeRequiredImplCopyWith(
+    _$AccountTypeRequiredImpl value,
+    $Res Function(_$AccountTypeRequiredImpl) then,
+  ) = __$$AccountTypeRequiredImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String idToken, String? displayName, String? photoUrl});
+}
+
+/// @nodoc
+class __$$AccountTypeRequiredImplCopyWithImpl<$Res>
+    extends _$AuthStateCopyWithImpl<$Res, _$AccountTypeRequiredImpl>
+    implements _$$AccountTypeRequiredImplCopyWith<$Res> {
+  __$$AccountTypeRequiredImplCopyWithImpl(
+    _$AccountTypeRequiredImpl _value,
+    $Res Function(_$AccountTypeRequiredImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of AuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? idToken = null,
+    Object? displayName = freezed,
+    Object? photoUrl = freezed,
+  }) {
+    return _then(
+      _$AccountTypeRequiredImpl(
+        null == idToken
+            ? _value.idToken
+            : idToken // ignore: cast_nullable_to_non_nullable
+                as String,
+        freezed == displayName
+            ? _value.displayName
+            : displayName // ignore: cast_nullable_to_non_nullable
+                as String?,
+        freezed == photoUrl
+            ? _value.photoUrl
+            : photoUrl // ignore: cast_nullable_to_non_nullable
+                as String?,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$AccountTypeRequiredImpl implements _AccountTypeRequired {
+  const _$AccountTypeRequiredImpl(
+    this.idToken,
+    this.displayName,
+    this.photoUrl,
+  );
+
+  @override
+  final String idToken;
+  @override
+  final String? displayName;
+  @override
+  final String? photoUrl;
+
+  @override
+  String toString() {
+    return 'AuthState.accountTypeRequired(idToken: $idToken, displayName: $displayName, photoUrl: $photoUrl)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$AccountTypeRequiredImpl &&
+            (identical(other.idToken, idToken) || other.idToken == idToken) &&
+            (identical(other.displayName, displayName) ||
+                other.displayName == displayName) &&
+            (identical(other.photoUrl, photoUrl) ||
+                other.photoUrl == photoUrl));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, idToken, displayName, photoUrl);
+
+  /// Create a copy of AuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$AccountTypeRequiredImplCopyWith<_$AccountTypeRequiredImpl> get copyWith =>
+      __$$AccountTypeRequiredImplCopyWithImpl<_$AccountTypeRequiredImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() initial,
+    required TResult Function() loading,
+    required TResult Function(AuthUser user) authenticated,
+    required TResult Function() unauthenticated,
+    required TResult Function(String message) error,
+    required TResult Function() passwordResetSent,
+    required TResult Function(
+      String idToken,
+      String? displayName,
+      String? photoUrl,
+    )
+    accountTypeRequired,
+  }) {
+    return accountTypeRequired(idToken, displayName, photoUrl);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? initial,
+    TResult? Function()? loading,
+    TResult? Function(AuthUser user)? authenticated,
+    TResult? Function()? unauthenticated,
+    TResult? Function(String message)? error,
+    TResult? Function()? passwordResetSent,
+    TResult? Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
+  }) {
+    return accountTypeRequired?.call(idToken, displayName, photoUrl);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? initial,
+    TResult Function()? loading,
+    TResult Function(AuthUser user)? authenticated,
+    TResult Function()? unauthenticated,
+    TResult Function(String message)? error,
+    TResult Function()? passwordResetSent,
+    TResult Function(String idToken, String? displayName, String? photoUrl)?
+    accountTypeRequired,
+    required TResult orElse(),
+  }) {
+    if (accountTypeRequired != null) {
+      return accountTypeRequired(idToken, displayName, photoUrl);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(_Initial value) initial,
+    required TResult Function(_Loading value) loading,
+    required TResult Function(_Authenticated value) authenticated,
+    required TResult Function(_Unauthenticated value) unauthenticated,
+    required TResult Function(_Error value) error,
+    required TResult Function(_PasswordResetSent value) passwordResetSent,
+    required TResult Function(_AccountTypeRequired value) accountTypeRequired,
+  }) {
+    return accountTypeRequired(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(_Initial value)? initial,
+    TResult? Function(_Loading value)? loading,
+    TResult? Function(_Authenticated value)? authenticated,
+    TResult? Function(_Unauthenticated value)? unauthenticated,
+    TResult? Function(_Error value)? error,
+    TResult? Function(_PasswordResetSent value)? passwordResetSent,
+    TResult? Function(_AccountTypeRequired value)? accountTypeRequired,
+  }) {
+    return accountTypeRequired?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(_Initial value)? initial,
+    TResult Function(_Loading value)? loading,
+    TResult Function(_Authenticated value)? authenticated,
+    TResult Function(_Unauthenticated value)? unauthenticated,
+    TResult Function(_Error value)? error,
+    TResult Function(_PasswordResetSent value)? passwordResetSent,
+    TResult Function(_AccountTypeRequired value)? accountTypeRequired,
+    required TResult orElse(),
+  }) {
+    if (accountTypeRequired != null) {
+      return accountTypeRequired(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class _AccountTypeRequired implements AuthState {
+  const factory _AccountTypeRequired(
+    final String idToken,
+    final String? displayName,
+    final String? photoUrl,
+  ) = _$AccountTypeRequiredImpl;
+
+  String get idToken;
+  String? get displayName;
+  String? get photoUrl;
+
+  /// Create a copy of AuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$AccountTypeRequiredImplCopyWith<_$AccountTypeRequiredImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }

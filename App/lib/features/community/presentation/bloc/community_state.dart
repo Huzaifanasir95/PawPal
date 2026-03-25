@@ -16,6 +16,7 @@ class CommunityState with _$CommunityState {
     required List<Comment> comments,
     required String sortBy,
     required bool descending,
+    String? category,
     String? selectedPostId,
   }) = _Loaded;
 

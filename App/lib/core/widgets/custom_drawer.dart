@@ -3,9 +3,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
+import '../widgets/user_avatar.dart';
+import '../navigation/app_navigator.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
-import '../../features/community/presentation/pages/community_page.dart';
+import '../../features/community/presentation/pages/community_hub_page.dart';
 import '../../features/chatbot/presentation/pages/chatbot_screen.dart';
+import '../../features/pets/presentation/pages/my_pets_screen.dart';
+import '../../features/caregiver/presentation/pages/caregivers_list_screen.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});
@@ -48,14 +52,6 @@ class CustomDrawer extends StatelessWidget {
                           Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                         },
                       ),
-                      _buildDrawerItem(
-                        icon: Icons.search,
-                        title: 'Search Pets',
-                        onTap: () {
-                          Navigator.pop(context);
-                          // Navigate to search
-                        },
-                      ),
             
                       SizedBox(height: 20.h),
             
@@ -66,23 +62,46 @@ class CustomDrawer extends StatelessWidget {
                         title: 'My Pets',
                         onTap: () {
                           Navigator.pop(context);
-                          // Navigate to my pets
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MyPetsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+            
+                      SizedBox(height: 20.h),
+            
+                      // Services Section
+                      _buildDrawerSection('Services'),
+                      _buildDrawerItem(
+                        icon: Icons.local_hospital,
+                        title: 'Find Vets',
+                        onTap: () {
+                          Navigator.pop(context);
+                          AppNavigator.navigateToVetsList(context);
                         },
                       ),
                       _buildDrawerItem(
-                        icon: Icons.favorite,
-                        title: 'Favorites',
+                        icon: Icons.shopping_bag,
+                        title: 'Marketplace',
                         onTap: () {
                           Navigator.pop(context);
-                          // Navigate to favorites
+                          AppNavigator.navigateToMarketplace(context);
                         },
                       ),
                       _buildDrawerItem(
-                        icon: Icons.add_circle_outline,
-                        title: 'Add Pet',
+                        icon: Icons.home_work_outlined,
+                        title: 'Pet Sitting',
                         onTap: () {
                           Navigator.pop(context);
-                          // Navigate to add pet
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CaregiversListScreen(),
+                            ),
+                          );
                         },
                       ),
             
@@ -91,24 +110,16 @@ class CustomDrawer extends StatelessWidget {
                       // Community Section
                       _buildDrawerSection('Community'),
                       _buildDrawerItem(
-                        icon: Icons.group,
-                        title: 'Community Forum',
+                        icon: Icons.groups,
+                        title: 'Community Hub',
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const CommunityPage(),
+                              builder: (context) => const CommunityHubPage(),
                             ),
                           );
-                        },
-                      ),
-                      _buildDrawerItem(
-                        icon: Icons.event,
-                        title: 'Events',
-                        onTap: () {
-                          Navigator.pop(context);
-                          // Navigate to events
                         },
                       ),
             
@@ -199,39 +210,12 @@ class CustomDrawer extends StatelessWidget {
         child: Row(
           children: [
             // User Avatar - Smaller circle on the left
-            Container(
-              width: 50.w,
-              height: 50.h,
-              decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(25.r),
-                border: Border.all(
-                  color: AppColors.accent.withOpacity(0.2),
-                  width: 2.w,
-                ),
-              ),
-              child: user.photoURL != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(25.r),
-                      child: Image.network(
-                        user.photoURL!,
-                        width: 50.w,
-                        height: 50.h,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.person,
-                            color: AppColors.accent,
-                            size: 25.w,
-                          );
-                        },
-                      ),
-                    )
-                  : Icon(
-                      Icons.person,
-                      color: AppColors.accent,
-                      size: 25.w,
-                    ),
+            UserAvatar(
+              imageUrl: user.photoURL,
+              size: 50.w,
+              showBorder: true,
+              borderColor: AppColors.accent.withOpacity(0.2),
+              borderWidth: 2.w,
             ),
             SizedBox(width: 16.w),
             // User Info
@@ -242,7 +226,7 @@ class CustomDrawer extends StatelessWidget {
                 children: [
                   // User Name
                   Text(
-                    user.displayName ?? user.email?.split('@')[0] ?? 'User',
+                    user.displayName ?? user.email.split('@')[0],
                     style: AppTextStyles.onboardingTitle.copyWith(
                       fontSize: 18.sp,
                       color: AppColors.accent,
@@ -254,7 +238,7 @@ class CustomDrawer extends StatelessWidget {
                   SizedBox(height: 2.h),
                   // User Email
                   Text(
-                    user.email ?? '',
+                    user.email,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 12.sp,
                       color: AppColors.accent.withOpacity(0.8),
@@ -272,6 +256,7 @@ class CustomDrawer extends StatelessWidget {
       unauthenticated: () => _buildGuestHeader(),
       error: (message) => _buildGuestHeader(),
       passwordResetSent: () => _buildGuestHeader(),
+      accountTypeRequired: (idToken, displayName, photoUrl) => _buildGuestHeader(),
     );
   }
 

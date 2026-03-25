@@ -72,7 +72,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Book ${widget.caregiver.displayName}',
+          'Book ${widget.caregiver.userName ?? "Caregiver"}',
           style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
         ),
         backgroundColor: AppColors.background,
@@ -209,7 +209,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    service.serviceName ?? 'Pet Care Service',
+                    service.serviceTypeDisplayName ?? service.serviceTypeName ?? 'Pet Care Service',
                     style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
                   ),
                   if (service.description != null) ...[
@@ -221,7 +221,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                   ],
                   SizedBox(height: 4.h),
                   Text(
-                    '${service.durationMinutes} mins • Max ${service.maxPets} pets',
+                    '${service.durationMinutes ?? 60} mins • Max ${widget.caregiver.maxPetsAtOnce} pets',
                     style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
                   ),
                 ],
@@ -231,12 +231,12 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${service.currency} ${service.basePrice.toStringAsFixed(0)}',
+                  '${service.currency} ${service.rateAmount.toStringAsFixed(0)}',
                   style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary),
                 ),
-                if (service.additionalPetPrice > 0)
+                if (service.additionalPetRate > 0)
                   Text(
-                    '+${service.additionalPetPrice.toStringAsFixed(0)}/pet',
+                    '+${service.additionalPetRate.toStringAsFixed(0)}/pet',
                     style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
                   ),
               ],
@@ -478,7 +478,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
             _selectedPetIds.remove(pet['id']);
           } else {
             if (_selectedService != null && 
-                _selectedPetIds.length < _selectedService!.maxPets) {
+                _selectedPetIds.length < widget.caregiver.maxPetsAtOnce) {
               _selectedPetIds.add(pet['id']!);
             } else if (_selectedService == null) {
               _selectedPetIds.add(pet['id']!);
@@ -507,7 +507,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                     _selectedPetIds.remove(pet['id']);
                   } else {
                     if (_selectedService != null && 
-                        _selectedPetIds.length < _selectedService!.maxPets) {
+                        _selectedPetIds.length < widget.caregiver.maxPetsAtOnce) {
                       _selectedPetIds.add(pet['id']!);
                     }
                   }
@@ -713,9 +713,9 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
   }
 
   Widget _buildPriceSummary() {
-    final basePrice = _selectedService?.basePrice ?? 0;
+    final basePrice = _selectedService?.rateAmount ?? 0.0;
     final additionalPetsCount = _selectedPetIds.length > 1 ? _selectedPetIds.length - 1 : 0;
-    final additionalPetsFee = additionalPetsCount * (_selectedService?.additionalPetPrice ?? 0);
+    final additionalPetsFee = (additionalPetsCount * (_selectedService?.additionalPetRate ?? 0.0)).toDouble();
     final serviceFee = (basePrice + additionalPetsFee) * 0.1; // 10% service fee
     final total = basePrice + additionalPetsFee + serviceFee;
 
@@ -912,10 +912,11 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
       );
 
       final request = CreateBookingRequest(
-        caregiverServiceId: _selectedService!.id,
+        caregiverId: widget.caregiver.id,
+        serviceId: _selectedService!.id,
         petIds: _selectedPetIds,
-        startDatetime: startDatetime,
-        endDatetime: endDatetime,
+        startDatetime: startDatetime.toIso8601String(),
+        endDatetime: endDatetime.toIso8601String(),
         serviceLocationType: _locationType,
         serviceAddress: _locationType == 'owner_home' ? _addressController.text : null,
         specialInstructions: _instructionsController.text.isNotEmpty 
@@ -928,10 +929,9 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
       setState(() => _isSubmitting = false);
 
       if (mounted) {
-        CustomSnackbar.show(
-          context: context,
-          message: 'Booking created successfully!',
-          isError: false,
+        CustomSnackbar.showSuccess(
+          context,
+          'Booking created successfully!',
         );
 
         Navigator.of(context).pushReplacement(
@@ -946,10 +946,9 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     } catch (e) {
       setState(() => _isSubmitting = false);
       if (mounted) {
-        CustomSnackbar.show(
-          context: context,
-          message: e.toString().replaceFirst('Exception: ', ''),
-          isError: true,
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
         );
       }
     }

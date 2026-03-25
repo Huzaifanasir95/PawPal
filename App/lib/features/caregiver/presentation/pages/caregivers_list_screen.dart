@@ -71,23 +71,21 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        CustomSnackbar.show(
-          context: context,
-          message: e.toString().replaceFirst('Exception: ', ''),
-          isError: true,
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
         );
       }
     }
   }
 
   Future<List<CaregiverProfile>> _searchCaregivers() async {
-    return await _repository.searchCaregivers(
+    final result = await _repository.searchCaregivers(
       serviceType: _selectedServiceType,
-      maxDistance: _maxDistance,
       minRating: _minRating,
-      sortBy: _sortBy,
       page: _page,
     );
+    return result.caregivers;
   }
 
   Future<void> _loadMoreCaregivers() async {
@@ -121,10 +119,9 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        CustomSnackbar.show(
-          context: context,
-          message: e.toString().replaceFirst('Exception: ', ''),
-          isError: true,
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
         );
       }
     }
@@ -235,17 +232,17 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
           return Padding(
             padding: EdgeInsets.only(right: 8.w),
             child: ChoiceChip(
-              label: Text(serviceType.name),
-              selected: _selectedServiceType == serviceType.slug,
+              label: Text(serviceType.displayName),
+              selected: _selectedServiceType == serviceType.name,
               onSelected: (selected) {
                 setState(() {
-                  _selectedServiceType = selected ? serviceType.slug : null;
+                  _selectedServiceType = selected ? serviceType.name : null;
                 });
                 _applyFilters();
               },
               selectedColor: AppColors.primary,
               labelStyle: TextStyle(
-                color: _selectedServiceType == serviceType.slug ? Colors.white : AppColors.textPrimary,
+                color: _selectedServiceType == serviceType.name ? Colors.white : AppColors.textPrimary,
               ),
             ),
           );
@@ -305,13 +302,13 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
               children: [
                 CircleAvatar(
                   radius: 28.r,
-                  backgroundImage: caregiver.profilePhotoUrl != null
-                      ? NetworkImage(caregiver.profilePhotoUrl!)
+                  backgroundImage: caregiver.userAvatar != null
+                      ? NetworkImage(caregiver.userAvatar!)
                       : null,
                   backgroundColor: AppColors.primary.withOpacity(0.1),
-                  child: caregiver.profilePhotoUrl == null
+                  child: caregiver.userAvatar == null
                       ? Text(
-                          caregiver.displayName[0].toUpperCase(),
+                          (caregiver.userName ?? 'C')[0].toUpperCase(),
                           style: AppTextStyles.titleLarge.copyWith(color: AppColors.primary),
                         )
                       : null,
@@ -325,7 +322,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                         children: [
                           Flexible(
                             child: Text(
-                              caregiver.displayName,
+                              caregiver.userName ?? 'Caregiver',
                               style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -351,12 +348,12 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                             '(${caregiver.totalReviews})',
                             style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                           ),
-                          if (caregiver.completedBookings > 0) ...[
+                          if (caregiver.totalBookings > 0) ...[
                             SizedBox(width: 12.w),
                             Icon(Icons.check_circle, color: Colors.green, size: 14.w),
                             SizedBox(width: 4.w),
                             Text(
-                              '${caregiver.completedBookings} bookings',
+                              '${caregiver.totalBookings} bookings',
                               style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                             ),
                           ],
@@ -381,7 +378,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
               children: [
                 _buildInfoChip(Icons.location_on, caregiver.city ?? 'Unknown'),
                 SizedBox(width: 8.w),
-                _buildInfoChip(Icons.home, caregiver.homeType ?? 'Home'),
+                _buildInfoChip(Icons.home, caregiver.hasFencedYard ? 'Fenced Yard' : 'Home'),
               ],
             ),
             SizedBox(height: 12.h),
@@ -389,11 +386,11 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
               spacing: 8.w,
               runSpacing: 4.h,
               children: [
-                if (caregiver.acceptsDogs)
+                if (caregiver.acceptedPetTypes.contains('dog'))
                   _buildPetChip('🐕', 'Dogs'),
-                if (caregiver.acceptsCats)
+                if (caregiver.acceptedPetTypes.contains('cat'))
                   _buildPetChip('🐈', 'Cats'),
-                if (caregiver.acceptsOtherPets)
+                if (caregiver.acceptedPetTypes.any((t) => t != 'dog' && t != 'cat'))
                   _buildPetChip('🐾', 'Other'),
               ],
             ),

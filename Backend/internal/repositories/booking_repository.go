@@ -42,9 +42,15 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, booking *models.S
 		currency = "PKR"
 	}
 
+	// Convert UUID slice to string slice for PostgreSQL array encoding
+	petIDStrings := make([]string, len(booking.PetIDs))
+	for i, id := range booking.PetIDs {
+		petIDStrings[i] = id.String()
+	}
+
 	err := r.db.QueryRow(ctx, query,
 		booking.PetOwnerID, booking.CaregiverID, booking.ServiceID,
-		booking.PetIDs, booking.StartDatetime, booking.EndDatetime,
+		petIDStrings, booking.StartDatetime, booking.EndDatetime,
 		booking.ServiceLocationType, booking.ServiceAddress, booking.ServiceLatitude, booking.ServiceLongitude,
 		booking.SpecialInstructions, booking.EmergencyContactName, booking.EmergencyContactPhone,
 		booking.BaseAmount, booking.AdditionalPetsFee, booking.ServiceFee, booking.TotalAmount, currency,

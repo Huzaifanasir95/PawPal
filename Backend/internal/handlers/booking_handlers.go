@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -133,7 +134,8 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	}
 
 	if err := h.repo.CreateBooking(c.Request.Context(), booking); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking"})
+		log.Printf("ERROR CreateBooking: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking", "details": err.Error()})
 		return
 	}
 

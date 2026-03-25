@@ -262,5 +262,205 @@ func main() {
 		printResult(result)
 	}
 
+	// ============================================
+	// BOOKING TESTS - Need a pet owner user
+	// ============================================
+	fmt.Println("\n📝 Step 13: Registering pet owner for booking tests...")
+	ownerEmail := fmt.Sprintf("petowner_test_%d@test.com", time.Now().Unix())
+	ownerBody := map[string]interface{}{
+		"email":        ownerEmail,
+		"password":     "Test@123456",
+		"full_name":    "Test Pet Owner",
+		"phone_number": "+923009876543",
+	}
+	result = makeRequest("POST", "/auth/signup", "", ownerBody)
+	printResult(result)
+
+	var ownerToken string
+	var ownerID string
+	if err := json.Unmarshal([]byte(result.Response), &authResp); err == nil {
+		if t, ok := authResp["accessToken"].(string); ok {
+			ownerToken = t
+		}
+		if user, ok := authResp["user"].(map[string]interface{}); ok {
+			if uid, ok := user["uid"].(string); ok {
+				ownerID = uid
+			}
+		}
+	}
+	fmt.Printf("   Pet Owner ID: %s\n", ownerID)
+
+	// Create a pet for the owner
+	fmt.Println("\n📝 Step 14: Creating a pet for booking...")
+	petBody := map[string]interface{}{
+		"name":       "Buddy",
+		"type":       "dog",
+		"breed":      "Golden Retriever",
+		"age":        3,
+		"ageUnit":    "years",
+		"weight":     25.5,
+		"weightUnit": "kg",
+		"gender":     "male",
+		"color":      "golden",
+	}
+	result = makeRequest("POST", "/pets", ownerToken, petBody)
+	printResult(result)
+
+	var petID string
+	var petResp map[string]interface{}
+	if err := json.Unmarshal([]byte(result.Response), &petResp); err == nil {
+		if pet, ok := petResp["pet"].(map[string]interface{}); ok {
+			if id, ok := pet["id"].(string); ok {
+				petID = id
+			}
+		}
+	}
+	fmt.Printf("   Pet ID: %s\n", petID)
+
+	// Get service ID from the caregiver we created
+	var serviceID string
+	result = makeRequest("GET", "/caregivers/"+caregiverID, ownerToken, nil)
+	var cgResp map[string]interface{}
+	if err := json.Unmarshal([]byte(result.Response), &cgResp); err == nil {
+		if services, ok := cgResp["services"].([]interface{}); ok && len(services) > 0 {
+			if svc, ok := services[0].(map[string]interface{}); ok {
+				if id, ok := svc["id"].(string); ok {
+					serviceID = id
+				}
+			}
+		}
+	}
+	fmt.Printf("   Service ID: %s\n", serviceID)
+
+	if petID != "" && serviceID != "" && caregiverID != "" {
+		// Step 15: Create Booking
+		fmt.Println("\n📝 Step 15: Creating a booking...")
+		bookingBody := map[string]interface{}{
+			"caregiverId":         caregiverID,
+			"serviceId":           serviceID,
+			"petIds":              []string{petID},
+			"startDatetime":       "2026-04-05T09:00:00Z",
+			"endDatetime":         "2026-04-05T10:00:00Z",
+			"serviceLocationType": "owner_home",
+			"serviceAddress":      "123 Test Street, Lahore",
+			"specialInstructions": "Please bring treats!",
+		}
+		result = makeRequest("POST", "/bookings", ownerToken, bookingBody)
+		printResult(result)
+
+		var bookingID string
+		var bookingResp map[string]interface{}
+		if err := json.Unmarshal([]byte(result.Response), &bookingResp); err == nil {
+			if booking, ok := bookingResp["booking"].(map[string]interface{}); ok {
+				if id, ok := booking["id"].(string); ok {
+					bookingID = id
+				}
+			}
+		}
+
+		if bookingID != "" {
+			fmt.Printf("   Booking ID: %s\n", bookingID)
+
+			// Step 16: Get Booking
+			fmt.Println("\n📝 Step 16: Getting booking details...")
+			result = makeRequest("GET", "/bookings/"+bookingID, ownerToken, nil)
+			printResult(result)
+
+			// Step 17: Get My Bookings (as owner)
+			fmt.Println("\n📝 Step 17: Getting owner's bookings...")
+			result = makeRequest("GET", "/bookings?role=owner", ownerToken, nil)
+			printResult(result)
+
+			// Step 18: Caregiver responds to booking (accept)
+			fmt.Println("\n📝 Step 18: Caregiver accepting booking...")
+			respondBody := map[string]interface{}{
+				"accept": true,
+			}
+			result = makeRequest("POST", "/bookings/"+bookingID+"/respond", token, respondBody)
+			printResult(result)
+
+			// Step 19: Get My Bookings (as caregiver)
+			fmt.Println("\n📝 Step 19: Getting caregiver's bookings...")
+			result = makeRequest("GET", "/bookings?role=caregiver", token, nil)
+			printResult(result)
+
+			// Step 20: Start Service
+			fmt.Println("\n📝 Step 20: Starting service...")
+			result = makeRequest("POST", "/bookings/"+bookingID+"/start", token, nil)
+			printResult(result)
+
+			// Step 21: Update Tracking
+			fmt.Println("\n📝 Step 21: Adding GPS tracking point...")
+			trackingBody := map[string]interface{}{
+				"latitude":     31.5205,
+				"longitude":    74.3588,
+				"activityType": "walking",
+				"note":         "Started the walk!",
+			}
+			result = makeRequest("POST", "/bookings/"+bookingID+"/tracking", token, trackingBody)
+			printResult(result)
+
+			// Step 22: Get Tracking
+			fmt.Println("\n📝 Step 22: Getting tracking points...")
+			result = makeRequest("GET", "/bookings/"+bookingID+"/tracking", ownerToken, nil)
+			printResult(result)
+
+			// Step 23: Submit Completion Report
+			fmt.Println("\n📝 Step 23: Submitting completion report...")
+			completionBody := map[string]interface{}{
+				"summary":             "Great walk with Buddy!",
+				"activitiesPerformed": []string{"walking", "playing"},
+				"behaviorNotes":       "Very friendly and energetic",
+				"actualDurationMinutes": 60,
+				"distanceWalkedKm":    2.5,
+			}
+			result = makeRequest("POST", "/bookings/"+bookingID+"/complete", token, completionBody)
+			printResult(result)
+
+			// Step 24: Owner submits review
+			fmt.Println("\n📝 Step 24: Owner submitting review...")
+			reviewBody := map[string]interface{}{
+				"overallRating":       5,
+				"communicationRating": 5,
+				"reliabilityRating":   5,
+				"careQualityRating":   5,
+				"review":              "Amazing caregiver! Buddy loved the walk.",
+			}
+			result = makeRequest("POST", "/bookings/"+bookingID+"/review/owner", ownerToken, reviewBody)
+			printResult(result)
+
+			// Step 25: Caregiver submits review
+			fmt.Println("\n📝 Step 25: Caregiver submitting review...")
+			cgReviewBody := map[string]interface{}{
+				"overallRating":     5,
+				"petBehaviorRating": 5,
+				"review":            "Buddy is such a good boy!",
+			}
+			result = makeRequest("POST", "/bookings/"+bookingID+"/review/caregiver", token, cgReviewBody)
+			printResult(result)
+
+			// Step 26: Get Reviews for Caregiver
+			fmt.Println("\n📝 Step 26: Getting caregiver reviews...")
+			result = makeRequest("GET", "/caregivers/"+caregiverID+"/reviews", ownerToken, nil)
+			printResult(result)
+
+			// Step 27: Process Payment
+			fmt.Println("\n📝 Step 27: Processing payment...")
+			paymentBody := map[string]interface{}{
+				"paymentMethod": "jazzcash",
+				"paymentType":   "final",
+			}
+			result = makeRequest("POST", "/bookings/"+bookingID+"/payments", ownerToken, paymentBody)
+			printResult(result)
+
+			// Step 28: Get Payments
+			fmt.Println("\n📝 Step 28: Getting payments...")
+			result = makeRequest("GET", "/bookings/"+bookingID+"/payments", ownerToken, nil)
+			printResult(result)
+		}
+	} else {
+		fmt.Println("\n⚠️ Could not run booking tests - missing pet, service, or caregiver ID")
+	}
+
 	fmt.Println("\n=== Test Suite Complete ===")
 }

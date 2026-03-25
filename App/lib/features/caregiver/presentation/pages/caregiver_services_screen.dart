@@ -42,10 +42,9 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        CustomSnackbar.show(
-          context: context,
-          message: e.toString().replaceFirst('Exception: ', ''),
-          isError: true,
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
         );
       }
     }
@@ -377,18 +376,20 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
               ? descriptionController.text
               : null,
         ));
-        CustomSnackbar.show(
-          context: context,
-          message: 'Service added successfully!',
-          isError: false,
-        );
+        if (mounted) {
+          CustomSnackbar.showSuccess(
+            context,
+            'Service added successfully!',
+          );
+        }
         _loadData();
       } catch (e) {
-        CustomSnackbar.show(
-          context: context,
-          message: e.toString().replaceFirst('Exception: ', ''),
-          isError: true,
-        );
+        if (mounted) {
+          CustomSnackbar.showError(
+            context,
+            e.toString().replaceFirst('Exception: ', ''),
+          );
+        }
       }
     }
   }
@@ -442,18 +443,20 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
           'rateAmount': double.parse(rateController.text),
           'description': descriptionController.text,
         });
-        CustomSnackbar.show(
-          context: context,
-          message: 'Service updated!',
-          isError: false,
-        );
+        if (mounted) {
+          CustomSnackbar.showSuccess(
+            context,
+            'Service updated!',
+          );
+        }
         _loadData();
       } catch (e) {
-        CustomSnackbar.show(
-          context: context,
-          message: e.toString().replaceFirst('Exception: ', ''),
-          isError: true,
-        );
+        if (mounted) {
+          CustomSnackbar.showError(
+            context,
+            e.toString().replaceFirst('Exception: ', ''),
+          );
+        }
       }
     }
   }
@@ -463,11 +466,12 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
       await _repository.updateService(serviceId, {'isAvailable': available});
       _loadData();
     } catch (e) {
-      CustomSnackbar.show(
-        context: context,
-        message: e.toString().replaceFirst('Exception: ', ''),
-        isError: true,
-      );
+      if (mounted) {
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+        );
+      }
     }
   }
 
@@ -493,18 +497,20 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
     if (confirm == true) {
       try {
         await _repository.deleteService(serviceId);
-        CustomSnackbar.show(
-          context: context,
-          message: 'Service deleted',
-          isError: false,
-        );
+        if (mounted) {
+          CustomSnackbar.showSuccess(
+            context,
+            'Service deleted',
+          );
+        }
         _loadData();
       } catch (e) {
-        CustomSnackbar.show(
-          context: context,
-          message: e.toString().replaceFirst('Exception: ', ''),
-          isError: true,
-        );
+        if (mounted) {
+          CustomSnackbar.showError(
+            context,
+            e.toString().replaceFirst('Exception: ', ''),
+          );
+        }
       }
     }
   }

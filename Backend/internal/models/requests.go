@@ -356,3 +356,205 @@ type UpdateEventRequest struct {
 type RSVPRequest struct {
 	Status string `json:"status" binding:"required,oneof=going interested"`
 }
+
+// =====================================================
+// CAREGIVER MODULE REQUEST/RESPONSE TYPES
+// =====================================================
+
+// CreateCaregiverProfileRequest represents a request to create caregiver profile
+type CreateCaregiverProfileRequest struct {
+	Bio                  *string  `json:"bio,omitempty"`
+	YearsOfExperience    int      `json:"yearsOfExperience"`
+	Headline             *string  `json:"headline,omitempty"`
+	Address              *string  `json:"address,omitempty"`
+	City                 *string  `json:"city,omitempty"`
+	State                *string  `json:"state,omitempty"`
+	PostalCode           *string  `json:"postalCode,omitempty"`
+	Country              string   `json:"country"`
+	Latitude             *float64 `json:"latitude,omitempty"`
+	Longitude            *float64 `json:"longitude,omitempty"`
+	ServiceRadiusKm      int      `json:"serviceRadiusKm"`
+	AcceptedPetTypes     []string `json:"acceptedPetTypes"`
+	AcceptedPetSizes     []string `json:"acceptedPetSizes"`
+	MaxPetsAtOnce        int      `json:"maxPetsAtOnce"`
+	HasFencedYard        bool     `json:"hasFencedYard"`
+	HasOwnTransport      bool     `json:"hasOwnTransport"`
+	SmokeFreeHome        bool     `json:"smokeFreeHome"`
+	HasChildren          bool     `json:"hasChildren"`
+	HasOtherPets         bool     `json:"hasOtherPets"`
+	OtherPetsDescription *string  `json:"otherPetsDescription,omitempty"`
+	Certifications       []string `json:"certifications,omitempty"`
+	PetFirstAidCertified bool     `json:"petFirstAidCertified"`
+}
+
+// UpdateCaregiverProfileRequest represents a request to update caregiver profile
+type UpdateCaregiverProfileRequest struct {
+	Bio                  *string  `json:"bio,omitempty"`
+	YearsOfExperience    *int     `json:"yearsOfExperience,omitempty"`
+	Headline             *string  `json:"headline,omitempty"`
+	Address              *string  `json:"address,omitempty"`
+	City                 *string  `json:"city,omitempty"`
+	State                *string  `json:"state,omitempty"`
+	PostalCode           *string  `json:"postalCode,omitempty"`
+	Latitude             *float64 `json:"latitude,omitempty"`
+	Longitude            *float64 `json:"longitude,omitempty"`
+	ServiceRadiusKm      *int     `json:"serviceRadiusKm,omitempty"`
+	AcceptedPetTypes     []string `json:"acceptedPetTypes,omitempty"`
+	AcceptedPetSizes     []string `json:"acceptedPetSizes,omitempty"`
+	MaxPetsAtOnce        *int     `json:"maxPetsAtOnce,omitempty"`
+	HasFencedYard        *bool    `json:"hasFencedYard,omitempty"`
+	HasOwnTransport      *bool    `json:"hasOwnTransport,omitempty"`
+	SmokeFreeHome        *bool    `json:"smokeFreeHome,omitempty"`
+	HasChildren          *bool    `json:"hasChildren,omitempty"`
+	HasOtherPets         *bool    `json:"hasOtherPets,omitempty"`
+	OtherPetsDescription *string  `json:"otherPetsDescription,omitempty"`
+	IsAcceptingBookings  *bool    `json:"isAcceptingBookings,omitempty"`
+}
+
+// AddCaregiverServiceRequest represents a request to add a service
+type AddCaregiverServiceRequest struct {
+	ServiceTypeID     uuid.UUID `json:"serviceTypeId" binding:"required"`
+	RateType          string    `json:"rateType" binding:"required,oneof=hourly per_visit daily per_walk"`
+	RateAmount        float64   `json:"rateAmount" binding:"required,min=0"`
+	Currency          string    `json:"currency"`
+	Description       *string   `json:"description,omitempty"`
+	DurationMinutes   *int      `json:"durationMinutes,omitempty"`
+	Includes          []string  `json:"includes,omitempty"`
+	AdditionalPetRate float64   `json:"additionalPetRate"`
+}
+
+// UpdateCaregiverServiceRequest represents a request to update a service
+type UpdateCaregiverServiceRequest struct {
+	RateType          *string  `json:"rateType,omitempty"`
+	RateAmount        *float64 `json:"rateAmount,omitempty"`
+	Description       *string  `json:"description,omitempty"`
+	DurationMinutes   *int     `json:"durationMinutes,omitempty"`
+	Includes          []string `json:"includes,omitempty"`
+	AdditionalPetRate *float64 `json:"additionalPetRate,omitempty"`
+	IsAvailable       *bool    `json:"isAvailable,omitempty"`
+}
+
+// SetCaregiverAvailabilityRequest represents availability slots
+type SetCaregiverAvailabilityRequest struct {
+	Slots []AvailabilitySlot `json:"slots" binding:"required"`
+}
+
+// AvailabilitySlot represents a single availability time slot
+type AvailabilitySlot struct {
+	DayOfWeek   int    `json:"dayOfWeek" binding:"min=0,max=6"`
+	StartTime   string `json:"startTime" binding:"required"` // HH:MM format
+	EndTime     string `json:"endTime" binding:"required"`
+	IsAvailable bool   `json:"isAvailable"`
+}
+
+// AddBlockedDateRequest represents a request to block a date
+type AddBlockedDateRequest struct {
+	BlockedDate string  `json:"blockedDate" binding:"required"` // YYYY-MM-DD
+	Reason      *string `json:"reason,omitempty"`
+}
+
+// CreateBookingRequest represents a request to create a booking
+type CreateBookingRequest struct {
+	CaregiverID          uuid.UUID   `json:"caregiverId" binding:"required"`
+	ServiceID            uuid.UUID   `json:"serviceId" binding:"required"`
+	PetIDs               []uuid.UUID `json:"petIds" binding:"required,min=1"`
+	StartDatetime        string      `json:"startDatetime" binding:"required"` // ISO 8601
+	EndDatetime          string      `json:"endDatetime" binding:"required"`
+	ServiceLocationType  string      `json:"serviceLocationType" binding:"required,oneof=owner_home caregiver_home pickup_location outdoor"`
+	ServiceAddress       *string     `json:"serviceAddress,omitempty"`
+	ServiceLatitude      *float64    `json:"serviceLatitude,omitempty"`
+	ServiceLongitude     *float64    `json:"serviceLongitude,omitempty"`
+	SpecialInstructions  *string     `json:"specialInstructions,omitempty"`
+	EmergencyContactName *string     `json:"emergencyContactName,omitempty"`
+	EmergencyContactPhone *string    `json:"emergencyContactPhone,omitempty"`
+}
+
+// RespondToBookingRequest represents caregiver response to booking
+type RespondToBookingRequest struct {
+	Accept bool    `json:"accept"`
+	Reason *string `json:"reason,omitempty"` // Required if declining
+}
+
+// CancelBookingRequest represents a booking cancellation
+type CancelBookingRequest struct {
+	Reason string `json:"reason" binding:"required"`
+}
+
+// StartServiceRequest represents starting a service
+type StartServiceRequest struct {
+	Latitude  float64 `json:"latitude" binding:"required"`
+	Longitude float64 `json:"longitude" binding:"required"`
+}
+
+// UpdateTrackingRequest represents GPS tracking update
+type UpdateTrackingRequest struct {
+	Latitude       float64 `json:"latitude" binding:"required"`
+	Longitude      float64 `json:"longitude" binding:"required"`
+	AccuracyMeters *float64 `json:"accuracyMeters,omitempty"`
+	ActivityType   *string `json:"activityType,omitempty"`
+	Note           *string `json:"note,omitempty"`
+}
+
+// SubmitCompletionReportRequest represents service completion report
+type SubmitCompletionReportRequest struct {
+	Summary               string   `json:"summary" binding:"required"`
+	ActivitiesPerformed   []string `json:"activitiesPerformed,omitempty"`
+	FeedingNotes          *string  `json:"feedingNotes,omitempty"`
+	BathroomNotes         *string  `json:"bathroomNotes,omitempty"`
+	BehaviorNotes         *string  `json:"behaviorNotes,omitempty"`
+	HealthObservations    *string  `json:"healthObservations,omitempty"`
+	PhotoURLs             []string `json:"photoUrls,omitempty"`
+	VideoURLs             []string `json:"videoUrls,omitempty"`
+	ActualDurationMinutes *int     `json:"actualDurationMinutes,omitempty"`
+	DistanceWalkedKm      *float64 `json:"distanceWalkedKm,omitempty"`
+}
+
+// SubmitOwnerReviewRequest represents owner's review of service
+type SubmitOwnerReviewRequest struct {
+	OverallRating       int     `json:"overallRating" binding:"required,min=1,max=5"`
+	CommunicationRating *int    `json:"communicationRating,omitempty" binding:"omitempty,min=1,max=5"`
+	ReliabilityRating   *int    `json:"reliabilityRating,omitempty" binding:"omitempty,min=1,max=5"`
+	CareQualityRating   *int    `json:"careQualityRating,omitempty" binding:"omitempty,min=1,max=5"`
+	Review              *string `json:"review,omitempty"`
+}
+
+// SubmitCaregiverReviewRequest represents caregiver's review of owner/pet
+type SubmitCaregiverReviewRequest struct {
+	OverallRating     int     `json:"overallRating" binding:"required,min=1,max=5"`
+	PetBehaviorRating *int    `json:"petBehaviorRating,omitempty" binding:"omitempty,min=1,max=5"`
+	Review            *string `json:"review,omitempty"`
+}
+
+// ReportIncidentRequest represents an incident report
+type ReportIncidentRequest struct {
+	IncidentType        string   `json:"incidentType" binding:"required,oneof=injury_pet injury_caregiver pet_escape property_damage behavioral_issue medical_emergency service_quality safety_concern other"`
+	Severity            string   `json:"severity" binding:"required,oneof=low medium high critical"`
+	Description         string   `json:"description" binding:"required"`
+	OccurredAt          string   `json:"occurredAt" binding:"required"` // ISO 8601
+	LocationDescription *string  `json:"locationDescription,omitempty"`
+	PhotoURLs           []string `json:"photoUrls,omitempty"`
+	VideoURLs           []string `json:"videoUrls,omitempty"`
+}
+
+// ProcessPaymentRequest represents payment processing
+type ProcessPaymentRequest struct {
+	PaymentMethod string `json:"paymentMethod" binding:"required,oneof=card wallet bank_transfer cash jazzcash easypaisa"`
+	PaymentType   string `json:"paymentType" binding:"required,oneof=deposit final tip"`
+}
+
+// SearchCaregiversRequest represents caregiver search filters
+type SearchCaregiversRequest struct {
+	ServiceType     *string  `json:"serviceType,omitempty"`
+	City            *string  `json:"city,omitempty"`
+	Latitude        *float64 `json:"latitude,omitempty"`
+	Longitude       *float64 `json:"longitude,omitempty"`
+	RadiusKm        *int     `json:"radiusKm,omitempty"`
+	PetType         *string  `json:"petType,omitempty"`
+	PetSize         *string  `json:"petSize,omitempty"`
+	MinRating       *float64 `json:"minRating,omitempty"`
+	MaxRate         *float64 `json:"maxRate,omitempty"`
+	VerifiedOnly    bool     `json:"verifiedOnly"`
+	AvailableDate   *string  `json:"availableDate,omitempty"` // YYYY-MM-DD
+	Page            int      `json:"page"`
+	Limit           int      `json:"limit"`
+}

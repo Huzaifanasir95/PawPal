@@ -45,6 +45,7 @@ func main() {
 		{"004 - Fix Availability Hours", "internal/database/migrations/004_fix_availability_hours.sql"},
 		{"005 - Marketplace", "internal/database/migrations/005_marketplace.sql"},
 		{"006 - Community Hub", "internal/database/migrations/006_community_hub.sql"},
+		{"007 - Caregiver System", "internal/database/migrations/007_caregiver_system.sql"},
 	}
 
 	for _, m := range migrations {

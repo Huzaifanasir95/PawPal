@@ -91,7 +91,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _caregiver == null
@@ -102,17 +102,20 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                       _buildSliverAppBar(),
                       _buildProfileHeader(),
                       SliverToBoxAdapter(
-                        child: TabBar(
-                          controller: _tabController,
-                          labelColor: AppColors.primary,
-                          unselectedLabelColor: AppColors.textSecondary,
-                          indicatorColor: AppColors.primary,
-                          tabs: const [
-                            Tab(text: 'About'),
-                            Tab(text: 'Services'),
-                            Tab(text: 'Gallery'),
-                            Tab(text: 'Reviews'),
-                          ],
+                        child: Container(
+                          color: Colors.white,
+                          child: TabBar(
+                            controller: _tabController,
+                            labelColor: AppColors.primary,
+                            unselectedLabelColor: AppColors.textSecondary,
+                            indicatorColor: AppColors.primary,
+                            tabs: const [
+                              Tab(text: 'About'),
+                              Tab(text: 'Services'),
+                              Tab(text: 'Gallery'),
+                              Tab(text: 'Reviews'),
+                            ],
+                          ),
                         ),
                       ),
                     ];
@@ -172,16 +175,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
   SliverToBoxAdapter _buildProfileHeader() {
     return SliverToBoxAdapter(
       child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary.withOpacity(0.05),
-              AppColors.background,
-            ],
-          ),
-        ),
+        color: Colors.white,
         child: Container(
           padding: EdgeInsets.all(20.w),
           child: Column(
@@ -291,23 +285,15 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         children: [
           Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 20.w),
@@ -342,11 +328,8 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
-        ),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Text(
         label,
@@ -383,15 +366,8 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return Container(
       padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,11 +378,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 width: 4.w,
                 height: 20.h,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.primary, AppColors.primary.withOpacity(0.5)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
@@ -436,15 +408,8 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return Container(
       padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,11 +420,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 width: 4.w,
                 height: 20.h,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.primary, AppColors.primary.withOpacity(0.5)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
@@ -572,15 +533,8 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return Container(
       padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -591,11 +545,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 width: 4.w,
                 height: 20.h,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.primary, AppColors.primary.withOpacity(0.5)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),

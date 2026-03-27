@@ -91,7 +91,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _caregiver == null
@@ -102,17 +102,20 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                       _buildSliverAppBar(),
                       _buildProfileHeader(),
                       SliverToBoxAdapter(
-                        child: TabBar(
-                          controller: _tabController,
-                          labelColor: AppColors.primary,
-                          unselectedLabelColor: AppColors.textSecondary,
-                          indicatorColor: AppColors.primary,
-                          tabs: const [
-                            Tab(text: 'About'),
-                            Tab(text: 'Services'),
-                            Tab(text: 'Gallery'),
-                            Tab(text: 'Reviews'),
-                          ],
+                        child: Container(
+                          color: Colors.white,
+                          child: TabBar(
+                            controller: _tabController,
+                            labelColor: AppColors.primary,
+                            unselectedLabelColor: AppColors.textSecondary,
+                            indicatorColor: AppColors.primary,
+                            tabs: const [
+                              Tab(text: 'About'),
+                              Tab(text: 'Services'),
+                              Tab(text: 'Gallery'),
+                              Tab(text: 'Reviews'),
+                            ],
+                          ),
                         ),
                       ),
                     ];
@@ -172,118 +175,168 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
   SliverToBoxAdapter _buildProfileHeader() {
     return SliverToBoxAdapter(
       child: Container(
-        padding: EdgeInsets.all(16.w),
-        color: AppColors.background,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              _caregiver!.userName ?? 'Caregiver',
-                              style: AppTextStyles.headlineLarge,
+        color: Colors.white,
+        child: Container(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                _caregiver!.userName ?? 'Caregiver',
+                                style: AppTextStyles.headlineLarge.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 28.sp,
+                                ),
+                              ),
+                            ),
+                            if (_caregiver!.isVerified) ...[
+                              SizedBox(width: 8.w),
+                              Container(
+                                padding: EdgeInsets.all(4.w),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.verified,
+                                  color: Colors.blue,
+                                  size: 20.w,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        if (_caregiver!.headline != null) ...[
+                          SizedBox(height: 6.h),
+                          Text(
+                            _caregiver!.headline!,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 15.sp,
                             ),
                           ),
-                          if (_caregiver!.isVerified) ...[
-                            SizedBox(width: 8.w),
-                            Icon(Icons.verified, color: Colors.blue, size: 24.w),
-                          ],
                         ],
-                      ),
-                      if (_caregiver!.headline != null) ...[
-                        SizedBox(height: 4.h),
-                        Text(
-                          _caregiver!.headline!,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16.h),
-            Row(
-              children: [
-                _buildStatItem(
-                  Icons.star,
-                  Colors.amber,
-                  _caregiver!.averageRating.toStringAsFixed(1),
-                  '${_caregiver!.totalReviews} reviews',
-                ),
-                SizedBox(width: 24.w),
-                _buildStatItem(
-                  Icons.check_circle,
-                  Colors.green,
-                  '${_caregiver!.totalBookings}',
-                  'bookings',
-                ),
-                SizedBox(width: 24.w),
-                _buildStatItem(
-                  Icons.location_on,
-                  AppColors.primary,
-                  _caregiver!.city ?? '-',
-                  'location',
-                ),
-              ],
-            ),
-            SizedBox(height: 16.h),
-            Wrap(
-              spacing: 8.w,
-              runSpacing: 8.h,
-              children: [
-                if (_caregiver!.acceptedPetTypes.contains('dog')) _buildPetChip('🐕 Dogs'),
-                if (_caregiver!.acceptedPetTypes.contains('cat')) _buildPetChip('🐈 Cats'),
-                if (_caregiver!.acceptedPetTypes.any((t) => t != 'dog' && t != 'cat')) _buildPetChip('🐾 Other'),
-              ],
-            ),
-          ],
+                ],
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      Icons.star_rounded,
+                      Colors.amber,
+                      _caregiver!.averageRating.toStringAsFixed(1),
+                      '${_caregiver!.totalReviews} reviews',
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: _buildStatCard(
+                      Icons.check_circle_rounded,
+                      Colors.green,
+                      '${_caregiver!.totalBookings}',
+                      'bookings',
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: _buildStatCard(
+                      Icons.location_on_rounded,
+                      const Color(0xFFE91E63),
+                      _caregiver!.city ?? '-',
+                      'location',
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20.h),
+              Wrap(
+                spacing: 10.w,
+                runSpacing: 10.h,
+                children: [
+                  if (_caregiver!.acceptedPetTypes.contains('dog'))
+                    _buildPetChip('🐕 Dogs', const Color(0xFF2196F3)),
+                  if (_caregiver!.acceptedPetTypes.contains('cat'))
+                    _buildPetChip('🐈 Cats', const Color(0xFF9C27B0)),
+                  if (_caregiver!.acceptedPetTypes.any((t) => t != 'dog' && t != 'cat'))
+                    _buildPetChip('🐾 Other', const Color(0xFF4CAF50)),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(IconData icon, Color color, String value, String label) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 20.w),
-        SizedBox(width: 4.w),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              value,
-              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+  Widget _buildStatCard(IconData icon, Color color, String value, String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              shape: BoxShape.circle,
             ),
-            Text(
-              label,
-              style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+            child: Icon(icon, color: color, size: 20.w),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            value,
+            style: AppTextStyles.titleMedium.copyWith(
+              fontWeight: FontWeight.w700,
+              color: color,
             ),
-          ],
-        ),
-      ],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 11.sp,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildPetChip(String label) {
+  Widget _buildPetChip(String label, Color color) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Text(
         label,
-        style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary),
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -311,22 +364,40 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
 
   Widget _buildSection(String title, String content) {
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12.r),
+        color: AppColors.primary.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: AppTextStyles.titleMedium,
+          Row(
+            children: [
+              Container(
+                width: 4.w,
+                height: 20.h,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Text(
+                title,
+                style: AppTextStyles.titleMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: 12.h),
           Text(
             content,
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
           ),
         ],
       ),
@@ -335,42 +406,121 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
 
   Widget _buildHomeEnvironment() {
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12.r),
+        color: AppColors.primary.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Home Environment', style: AppTextStyles.titleMedium),
-          SizedBox(height: 12.h),
-          _buildEnvironmentRow(Icons.yard, 'Fenced Yard', _caregiver!.hasFencedYard ? 'Yes' : 'No'),
-          _buildEnvironmentRow(Icons.directions_car, 'Own Transport', _caregiver!.hasOwnTransport ? 'Yes' : 'No'),
-          _buildEnvironmentRow(Icons.pets, 'Has Pets', _caregiver!.hasOtherPets ? 'Yes' : 'No'),
-          _buildEnvironmentRow(Icons.child_care, 'Children at Home', _caregiver!.hasChildren ? 'Yes' : 'No'),
-          _buildEnvironmentRow(Icons.smoke_free, 'Smoke-Free Home', _caregiver!.smokeFreeHome ? 'Yes' : 'No'),
+          Row(
+            children: [
+              Container(
+                width: 4.w,
+                height: 20.h,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Text(
+                'Home Environment',
+                style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          _buildEnvironmentRow(
+            Icons.yard_rounded,
+            'Fenced Yard',
+            _caregiver!.hasFencedYard,
+            const Color(0xFF4CAF50),
+          ),
+          _buildEnvironmentRow(
+            Icons.directions_car_rounded,
+            'Own Transport',
+            _caregiver!.hasOwnTransport,
+            const Color(0xFF2196F3),
+          ),
+          _buildEnvironmentRow(
+            Icons.pets_rounded,
+            'Has Pets',
+            _caregiver!.hasOtherPets,
+            const Color(0xFFFF9800),
+          ),
+          _buildEnvironmentRow(
+            Icons.child_care_rounded,
+            'Children at Home',
+            _caregiver!.hasChildren,
+            const Color(0xFF9C27B0),
+          ),
+          _buildEnvironmentRow(
+            Icons.smoke_free_rounded,
+            'Smoke-Free Home',
+            _caregiver!.smokeFreeHome,
+            const Color(0xFF00BCD4),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildEnvironmentRow(IconData icon, String label, String value) {
+  Widget _buildEnvironmentRow(IconData icon, String label, bool value, Color color) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 8.h),
+      padding: EdgeInsets.only(bottom: 12.h),
       child: Row(
         children: [
-          Icon(icon, size: 20.w, color: AppColors.textSecondary),
-          SizedBox(width: 12.w),
+          Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Icon(icon, size: 20.w, color: color),
+          ),
+          SizedBox(width: 14.w),
           Expanded(
             child: Text(
               label,
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          Text(
-            value,
-            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w500),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+            decoration: BoxDecoration(
+              color: value
+                  ? const Color(0xFF4CAF50).withOpacity(0.1)
+                  : AppColors.textSecondary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: value
+                    ? const Color(0xFF4CAF50).withOpacity(0.3)
+                    : AppColors.textSecondary.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  value ? Icons.check_circle : Icons.cancel,
+                  size: 16.w,
+                  color: value ? const Color(0xFF4CAF50) : AppColors.textSecondary,
+                ),
+                SizedBox(width: 4.w),
+                Text(
+                  value ? 'Yes' : 'No',
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: value ? const Color(0xFF4CAF50) : AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -381,16 +531,32 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12.r),
+        color: AppColors.primary.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Availability', style: AppTextStyles.titleMedium),
-          SizedBox(height: 12.h),
+          Row(
+            children: [
+              Container(
+                width: 4.w,
+                height: 20.h,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Text(
+                'Availability',
+                style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: days.asMap().entries.map((entry) {
@@ -400,20 +566,38 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
               final isAvailable = dayAvailability.isNotEmpty;
               
               return Container(
-                width: 36.w,
-                height: 36.h,
+                width: 42.w,
+                height: 42.h,
                 decoration: BoxDecoration(
-                  color: isAvailable 
-                      ? AppColors.primary.withOpacity(0.1)
-                      : AppColors.textSecondary.withOpacity(0.1),
+                  gradient: isAvailable
+                      ? LinearGradient(
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.7),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: isAvailable ? null : AppColors.textSecondary.withOpacity(0.1),
                   shape: BoxShape.circle,
+                  boxShadow: isAvailable
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Center(
                   child: Text(
                     entry.value,
                     style: AppTextStyles.labelSmall.copyWith(
-                      color: isAvailable ? AppColors.primary : AppColors.textSecondary,
-                      fontWeight: isAvailable ? FontWeight.w600 : FontWeight.normal,
+                      color: isAvailable ? Colors.white : AppColors.textSecondary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11.sp,
                     ),
                   ),
                 ),
@@ -428,9 +612,30 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
   Widget _buildServicesTab() {
     if (_services.isEmpty) {
       return Center(
-        child: Text(
-          'No services available',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.pets_rounded,
+                size: 48.w,
+                color: AppColors.primary,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'No services available',
+              style: AppTextStyles.titleMedium.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -441,65 +646,174 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
       itemBuilder: (context, index) {
         final service = _services[index];
         return Container(
-          margin: EdgeInsets.only(bottom: 12.h),
-          padding: EdgeInsets.all(16.w),
+          margin: EdgeInsets.only(bottom: 16.h),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12.r),
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      service.serviceTypeDisplayName ?? service.serviceTypeId,
-                      style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
+              Container(
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withOpacity(0.1),
+                      AppColors.primary.withOpacity(0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(10.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: Icon(
+                        Icons.pets_rounded,
+                        color: AppColors.primary,
+                        size: 24.w,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '${service.currency} ${service.rateAmount.toStringAsFixed(0)}',
-                    style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary),
-                  ),
-                ],
-              ),
-              if (service.description != null) ...[
-                SizedBox(height: 8.h),
-                Text(
-                  service.description!,
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Text(
+                        service.serviceTypeDisplayName ?? service.serviceTypeId,
+                        style: AppTextStyles.titleMedium.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppColors.primary, Color(0xFF6A1B9A)],
+                        ),
+                        borderRadius: BorderRadius.circular(12.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '${service.currency} ${service.rateAmount.toStringAsFixed(0)}',
+                        style: AppTextStyles.titleMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-              SizedBox(height: 8.h),
-              Row(
-                children: [
-                  Icon(Icons.schedule, size: 14.w, color: AppColors.textSecondary),
-                  SizedBox(width: 4.w),
-                  Text(
-                    'Duration: ${service.durationMinutes} mins',
-                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
-                  ),
-                  SizedBox(width: 16.w),
-                  Icon(Icons.pets, size: 14.w, color: AppColors.textSecondary),
-                  SizedBox(width: 4.w),
-                  Text(
-                    'Max ${_caregiver!.maxPetsAtOnce} pets',
-                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
-                  ),
-                ],
               ),
-              if (service.additionalPetRate > 0) ...[
-                SizedBox(height: 4.h),
-                Text(
-                  '+${service.currency} ${service.additionalPetRate.toStringAsFixed(0)} per additional pet',
-                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+              Padding(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (service.description != null) ...[
+                      Text(
+                        service.description!,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                          height: 1.5,
+                        ),
+                      ),
+                      SizedBox(height: 12.h),
+                    ],
+                    Row(
+                      children: [
+                        _buildServiceInfoChip(
+                          Icons.schedule_rounded,
+                          '${service.durationMinutes} mins',
+                          const Color(0xFF2196F3),
+                        ),
+                        SizedBox(width: 8.w),
+                        _buildServiceInfoChip(
+                          Icons.pets_rounded,
+                          'Max ${_caregiver!.maxPetsAtOnce} pets',
+                          const Color(0xFFFF9800),
+                        ),
+                      ],
+                    ),
+                    if (service.additionalPetRate > 0) ...[
+                      SizedBox(height: 8.h),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4CAF50).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(
+                            color: const Color(0xFF4CAF50).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.add_circle_outline_rounded,
+                              size: 16.w,
+                              color: const Color(0xFF4CAF50),
+                            ),
+                            SizedBox(width: 6.w),
+                            Text(
+                              '+${service.currency} ${service.additionalPetRate.toStringAsFixed(0)} per additional pet',
+                              style: AppTextStyles.labelMedium.copyWith(
+                                color: const Color(0xFF4CAF50),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildServiceInfoChip(IconData icon, String label, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16.w, color: color),
+          SizedBox(width: 4.w),
+          Text(
+            label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -509,11 +823,32 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.photo_library, size: 64.w, color: AppColors.textSecondary),
+            Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.photo_library_rounded,
+                size: 48.w,
+                color: AppColors.primary,
+              ),
+            ),
             SizedBox(height: 16.h),
             Text(
               'No photos yet',
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.titleMedium.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'Gallery photos will appear here',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -600,11 +935,32 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.rate_review, size: 64.w, color: AppColors.textSecondary),
+            Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.rate_review_rounded,
+                size: 48.w,
+                color: Colors.amber,
+              ),
+            ),
             SizedBox(height: 16.h),
             Text(
               'No reviews yet',
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.titleMedium.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'Be the first to book and review!',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -617,59 +973,115 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
       itemBuilder: (context, index) {
         final review = _reviews[index];
         return Container(
-          margin: EdgeInsets.only(bottom: 12.h),
-          padding: EdgeInsets.all(16.w),
+          margin: EdgeInsets.only(bottom: 16.h),
+          padding: EdgeInsets.all(18.w),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12.r),
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.amber.withOpacity(0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 20.r,
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
-                    child: Text(
-                      'P',
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary),
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.3),
+                        width: 2,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 24.r,
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      child: Text(
+                        'P',
+                        style: AppTextStyles.titleMedium.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
-                  SizedBox(width: 12.w),
+                  SizedBox(width: 14.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Pet Owner',
-                          style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
+                        SizedBox(height: 4.h),
                         Row(
                           children: [
                             ...List.generate(5, (i) {
                               return Icon(
-                                i < (review.ownerRating ?? 0) ? Icons.star : Icons.star_border,
+                                i < (review.ownerRating ?? 0)
+                                    ? Icons.star_rounded
+                                    : Icons.star_outline_rounded,
                                 color: Colors.amber,
-                                size: 16.w,
+                                size: 18.w,
                               );
                             }),
+                            SizedBox(width: 8.w),
+                            Text(
+                              '${review.ownerRating ?? 0}.0',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: Colors.amber,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  Text(
-                    _formatReviewDate(review.ownerReviewAt),
-                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.textSecondary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Text(
+                      _formatReviewDate(review.ownerReviewAt),
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
               if (review.ownerReview != null) ...[
-                SizedBox(height: 12.h),
-                Text(
-                  review.ownerReview!,
-                  style: AppTextStyles.bodyMedium,
+                SizedBox(height: 14.h),
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    review.ownerReview!,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      height: 1.5,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                 ),
               ],
             ],
@@ -693,44 +1105,79 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
 
   Widget _buildBookButton() {
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
       child: SafeArea(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => CreateBookingScreen(
-                  caregiver: _caregiver!,
-                  services: _services,
-                  availability: _availability,
-                ),
-              ),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            minimumSize: Size(double.infinity, 48.h),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primary,
+                AppColors.primary.withOpacity(0.8),
+              ],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
             ),
+            borderRadius: BorderRadius.circular(14.r),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: const Text(
-            'Book Now',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => CreateBookingScreen(
+                    caregiver: _caregiver!,
+                    services: _services,
+                    availability: _availability,
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              minimumSize: Size(double.infinity, 54.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14.r),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.calendar_today_rounded,
+                  color: Colors.white,
+                  size: 20.w,
+                ),
+                SizedBox(width: 12.w),
+                Text(
+                  'Book Now',
+                  style: TextStyle(
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
-

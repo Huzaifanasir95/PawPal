@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/navigation/app_navigator.dart';
-import '../../../../core/widgets/custom_drawer.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../chat/data/repositories/chat_repository.dart';
-import '../../../pets/data/repositories/pet_repository.dart';
-import '../../../pets/data/models/pet_model.dart';
-import '../../../pets/presentation/pages/add_pet_screen.dart';
+import '../../../chatbot/presentation/pages/chatbot_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
-import '../../../chatbot/presentation/pages/chatbot_screen.dart';
 
 class PetOwnerDashboard extends StatefulWidget {
   const PetOwnerDashboard({super.key});
@@ -23,14 +20,8 @@ class PetOwnerDashboard extends StatefulWidget {
 }
 
 class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final PetRepository _petRepository = PetRepository();
-  
   int _currentIndex = 0;
   String _userName = '';
-  String? _userPhoto;
-  
-  // Real data
   int _unreadMessages = 0;
 
   @override
@@ -39,11 +30,16 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
     _loadData();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future<void> _loadData() async {
     try {
       final chatRepo = getIt<ChatRepository>();
       final chats = await chatRepo.getMyChats();
-      
+
       int unread = 0;
       for (var chat in chats) {
         unread += chat.unreadCountOwner;
@@ -54,9 +50,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
           _unreadMessages = unread;
         });
       }
-    } catch (e) {
-      // Silently handle chat loading errors
-    }
+    } catch (_) {}
   }
 
   String _getGreeting() {
@@ -76,144 +70,384 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         state.maybeWhen(
-          authenticated: (user) {
-            _userName = user.displayName ?? '';
-            _userPhoto = user.photoUrl;
-          },
+          authenticated: (user) => _userName = user.displayName ?? '',
           orElse: () {},
         );
 
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: const SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.dark,
+            statusBarIconBrightness: Brightness.light,
           ),
           child: Scaffold(
-            key: _scaffoldKey,
-            backgroundColor: const Color(0xFFF5F7FA),
-            drawer: const CustomDrawer(),
+            backgroundColor: const Color(0xFFECEFF3),
             body: SafeArea(
               child: RefreshIndicator(
                 onRefresh: _loadData,
                 color: AppColors.primary,
-                child: CustomScrollView(
+                child: ListView(
+                  padding: EdgeInsets.zero,
                   physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(child: _buildHeader()),
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 120.h),
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate([
-                          _buildPetCard(),
-                          SizedBox(height: 24.h),
-                          _buildSectionTitle('Quick Actions'),
-                          SizedBox(height: 16.h),
-                          _buildQuickActions(),
-                          SizedBox(height: 28.h),
-                          _buildSectionTitle('Explore'),
-                          SizedBox(height: 16.h),
-                          _buildExploreCards(),
-                        ]),
-                      ),
+                  children: [
+                    _buildTopHero(),
+                    Transform.translate(
+                      offset: Offset(0, -28.h),
+                      child: _buildContentSheet(),
                     ),
+                    SizedBox(height: 96.h),
                   ],
                 ),
               ),
             ),
-            bottomNavigationBar: _buildBottomNav(),
-            floatingActionButton: _buildMessagesFAB(),
+            floatingActionButton: _buildCenterFab(),
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerDocked,
+            bottomNavigationBar: _buildBottomBar(),
           ),
         );
       },
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
-      child: Row(
+  Widget _buildTopHero() {
+    return Container(
+      height: 332.h,
+      padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 36.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.primary,
+            Color.alphaBlend(Colors.black.withOpacity(0.14), AppColors.primary),
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: () => _scaffoldKey.currentState?.openDrawer(),
-            child: Container(
-              width: 48.w,
-              height: 48.h,
+          Row(
+            children: [
+              const Spacer(),
+              _buildTopActionIcon(
+                icon: Icons.favorite_border_rounded,
+                onTap: () => AppNavigator.navigateToCommunityHub(context),
+              ),
+              SizedBox(width: 10.w),
+              _buildTopActionIcon(
+                icon: Icons.phone_in_talk_outlined,
+                onTap: () => AppNavigator.navigateToVetsList(context),
+              ),
+              SizedBox(width: 10.w),
+              _buildTopActionIcon(
+                icon: Icons.shopping_cart_outlined,
+                onTap: () => AppNavigator.navigateToMarketplace(context),
+              ),
+            ],
+          ),
+          SizedBox(height: 26.h),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hello ${_getFirstName(_userName)}!',
+                      style: TextStyle(
+                        fontSize: 28.sp,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+                    Text(
+                      '${_getGreeting()}. Keep your pets healthy, happy, and safe.',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        height: 1.35,
+                        color: Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Container(
+                width: 110.w,
+                height: 128.h,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.inventory_2_rounded,
+                      color: Colors.white,
+                      size: 50.sp,
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      'Paw Deals',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopActionIcon({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 34.w,
+        height: 34.h,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.08),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.25)),
+        ),
+        child: Icon(icon, color: Colors.white, size: 18.sp),
+      ),
+    );
+  }
+
+  Widget _buildContentSheet() {
+    final categories = <_CategoryItem>[
+      _CategoryItem('Food', Icons.fastfood_outlined, () {
+        AppNavigator.navigateToMarketplace(context);
+      }),
+      _CategoryItem('Health', Icons.medical_services_outlined, () {
+        AppNavigator.navigateToVetsList(context);
+      }),
+      _CategoryItem('Toys', Icons.sports_esports_outlined, () {
+        AppNavigator.navigateToMarketplace(context);
+      }),
+      _CategoryItem('Care', Icons.spa_outlined, () {
+        AppNavigator.navigateToCommunityHub(context);
+      }),
+      _CategoryItem('AI', Icons.smart_toy_outlined, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+        );
+      }),
+    ];
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFECEFF3),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22.r)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 50.h,
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(14.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                borderRadius: BorderRadius.circular(15.r),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Search for pet food, care or vets...',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
+                  Icon(Icons.search_rounded,
+                      color: AppColors.textPrimary, size: 22.sp),
                 ],
               ),
-              child: Icon(
-                Icons.menu_rounded,
-                color: AppColors.textPrimary,
-                size: 22.sp,
-              ),
             ),
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            SizedBox(height: 16.h),
+            _buildPromoCard(),
+            SizedBox(height: 18.h),
+            Row(
               children: [
                 Text(
-                  _getGreeting(),
+                  'Categories',
                   style: TextStyle(
-                    fontSize: 13.sp,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 25.sp,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                SizedBox(height: 2.h),
-                Text(
-                  _getFirstName(_userName),
-                  style: TextStyle(
-                    fontSize: 24.sp,
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => AppNavigator.navigateToMarketplace(context),
+                  child: Text(
+                    'See All',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            ),
-            child: Container(
-              width: 48.w,
-              height: 48.h,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(14.r),
-                image: _userPhoto != null
-                    ? DecorationImage(
-                        image: NetworkImage(_userPhoto!),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
+            SizedBox(height: 14.h),
+            SizedBox(
+              height: 94.h,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: categories.length,
+                separatorBuilder: (_, __) => SizedBox(width: 12.w),
+                itemBuilder: (context, index) =>
+                    _buildCategoryChip(categories[index]),
               ),
-              child: _userPhoto == null
-                  ? Center(
+            ),
+            SizedBox(height: 14.h),
+            Text(
+              'Most Popular',
+              style: TextStyle(
+                fontSize: 24.sp,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            SizedBox(height: 12.h),
+            _buildMostPopularCard(
+              title: 'Book a Vet Consultation',
+              subtitle: 'Chat with verified vets in minutes',
+              icon: Icons.local_hospital_outlined,
+              onTap: () => AppNavigator.navigateToVetsList(context),
+            ),
+            SizedBox(height: 10.h),
+            _buildMostPopularCard(
+              title: 'Manage Your Pets',
+              subtitle: 'Update profiles, records, and reminders',
+              icon: Icons.pets_outlined,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MyPetsScreen()),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromoCard() {
+    return Container(
+      height: 152.h,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18.r),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            AppColors.primary.withOpacity(0.12),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 7,
+            child: ClipRRect(
+              borderRadius:
+                  BorderRadius.horizontal(left: Radius.circular(18.r)),
+              child: Container(
+                color: AppColors.primary.withOpacity(0.14),
+                child: Center(
+                  child: Icon(
+                    Icons.pets_rounded,
+                    size: 58.sp,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 6,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'PET CARE WEEK',
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    'Save on food, toys & grooming.',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                    ),
+                  ),
+                  SizedBox(height: 10.h),
+                  GestureDetector(
+                    onTap: () => AppNavigator.navigateToMarketplace(context),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 6.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
                       child: Text(
-                        _getFirstName(_userName).isNotEmpty
-                            ? _getFirstName(_userName)[0].toUpperCase()
-                            : 'P',
+                        'Shop Now',
                         style: TextStyle(
+                          fontSize: 11.sp,
                           color: Colors.white,
-                          fontSize: 20.sp,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    )
-                  : null,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -221,283 +455,66 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
     );
   }
 
-  Widget _buildPetCard() {
-    return StreamBuilder<List<PetModel>>(
-      stream: _petRepository.getUserPets(),
-      builder: (context, snapshot) {
-        final pets = snapshot.data ?? [];
-        final petCount = pets.length;
-
-        return GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const MyPetsScreen()),
-          ),
-          child: Container(
-            padding: EdgeInsets.all(24.w),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF2C6E69), Color(0xFF1A4F4A)],
-              ),
-              borderRadius: BorderRadius.circular(24.r),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 64.w,
-                  height: 64.h,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  child: Icon(
-                    Icons.pets_rounded,
-                    color: Colors.white,
-                    size: 32.sp,
-                  ),
-                ),
-                SizedBox(width: 20.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'My Pets',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '$petCount',
-                            style: TextStyle(
-                              fontSize: 36.sp,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              height: 1,
-                            ),
-                          ),
-                          SizedBox(width: 8.w),
-                          Padding(
-                            padding: EdgeInsets.only(bottom: 4.h),
-                            child: Text(
-                              petCount == 1 ? 'Pet' : 'Pets',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 44.w,
-                  height: 44.h,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Colors.white,
-                    size: 22.sp,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 18.sp,
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.w700,
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return Row(
-      children: [
-        _buildActionTile(
-          icon: Icons.add_rounded,
-          label: 'Add Pet',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddPetScreen()),
-          ),
-        ),
-        SizedBox(width: 12.w),
-        _buildActionTile(
-          icon: Icons.medical_services_outlined,
-          label: 'Find Vet',
-          onTap: () => AppNavigator.navigateToVetsList(context),
-        ),
-        SizedBox(width: 12.w),
-        _buildActionTile(
-          icon: Icons.smart_toy_outlined,
-          label: 'AI Chat',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ChatbotScreen()),
-          ),
-        ),
-        SizedBox(width: 12.w),
-        _buildActionTile(
-          icon: Icons.shopping_bag_outlined,
-          label: 'Shop',
-          onTap: () => AppNavigator.navigateToMarketplace(context),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionTile({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 16.h),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Container(
-                width: 44.w,
-                height: 44.h,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Icon(
-                  icon,
-                  color: AppColors.primary,
-                  size: 22.sp,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExploreCards() {
-    return Column(
-      children: [
-        _buildExploreCard(
-          icon: Icons.groups_rounded,
-          title: 'Community Hub',
-          subtitle: 'Connect with other pet parents',
-          color: const Color(0xFF6366F1),
-          onTap: () => AppNavigator.navigateToCommunityHub(context),
-        ),
-        SizedBox(height: 12.h),
-        Row(
+  Widget _buildCategoryChip(_CategoryItem item) {
+    return GestureDetector(
+      onTap: item.onTap,
+      child: SizedBox(
+        width: 78.w,
+        child: Column(
           children: [
-            Expanded(
-              child: _buildSmallExploreCard(
-                icon: Icons.event_rounded,
-                title: 'Events',
-                color: const Color(0xFFEC4899),
-                onTap: () => AppNavigator.navigateToCommunityHub(context),
+            Container(
+              width: 58.w,
+              height: 58.h,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
               ),
+              child: Icon(item.icon, size: 27.sp, color: AppColors.primary),
             ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: _buildSmallExploreCard(
-                icon: Icons.favorite_rounded,
-                title: 'Adoption',
-                color: const Color(0xFFF59E0B),
-                onTap: () => AppNavigator.navigateToCommunityHub(context),
+            SizedBox(height: 8.h),
+            Text(
+              item.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11.sp,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
-        SizedBox(height: 12.h),
-        _buildExploreCard(
-          icon: Icons.search_rounded,
-          title: 'Lost & Found',
-          subtitle: 'Help reunite pets with families',
-          color: const Color(0xFF10B981),
-          onTap: () => AppNavigator.navigateToCommunityHub(context),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildExploreCard({
-    required IconData icon,
+  Widget _buildMostPopularCard({
     required String title,
     required String subtitle,
-    required Color color,
+    required IconData icon,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(16.r),
         ),
         child: Row(
           children: [
             Container(
-              width: 52.w,
-              height: 52.h,
+              width: 48.w,
+              height: 48.h,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: AppColors.primary.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(14.r),
               ),
-              child: Icon(icon, color: color, size: 26.sp),
+              child: Icon(icon, color: AppColors.primary, size: 24.sp),
             ),
-            SizedBox(width: 16.w),
+            SizedBox(width: 12.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -505,146 +522,84 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 16.sp,
+                      fontSize: 14.sp,
                       color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  SizedBox(height: 2.h),
+                  SizedBox(height: 3.h),
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontSize: 13.sp,
+                      fontSize: 12.sp,
                       color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.textSecondary,
-              size: 24.sp,
-            ),
+            Icon(Icons.chevron_right_rounded,
+                size: 22.sp, color: AppColors.textSecondary),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSmallExploreCard({
-    required IconData icon,
-    required String title,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+  Widget _buildBottomBar() {
+    return BottomAppBar(
+      color: Colors.white,
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 8,
+      elevation: 8,
+      child: SizedBox(
+        height: 70.h,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            Container(
-              width: 44.w,
-              height: 44.h,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Icon(icon, color: color, size: 22.sp),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+            _buildNavItem(Icons.storefront_outlined, 'InStore', 0),
+            _buildNavItem(Icons.local_shipping_outlined, 'Delivery', 1),
+            SizedBox(width: 44.w),
+            _buildNavItem(Icons.grid_view_rounded, 'Ecomm', 2),
+            _buildNavItem(Icons.person_outline_rounded, 'Profile', 3),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.home_rounded, 'Home', 0),
-              _buildNavItem(Icons.local_hospital_rounded, 'Vets', 1),
-              _buildNavItem(Icons.pets_rounded, 'Pets', 2),
-              _buildNavItem(Icons.person_rounded, 'Profile', 3),
-            ],
-          ),
         ),
       ),
     );
   }
 
   Widget _buildNavItem(IconData icon, String label, int index) {
-    final isSelected = _currentIndex == index;
-    return GestureDetector(
+    final selected = _currentIndex == index;
+    return InkWell(
       onTap: () {
         setState(() => _currentIndex = index);
-        switch (index) {
-          case 1:
-            AppNavigator.navigateToVetsList(context);
-            break;
-          case 2:
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const MyPetsScreen()));
-            break;
-          case 3:
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-            break;
+        if (index == 1) {
+          AppNavigator.navigateToVetsList(context);
+        } else if (index == 2) {
+          AppNavigator.navigateToMarketplace(context);
+        } else if (index == 3) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          );
         }
       },
-      behavior: HitTestBehavior.opaque,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             icon,
-            color: isSelected ? AppColors.primary : AppColors.textSecondary,
-            size: 26.sp,
+            size: 22.sp,
+            color: selected ? AppColors.primary : AppColors.textSecondary,
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: 2.h),
           Text(
             label,
             style: TextStyle(
               fontSize: 11.sp,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected ? AppColors.primary : AppColors.textSecondary,
             ),
           ),
         ],
@@ -652,60 +607,49 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
     );
   }
 
-  Widget _buildMessagesFAB() {
-    return GestureDetector(
-      onTap: () => AppNavigator.navigateToChats(context),
-      child: Container(
-        width: 56.w,
-        height: 56.h,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Center(
-              child: Icon(
-                Icons.chat_bubble_rounded,
-                color: Colors.white,
-                size: 26.sp,
-              ),
-            ),
-            if (_unreadMessages > 0)
-              Positioned(
-                top: -2.h,
-                right: -2.w,
-                child: Container(
-                  width: 20.w,
-                  height: 20.h,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      _unreadMessages > 9 ? '9+' : '$_unreadMessages',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+  Widget _buildCenterFab() {
+    return FloatingActionButton(
+      onPressed: () => AppNavigator.navigateToChats(context),
+      backgroundColor: AppColors.primary,
+      elevation: 4,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Center(
+            child: Icon(Icons.qr_code_scanner_rounded,
+                color: Colors.white, size: 28.sp),
+          ),
+          if (_unreadMessages > 0)
+            Positioned(
+              top: -4,
+              right: -6,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE53935),
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                child: Text(
+                  _unreadMessages > 9 ? '9+' : '$_unreadMessages',
+                  style: TextStyle(
+                    fontSize: 9.sp,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
+}
+
+class _CategoryItem {
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  _CategoryItem(this.title, this.icon, this.onTap);
 }

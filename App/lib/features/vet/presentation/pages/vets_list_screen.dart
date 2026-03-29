@@ -73,7 +73,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
         statusBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F7FA),
+        backgroundColor: AppColors.authBackground,
         body: SafeArea(
           child: Column(
             children: [
@@ -98,11 +98,14 @@ class _VetsListScreenState extends State<VetsListScreen> {
               width: 44.w,
               height: 44.h,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: AppColors.socialBorder,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: AppColors.primary.withOpacity(0.24),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -110,7 +113,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
               ),
               child: Icon(
                 Icons.arrow_back_rounded,
-                color: AppColors.textPrimary,
+                color: AppColors.accent,
                 size: 22.sp,
               ),
             ),
@@ -145,11 +148,14 @@ class _VetsListScreenState extends State<VetsListScreen> {
               width: 44.w,
               height: 44.h,
               decoration: BoxDecoration(
-                color: _hasActiveFilters ? AppColors.primary : Colors.white,
+                color: _hasActiveFilters ? AppColors.accent : AppColors.primary,
                 borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: AppColors.socialBorder,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: AppColors.primary.withOpacity(0.24),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -160,7 +166,9 @@ class _VetsListScreenState extends State<VetsListScreen> {
                   Center(
                     child: Icon(
                       Icons.tune_rounded,
-                      color: _hasActiveFilters ? Colors.white : AppColors.textPrimary,
+                      color: _hasActiveFilters
+                          ? AppColors.surface
+                          : AppColors.accent,
                       size: 22.sp,
                     ),
                   ),
@@ -171,8 +179,8 @@ class _VetsListScreenState extends State<VetsListScreen> {
                       child: Container(
                         width: 8.w,
                         height: 8.h,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFEF4444),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -191,11 +199,15 @@ class _VetsListScreenState extends State<VetsListScreen> {
       padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surfaceContainer,
           borderRadius: BorderRadius.circular(14.r),
+          border: Border.all(
+            color: AppColors.socialBorder,
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: AppColors.primary.withOpacity(0.16),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -203,7 +215,10 @@ class _VetsListScreenState extends State<VetsListScreen> {
         ),
         child: TextField(
           controller: _searchController,
-          style: TextStyle(fontSize: 15.sp),
+          style: TextStyle(
+            fontSize: 15.sp,
+            color: AppColors.textPrimary,
+          ),
           decoration: InputDecoration(
             hintText: 'Search by name or specialization...',
             hintStyle: TextStyle(
@@ -284,8 +299,11 @@ class _VetsListScreenState extends State<VetsListScreen> {
       margin: EdgeInsets.only(bottom: 16.h),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: AppColors.socialBorder.withOpacity(0.7),
+        ),
       ),
       child: Row(
         children: [
@@ -293,7 +311,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
             width: 80.w,
             height: 80.h,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: AppColors.primary.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12.r),
             ),
           ),
@@ -306,7 +324,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
                   width: 120.w,
                   height: 16.h,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: AppColors.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                 ),
@@ -315,7 +333,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
                   width: 80.w,
                   height: 12.h,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: AppColors.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                 ),
@@ -324,7 +342,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
                   width: 100.w,
                   height: 12.h,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: AppColors.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                 ),
@@ -377,7 +395,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
               child: Text(
                 'Clear Filters',
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: AppColors.authTitle,
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w600,
                 ),
@@ -399,7 +417,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
             Icon(
               Icons.error_outline_rounded,
               size: 64.sp,
-              color: const Color(0xFFEF4444),
+              color: AppColors.error,
             ),
             SizedBox(height: 16.h),
             Text(
@@ -425,13 +443,13 @@ class _VetsListScreenState extends State<VetsListScreen> {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: AppColors.darkTeal,
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(
                   'Try Again',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w600,
                   ),
@@ -455,7 +473,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
           minRating: _filterMinRating,
         ));
       },
-      color: AppColors.primary,
+      color: AppColors.darkTeal,
       child: ListView.builder(
         controller: _scrollController,
         padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 100.h),
@@ -464,7 +482,11 @@ class _VetsListScreenState extends State<VetsListScreen> {
           if (index >= vets.length) {
             return Padding(
               padding: EdgeInsets.symmetric(vertical: 20.h),
-              child: const Center(child: CircularProgressIndicator()),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.darkTeal,
+                ),
+              ),
             );
           }
           return _VetCard(vet: vets[index]);
@@ -528,11 +550,14 @@ class _VetCard extends StatelessWidget {
         margin: EdgeInsets.only(bottom: 16.h),
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+            color: AppColors.socialBorder.withOpacity(0.75),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: AppColors.primary.withOpacity(0.14),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -558,7 +583,7 @@ class _VetCard extends StatelessWidget {
                   ? Center(
                       child: Icon(
                         Icons.person_rounded,
-                        color: AppColors.primary,
+                        color: AppColors.darkTeal,
                         size: 36.sp,
                       ),
                     )
@@ -621,14 +646,14 @@ class _VetCard extends StatelessWidget {
                             vertical: 4.h,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withOpacity(0.1),
+                            color: AppColors.googleButton.withOpacity(0.45),
                             borderRadius: BorderRadius.circular(6.r),
                           ),
                           child: Text(
                             vet.specialization.first,
                             style: TextStyle(
                               fontSize: 11.sp,
-                              color: const Color(0xFF6366F1),
+                              color: AppColors.authTitle,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -638,7 +663,7 @@ class _VetCard extends StatelessWidget {
                         'PKR ${vet.consultationFee.toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 15.sp,
-                          color: AppColors.primary,
+                          color: AppColors.authTitle,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -707,7 +732,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -723,7 +748,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 width: 40.w,
                 height: 4.h,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppColors.primary.withOpacity(0.7),
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
@@ -772,7 +797,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   SizedBox(height: 10.h),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F7FA),
+                      color: AppColors.surfaceContainer,
+                      border: Border.all(
+                        color: AppColors.socialBorder,
+                      ),
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: TextField(
@@ -820,8 +848,13 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           ),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppColors.primary
-                                : const Color(0xFFF5F7FA),
+                                ? AppColors.darkTeal
+                                : AppColors.surfaceContainer,
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.darkTeal
+                                  : AppColors.primary.withOpacity(0.2),
+                            ),
                             borderRadius: BorderRadius.circular(20.r),
                           ),
                           child: Text(
@@ -829,7 +862,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                             style: TextStyle(
                               fontSize: 13.sp,
                               color: isSelected
-                                  ? Colors.white
+                                  ? AppColors.surface
                                   : AppColors.textPrimary,
                               fontWeight:
                                   isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -876,10 +909,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   SizedBox(height: 10.h),
                   SliderTheme(
                     data: SliderThemeData(
-                      activeTrackColor: AppColors.primary,
-                      inactiveTrackColor: const Color(0xFFF5F7FA),
-                      thumbColor: AppColors.primary,
-                      overlayColor: AppColors.primary.withOpacity(0.1),
+                      activeTrackColor: AppColors.darkTeal,
+                      inactiveTrackColor: AppColors.primary.withOpacity(0.3),
+                      thumbColor: AppColors.darkTeal,
+                      overlayColor: AppColors.darkTeal.withOpacity(0.1),
                       trackHeight: 6.h,
                     ),
                     child: Slider(
@@ -904,14 +937,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           child: Container(
                             padding: EdgeInsets.symmetric(vertical: 16.h),
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppColors.primary),
+                              border: Border.all(color: AppColors.darkTeal),
                               borderRadius: BorderRadius.circular(14.r),
                             ),
                             child: Center(
                               child: Text(
                                 'Clear',
                                 style: TextStyle(
-                                  color: AppColors.primary,
+                                  color: AppColors.darkTeal,
                                   fontSize: 15.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -937,14 +970,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           child: Container(
                             padding: EdgeInsets.symmetric(vertical: 16.h),
                             decoration: BoxDecoration(
-                              color: AppColors.primary,
+                              color: AppColors.darkTeal,
                               borderRadius: BorderRadius.circular(14.r),
                             ),
                             child: Center(
                               child: Text(
                                 'Apply Filters',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.surface,
                                   fontSize: 15.sp,
                                   fontWeight: FontWeight.w600,
                                 ),

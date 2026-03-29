@@ -8,6 +8,7 @@ import '../cubit/marketplace_cubit.dart';
 import '../cubit/marketplace_state.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/cart_state.dart';
+import 'cart_screen.dart';
 import '../../data/repositories/marketplace_repository.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -352,6 +353,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               child: BlocConsumer<CartCubit, CartState>(
                 listener: (context, state) {
                   if (state.addedProductId != null) {
+                    context.read<CartCubit>().clearAddedProductId();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Added to cart!',
@@ -361,6 +363,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.r)),
                         duration: const Duration(seconds: 2),
+                      ),
+                    );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<CartCubit>(),
+                          child: const CartScreen(),
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (state.error != null && state.error!.isNotEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.error!, style: GoogleFonts.mulish()),
+                        backgroundColor: const Color(0xFFEF4444),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r)),
                       ),
                     );
                   }

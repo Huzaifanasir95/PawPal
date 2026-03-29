@@ -121,11 +121,15 @@ class MarketplaceRepository {
     try {
       final response = await _apiClient.post(
         '/api/v1/marketplace/cart',
-        data: {'ProductID': productId, 'Quantity': quantity},
+        data: {'productId': productId, 'quantity': quantity},
       );
       if (response.data['success'] == true) {
+        final itemJson = response.data['cartItem'] ?? response.data['cart_item'];
+        if (itemJson is Map<String, dynamic>) {
+          return CartItem.fromJson(itemJson);
+        }
         return CartItem.fromJson(
-            response.data['cart_item'] as Map<String, dynamic>);
+            response.data['cartItem'] as Map<String, dynamic>);
       }
       throw Exception(response.data['error'] ?? 'Failed to add to cart');
     } on DioException catch (e) {
@@ -148,17 +152,15 @@ class MarketplaceRepository {
     }
   }
 
-  Future<CartItem> updateCartItem(String cartItemId, int quantity) async {
+  Future<void> updateCartItem(String cartItemId, int quantity) async {
     try {
       final response = await _apiClient.put(
         '/api/v1/marketplace/cart/$cartItemId',
         data: {'quantity': quantity},
       );
-      if (response.data['success'] == true) {
-        return CartItem.fromJson(
-            response.data['cart_item'] as Map<String, dynamic>);
+      if (response.data['success'] != true) {
+        throw Exception(response.data['error'] ?? 'Failed to update cart');
       }
-      throw Exception(response.data['error'] ?? 'Failed to update cart');
     } on DioException catch (e) {
       throw Exception(
           e.response?.data?['error'] ?? 'Network error: ${e.message}');

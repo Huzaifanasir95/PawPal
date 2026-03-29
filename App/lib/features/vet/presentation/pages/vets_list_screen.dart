@@ -20,6 +20,7 @@ class VetsListScreen extends StatefulWidget {
 class _VetsListScreenState extends State<VetsListScreen> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
+  String _searchQuery = '';
   
   String? _filterCity;
   String? _filterSpecialization;
@@ -43,6 +44,8 @@ class _VetsListScreenState extends State<VetsListScreen> {
   }
 
   void _onScroll() {
+    if (_searchQuery.trim().isNotEmpty) return;
+
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.9) {
       final currentState = context.read<VetBloc>().state;
       currentState.maybeWhen(
@@ -215,6 +218,11 @@ class _VetsListScreenState extends State<VetsListScreen> {
         ),
         child: TextField(
           controller: _searchController,
+          onChanged: (value) {
+            setState(() {
+              _searchQuery = value.trim().toLowerCase();
+            });
+          },
           style: TextStyle(
             fontSize: 15.sp,
             color: AppColors.textPrimary,
@@ -234,6 +242,21 @@ class _VetsListScreenState extends State<VetsListScreen> {
               ),
             ),
             prefixIconConstraints: BoxConstraints(minWidth: 50.w),
+            suffixIcon: _searchController.text.isEmpty
+                ? null
+                : IconButton(
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textSecondary,
+                      size: 18.sp,
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                      });
+                    },
+                  ),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(vertical: 16.h),
           ),
@@ -463,7 +486,25 @@ class _VetsListScreenState extends State<VetsListScreen> {
   }
 
   Widget _buildList(List<VetProfile> vets, bool hasMore) {
-    if (vets.isEmpty) return _buildEmptyState();
+    final filteredVets = _searchQuery.isEmpty
+        ? vets
+        : vets.where((vet) {
+            final name = vet.fullName.toLowerCase();
+            final degree = vet.degree.toLowerCase();
+            final city = (vet.city ?? '').toLowerCase();
+            final clinic = (vet.clinicName ?? '').toLowerCase();
+            final specs = vet.specialization.join(' ').toLowerCase();
+
+            return name.contains(_searchQuery) ||
+                degree.contains(_searchQuery) ||
+                city.contains(_searchQuery) ||
+                clinic.contains(_searchQuery) ||
+                specs.contains(_searchQuery);
+          }).toList();
+
+    if (filteredVets.isEmpty) return _buildEmptyState();
+
+    final showPaginationLoader = hasMore && _searchQuery.isEmpty;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -477,9 +518,9 @@ class _VetsListScreenState extends State<VetsListScreen> {
       child: ListView.builder(
         controller: _scrollController,
         padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 100.h),
-        itemCount: vets.length + (hasMore ? 1 : 0),
+        itemCount: filteredVets.length + (showPaginationLoader ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index >= vets.length) {
+          if (index >= filteredVets.length) {
             return Padding(
               padding: EdgeInsets.symmetric(vertical: 20.h),
               child: Center(
@@ -489,7 +530,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
               ),
             );
           }
-          return _VetCard(vet: vets[index]);
+          return _VetCard(vet: filteredVets[index]);
         },
       ),
     );

@@ -111,7 +111,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
 
   Widget _buildTopHero() {
     return Container(
-      height: 332.h,
+      height: 300.h,
       padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 36.h),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -126,26 +126,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Spacer(),
-              _buildTopActionIcon(
-                icon: Icons.favorite_border_rounded,
-                onTap: () => AppNavigator.navigateToCommunityHub(context),
-              ),
-              SizedBox(width: 10.w),
-              _buildTopActionIcon(
-                icon: Icons.phone_in_talk_outlined,
-                onTap: () => AppNavigator.navigateToVetsList(context),
-              ),
-              SizedBox(width: 10.w),
-              _buildTopActionIcon(
-                icon: Icons.shopping_cart_outlined,
-                onTap: () => AppNavigator.navigateToMarketplace(context),
-              ),
-            ],
-          ),
-          SizedBox(height: 26.h),
+          SizedBox(height: 42.h),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -163,69 +144,67 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                       ),
                     ),
                     SizedBox(height: 10.h),
-                    Text(
-                      '${_getGreeting()}. Keep your pets healthy, happy, and safe.',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        height: 1.35,
-                        color: Colors.white.withOpacity(0.9),
-                        fontWeight: FontWeight.w500,
+                    SizedBox(
+                      width: 198.w,
+                      child: Text(
+                        '${_getGreeting()}. Keep your pets healthy, happy, and safe.',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          height: 1.35,
+                          color: Colors.white.withOpacity(0.9),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 14.h),
+                    GestureDetector(
+                      onTap: () => AppNavigator.navigateToMarketplace(context),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 14.w,
+                          vertical: 9.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(18.r),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.34),
+                          ),
+                        ),
+                        child: Text(
+                          'Explore App',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              SizedBox(width: 12.w),
+              SizedBox(width: 10.w),
               Container(
-                width: 110.w,
-                height: 128.h,
+                width: 118.w,
+                height: 134.h,
+                padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20.r),
                   border: Border.all(color: Colors.white.withOpacity(0.2)),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.inventory_2_rounded,
-                      color: Colors.white,
-                      size: 50.sp,
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      'Paw Deals',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14.r),
+                  child: Image.asset(
+                    'assets/logo/onboarding_page1_pet.png',
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTopActionIcon({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 34.w,
-        height: 34.h,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withOpacity(0.25)),
-        ),
-        child: Icon(icon, color: Colors.white, size: 18.sp),
       ),
     );
   }
@@ -259,37 +238,12 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(22.r)),
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 0),
+        padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 50.h,
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15.r),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Search for pet food, care or vets...',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Icon(Icons.search_rounded,
-                      color: AppColors.textPrimary, size: 22.sp),
-                ],
-              ),
-            ),
-            SizedBox(height: 16.h),
             _buildPromoCard(),
-            SizedBox(height: 18.h),
+            SizedBox(height: 12.h),
             Row(
               children: [
                 Text(

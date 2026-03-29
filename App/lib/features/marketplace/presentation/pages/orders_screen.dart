@@ -278,23 +278,6 @@ class _OrdersView extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-              )
-            else
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8F6F2),
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                child: Text(
-                  'Order items are being synced',
-                  style: GoogleFonts.mulish(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
               ),
 
             SizedBox(height: 12.h),
@@ -305,13 +288,22 @@ class _OrdersView extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${order.items.length} item${order.items.length == 1 ? '' : 's'}',
-                      style: GoogleFonts.mulish(
-                        fontSize: 12.sp,
-                        color: AppColors.textSecondary,
+                    if (order.items.isNotEmpty)
+                      Text(
+                        '${order.items.length} item${order.items.length == 1 ? '' : 's'}',
+                        style: GoogleFonts.mulish(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      )
+                    else
+                      Text(
+                        'Order placed',
+                        style: GoogleFonts.mulish(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
                     Text(
                       _paymentLabel(order.paymentMethod),
                       style: GoogleFonts.mulish(

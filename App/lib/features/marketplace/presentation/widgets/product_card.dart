@@ -24,12 +24,15 @@ class ProductCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(18.r),
+          border: Border.all(
+            color: AppColors.primary.withOpacity(0.35),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: AppColors.primary.withOpacity(0.18),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -38,7 +41,7 @@ class ProductCard extends StatelessWidget {
           children: [
             // Image
             ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(18.r)),
               child: AspectRatio(
                 aspectRatio: 1.0,
                 child: product.firstImage.isNotEmpty
@@ -56,18 +59,18 @@ class ProductCard extends StatelessWidget {
             // Content
             Expanded(
               child: Padding(
-                padding: EdgeInsets.all(10.w),
+                padding: EdgeInsets.fromLTRB(10.w, 10.h, 10.w, 10.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Category chip
                     if (product.categoryName != null)
                       Container(
+                        constraints: BoxConstraints(maxWidth: 96.w),
                         padding: EdgeInsets.symmetric(
-                            horizontal: 6.w, vertical: 2.h),
+                            horizontal: 7.w, vertical: 3.h),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(4.r),
+                          color: AppColors.googleButton.withOpacity(0.45),
+                          borderRadius: BorderRadius.circular(6.r),
                         ),
                         child: Text(
                           product.categoryName!,
@@ -87,17 +90,16 @@ class ProductCard extends StatelessWidget {
                     Text(
                       product.name,
                       style: GoogleFonts.mulish(
-                        fontSize: 13.sp,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF191D21),
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
 
-                    const Spacer(),
+                    SizedBox(height: 6.h),
 
-                    // Rating row
                     Row(
                       children: [
                         Icon(Icons.star_rounded,
@@ -122,34 +124,36 @@ class ProductCard extends StatelessWidget {
                       ],
                     ),
 
-                    SizedBox(height: 6.h),
+                    const Spacer(),
 
-                    // Price + cart button
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Expanded(
                           child: Text(
                             'PKR ${product.price.toStringAsFixed(0)}',
                             style: GoogleFonts.mulish(
-                              fontSize: 14.sp,
+                              fontSize: 18.sp,
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF2C6E69),
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (onAddToCart != null)
                           GestureDetector(
                             onTap: onAddToCart,
                             child: Container(
-                              width: 28.w,
-                              height: 28.w,
+                              width: 32.w,
+                              height: 32.w,
                               decoration: BoxDecoration(
                                 color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(8.r),
+                                borderRadius: BorderRadius.circular(10.r),
                               ),
                               child: Icon(
                                 Icons.add,
-                                size: 16.sp,
+                                size: 18.sp,
                                 color: const Color(0xFF191D21),
                               ),
                             ),
@@ -173,7 +177,7 @@ class ProductCard extends StatelessWidget {
         child: Icon(
           Icons.shopping_bag_outlined,
           size: 36.sp,
-          color: const Color(0xFFB3E0DB),
+          color: const Color(0xFF9AD9D2),
         ),
       ),
     );

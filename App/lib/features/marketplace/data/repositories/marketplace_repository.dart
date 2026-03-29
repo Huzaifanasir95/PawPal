@@ -43,10 +43,10 @@ class MarketplaceRepository {
       final queryParams = <String, dynamic>{
         'page': page,
         'limit': limit,
-        if (categoryId != null) 'category_id': categoryId,
-        if (petType != null) 'pet_type': petType,
-        if (minPrice != null) 'min_price': minPrice,
-        if (maxPrice != null) 'max_price': maxPrice,
+        if (categoryId != null) 'categoryId': categoryId,
+        if (petType != null) 'petType': petType,
+        if (minPrice != null) 'minPrice': minPrice,
+        if (maxPrice != null) 'maxPrice': maxPrice,
         if (search != null && search.isNotEmpty) 'search': search,
       };
 

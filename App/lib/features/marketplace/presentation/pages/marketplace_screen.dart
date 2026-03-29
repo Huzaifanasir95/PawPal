@@ -12,6 +12,7 @@ import '../cubit/cart_state.dart';
 import '../widgets/product_card.dart';
 import 'product_detail_screen.dart';
 import 'cart_screen.dart';
+import 'orders_screen.dart';
 
 class MarketplaceScreen extends StatelessWidget {
   const MarketplaceScreen({super.key});
@@ -155,6 +156,12 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
         onPressed: () => Navigator.pop(context),
       ),
       actions: [
+        IconButton(
+          icon: Icon(Icons.receipt_long_outlined,
+              color: const Color(0xFF191D21), size: 23.sp),
+          onPressed: () => _openOrders(context),
+          tooltip: 'My Orders',
+        ),
         BlocBuilder<CartCubit, CartState>(
           builder: (context, state) {
             final count = state.items.fold(0, (s, i) => s + i.quantity);
@@ -554,6 +561,15 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
           value: cartCubit,
           child: const CartScreen(),
         ),
+      ),
+    );
+  }
+
+  void _openOrders(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const OrdersScreen(),
       ),
     );
   }

@@ -140,13 +140,53 @@ class _OrdersView extends StatelessWidget {
             );
           }
 
-          return ListView.separated(
-            padding: EdgeInsets.all(16.w),
-            itemCount: state.orders.length,
-            separatorBuilder: (_, __) => SizedBox(height: 12.h),
-            itemBuilder: (context, i) {
-              return _buildOrderCard(context, state.orders[i]);
-            },
+          return Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 8.h),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 12.w, vertical: 7.h),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(
+                            color: AppColors.primary.withOpacity(0.25)),
+                      ),
+                      child: Text(
+                        '${state.orders.length} orders',
+                        style: GoogleFonts.mulish(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF2C6E69),
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Tap any order for details',
+                      style: GoogleFonts.mulish(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 16.h),
+                  itemCount: state.orders.length,
+                  separatorBuilder: (_, __) => SizedBox(height: 12.h),
+                  itemBuilder: (context, i) {
+                    return _buildOrderCard(context, state.orders[i]);
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -172,11 +212,12 @@ class _OrdersView extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: AppColors.primary.withOpacity(0.18)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -217,16 +258,43 @@ class _OrdersView extends StatelessWidget {
 
             // Items summary
             if (order.items.isNotEmpty)
-              Text(
-                order.items.length == 1
-                    ? order.items.first.productName
-                    : '${order.items.first.productName} + ${order.items.length - 1} more',
-                style: GoogleFonts.mulish(
-                  fontSize: 13.sp,
-                  color: AppColors.textSecondary,
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F6F2),
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.14)),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                child: Text(
+                  order.items.length == 1
+                      ? order.items.first.productName
+                      : '${order.items.first.productName} + ${order.items.length - 1} more',
+                  style: GoogleFonts.mulish(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF4B5563),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              )
+            else
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F6F2),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Text(
+                  'Order items are being synced',
+                  style: GoogleFonts.mulish(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
 
             SizedBox(height: 12.h),

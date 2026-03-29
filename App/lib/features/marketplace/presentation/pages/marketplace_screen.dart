@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../data/models/marketplace_models.dart';
 import '../../data/repositories/marketplace_repository.dart';
 import '../cubit/marketplace_cubit.dart';
 import '../cubit/marketplace_state.dart';
@@ -37,11 +38,29 @@ class _MarketplaceView extends StatefulWidget {
 
 class _MarketplaceViewState extends State<_MarketplaceView> {
   final _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  List<Product> _filterProducts(List<Product> products) {
+    if (_searchQuery.isEmpty) return products;
+    
+    final query = _searchQuery.toLowerCase();
+    return products.where((product) {
+      final name = product.name.toLowerCase();
+      final description = product.description.toLowerCase();
+      final category = (product.categoryName ?? '').toLowerCase();
+      final petType = (product.petType ?? '').toLowerCase();
+      
+      return name.contains(query) ||
+             description.contains(query) ||
+             category.contains(query) ||
+             petType.contains(query);
+    }).toList();
   }
 
   @override
@@ -88,10 +107,11 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                   padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 6.h),
                   child: BlocBuilder<MarketplaceCubit, MarketplaceState>(
                     builder: (context, state) {
+                      final filtered = _filterProducts(state.products);
                       return Row(
                         children: [
                           Text(
-                            '${state.products.length} items found',
+                            '${filtered.length} items found',
                             style: GoogleFonts.mulish(
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w700,
@@ -230,15 +250,10 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                   border: InputBorder.none,
                   isDense: true,
                 ),
-                onChanged: (_) => setState(() {}),
-                onSubmitted: (val) {
-                  context.read<MarketplaceCubit>().filterProducts(
-                        search: val.isEmpty ? null : val,
-                        categoryId: context
-                            .read<MarketplaceCubit>()
-                            .state
-                            .selectedCategoryId,
-                      );
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val;
+                  });
                 },
               ),
             ),
@@ -246,13 +261,9 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
               GestureDetector(
                 onTap: () {
                   _searchController.clear();
-                  context.read<MarketplaceCubit>().filterProducts(
-                        categoryId: context
-                            .read<MarketplaceCubit>()
-                            .state
-                            .selectedCategoryId,
-                      );
-                  setState(() {});
+                  setState(() {
+                    _searchQuery = '';
+                  });
                 },
                 child: Padding(
                   padding: EdgeInsets.only(right: 12.w),
@@ -365,7 +376,9 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
           );
         }
 
-        if (state.products.isEmpty) {
+        final filteredProducts = _filterProducts(state.products);
+
+        if (filteredProducts.isEmpty) {
           return SliverToBoxAdapter(
             child: Center(
               child: Padding(
@@ -375,14 +388,21 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                     Icon(Icons.shopping_bag_outlined,
                         size: 56.sp, color: AppColors.primary),
                     SizedBox(height: 16.h),
-                    Text('No products found',
+                    Text(
+                        _searchQuery.isNotEmpty
+                            ? 'No products match "$_searchQuery"'
+                            : 'No products found',
+                        textAlign: TextAlign.center,
                         style: GoogleFonts.mulish(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         )),
                     SizedBox(height: 8.h),
-                    Text('Try adjusting your filters',
+                    Text(
+                        _searchQuery.isNotEmpty
+                            ? 'Try a different search term'
+                            : 'Try adjusting your filters',
                         style: GoogleFonts.mulish(
                             color: AppColors.textSecondary)),
                   ],
@@ -397,7 +417,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
           sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate(
               (context, i) {
-                final product = state.products[i];
+                final product = filteredProducts[i];
                 return ProductCard(
                   product: product,
                   onTap: () => _openProductDetail(context, product.id),
@@ -406,7 +426,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                       .addToCart(product.id, 1),
                 );
               },
-              childCount: state.products.length,
+              childCount: filteredProducts.length,
             ),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,

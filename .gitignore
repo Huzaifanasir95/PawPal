@@ -64,3 +64,5 @@ Backend/pawpal_backend.exe
 admin-portal/.env.production
 admin-portal/VERCEL_DEPLOYMENT.md
 .agents/ui-ux-pro-max-skill/
+.agents/skills/frontend/banner-design/references/banner-sizes-and-styles.md
+/.agents/skills/frontend

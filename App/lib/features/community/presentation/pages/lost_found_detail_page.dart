@@ -64,186 +64,257 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
       );
     }
     return SingleChildScrollView(
-      padding: EdgeInsets.all(20.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image Gallery
-          if (post.imageUrls.isNotEmpty) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16.r),
-              child: SizedBox(
-                height: 220.h,
-                child: PageView.builder(
-                  itemCount: post.imageUrls.length,
-                  itemBuilder: (context, index) {
-                    return Image.network(
-                      post.imageUrls[index],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: AppColors.neutral200,
-                        child: Icon(Icons.pets, size: 60.sp, color: AppColors.textSecondary),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            if (post.imageUrls.length > 1)
-              Padding(
-                padding: EdgeInsets.only(top: 8.h),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    post.imageUrls.length,
-                    (index) => Container(
-                      width: 8.w,
-                      height: 8.h,
-                      margin: EdgeInsets.symmetric(horizontal: 3.w),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: index == 0 ? AppColors.primary : AppColors.neutral300,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            SizedBox(height: 16.h),
-          ],
-          _buildTypeBadge(post),
-          SizedBox(height: 16.h),
-          if (post.petName != null) ...[
-            Text(
-              post.petName!,
-              style: AppTextStyles.onboardingTitle.copyWith(
-                fontSize: 28.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 8.h),
-          ],
-          // Pet info row
-          if (post.petType != null || post.breed != null || post.color != null)
-            Wrap(
-              spacing: 8.w,
-              runSpacing: 6.h,
-              children: [
-                if (post.petType != null) _infoChip(Icons.pets, post.petType!),
-                if (post.breed != null) _infoChip(Icons.category, post.breed!),
-                if (post.color != null)
-                  _infoChip(Icons.palette_outlined, post.color!),
-              ],
-            ),
-          SizedBox(height: 20.h),
-          // Description
-          _sectionTitle('Description'),
-          SizedBox(height: 8.h),
-          Text(
-            post.description,
-            style: AppTextStyles.onboardingBody.copyWith(
-              fontSize: 15.sp,
-              color: AppColors.textPrimary,
-              height: 1.5,
-            ),
-          ),
-          SizedBox(height: 20.h),
-          // Location
-          if (post.lastSeenLocation != null) ...[
-            _sectionTitle('Last Seen Location'),
-            SizedBox(height: 8.h),
-            Container(
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.location_on,
-                      color: AppColors.error, size: 20.sp),
-                  SizedBox(width: 8.w),
-                  Expanded(
-                    child: Text(
-                      post.lastSeenLocation!,
-                      style: AppTextStyles.onboardingBody.copyWith(
-                        fontSize: 14.sp,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20.h),
-          ],
-          // Contact info
-          if (post.contactPhone != null || post.contactEmail != null) ...[
-            _sectionTitle('Contact Information'),
-            SizedBox(height: 8.h),
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                children: [
-                  if (post.contactPhone != null)
-                    _contactRow(Icons.phone, post.contactPhone!),
-                  if (post.contactPhone != null && post.contactEmail != null)
-                    SizedBox(height: 8.h),
-                  if (post.contactEmail != null)
-                    _contactRow(Icons.email_outlined, post.contactEmail!),
-                ],
-              ),
-            ),
-            SizedBox(height: 20.h),
-          ],
-          // Posted by & time
-          _sectionTitle('Posted by'),
-          SizedBox(height: 8.h),
-          Row(
+          // Hero Image Section
+          Stack(
             children: [
-              CircleAvatar(
-                radius: 20.r,
-                backgroundColor: AppColors.primary,
-                backgroundImage: post.userAvatar != null
-                    ? NetworkImage(post.userAvatar!)
-                    : null,
-                child: post.userAvatar == null
-                    ? Icon(Icons.person, size: 20.sp)
-                    : null,
+              // Image or placeholder
+              Container(
+                height: 280.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: post.type == 'lost' 
+                      ? const Color(0xFFFFEBEE)
+                      : const Color(0xFFE8F5E9),
+                ),
+                child: post.imageUrls.isNotEmpty
+                    ? PageView.builder(
+                        itemCount: post.imageUrls.length,
+                        itemBuilder: (context, index) {
+                          return Image.network(
+                            post.imageUrls[index],
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) => _buildPlaceholder(post),
+                          );
+                        },
+                      )
+                    : _buildPlaceholder(post),
               ),
-              SizedBox(width: 10.w),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    post.userName ?? 'Unknown',
-                    style: AppTextStyles.onboardingBody.copyWith(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+              // Gradient overlay for better badge visibility
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.3),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.3],
                     ),
                   ),
-                  Text(
-                    _formatDate(post.createdAt),
-                    style: AppTextStyles.onboardingBody.copyWith(
-                      fontSize: 12.sp,
-                      color: AppColors.textSecondary,
+                ),
+              ),
+              // Status badges at top
+              Positioned(
+                top: 16.h,
+                left: 16.w,
+                right: 16.w,
+                child: _buildTypeBadge(post),
+              ),
+              // Image indicators at bottom
+              if (post.imageUrls.length > 1)
+                Positioned(
+                  bottom: 12.h,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      post.imageUrls.length,
+                      (index) => Container(
+                        width: 8.w,
+                        height: 8.h,
+                        margin: EdgeInsets.symmetric(horizontal: 3.w),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4.r,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ],
-              ),
+                ),
             ],
           ),
-          SizedBox(height: 30.h),
+          // Content section
+          Padding(
+            padding: EdgeInsets.all(20.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildContentSection(post),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPlaceholder(post) {
+    final isLost = post.type == 'lost';
+    return Container(
+      color: isLost ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.pets,
+              size: 80.sp,
+              color: (isLost ? AppColors.error : AppColors.success).withOpacity(0.3),
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              'No image available',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContentSection(post) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Pet name
+        if (post.petName != null) ...[
+          Text(
+            post.petName!,
+            style: AppTextStyles.onboardingTitle.copyWith(
+              fontSize: 28.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 12.h),
+        ],
+        // Pet info chips
+        if (post.petType != null || post.breed != null || post.color != null)
+          Wrap(
+            spacing: 8.w,
+            runSpacing: 8.h,
+            children: [
+              if (post.petType != null) _infoChip(Icons.pets, post.petType!),
+              if (post.breed != null) _infoChip(Icons.category, post.breed!),
+              if (post.color != null) _infoChip(Icons.palette_outlined, post.color!),
+            ],
+          ),
+        SizedBox(height: 24.h),
+        // Description
+        _sectionTitle('Description'),
+        SizedBox(height: 12.h),
+        Text(
+          post.description,
+          style: AppTextStyles.onboardingBody.copyWith(
+            fontSize: 15.sp,
+            color: AppColors.textPrimary,
+            height: 1.5,
+          ),
+        ),
+        SizedBox(height: 24.h),
+        // Location
+        if (post.lastSeenLocation != null) ...[
+          _sectionTitle('Last Seen Location'),
+          SizedBox(height: 12.h),
+          Container(
+            padding: EdgeInsets.all(14.w),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.location_on, color: AppColors.error, size: 22.sp),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Text(
+                    post.lastSeenLocation!,
+                    style: AppTextStyles.onboardingBody.copyWith(
+                      fontSize: 14.sp,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 24.h),
+        ],
+        // Contact info
+        if (post.contactPhone != null || post.contactEmail != null) ...[
+          _sectionTitle('Contact Information'),
+          SizedBox(height: 12.h),
+          Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: [
+                if (post.contactPhone != null) _contactRow(Icons.phone, post.contactPhone!),
+                if (post.contactPhone != null && post.contactEmail != null) SizedBox(height: 12.h),
+                if (post.contactEmail != null) _contactRow(Icons.email_outlined, post.contactEmail!),
+              ],
+            ),
+          ),
+          SizedBox(height: 24.h),
+        ],
+        // Posted by
+        _sectionTitle('Posted by'),
+        SizedBox(height: 12.h),
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 24.r,
+              backgroundColor: AppColors.primary,
+              backgroundImage: post.userAvatar != null ? NetworkImage(post.userAvatar!) : null,
+              child: post.userAvatar == null ? Icon(Icons.person, size: 24.sp, color: Colors.white) : null,
+            ),
+            SizedBox(width: 12.w),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  post.userName ?? 'Unknown',
+                  style: AppTextStyles.onboardingBody.copyWith(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  _formatDate(post.createdAt),
+                  style: AppTextStyles.onboardingBody.copyWith(
+                    fontSize: 13.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
     );
   }
 

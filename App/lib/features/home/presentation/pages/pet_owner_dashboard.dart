@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/navigation/app_navigator.dart';
@@ -24,8 +25,10 @@ class PetOwnerDashboard extends StatefulWidget {
 }
 
 class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
+  static const String _pixelThemePrefKey = 'home_pixel_pet_theme';
   int _currentIndex = 0;
   String _userName = '';
+  String _pixelTheme = 'classic';
   final ScrollController _categoryScrollController = ScrollController();
   Timer? _categoryAutoScrollTimer;
   bool _isCategoryTouching = false;
@@ -34,8 +37,17 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   void initState() {
     super.initState();
     _loadData();
+    _loadCustomization();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startCategoryAutoScroll();
+    });
+  }
+
+  Future<void> _loadCustomization() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _pixelTheme = prefs.getString(_pixelThemePrefKey) ?? 'classic';
     });
   }
 
@@ -247,7 +259,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(14.r),
-                  child: const _InteractivePixelCatWidget(),
+                  child: _InteractivePixelCatWidget(theme: _pixelTheme),
                 ),
               ),
             ],
@@ -611,7 +623,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   Widget _buildNavItem(IconData icon, String label, int index) {
     final selected = _currentIndex == index;
     return InkWell(
-      onTap: () {
+      onTap: () async {
         setState(() => _currentIndex = index);
         if (index == 1) {
           Navigator.push(
@@ -621,10 +633,11 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
         } else if (index == 2) {
           AppNavigator.navigateToChats(context);
         } else if (index == 3) {
-          Navigator.push(
+          await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const ProfileScreen()),
           );
+          await _loadCustomization();
         }
       },
       child: Column(
@@ -668,7 +681,9 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
 }
 
 class _InteractivePixelCatWidget extends StatefulWidget {
-  const _InteractivePixelCatWidget();
+  const _InteractivePixelCatWidget({required this.theme});
+
+  final String theme;
 
   @override
   State<_InteractivePixelCatWidget> createState() =>
@@ -679,84 +694,216 @@ class _InteractivePixelCatWidgetState extends State<_InteractivePixelCatWidget> 
   int _spriteIndex = 0;
   Timer? _runTimer;
 
-  static const List<List<String>> _sprites = [
-    // Frame 1: front legs forward, back legs back
-    [
-      '..................',
-      '..................',
-      '.KK.KK............',
-      '.KKKKK............',
-      'K.KKKK............',
-      'KKKKKKKKKKKKKK....',
-      '.KKKKKKKKKKKKKK...',
-      '..KKKKKKKKKKKKK...',
-      '..KKKKKKKKKKKKKK..',
-      '..KK...KK....KKK..',
-      '.K.....K......KK..',
-      'K......K..........',
-      '..................',
-      '..................',
+  static const Map<String, List<List<String>>> _spritePresets = {
+    'classic': [
+      [
+        '..................',
+        '..................',
+        '.KK.KK............',
+        '.KKKKK............',
+        'K.KKKK............',
+        'KKKKKKKKKKKKKK....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKKK..',
+        '..KK...KK....KKK..',
+        '.K.....K......KK..',
+        'K......K..........',
+        '..................',
+        '..................',
+      ],
+      [
+        '..................',
+        '..................',
+        '.KK.KK............',
+        '.KKKKK............',
+        'K.KKKK............',
+        'KKKKKKKKKKKKKK....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKKK..',
+        '...KK..KK.....KK..',
+        '....KK..KK....KK..',
+        '..................',
+        '..................',
+        '..................',
+      ],
+      [
+        '..................',
+        '..................',
+        '.KK.KK............',
+        '.KKKKK............',
+        'K.KKKK............',
+        'KKKKKKKKKKKKKK....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKKK..',
+        '...KK...KK....KKK.',
+        '....K....K.....KK.',
+        '....K....K........',
+        '..................',
+        '..................',
+      ],
+      [
+        '..................',
+        '.KK.KK............',
+        '.KKKKK............',
+        'K.KKKK............',
+        'KKKKKKKKKKKKKK....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKKK..',
+        '...KKKKKKKKKKKKK..',
+        '....KK..KK....KK..',
+        '....KK..KK....KK..',
+        '..................',
+        '..................',
+        '..................',
+      ],
     ],
-    // Frame 2: legs crossing mid-stride
-    [
-      '..................',
-      '..................',
-      '.KK.KK............',
-      '.KKKKK............',
-      'K.KKKK............',
-      'KKKKKKKKKKKKKK....',
-      '.KKKKKKKKKKKKKK...',
-      '..KKKKKKKKKKKKK...',
-      '..KKKKKKKKKKKKKK..',
-      '...KK..KK.....KK..',
-      '....KK..KK....KK..',
-      '..................',
-      '..................',
-      '..................',
+    'chunky': [
+      [
+        '..................',
+        '..KK..KK..........',
+        '.KKKKKKK..........',
+        '.KKKKKKK..........',
+        'KKKKKKKKKKKKKK....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKKK..',
+        '...KKKKKKKKKKKKK..',
+        '...KK..KK....KKK..',
+        '..KK...KK....KK...',
+        '.KK....K.....KK...',
+        '..................',
+        '..................',
+      ],
+      [
+        '..................',
+        '..KK..KK..........',
+        '.KKKKKKK..........',
+        '.KKKKKKK..........',
+        'KKKKKKKKKKKKKK....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKKK..',
+        '...KKKKKKKKKKKKK..',
+        '....KKKK....KKK...',
+        '....KK..KK...KK...',
+        '....K....K........',
+        '..................',
+        '..................',
+      ],
+      [
+        '..................',
+        '..KK..KK..........',
+        '.KKKKKKK..........',
+        '.KKKKKKK..........',
+        'KKKKKKKKKKKKKK....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKKK..',
+        '...KKKKKKKKKKKKK..',
+        '...KK..KK....KKK..',
+        '..KK...KK....KK...',
+        '..K....K.....KK...',
+        '..................',
+        '..................',
+      ],
+      [
+        '..................',
+        '..KK..KK..........',
+        '.KKKKKKK..........',
+        '.KKKKKKK..........',
+        'KKKKKKKKKKKKKK....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKKK..',
+        '...KKKKKKKKKKKKK..',
+        '....KKKK....KKK...',
+        '....KK..KK...KK...',
+        '.....K..K.........',
+        '..................',
+        '..................',
+      ],
     ],
-    // Frame 3: front legs back, back legs forward
-    [
-      '..................',
-      '..................',
-      '.KK.KK............',
-      '.KKKKK............',
-      'K.KKKK............',
-      'KKKKKKKKKKKKKK....',
-      '.KKKKKKKKKKKKKK...',
-      '..KKKKKKKKKKKKK...',
-      '..KKKKKKKKKKKKKK..',
-      '...KK...KK....KKK.',
-      '....K....K.....KK.',
-      '....K....K........',
-      '..................',
-      '..................',
+    'doggo': [
+      [
+        '..................',
+        '....KK............',
+        '...KKKK...........',
+        '..KKKKKK..........',
+        'KKKKKKKKKKKKK.....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '...KKKKKKKKKKKK...',
+        '...KKK..KK...KK...',
+        '..KK....KK...KK...',
+        '.KK.....K....K....',
+        '..................',
+        '..................',
+        '..................',
+      ],
+      [
+        '..................',
+        '....KK............',
+        '...KKKK...........',
+        '..KKKKKK..........',
+        'KKKKKKKKKKKKK.....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '...KKKKKKKKKKKK...',
+        '...KKK..KK...KK...',
+        '..KK...KK....KK...',
+        '......KK.....K....',
+        '..................',
+        '..................',
+        '..................',
+      ],
+      [
+        '..................',
+        '....KK............',
+        '...KKKK...........',
+        '..KKKKKK..........',
+        'KKKKKKKKKKKKK.....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '...KKKKKKKKKKKK...',
+        '...KKK..KK...KK...',
+        '..KK....KK...KK...',
+        '.KK.....K....K....',
+        '..................',
+        '..................',
+        '..................',
+      ],
+      [
+        '..................',
+        '....KK............',
+        '...KKKK...........',
+        '..KKKKKK..........',
+        'KKKKKKKKKKKKK.....',
+        '.KKKKKKKKKKKKKK...',
+        '..KKKKKKKKKKKKK...',
+        '...KKKKKKKKKKKK...',
+        '...KKK..KK...KK...',
+        '..KK...KK....KK...',
+        '......KK.....K....',
+        '..................',
+        '..................',
+        '..................',
+      ],
     ],
-    // Frame 4: legs together (bounce)
-    [
-      '..................',
-      '.KK.KK............',
-      '.KKKKK............',
-      'K.KKKK............',
-      'KKKKKKKKKKKKKK....',
-      '.KKKKKKKKKKKKKK...',
-      '..KKKKKKKKKKKKK...',
-      '..KKKKKKKKKKKKKK..',
-      '...KKKKKKKKKKKKK..',
-      '....KK..KK....KK..',
-      '....KK..KK....KK..',
-      '..................',
-      '..................',
-      '..................',
-    ],
-  ];
+  };
 
   @override
   void initState() {
     super.initState();
     _runTimer = Timer.periodic(const Duration(milliseconds: 140), (_) {
       if (!mounted) return;
+      final spriteSet =
+          _spritePresets[widget.theme] ?? _spritePresets['classic']!;
       setState(() {
-        _spriteIndex = (_spriteIndex + 1) % _sprites.length;
+        _spriteIndex = (_spriteIndex + 1) % spriteSet.length;
       });
     });
   }
@@ -778,7 +925,9 @@ class _InteractivePixelCatWidgetState extends State<_InteractivePixelCatWidget> 
 
   @override
   Widget build(BuildContext context) {
-    final sprite = _sprites[_spriteIndex];
+    final spriteSet =
+        _spritePresets[widget.theme] ?? _spritePresets['classic']!;
+    final sprite = spriteSet[_spriteIndex % spriteSet.length];
 
     return Container(
       color: Colors.white,

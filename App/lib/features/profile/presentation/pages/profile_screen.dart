@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:convert';
 import '../../../../core/constants/app_colors.dart';
@@ -21,6 +22,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  static const String _pixelThemePrefKey = 'home_pixel_pet_theme';
   AuthUser? _userProfile;
   bool _isLoading = true;
   bool _isUpdating = false;
@@ -30,6 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Form controllers
   final _displayNameController = TextEditingController();
   String? _selectedAccountType;
+  String _selectedPixelTheme = 'classic';
 
   // Map backend values to display names
   String _mapAccountTypeToDisplay(String? backendType) {
@@ -64,6 +67,110 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadUserProfile();
+    _loadCustomizationSettings();
+  }
+
+  Future<void> _loadCustomizationSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _selectedPixelTheme = prefs.getString(_pixelThemePrefKey) ?? 'classic';
+    });
+  }
+
+  Future<void> _savePixelTheme(String theme) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_pixelThemePrefKey, theme);
+
+    if (!mounted) return;
+    setState(() {
+      _selectedPixelTheme = theme;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Home pixel pet style updated'),
+        backgroundColor: AppColors.success,
+      ),
+    );
+  }
+
+  String _themeLabel(String key) {
+    switch (key) {
+      case 'chunky':
+        return 'Chunky Cat';
+      case 'doggo':
+        return 'Doggo Run';
+      default:
+        return 'Classic Cat';
+    }
+  }
+
+  Future<void> _showPetThemeSelector() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFFF1F6F8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 16.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Home Pixel Pet Style',
+                style: AppTextStyles.onboardingTitle.copyWith(
+                  fontSize: 18.sp,
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(height: 6.h),
+              Text(
+                'Choose how your running pet looks on the home card.',
+                style: AppTextStyles.onboardingBody.copyWith(
+                  fontSize: 13.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              SizedBox(height: 10.h),
+              ...['classic', 'chunky', 'doggo'].map((theme) {
+                return RadioListTile<String>(
+                  value: theme,
+                  groupValue: _selectedPixelTheme,
+                  activeColor: AppColors.primary,
+                  title: Text(
+                    _themeLabel(theme),
+                    style: AppTextStyles.onboardingBody.copyWith(
+                      fontSize: 15.sp,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    theme == 'doggo'
+                        ? 'Playful running dog'
+                        : 'Running pixel cat variant',
+                    style: AppTextStyles.onboardingBody.copyWith(
+                      fontSize: 12.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    Navigator.pop(context);
+                    _savePixelTheme(value);
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _loadUserProfile() async {
@@ -447,6 +554,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           actions: [
+            IconButton(
+              onPressed: _showPetThemeSelector,
+              icon: Icon(
+                Icons.settings_outlined,
+                color: Colors.white,
+                size: 24.sp,
+              ),
+              tooltip: 'App Customization',
+            ),
             IconButton(
               onPressed: _showLogoutDialog,
               icon: Icon(

@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
-import '../../../../core/widgets/custom_drawer.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../data/models/post.dart';
 import '../../data/repositories/community_hub_repository.dart';
@@ -47,7 +46,6 @@ class _CommunityHubView extends StatefulWidget {
 class _CommunityHubViewState extends State<_CommunityHubView>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -64,37 +62,37 @@ class _CommunityHubViewState extends State<_CommunityHubView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF8F6F2),
-      drawer: const CustomDrawer(),
+      backgroundColor: const Color(0xFFD6E2E8),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: const Color(0xFF4E9F9A),
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.menu, color: AppColors.accent, size: 24.sp),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          icon: Icon(Icons.arrow_back, color: Colors.white, size: 24.sp),
+          onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Community Hub',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
-            color: AppColors.accent,
-            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
           ),
         ),
+        centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
-          indicatorColor: AppColors.accent,
-          labelColor: AppColors.accent,
-          unselectedLabelColor: AppColors.textSecondary,
+          indicatorColor: const Color(0xFF19262D),
+          indicatorWeight: 2.6,
+          labelColor: const Color(0xFF19262D),
+          unselectedLabelColor: Colors.white.withOpacity(0.65),
           labelStyle: AppTextStyles.onboardingBody.copyWith(
             fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
           unselectedLabelStyle: AppTextStyles.onboardingBody.copyWith(
             fontSize: 14.sp,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w500,
           ),
           tabs: const [
             Tab(text: 'Forum'),
@@ -175,14 +173,55 @@ class _ForumTabState extends State<_ForumTab> {
   }
 
   Widget _buildForumContent(List<Post> posts) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFDDE8ED),
+            Color(0xFFD2DEE5),
+          ],
+        ),
+      ),
+      child: SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFF1F6F8),
+                  Color(0xFFDDE9EE),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(14.r),
+              border: Border.all(color: const Color(0xFFB9CBD4)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.forum_rounded, color: AppColors.primary, size: 18.sp),
+                SizedBox(width: 8.w),
+                Text(
+                  'Forum Feed',
+                  style: AppTextStyles.onboardingBody.copyWith(
+                    fontSize: 14.sp,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
           SizedBox(height: 12.h),
           const CreatePostCard(),
-          SizedBox(height: 16.h),
+          SizedBox(height: 14.h),
           if (posts.isEmpty)
             Center(
               child: Padding(
@@ -197,36 +236,39 @@ class _ForumTabState extends State<_ForumTab> {
               ),
             )
           else
-            ...posts.map((post) => Padding(
-                  padding: EdgeInsets.only(bottom: 16.h),
-                  child: PostCard(
-                    post: post,
-                    onLike: () {
-                      context
-                          .read<CommunityBloc>()
-                          .add(CommunityEvent.likePost(post.id));
-                    },
-                    onComment: (content) {
-                      context.read<CommunityBloc>().add(
-                            CommunityEvent.addComment(
-                              postId: post.id,
-                              content: content,
-                            ),
-                          );
-                    },
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => BlocProvider.value(
-                            value: context.read<CommunityBloc>(),
-                            child: PostDetailPage(post: post),
+            ...posts.map(
+              (post) => Padding(
+                padding: EdgeInsets.only(bottom: 10.h),
+                child: PostCard(
+                  post: post,
+                  onLike: () {
+                    context
+                        .read<CommunityBloc>()
+                        .add(CommunityEvent.likePost(post.id));
+                  },
+                  onComment: (content) {
+                    context.read<CommunityBloc>().add(
+                          CommunityEvent.addComment(
+                            postId: post.id,
+                            content: content,
                           ),
+                        );
+                  },
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => BlocProvider.value(
+                          value: context.read<CommunityBloc>(),
+                          child: PostDetailPage(post: post),
                         ),
-                      );
-                    },
-                  ),
-                )),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
         ],
+      ),
       ),
     );
   }

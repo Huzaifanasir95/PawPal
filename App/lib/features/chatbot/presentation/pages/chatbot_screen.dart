@@ -115,14 +115,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     final bool canSend = !_isLoading && _messageController.text.trim().isNotEmpty;
 
     return Scaffold(
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: const Color(0xFFD6E2E8),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: const Color(0xFF4E9F9A),
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: AppColors.accent,
+            color: Colors.white,
             size: 24.sp,
           ),
           onPressed: () => Navigator.pop(context),
@@ -132,186 +132,208 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
             fontWeight: FontWeight.w700,
-            color: AppColors.accent,
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 10.h),
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14.r),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.45)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 34.w,
-                      height: 34.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.pets_rounded,
-                        color: AppColors.darkTeal,
-                        size: 18.sp,
-                      ),
-                    ),
-                    SizedBox(width: 10.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'AI assistant for everyday pet care',
-                            style: AppTextStyles.onboardingBody.copyWith(
-                              fontSize: 12.sp,
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(height: 2.h),
-                          Text(
-                            'For emergencies, contact a licensed vet immediately.',
-                            style: AppTextStyles.onboardingBody.copyWith(
-                              fontSize: 11.sp,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                itemCount: _messages.length,
-                itemBuilder: (context, index) {
-                  final message = _messages[index];
-                  return _buildMessageBubble(message);
-                },
-              ),
-            ),
-            if (_messages.length == 1)
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFDDE8ED),
+              Color(0xFFD2DEE5),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            children: [
               Padding(
-                padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
-                child: _buildQuickPromptSection(),
-              ),
-            if (_isLoading)
-              Padding(
-                padding: EdgeInsets.fromLTRB(16.w, 2.h, 16.w, 8.h),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      height: 16.w,
-                      width: 16.w,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(AppColors.darkTeal),
-                      ),
+                padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 10.h),
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFF1F6F8),
+                        Color(0xFFDDE9EE),
+                      ],
                     ),
-                    SizedBox(width: 10.w),
-                    Text(
-                      'Thinking...',
-                      style: AppTextStyles.onboardingBody.copyWith(
-                        fontSize: 12.sp,
-                        color: AppColors.textSecondary,
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(color: const Color(0xFFB9CBD4)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 34.w,
+                        height: 34.w,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.pets_rounded,
+                          color: AppColors.primary,
+                          size: 18.sp,
+                        ),
+                      ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'AI assistant for everyday pet care',
+                              style: AppTextStyles.onboardingBody.copyWith(
+                                fontSize: 12.sp,
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              'For emergencies, contact a licensed vet immediately.',
+                              style: AppTextStyles.onboardingBody.copyWith(
+                                fontSize: 11.sp,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 14.h),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      enabled: !_isLoading,
-                      maxLines: 3,
-                      minLines: 1,
-                      onChanged: (_) => setState(() {}),
-                      textInputAction: TextInputAction.send,
-                      decoration: InputDecoration(
-                        hintText: 'Ask about pet care...',
-                        hintStyle: AppTextStyles.onboardingBody.copyWith(
-                          fontSize: 14.sp,
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    final message = _messages[index];
+                    return _buildMessageBubble(message);
+                  },
+                ),
+              ),
+              if (_messages.length == 1)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
+                  child: _buildQuickPromptSection(),
+                ),
+              if (_isLoading)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16.w, 2.h, 16.w, 8.h),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        height: 16.w,
+                        width: 16.w,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        ),
+                      ),
+                      SizedBox(width: 10.w),
+                      Text(
+                        'Thinking...',
+                        style: AppTextStyles.onboardingBody.copyWith(
+                          fontSize: 12.sp,
                           color: AppColors.textSecondary,
                         ),
-                        filled: true,
-                        fillColor: AppColors.surface,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 12.h,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.r),
-                          borderSide: BorderSide(
-                            color: AppColors.darkTeal.withOpacity(0.25),
-                            width: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 14.h),
+                child: Container(
+                  padding: EdgeInsets.all(6.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F6F8),
+                    borderRadius: BorderRadius.circular(28.r),
+                    border: Border.all(color: const Color(0xFFB9CBD4)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          enabled: !_isLoading,
+                          maxLines: 3,
+                          minLines: 1,
+                          onChanged: (_) => setState(() {}),
+                          textInputAction: TextInputAction.send,
+                          decoration: InputDecoration(
+                            hintText: 'Ask about pet care...',
+                            hintStyle: AppTextStyles.onboardingBody.copyWith(
+                              fontSize: 14.sp,
+                              color: AppColors.textSecondary,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 12.h,
+                            ),
+                            border: InputBorder.none,
                           ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.r),
-                          borderSide: BorderSide(
-                            color: AppColors.darkTeal.withOpacity(0.25),
-                            width: 1,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24.r),
-                          borderSide: BorderSide(
-                            color: AppColors.darkTeal,
-                            width: 1.6,
-                          ),
+                          onSubmitted: (_) {
+                            if (canSend) {
+                              _sendMessage(_messageController.text);
+                            }
+                          },
                         ),
                       ),
-                      onSubmitted: (_) {
-                        if (canSend) {
-                          _sendMessage(_messageController.text);
-                        }
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    decoration: BoxDecoration(
-                      color: canSend
-                          ? AppColors.darkTeal
-                          : AppColors.darkTeal.withOpacity(0.35),
-                      borderRadius: BorderRadius.circular(24.r),
-                    ),
-                    child: IconButton(
-                      tooltip: 'Send message',
-                      icon: Icon(
-                        Icons.send_rounded,
-                        color: AppColors.surface,
-                        size: 20.sp,
+                      SizedBox(width: 8.w),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        decoration: BoxDecoration(
+                          color: canSend
+                              ? AppColors.primary
+                              : AppColors.primary.withOpacity(0.35),
+                          borderRadius: BorderRadius.circular(22.r),
+                        ),
+                        child: IconButton(
+                          tooltip: 'Send message',
+                          icon: Icon(
+                            Icons.send_rounded,
+                            color: Colors.white,
+                            size: 20.sp,
+                          ),
+                          onPressed: canSend
+                              ? () => _sendMessage(_messageController.text)
+                              : null,
+                        ),
                       ),
-                      onPressed:
-                          canSend ? () => _sendMessage(_messageController.text) : null,
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -336,8 +358,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           children: _quickPrompts
               .map(
                 (prompt) => ActionChip(
-                  backgroundColor: AppColors.surface,
-                  side: BorderSide(color: AppColors.primary.withOpacity(0.45)),
+                  backgroundColor: const Color(0xFFF1F6F8),
+                  side: const BorderSide(color: Color(0xFFB9CBD4)),
                   label: Text(
                     prompt,
                     style: AppTextStyles.onboardingBody.copyWith(
@@ -362,7 +384,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         margin: EdgeInsets.only(bottom: 12.h),
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         decoration: BoxDecoration(
-          color: message.isUser ? AppColors.darkTeal : AppColors.surface,
+          color: message.isUser ? const Color(0xFF2F6E72) : const Color(0xFFF1F6F8),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(16.r),
             topRight: Radius.circular(16.r),
@@ -372,12 +394,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           border: message.isUser
               ? null
               : Border.all(
-                  color: AppColors.primary.withOpacity(0.35),
+                  color: const Color(0xFFB9CBD4),
                   width: 1,
                 ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.accent.withOpacity(0.08),
+              color: Colors.black.withOpacity(0.06),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

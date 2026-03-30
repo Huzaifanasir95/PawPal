@@ -82,8 +82,10 @@ class _CommunityHubViewState extends State<_CommunityHubView>
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
+          tabAlignment: TabAlignment.center,
           indicatorColor: const Color(0xFF19262D),
           indicatorWeight: 2.6,
+          indicatorSize: TabBarIndicatorSize.label,
           labelColor: const Color(0xFF19262D),
           unselectedLabelColor: Colors.white.withOpacity(0.65),
           labelStyle: AppTextStyles.onboardingBody.copyWith(
@@ -124,10 +126,27 @@ class _ForumTab extends StatefulWidget {
 }
 
 class _ForumTabState extends State<_ForumTab> {
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedCategory = PostCategory.all;
+  String _selectedDateFilter = 'all_time';
+
+  static const Map<String, String> _dateFilterLabels = {
+    'all_time': 'All Time',
+    'today': 'Today',
+    'this_week': 'This Week',
+    'this_month': 'This Month',
+  };
+
   @override
   void initState() {
     super.initState();
     _loadPosts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _loadPosts() {
@@ -173,6 +192,8 @@ class _ForumTabState extends State<_ForumTab> {
   }
 
   Widget _buildForumContent(List<Post> posts) {
+    final filteredPosts = _applyFilters(posts);
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -185,90 +206,242 @@ class _ForumTabState extends State<_ForumTab> {
         ),
       ),
       child: SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFF1F6F8),
-                  Color(0xFFDDE9EE),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(14.r),
-              border: Border.all(color: const Color(0xFFB9CBD4)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.forum_rounded, color: AppColors.primary, size: 18.sp),
-                SizedBox(width: 8.w),
-                Text(
-                  'Forum Feed',
-                  style: AppTextStyles.onboardingBody.copyWith(
-                    fontSize: 14.sp,
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFF1F6F8),
+                    Color(0xFFDDE9EE),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          SizedBox(height: 12.h),
-          const CreatePostCard(),
-          SizedBox(height: 14.h),
-          if (posts.isEmpty)
-            Center(
-              child: Padding(
-                padding: EdgeInsets.only(top: 40.h),
-                child: Text(
-                  'No posts yet. Be the first to share!',
-                  style: AppTextStyles.onboardingBody.copyWith(
-                    fontSize: 16.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(color: const Color(0xFFB9CBD4)),
               ),
-            )
-          else
-            ...posts.map(
-              (post) => Padding(
-                padding: EdgeInsets.only(bottom: 10.h),
-                child: PostCard(
-                  post: post,
-                  onLike: () {
-                    context
-                        .read<CommunityBloc>()
-                        .add(CommunityEvent.likePost(post.id));
-                  },
-                  onComment: (content) {
-                    context.read<CommunityBloc>().add(
-                          CommunityEvent.addComment(
-                            postId: post.id,
-                            content: content,
-                          ),
-                        );
-                  },
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (ctx) => BlocProvider.value(
-                          value: context.read<CommunityBloc>(),
-                          child: PostDetailPage(post: post),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    style: AppTextStyles.onboardingBody.copyWith(
+                      fontSize: 14.sp,
+                      color: AppColors.textPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Search forum posts',
+                      hintStyle: AppTextStyles.onboardingBody.copyWith(
+                        fontSize: 13.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: AppColors.primary,
+                        size: 20.sp,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.78),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 10.h,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        borderSide: BorderSide(color: const Color(0xFFC6D6DE)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        borderSide: BorderSide(color: const Color(0xFFC6D6DE)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        borderSide: BorderSide(color: AppColors.primary),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10.h),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildFilterDropdown(
+                          label: 'Category',
+                          value: _selectedCategory,
+                          items: PostCategory.values,
+                          itemLabelBuilder: _categoryLabel,
+                          onChanged: (value) {
+                            if (value == null) return;
+                            setState(() => _selectedCategory = value);
+                          },
                         ),
                       ),
-                    );
-                  },
-                ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: _buildFilterDropdown(
+                          label: 'Date',
+                          value: _selectedDateFilter,
+                          items: _dateFilterLabels.keys.toList(),
+                          itemLabelBuilder: (value) => _dateFilterLabels[value]!,
+                          onChanged: (value) {
+                            if (value == null) return;
+                            setState(() => _selectedDateFilter = value);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-        ],
+            SizedBox(height: 12.h),
+            const CreatePostCard(),
+            SizedBox(height: 14.h),
+            if (filteredPosts.isEmpty)
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 40.h),
+                  child: Text(
+                    'No posts found for current filters.',
+                    style: AppTextStyles.onboardingBody.copyWith(
+                      fontSize: 16.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              )
+            else
+              ...filteredPosts.map(
+                (post) => Padding(
+                  padding: EdgeInsets.only(bottom: 10.h),
+                  child: PostCard(
+                    post: post,
+                    onLike: () {
+                      context
+                          .read<CommunityBloc>()
+                          .add(CommunityEvent.likePost(post.id));
+                    },
+                    onComment: (content) {
+                      context.read<CommunityBloc>().add(
+                            CommunityEvent.addComment(
+                              postId: post.id,
+                              content: content,
+                            ),
+                          );
+                    },
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => BlocProvider.value(
+                            value: context.read<CommunityBloc>(),
+                            child: PostDetailPage(post: post),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
+    );
+  }
+
+  List<Post> _applyFilters(List<Post> posts) {
+    final query = _searchController.text.trim().toLowerCase();
+    final now = DateTime.now();
+
+    return posts.where((post) {
+      final matchesSearch =
+          query.isEmpty ||
+          post.title.toLowerCase().contains(query) ||
+          post.content.toLowerCase().contains(query) ||
+          (post.userName ?? '').toLowerCase().contains(query);
+
+      final matchesCategory = _selectedCategory == PostCategory.all ||
+          post.category == _selectedCategory;
+
+      bool matchesDate = true;
+      if (_selectedDateFilter == 'today') {
+        matchesDate = post.createdAt.year == now.year &&
+            post.createdAt.month == now.month &&
+            post.createdAt.day == now.day;
+      } else if (_selectedDateFilter == 'this_week') {
+        final weekAgo = now.subtract(const Duration(days: 7));
+        matchesDate = post.createdAt.isAfter(weekAgo);
+      } else if (_selectedDateFilter == 'this_month') {
+        matchesDate = post.createdAt.year == now.year &&
+            post.createdAt.month == now.month;
+      }
+
+      return matchesSearch && matchesCategory && matchesDate;
+    }).toList();
+  }
+
+  String _categoryLabel(String category) {
+    switch (category) {
+      case PostCategory.all:
+        return 'All';
+      case PostCategory.general:
+        return 'General';
+      case PostCategory.dogs:
+        return 'Dogs';
+      case PostCategory.cats:
+        return 'Cats';
+      case PostCategory.health:
+        return 'Health';
+      case PostCategory.training:
+        return 'Training';
+      case PostCategory.nutrition:
+        return 'Nutrition';
+      case PostCategory.funny:
+        return 'Funny';
+      case PostCategory.questions:
+        return 'Questions';
+      default:
+        return category;
+    }
+  }
+
+  Widget _buildFilterDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required String Function(String value) itemLabelBuilder,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.78),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: const Color(0xFFC6D6DE)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          style: AppTextStyles.onboardingBody.copyWith(
+            fontSize: 12.sp,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+          icon: Icon(Icons.keyboard_arrow_down_rounded, size: 18.sp),
+          onChanged: onChanged,
+          items: items
+              .map(
+                (item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: Text('$label: ${itemLabelBuilder(item)}'),
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }

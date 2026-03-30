@@ -21,6 +21,10 @@ class AdoptionCubit extends Cubit<AdoptionState> {
     }
   }
 
+  void searchListings(String query) {
+    emit(state.copyWith(searchQuery: query));
+  }
+
   Future<void> loadDetail(String id) async {
     emit(state.copyWith(isLoadingDetail: true, selectedListing: null, error: null));
     try {

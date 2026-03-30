@@ -12,6 +12,7 @@ import '../../../../core/navigation/app_navigator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../chat/data/repositories/chat_repository.dart';
 import '../../../chatbot/presentation/pages/chatbot_screen.dart';
+import '../../../home/presentation/pages/all_categories_page.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 
@@ -309,7 +310,12 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                 ),
                 const Spacer(),
                 GestureDetector(
-                  onTap: () => AppNavigator.navigateToMarketplace(context),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AllCategoriesPage(),
+                    ),
+                  ),
                   child: Text(
                     'See All',
                     style: TextStyle(
@@ -376,21 +382,24 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   Widget _buildPromoCard() {
     return Container(
       height: 158.h,
+      transform: Matrix4.translationValues(0, -1.5, 0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18.r),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white,
-            AppColors.primary.withOpacity(0.12),
+            const Color(0xFFF1F6F8),
+            const Color(0xFFDDE9EE),
           ],
         ),
+        border: Border.all(color: const Color(0xFFB9CBD4), width: 1.1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.10),
+            blurRadius: 18,
+            spreadRadius: 0.5,
+            offset: const Offset(0, 8),
           ),
         ],
       ),

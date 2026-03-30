@@ -1,0 +1,233 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/navigation/app_navigator.dart';
+import '../../../chatbot/presentation/pages/chatbot_screen.dart';
+import '../../../pets/presentation/pages/my_pets_screen.dart';
+import '../../../profile/presentation/pages/profile_screen.dart';
+
+class AllCategoriesPage extends StatelessWidget {
+  const AllCategoriesPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <_CategoryAction>[
+      _CategoryAction(
+        title: 'Community',
+        subtitle: 'Forums and support',
+        icon: Icons.groups_rounded,
+        onTap: () => AppNavigator.navigateToCommunityHub(context),
+      ),
+      _CategoryAction(
+        title: 'Lost & Found',
+        subtitle: 'Report and discover pets',
+        icon: Icons.pets_rounded,
+        onTap: () => AppNavigator.navigateToCommunityHub(context),
+      ),
+      _CategoryAction(
+        title: 'Adoption',
+        subtitle: 'Find new companions',
+        icon: Icons.volunteer_activism_rounded,
+        onTap: () => AppNavigator.navigateToCommunityHub(context),
+      ),
+      _CategoryAction(
+        title: 'Events',
+        subtitle: 'Meetups and activities',
+        icon: Icons.event_available_rounded,
+        onTap: () => AppNavigator.navigateToCommunityHub(context),
+      ),
+      _CategoryAction(
+        title: 'AI Chatbot',
+        subtitle: 'Instant pet help',
+        icon: Icons.smart_toy_outlined,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+        ),
+      ),
+      _CategoryAction(
+        title: 'Marketplace',
+        subtitle: 'Food, toys, essentials',
+        icon: Icons.storefront_rounded,
+        onTap: () => AppNavigator.navigateToMarketplace(context),
+      ),
+      _CategoryAction(
+        title: 'Diet Plans',
+        subtitle: 'Nutrition guidance',
+        icon: Icons.restaurant_menu_rounded,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+        ),
+      ),
+      _CategoryAction(
+        title: 'Pet Journals',
+        subtitle: 'Track daily records',
+        icon: Icons.edit_note_rounded,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MyPetsScreen()),
+        ),
+      ),
+      _CategoryAction(
+        title: 'Vet Consultation',
+        subtitle: 'Book trusted vets',
+        icon: Icons.local_hospital_outlined,
+        onTap: () => AppNavigator.navigateToVetsList(context),
+      ),
+      _CategoryAction(
+        title: 'Chats',
+        subtitle: 'Open your messages',
+        icon: Icons.chat_bubble_outline_rounded,
+        onTap: () => AppNavigator.navigateToChats(context),
+      ),
+      _CategoryAction(
+        title: 'Orders',
+        subtitle: 'Track your deliveries',
+        icon: Icons.receipt_long_rounded,
+        onTap: () => AppNavigator.navigateToOrders(context),
+      ),
+      _CategoryAction(
+        title: 'Profile',
+        subtitle: 'Manage account settings',
+        icon: Icons.person_outline_rounded,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+        ),
+      ),
+    ];
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFD7E2E8),
+      appBar: AppBar(
+        elevation: 0,
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppColors.textPrimary,
+        title: Text(
+          'All Categories',
+          style: TextStyle(
+            fontSize: 20.sp,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 20.h),
+          child: GridView.builder(
+            itemCount: actions.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12.w,
+              mainAxisSpacing: 12.h,
+              childAspectRatio: 1.08,
+            ),
+            itemBuilder: (context, index) {
+              final action = actions[index];
+              return InkWell(
+                borderRadius: BorderRadius.circular(18.r),
+                onTap: action.onTap,
+                child: Ink(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18.r),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFF1F6F8),
+                        Color(0xFFDDE9EE),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: const Color(0xFFB9CBD4),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.07),
+                        blurRadius: 14,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(14.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 44.w,
+                          height: 44.h,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.14),
+                            borderRadius: BorderRadius.circular(999.r),
+                          ),
+                          child: Icon(
+                            action.icon,
+                            size: 22.sp,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(height: 12.h),
+                        Text(
+                          action.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w800,
+                            height: 1.15,
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          action.subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11.5.sp,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                            height: 1.25,
+                          ),
+                        ),
+                        const Spacer(),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Icon(
+                            Icons.arrow_forward_rounded,
+                            color: AppColors.textSecondary,
+                            size: 18.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryAction {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  _CategoryAction({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+  });
+}

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../data/models/marketplace_models.dart';
 import '../cubit/orders_cubit.dart';
 import '../cubit/orders_state.dart';
 import '../widgets/order_status_badge.dart';
@@ -67,6 +68,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildOrderMetaStrip(order),
+
+                SizedBox(height: 10.h),
+
                 // Status card
                 _buildCard(
                   child: Column(
@@ -99,7 +104,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           OrderStatusBadge(status: order.status),
                         ],
                       ),
-                      SizedBox(height: 12.h),
+                      SizedBox(height: 14.h),
                       // Status timeline
                       _buildStatusTimeline(order.status),
                     ],
@@ -109,7 +114,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 SizedBox(height: 12.h),
 
                 // Items
-                _buildSectionTitle('Items Ordered'),
+                _buildSectionTitle('Items Ordered', Icons.shopping_bag_outlined),
                 SizedBox(height: 8.h),
                 _buildCard(
                   child: Column(
@@ -135,7 +140,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 SizedBox(height: 12.h),
 
                 // Price breakdown
-                _buildSectionTitle('Price Details'),
+                _buildSectionTitle('Price Details', Icons.receipt_long_outlined),
                 SizedBox(height: 8.h),
                 _buildCard(
                   child: Column(
@@ -171,7 +176,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 SizedBox(height: 12.h),
 
                 // Shipping & Payment
-                _buildSectionTitle('Delivery & Payment'),
+                _buildSectionTitle('Delivery & Payment', Icons.local_shipping_outlined),
                 SizedBox(height: 8.h),
                 _buildCard(
                   child: Column(
@@ -231,6 +236,62 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildOrderMetaStrip(Order order) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Text(
+              '${order.items.length} item${order.items.length == 1 ? '' : 's'}',
+              style: GoogleFonts.mulish(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF2C6E69),
+              ),
+            ),
+          ),
+          SizedBox(width: 8.w),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF5FF),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Text(
+              _paymentLabel(order.paymentMethod),
+              style: GoogleFonts.mulish(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1E3A8A),
+              ),
+            ),
+          ),
+          const Spacer(),
+          Text(
+            'PKR ${(order.totalAmount + 150).toStringAsFixed(0)}',
+            style: GoogleFonts.mulish(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w900,
+              color: const Color(0xFF2C6E69),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -329,8 +390,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildOrderItemRow(item) {
+  Widget _buildOrderItemRow(OrderItem item) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8.r),
@@ -390,11 +452,20 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 color: const Color(0xFF191D21),
               ),
             ),
-            Text(
-              '×${item.quantity}',
-              style: GoogleFonts.mulish(
-                fontSize: 11.sp,
-                color: AppColors.textSecondary,
+            SizedBox(height: 4.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Text(
+                'x${item.quantity}',
+                style: GoogleFonts.mulish(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF2C6E69),
+                ),
               ),
             ),
           ],
@@ -409,11 +480,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.primary.withOpacity(0.17)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -421,14 +493,20 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.mulish(
-        fontSize: 15.sp,
-        fontWeight: FontWeight.w700,
-        color: const Color(0xFF191D21),
-      ),
+  Widget _buildSectionTitle(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 17.sp, color: const Color(0xFF2C6E69)),
+        SizedBox(width: 7.w),
+        Text(
+          title,
+          style: GoogleFonts.mulish(
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF191D21),
+          ),
+        ),
+      ],
     );
   }
 

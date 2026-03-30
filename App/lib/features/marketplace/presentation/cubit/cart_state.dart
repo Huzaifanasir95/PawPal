@@ -1,5 +1,7 @@
 import '../../data/models/marketplace_models.dart';
 
+const Object _unset = Object();
+
 class CartState {
   final bool isLoading;
   final bool isAddingToCart;
@@ -24,18 +26,21 @@ class CartState {
     bool? isAddingToCart,
     bool? isPlacingOrder,
     List<CartItem>? items,
-    Order? lastOrder,
-    String? addedProductId,
-    String? error,
+    Object? lastOrder = _unset,
+    Object? addedProductId = _unset,
+    Object? error = _unset,
   }) {
     return CartState(
       isLoading: isLoading ?? this.isLoading,
       isAddingToCart: isAddingToCart ?? this.isAddingToCart,
       isPlacingOrder: isPlacingOrder ?? this.isPlacingOrder,
       items: items ?? this.items,
-      lastOrder: lastOrder ?? this.lastOrder,
-      addedProductId: addedProductId ?? this.addedProductId,
-      error: error,
+      lastOrder:
+          identical(lastOrder, _unset) ? this.lastOrder : lastOrder as Order?,
+      addedProductId: identical(addedProductId, _unset)
+          ? this.addedProductId
+          : addedProductId as String?,
+      error: identical(error, _unset) ? this.error : error as String?,
     );
   }
 }

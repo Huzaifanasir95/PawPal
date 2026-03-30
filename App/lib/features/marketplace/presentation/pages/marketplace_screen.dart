@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../data/models/marketplace_models.dart';
 import '../../data/repositories/marketplace_repository.dart';
 import '../cubit/marketplace_cubit.dart';
 import '../cubit/marketplace_state.dart';
@@ -11,6 +12,7 @@ import '../cubit/cart_state.dart';
 import '../widgets/product_card.dart';
 import 'product_detail_screen.dart';
 import 'cart_screen.dart';
+import 'orders_screen.dart';
 
 class MarketplaceScreen extends StatelessWidget {
   const MarketplaceScreen({super.key});
@@ -37,7 +39,7 @@ class _MarketplaceView extends StatefulWidget {
 
 class _MarketplaceViewState extends State<_MarketplaceView> {
   final _searchController = TextEditingController();
-  String? _selectedPetType;
+  String _searchQuery = '';
 
   @override
   void dispose() {
@@ -45,24 +47,98 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
     super.dispose();
   }
 
+  List<Product> _filterProducts(List<Product> products) {
+    if (_searchQuery.isEmpty) return products;
+    
+    final query = _searchQuery.toLowerCase();
+    return products.where((product) {
+      final name = product.name.toLowerCase();
+      final description = product.description.toLowerCase();
+      final category = (product.categoryName ?? '').toLowerCase();
+      final petType = (product.petType ?? '').toLowerCase();
+      
+      return name.contains(query) ||
+             description.contains(query) ||
+             category.contains(query) ||
+             petType.contains(query);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F6F2),
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(context),
-          SliverToBoxAdapter(
-            child: _buildSearchBar(context),
+      body: Stack(
+        children: [
+          Positioned(
+            top: -90.h,
+            right: -70.w,
+            child: Container(
+              width: 240.w,
+              height: 240.h,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withOpacity(0.22),
+              ),
+            ),
           ),
-          SliverToBoxAdapter(
-            child: _buildPetTypeFilter(context),
+          Positioned(
+            top: 180.h,
+            left: -60.w,
+            child: Container(
+              width: 180.w,
+              height: 180.h,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFE6F4F2),
+              ),
+            ),
           ),
-          SliverToBoxAdapter(
-            child: _buildCategoryChips(context),
+          CustomScrollView(
+            slivers: [
+              _buildSliverAppBar(context),
+              SliverToBoxAdapter(
+                child: _buildSearchBar(context),
+              ),
+              SliverToBoxAdapter(
+                child: _buildCategoryChips(context),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 6.h),
+                  child: BlocBuilder<MarketplaceCubit, MarketplaceState>(
+                    builder: (context, state) {
+                      final filtered = _filterProducts(state.products);
+                      return Row(
+                        children: [
+                          Text(
+                            '${filtered.length} items found',
+                            style: GoogleFonts.mulish(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF2C6E69),
+                            ),
+                          ),
+                          const Spacer(),
+                          if (state.isLoadingProducts)
+                            SizedBox(
+                              width: 14.w,
+                              height: 14.h,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.darkTeal,
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+              _buildProductGrid(context),
+              SliverToBoxAdapter(child: SizedBox(height: 80.h)),
+            ],
           ),
-          _buildProductGrid(context),
-          SliverToBoxAdapter(child: SizedBox(height: 80.h)),
         ],
       ),
       floatingActionButton: _buildCartFab(context),
@@ -80,6 +156,12 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
         onPressed: () => Navigator.pop(context),
       ),
       actions: [
+        IconButton(
+          icon: Icon(Icons.receipt_long_outlined,
+              color: const Color(0xFF191D21), size: 23.sp),
+          onPressed: () => _openOrders(context),
+          tooltip: 'My Orders',
+        ),
         BlocBuilder<CartCubit, CartState>(
           builder: (context, state) {
             final count = state.items.fold(0, (s, i) => s + i.quantity);
@@ -175,15 +257,10 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                   border: InputBorder.none,
                   isDense: true,
                 ),
-                onSubmitted: (val) {
-                  context.read<MarketplaceCubit>().filterProducts(
-                        search: val.isEmpty ? null : val,
-                        categoryId: context
-                            .read<MarketplaceCubit>()
-                            .state
-                            .selectedCategoryId,
-                        petType: _selectedPetType,
-                      );
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val;
+                  });
                 },
               ),
             ),
@@ -191,14 +268,9 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
               GestureDetector(
                 onTap: () {
                   _searchController.clear();
-                  context.read<MarketplaceCubit>().filterProducts(
-                        categoryId: context
-                            .read<MarketplaceCubit>()
-                            .state
-                            .selectedCategoryId,
-                        petType: _selectedPetType,
-                      );
-                  setState(() {});
+                  setState(() {
+                    _searchQuery = '';
+                  });
                 },
                 child: Padding(
                   padding: EdgeInsets.only(right: 12.w),
@@ -212,81 +284,16 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
     );
   }
 
-  Widget _buildPetTypeFilter(BuildContext context) {
-    final petTypes = ['All', 'dog', 'cat', 'bird', 'fish', 'other'];
-    return SizedBox(
-      height: 44.h,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        itemCount: petTypes.length,
-        separatorBuilder: (_, __) => SizedBox(width: 8.w),
-        itemBuilder: (context, i) {
-          final type = petTypes[i];
-          final selected = type == 'All'
-              ? _selectedPetType == null
-              : _selectedPetType == type;
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedPetType = type == 'All' ? null : type;
-              });
-              context.read<MarketplaceCubit>().filterProducts(
-                    petType: _selectedPetType,
-                    search: _searchController.text.isNotEmpty
-                        ? _searchController.text
-                        : null,
-                    categoryId: context
-                        .read<MarketplaceCubit>()
-                        .state
-                        .selectedCategoryId,
-                  );
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(horizontal: 14.w),
-              decoration: BoxDecoration(
-                color: selected ? const Color(0xFF2C6E69) : Colors.white,
-                borderRadius: BorderRadius.circular(20.r),
-                boxShadow: selected
-                    ? [
-                        BoxShadow(
-                            color: const Color(0xFF2C6E69).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2))
-                      ]
-                    : [],
-              ),
-              child: Center(
-                child: Text(
-                  type == 'All'
-                      ? 'All'
-                      : type[0].toUpperCase() + type.substring(1),
-                  style: GoogleFonts.mulish(
-                    fontSize: 12.sp,
-                    fontWeight:
-                        selected ? FontWeight.w700 : FontWeight.w500,
-                    color: selected ? Colors.white : const Color(0xFF6A6A6A),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildCategoryChips(BuildContext context) {
     return BlocBuilder<MarketplaceCubit, MarketplaceState>(
       builder: (context, state) {
         if (state.categories.isEmpty) return const SizedBox.shrink();
         final all = [null, ...state.categories.map((c) => c)];
         return SizedBox(
-          height: 50.h,
+          height: 56.h,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+            padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 10.h),
             itemCount: all.length,
             separatorBuilder: (_, __) => SizedBox(width: 8.w),
             itemBuilder: (context, i) {
@@ -296,7 +303,6 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                 onTap: () {
                   context.read<MarketplaceCubit>().filterProducts(
                         categoryId: cat?.id,
-                        petType: _selectedPetType,
                         search: _searchController.text.isNotEmpty
                             ? _searchController.text
                             : null,
@@ -308,12 +314,12 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                   decoration: BoxDecoration(
                     color: selected
                         ? AppColors.primary
-                        : const Color(0xFFF3EFE8),
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(20.r),
                     border: Border.all(
                       color: selected
-                          ? AppColors.primary
-                          : Colors.transparent,
+                          ? const Color(0xFF7FC9C2)
+                          : AppColors.primary.withOpacity(0.35),
                     ),
                   ),
                   child: Center(
@@ -377,7 +383,9 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
           );
         }
 
-        if (state.products.isEmpty) {
+        final filteredProducts = _filterProducts(state.products);
+
+        if (filteredProducts.isEmpty) {
           return SliverToBoxAdapter(
             child: Center(
               child: Padding(
@@ -387,14 +395,21 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                     Icon(Icons.shopping_bag_outlined,
                         size: 56.sp, color: AppColors.primary),
                     SizedBox(height: 16.h),
-                    Text('No products found',
+                    Text(
+                        _searchQuery.isNotEmpty
+                            ? 'No products match "$_searchQuery"'
+                            : 'No products found',
+                        textAlign: TextAlign.center,
                         style: GoogleFonts.mulish(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         )),
                     SizedBox(height: 8.h),
-                    Text('Try adjusting your filters',
+                    Text(
+                        _searchQuery.isNotEmpty
+                            ? 'Try a different search term'
+                            : 'Try adjusting your filters',
                         style: GoogleFonts.mulish(
                             color: AppColors.textSecondary)),
                   ],
@@ -409,7 +424,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
           sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate(
               (context, i) {
-                final product = state.products[i];
+                final product = filteredProducts[i];
                 return ProductCard(
                   product: product,
                   onTap: () => _openProductDetail(context, product.id),
@@ -418,13 +433,13 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                       .addToCart(product.id, 1),
                 );
               },
-              childCount: state.products.length,
+              childCount: filteredProducts.length,
             ),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 12.w,
               mainAxisSpacing: 12.h,
-              childAspectRatio: 0.65,
+              childAspectRatio: 0.58,
             ),
           ),
         );
@@ -465,7 +480,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
           crossAxisCount: 2,
           crossAxisSpacing: 12.w,
           mainAxisSpacing: 12.h,
-          childAspectRatio: 0.65,
+          childAspectRatio: 0.58,
         ),
         itemCount: 6,
         itemBuilder: (_, __) => Container(
@@ -546,6 +561,15 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
           value: cartCubit,
           child: const CartScreen(),
         ),
+      ),
+    );
+  }
+
+  void _openOrders(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const OrdersScreen(),
       ),
     );
   }

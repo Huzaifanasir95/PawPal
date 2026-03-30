@@ -367,13 +367,13 @@ class _AddPetScreenState extends State<AddPetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: const Color(0xFFD6E2E8),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: const Color(0xFF4E9F9A),
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: AppColors.accent,
+            color: Colors.white,
             size: 24.sp,
           ),
           onPressed: () => Navigator.pop(context),
@@ -382,627 +382,654 @@ class _AddPetScreenState extends State<AddPetScreen> {
           'Add Pet',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
-            color: AppColors.accent,
-            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.w),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Pet Images Section
-              Text(
-                'Pet Photos',
-                style: AppTextStyles.onboardingTitle.copyWith(
-                  fontSize: 16.sp,
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 12.h),
-              Container(
-                height: 200.h,
-                child: GridView.builder(
-                  scrollDirection: Axis.horizontal,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 1,
-                    mainAxisSpacing: 12.w,
-                    childAspectRatio: 1,
-                  ),
-                  itemCount: _selectedImages.length + 1, // +1 for add button
-                  itemBuilder: (context, index) {
-                    if (index == _selectedImages.length) {
-                      // Add photo button
-                      return GestureDetector(
-                        onTap: () => _showImageSourceDialog(),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(16.r),
-                            border: Border.all(
-                              color: AppColors.border,
-                              width: 2,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.add_a_photo,
-                            color: AppColors.primary,
-                            size: 48.sp,
-                          ),
-                        ),
-                      );
-                    } else {
-                      // Photo
-                      final image = _selectedImages[index];
-                      final isPrimary = image == _selectedImage;
-                      return Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16.r),
-                              border: Border.all(
-                                color: isPrimary ? AppColors.success : AppColors.border,
-                                width: isPrimary ? 3 : 1,
-                              ),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(14.r),
-                              child: Image.file(
-                                image,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                              ),
-                            ),
-                          ),
-                          if (isPrimary && _isVerified)
-                            Positioned(
-                              top: 8.h,
-                              right: 8.w,
-                              child: Container(
-                                padding: EdgeInsets.all(4.w),
-                                decoration: BoxDecoration(
-                                  color: AppColors.success,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.verified,
-                                  color: Colors.white,
-                                  size: 16.sp,
-                                ),
-                              ),
-                            ),
-                          Positioned(
-                            top: 8.h,
-                            left: 8.w,
-                            child: GestureDetector(
-                              onTap: () => _removeImage(index),
-                              child: Container(
-                                padding: EdgeInsets.all(4.w),
-                                decoration: BoxDecoration(
-                                  color: AppColors.error.withOpacity(0.8),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 16.sp,
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (isPrimary)
-                            Positioned(
-                              bottom: 8.h,
-                              right: 8.w,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8.w,
-                                  vertical: 4.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(8.r),
-                                ),
-                                child: Text(
-                                  'Primary',
-                                  style: AppTextStyles.onboardingBody.copyWith(
-                                    fontSize: 10.sp,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      );
-                    }
-                  },
-                ),
-              ),
-              if (_selectedImage != null)
-                Padding(
-                  padding: EdgeInsets.only(top: 12.h),
-                  child: ElevatedButton.icon(
-                    onPressed: _isVerifying ? null : _verifyBreed,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                    icon: _isVerifying
-                        ? SizedBox(
-                            width: 16.w,
-                            height: 16.h,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.accent,
-                              ),
-                            ),
-                          )
-                        : Icon(
-                            Icons.verified_user,
-                            color: AppColors.accent,
-                            size: 18.sp,
-                          ),
-                    label: Text(
-                      _isVerifying ? 'Verifying...' : 'Verify Breed',
-                      style: AppTextStyles.onboardingBody.copyWith(
-                        fontSize: 14.sp,
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-
-              SizedBox(height: 30.h),
-
-              // Pet Type Selection
-              Text(
-                'Pet Type',
-                style: AppTextStyles.onboardingTitle.copyWith(
-                  fontSize: 16.sp,
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 12.h),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTypeCard('Dog', Icons.pets, 'dog'),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _buildTypeCard('Cat', Icons.pets, 'cat'),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 24.h),
-
-              // Pet Name
-              _buildTextField(
-                label: 'Pet Name',
-                controller: _nameController,
-                hint: 'e.g., Buddy',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter pet name';
-                  }
-                  return null;
-                },
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Breed
-              _buildTextField(
-                label: 'Breed',
-                controller: _breedController,
-                hint: 'e.g., Golden Retriever',
-                suffix: _isVerified
-                    ? Icon(
-                        Icons.verified,
-                        color: AppColors.success,
-                        size: 20.sp,
-                      )
-                    : null,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter breed';
-                  }
-                  return null;
-                },
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Age
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _buildTextField(
-                      label: 'Age',
-                      controller: _ageController,
-                      hint: '2',
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
-                        }
-                        if (int.tryParse(value) == null) {
-                          return 'Invalid';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _buildDropdown(
-                      label: 'Unit',
-                      value: _ageUnit,
-                      items: ['months', 'years'],
-                      onChanged: (value) {
-                        setState(() {
-                          _ageUnit = value!;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Gender
-              Text(
-                'Gender',
-                style: AppTextStyles.onboardingTitle.copyWith(
-                  fontSize: 16.sp,
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 12.h),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildGenderCard('Male', Icons.male, 'male'),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _buildGenderCard('Female', Icons.female, 'female'),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Color
-              _buildTextField(
-                label: 'Color',
-                controller: _colorController,
-                hint: 'e.g., Golden',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter color';
-                  }
-                  return null;
-                },
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Weight
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _buildTextField(
-                      label: 'Weight',
-                      controller: _weightController,
-                      hint: '25',
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Invalid';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _buildDropdown(
-                      label: 'Unit',
-                      value: _weightUnit,
-                      items: ['kg', 'lbs'],
-                      onChanged: (value) {
-                        setState(() {
-                          _weightUnit = value!;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Bio
-              _buildTextField(
-                label: 'Bio (Optional)',
-                controller: _bioController,
-                hint: 'Tell us about your pet...',
-                maxLines: 4,
-              ),
-
-              SizedBox(height: 30.h),
-
-              // Health Records Section
-              Text(
-                'Health Records (Optional)',
-                style: AppTextStyles.onboardingTitle.copyWith(
-                  fontSize: 18.sp,
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 16.h),
-              SwitchListTile(
-                title: Text(
-                  'Add Health Records',
-                  style: AppTextStyles.onboardingBody.copyWith(
-                    fontSize: 16.sp,
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(
-                  'Include vaccination status, medical conditions, and vet information',
-                  style: AppTextStyles.onboardingBody.copyWith(
-                    fontSize: 14.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                value: _hasHealthRecord,
-                onChanged: (value) {
-                  setState(() {
-                    _hasHealthRecord = value;
-                  });
-                },
-                activeColor: AppColors.primary,
-              ),
-
-              if (_hasHealthRecord) ...[
-                SizedBox(height: 24.h),
-
-                // Vaccination Status
-                Text(
-                  'Vaccination',
-                  style: AppTextStyles.onboardingTitle.copyWith(
-                    fontSize: 16.sp,
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                SwitchListTile(
-                  title: Text(
-                    'Is Vaccinated',
-                    style: AppTextStyles.onboardingBody.copyWith(
-                      fontSize: 16.sp,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  value: _isVaccinated,
-                  onChanged: (value) {
-                    setState(() {
-                      _isVaccinated = value;
-                    });
-                  },
-                  activeColor: AppColors.primary,
-                ),
-
-                if (_isVaccinated) ...[
-                  SizedBox(height: 16.h),
-                  _buildTextField(
-                    label: 'Vaccination Date',
-                    controller: _vaccinationDateController,
-                    hint: 'e.g., 2024-01-15',
-                  ),
-                  SizedBox(height: 16.h),
-                  _buildTextField(
-                    label: 'Vaccination Details',
-                    controller: _vaccinationDetailsController,
-                    hint: 'e.g., Rabies, DHPP, etc.',
-                    maxLines: 3,
-                  ),
-                ],
-
-                SizedBox(height: 24.h),
-
-                // Medical Conditions
-                _buildTextField(
-                  label: 'Medical Conditions (Optional)',
-                  controller: _medicalConditionsController,
-                  hint: 'e.g., Arthritis, Diabetes (separate with commas)',
-                  maxLines: 2,
-                ),
-
-                SizedBox(height: 16.h),
-
-                // Allergies
-                _buildTextField(
-                  label: 'Allergies (Optional)',
-                  controller: _allergiesController,
-                  hint: 'e.g., Chicken, Pollen (separate with commas)',
-                  maxLines: 2,
-                ),
-
-                SizedBox(height: 16.h),
-
-                // Current Medications
-                _buildTextField(
-                  label: 'Current Medications (Optional)',
-                  controller: _medicationsController,
-                  hint: 'e.g., Heartworm preventive, Insulin (separate with commas)',
-                  maxLines: 2,
-                ),
-
-                SizedBox(height: 24.h),
-
-                // Vet Information
-                Text(
-                  'Veterinarian Information',
-                  style: AppTextStyles.onboardingTitle.copyWith(
-                    fontSize: 16.sp,
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 16.h),
-
-                _buildTextField(
-                  label: 'Vet Name (Optional)',
-                  controller: _vetNameController,
-                  hint: 'Dr. Smith',
-                ),
-
-                SizedBox(height: 16.h),
-
-                _buildTextField(
-                  label: 'Vet Clinic (Optional)',
-                  controller: _vetClinicController,
-                  hint: 'City Animal Hospital',
-                ),
-
-                SizedBox(height: 16.h),
-
-                _buildTextField(
-                  label: 'Vet Phone (Optional)',
-                  controller: _vetPhoneController,
-                  hint: '+1 (555) 123-4567',
-                  keyboardType: TextInputType.phone,
-                ),
-
-                SizedBox(height: 16.h),
-
-                _buildTextField(
-                  label: 'Vet Address (Optional)',
-                  controller: _vetAddressController,
-                  hint: '123 Main St, City, State',
-                  maxLines: 2,
-                ),
-
-                SizedBox(height: 24.h),
-
-                // Emergency Contact
-                Text(
-                  'Emergency Contact',
-                  style: AppTextStyles.onboardingTitle.copyWith(
-                    fontSize: 16.sp,
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 16.h),
-
-                _buildTextField(
-                  label: 'Emergency Contact Name (Optional)',
-                  controller: _emergencyContactNameController,
-                  hint: 'John Doe',
-                ),
-
-                SizedBox(height: 16.h),
-
-                _buildTextField(
-                  label: 'Emergency Contact Phone (Optional)',
-                  controller: _emergencyContactPhoneController,
-                  hint: '+1 (555) 987-6543',
-                  keyboardType: TextInputType.phone,
-                ),
-
-                SizedBox(height: 24.h),
-
-                // Insurance
-                Text(
-                  'Pet Insurance (Optional)',
-                  style: AppTextStyles.onboardingTitle.copyWith(
-                    fontSize: 16.sp,
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 16.h),
-
-                _buildTextField(
-                  label: 'Insurance Provider',
-                  controller: _insuranceProviderController,
-                  hint: 'Pet Insurance Company',
-                ),
-
-                SizedBox(height: 16.h),
-
-                _buildTextField(
-                  label: 'Policy Number',
-                  controller: _insurancePolicyController,
-                  hint: 'POL-123456789',
-                ),
-
-                SizedBox(height: 16.h),
-
-                // Additional Notes
-                _buildTextField(
-                  label: 'Additional Health Notes (Optional)',
-                  controller: _additionalNotesController,
-                  hint: 'Any other health-related information...',
-                  maxLines: 4,
-                ),
-              ],
-
-              SizedBox(height: 30.h),
-
-              // Submit Button
-              SizedBox(
-                width: double.infinity,
-                height: 56.h,
-                child: ElevatedButton(
-                  onPressed: _submitPet,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.r),
-                    ),
-                  ),
-                  child: Text(
-                    'Register Pet',
-                    style: AppTextStyles.onboardingBody.copyWith(
-                      fontSize: 18.sp,
-                      color: AppColors.textOnSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 30.h),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFDDE8ED),
+              Color(0xFFD2DEE5),
             ],
           ),
         ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionCard(
+                  title: 'Pet Photos',
+                  subtitle:
+                      'Add clear photos and verify breed for better records.',
+                  icon: Icons.photo_camera_back_outlined,
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 188.h,
+                        child: GridView.builder(
+                          scrollDirection: Axis.horizontal,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 1,
+                            mainAxisSpacing: 12.w,
+                            childAspectRatio: 1,
+                          ),
+                          itemCount: _selectedImages.length + 1,
+                          itemBuilder: (context, index) {
+                            if (index == _selectedImages.length) {
+                              return GestureDetector(
+                                onTap: _showImageSourceDialog,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF4F8FA),
+                                    borderRadius: BorderRadius.circular(16.r),
+                                    border: Border.all(
+                                      color: const Color(0xFFBDD0D9),
+                                      width: 1.6,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.add_a_photo,
+                                    color: AppColors.primary,
+                                    size: 48.sp,
+                                  ),
+                                ),
+                              );
+                            }
+
+                            final image = _selectedImages[index];
+                            final isPrimary = image == _selectedImage;
+
+                            return Stack(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16.r),
+                                    border: Border.all(
+                                      color: isPrimary
+                                          ? AppColors.primary
+                                          : const Color(0xFFCAD8DF),
+                                      width: isPrimary ? 2.4 : 1,
+                                    ),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(14.r),
+                                    child: Image.file(
+                                      image,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                    ),
+                                  ),
+                                ),
+                                if (isPrimary && _isVerified)
+                                  Positioned(
+                                    top: 8.h,
+                                    right: 8.w,
+                                    child: Container(
+                                      padding: EdgeInsets.all(4.w),
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF2E7D32),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.verified,
+                                        color: Colors.white,
+                                        size: 16.sp,
+                                      ),
+                                    ),
+                                  ),
+                                Positioned(
+                                  top: 8.h,
+                                  left: 8.w,
+                                  child: GestureDetector(
+                                    onTap: () => _removeImage(index),
+                                    child: Container(
+                                      padding: EdgeInsets.all(4.w),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.error.withOpacity(0.85),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                        size: 16.sp,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                if (isPrimary)
+                                  Positioned(
+                                    bottom: 8.h,
+                                    right: 8.w,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.w,
+                                        vertical: 4.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary.withOpacity(0.85),
+                                        borderRadius: BorderRadius.circular(8.r),
+                                      ),
+                                      child: Text(
+                                        'Primary',
+                                        style: AppTextStyles.onboardingBody.copyWith(
+                                          fontSize: 10.sp,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      if (_selectedImage != null)
+                        Padding(
+                          padding: EdgeInsets.only(top: 14.h),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _isVerifying ? null : _verifyBreed,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF3D8986),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                              ),
+                              icon: _isVerifying
+                                  ? SizedBox(
+                                      width: 16.w,
+                                      height: 16.h,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : Icon(Icons.verified_user, size: 18.sp),
+                              label: Text(
+                                _isVerifying ? 'Verifying...' : 'Verify Breed',
+                                style: AppTextStyles.onboardingBody.copyWith(
+                                  fontSize: 14.sp,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 14.h),
+                _buildSectionCard(
+                  title: 'Basic Details',
+                  subtitle: 'Tell us the essentials for your pet profile.',
+                  icon: Icons.pets_outlined,
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: _buildTypeCard('Dog', Icons.pets, 'dog')),
+                          SizedBox(width: 12.w),
+                          Expanded(child: _buildTypeCard('Cat', Icons.pets, 'cat')),
+                        ],
+                      ),
+                      SizedBox(height: 18.h),
+                      _buildTextField(
+                        label: 'Pet Name',
+                        controller: _nameController,
+                        hint: 'e.g., Buddy',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter pet name';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 14.h),
+                      _buildTextField(
+                        label: 'Breed',
+                        controller: _breedController,
+                        hint: 'e.g., Golden Retriever',
+                        suffix: _isVerified
+                            ? Icon(
+                                Icons.verified,
+                                color: const Color(0xFF2E7D32),
+                                size: 20.sp,
+                              )
+                            : null,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter breed';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 14.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: _buildTextField(
+                              label: 'Age',
+                              controller: _ageController,
+                              hint: '2',
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                if (int.tryParse(value) == null) {
+                                  return 'Invalid';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: _buildDropdown(
+                              label: 'Unit',
+                              value: _ageUnit,
+                              items: const ['months', 'years'],
+                              onChanged: (value) {
+                                setState(() {
+                                  _ageUnit = value!;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 14.h),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Gender',
+                            style: AppTextStyles.onboardingTitle.copyWith(
+                              fontSize: 16.sp,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 8.h),
+                          Row(
+                            children: [
+                              Expanded(
+                                  child: _buildGenderCard(
+                                      'Male', Icons.male, 'male')),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                  child: _buildGenderCard(
+                                      'Female', Icons.female, 'female')),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 14.h),
+                      _buildTextField(
+                        label: 'Color',
+                        controller: _colorController,
+                        hint: 'e.g., Golden',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter color';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 14.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: _buildTextField(
+                              label: 'Weight',
+                              controller: _weightController,
+                              hint: '25',
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                if (double.tryParse(value) == null) {
+                                  return 'Invalid';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: _buildDropdown(
+                              label: 'Unit',
+                              value: _weightUnit,
+                              items: const ['kg', 'lbs'],
+                              onChanged: (value) {
+                                setState(() {
+                                  _weightUnit = value!;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 14.h),
+                      _buildTextField(
+                        label: 'Bio (Optional)',
+                        controller: _bioController,
+                        hint: 'Tell us about your pet...',
+                        maxLines: 4,
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 14.h),
+                _buildSectionCard(
+                  title: 'Health Records (Optional)',
+                  subtitle:
+                      'Add vaccination details, vet info, and emergency contacts.',
+                  icon: Icons.favorite_border_rounded,
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          'Add Health Records',
+                          style: AppTextStyles.onboardingBody.copyWith(
+                            fontSize: 16.sp,
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Include vaccination status, medical conditions, and vet information',
+                          style: AppTextStyles.onboardingBody.copyWith(
+                            fontSize: 13.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        value: _hasHealthRecord,
+                        onChanged: (value) {
+                          setState(() {
+                            _hasHealthRecord = value;
+                          });
+                        },
+                        activeColor: AppColors.primary,
+                      ),
+                      if (_hasHealthRecord) ...[
+                        SizedBox(height: 8.h),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            'Is Vaccinated',
+                            style: AppTextStyles.onboardingBody.copyWith(
+                              fontSize: 15.sp,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          value: _isVaccinated,
+                          onChanged: (value) {
+                            setState(() {
+                              _isVaccinated = value;
+                            });
+                          },
+                          activeColor: AppColors.primary,
+                        ),
+                        if (_isVaccinated) ...[
+                          SizedBox(height: 10.h),
+                          _buildTextField(
+                            label: 'Vaccination Date',
+                            controller: _vaccinationDateController,
+                            hint: 'e.g., 2024-01-15',
+                          ),
+                          SizedBox(height: 12.h),
+                          _buildTextField(
+                            label: 'Vaccination Details',
+                            controller: _vaccinationDetailsController,
+                            hint: 'e.g., Rabies, DHPP, etc.',
+                            maxLines: 3,
+                          ),
+                        ],
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Medical Conditions (Optional)',
+                          controller: _medicalConditionsController,
+                          hint: 'e.g., Arthritis, Diabetes',
+                          maxLines: 2,
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Allergies (Optional)',
+                          controller: _allergiesController,
+                          hint: 'e.g., Chicken, Pollen',
+                          maxLines: 2,
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Current Medications (Optional)',
+                          controller: _medicationsController,
+                          hint: 'e.g., Heartworm preventive, Insulin',
+                          maxLines: 2,
+                        ),
+                        SizedBox(height: 16.h),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Veterinarian Information',
+                            style: AppTextStyles.onboardingTitle.copyWith(
+                              fontSize: 16.sp,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Vet Name (Optional)',
+                          controller: _vetNameController,
+                          hint: 'Dr. Smith',
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Vet Clinic (Optional)',
+                          controller: _vetClinicController,
+                          hint: 'City Animal Hospital',
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Vet Phone (Optional)',
+                          controller: _vetPhoneController,
+                          hint: '+1 (555) 123-4567',
+                          keyboardType: TextInputType.phone,
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Vet Address (Optional)',
+                          controller: _vetAddressController,
+                          hint: '123 Main St, City, State',
+                          maxLines: 2,
+                        ),
+                        SizedBox(height: 16.h),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Emergency Contact',
+                            style: AppTextStyles.onboardingTitle.copyWith(
+                              fontSize: 16.sp,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Emergency Contact Name (Optional)',
+                          controller: _emergencyContactNameController,
+                          hint: 'John Doe',
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Emergency Contact Phone (Optional)',
+                          controller: _emergencyContactPhoneController,
+                          hint: '+1 (555) 987-6543',
+                          keyboardType: TextInputType.phone,
+                        ),
+                        SizedBox(height: 16.h),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Pet Insurance (Optional)',
+                            style: AppTextStyles.onboardingTitle.copyWith(
+                              fontSize: 16.sp,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Insurance Provider',
+                          controller: _insuranceProviderController,
+                          hint: 'Pet Insurance Company',
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Policy Number',
+                          controller: _insurancePolicyController,
+                          hint: 'POL-123456789',
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildTextField(
+                          label: 'Additional Health Notes (Optional)',
+                          controller: _additionalNotesController,
+                          hint: 'Any other health-related information...',
+                          maxLines: 4,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                SizedBox(height: 18.h),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56.h,
+                  child: ElevatedButton(
+                    onPressed: _submitPet,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF19262D),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: Text(
+                      'Register Pet',
+                      style: AppTextStyles.onboardingBody.copyWith(
+                        fontSize: 18.sp,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 14.h),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFF1F6F8),
+            Color(0xFFDDE9EE),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(color: const Color(0xFFB9CBD4), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34.w,
+                height: 34.h,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 18.sp),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.onboardingTitle.copyWith(
+                        fontSize: 17.sp,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.onboardingBody.copyWith(
+                        fontSize: 12.sp,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          child,
+        ],
       ),
     );
   }
@@ -1045,21 +1072,21 @@ class _AddPetScreenState extends State<AddPetScreen> {
             ),
             suffixIcon: suffix,
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: const Color(0xFFF7FBFD),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderRadius: BorderRadius.circular(14.r),
+              borderSide: const BorderSide(color: Color(0xFFC7D6DE)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderRadius: BorderRadius.circular(14.r),
+              borderSide: const BorderSide(color: Color(0xFFC7D6DE)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(14.r),
               borderSide: BorderSide(color: AppColors.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(14.r),
               borderSide: BorderSide(color: AppColors.error),
             ),
             contentPadding: EdgeInsets.symmetric(
@@ -1092,9 +1119,9 @@ class _AddPetScreenState extends State<AddPetScreen> {
         SizedBox(height: 8.h),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: AppColors.border),
+            color: const Color(0xFFF7FBFD),
+            borderRadius: BorderRadius.circular(14.r),
+            border: Border.all(color: const Color(0xFFC7D6DE)),
           ),
           padding: EdgeInsets.symmetric(horizontal: 12.w),
           child: DropdownButton<String>(
@@ -1131,12 +1158,10 @@ class _AddPetScreenState extends State<AddPetScreen> {
       child: Container(
         height: 80.h,
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withOpacity(0.3)
-              : AppColors.surface,
-          borderRadius: BorderRadius.circular(12.r),
+          color: isSelected ? const Color(0xFFD3ECEA) : const Color(0xFFF7FBFD),
+          borderRadius: BorderRadius.circular(14.r),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? AppColors.primary : const Color(0xFFC7D6DE),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -1174,12 +1199,10 @@ class _AddPetScreenState extends State<AddPetScreen> {
       child: Container(
         height: 60.h,
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.accent.withOpacity(0.1)
-              : AppColors.surface,
-          borderRadius: BorderRadius.circular(12.r),
+          color: isSelected ? const Color(0xFFE9F4F3) : const Color(0xFFF7FBFD),
+          borderRadius: BorderRadius.circular(14.r),
           border: Border.all(
-            color: isSelected ? AppColors.accent : AppColors.border,
+            color: isSelected ? AppColors.primary : const Color(0xFFC7D6DE),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -1188,7 +1211,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.accent : AppColors.textSecondary,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
               size: 20.sp,
             ),
             SizedBox(width: 8.w),
@@ -1196,7 +1219,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
               title,
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
-                color: isSelected ? AppColors.accent : AppColors.textSecondary,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
             ),

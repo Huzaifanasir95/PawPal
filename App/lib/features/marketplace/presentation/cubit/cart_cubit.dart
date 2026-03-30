@@ -25,8 +25,8 @@ class CartCubit extends Cubit<CartState> {
     emit(state.copyWith(isAddingToCart: true, error: null, addedProductId: null));
     try {
       await _repo.addToCart(productId, quantity);
-      emit(state.copyWith(isAddingToCart: false, addedProductId: productId));
       await loadCart();
+      emit(state.copyWith(isAddingToCart: false, addedProductId: productId));
     } catch (e) {
       emit(state.copyWith(
         isAddingToCart: false,
@@ -86,5 +86,6 @@ class CartCubit extends Cubit<CartState> {
   int get itemCount => state.items.fold(0, (sum, i) => sum + i.quantity);
 
   void clearError() => emit(state.copyWith(error: null));
+  void clearAddedProductId() => emit(state.copyWith(addedProductId: null));
   void clearLastOrder() => emit(state.copyWith(lastOrder: null));
 }

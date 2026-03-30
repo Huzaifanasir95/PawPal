@@ -10,6 +10,8 @@ import '../bloc/vet_event.dart';
 import '../bloc/vet_state.dart';
 import 'vet_detail_screen.dart';
 
+enum _VetQuickFilter { all, topRated, affordable, availableNow }
+
 class VetsListScreen extends StatefulWidget {
   const VetsListScreen({super.key});
 
@@ -20,6 +22,8 @@ class VetsListScreen extends StatefulWidget {
 class _VetsListScreenState extends State<VetsListScreen> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
+  String _searchQuery = '';
+  _VetQuickFilter _activeQuickFilter = _VetQuickFilter.all;
   
   String? _filterCity;
   String? _filterSpecialization;
@@ -43,6 +47,8 @@ class _VetsListScreenState extends State<VetsListScreen> {
   }
 
   void _onScroll() {
+    if (_searchQuery.trim().isNotEmpty) return;
+
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.9) {
       final currentState = context.read<VetBloc>().state;
       currentState.maybeWhen(
@@ -73,13 +79,42 @@ class _VetsListScreenState extends State<VetsListScreen> {
         statusBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F7FA),
+        backgroundColor: AppColors.authBackground,
         body: SafeArea(
-          child: Column(
+          child: Stack(
             children: [
-              _buildHeader(),
-              _buildSearchBar(),
-              Expanded(child: _buildVetsList()),
+              Positioned(
+                top: -80.h,
+                right: -50.w,
+                child: Container(
+                  width: 180.w,
+                  height: 180.h,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.18),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 140.h,
+                left: -40.w,
+                child: Container(
+                  width: 130.w,
+                  height: 130.h,
+                  decoration: BoxDecoration(
+                    color: AppColors.googleButton.withOpacity(0.16),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Column(
+                children: [
+                  _buildHeader(),
+                  _buildSearchBar(),
+                  _buildQuickFilters(),
+                  Expanded(child: _buildVetsList()),
+                ],
+              ),
             ],
           ),
         ),
@@ -98,11 +133,14 @@ class _VetsListScreenState extends State<VetsListScreen> {
               width: 44.w,
               height: 44.h,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: AppColors.socialBorder,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: AppColors.primary.withOpacity(0.24),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -110,7 +148,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
               ),
               child: Icon(
                 Icons.arrow_back_rounded,
-                color: AppColors.textPrimary,
+                color: AppColors.accent,
                 size: 22.sp,
               ),
             ),
@@ -145,11 +183,14 @@ class _VetsListScreenState extends State<VetsListScreen> {
               width: 44.w,
               height: 44.h,
               decoration: BoxDecoration(
-                color: _hasActiveFilters ? AppColors.primary : Colors.white,
+                color: _hasActiveFilters ? AppColors.accent : AppColors.primary,
                 borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: AppColors.socialBorder,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: AppColors.primary.withOpacity(0.24),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -160,7 +201,9 @@ class _VetsListScreenState extends State<VetsListScreen> {
                   Center(
                     child: Icon(
                       Icons.tune_rounded,
-                      color: _hasActiveFilters ? Colors.white : AppColors.textPrimary,
+                      color: _hasActiveFilters
+                          ? AppColors.surface
+                          : AppColors.accent,
                       size: 22.sp,
                     ),
                   ),
@@ -171,8 +214,8 @@ class _VetsListScreenState extends State<VetsListScreen> {
                       child: Container(
                         width: 8.w,
                         height: 8.h,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFEF4444),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -191,11 +234,15 @@ class _VetsListScreenState extends State<VetsListScreen> {
       padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surfaceContainer,
           borderRadius: BorderRadius.circular(14.r),
+          border: Border.all(
+            color: AppColors.socialBorder,
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: AppColors.primary.withOpacity(0.16),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -203,7 +250,15 @@ class _VetsListScreenState extends State<VetsListScreen> {
         ),
         child: TextField(
           controller: _searchController,
-          style: TextStyle(fontSize: 15.sp),
+          onChanged: (value) {
+            setState(() {
+              _searchQuery = value.trim().toLowerCase();
+            });
+          },
+          style: TextStyle(
+            fontSize: 15.sp,
+            color: AppColors.textPrimary,
+          ),
           decoration: InputDecoration(
             hintText: 'Search by name or specialization...',
             hintStyle: TextStyle(
@@ -219,9 +274,116 @@ class _VetsListScreenState extends State<VetsListScreen> {
               ),
             ),
             prefixIconConstraints: BoxConstraints(minWidth: 50.w),
+            suffixIcon: _searchController.text.isEmpty
+                ? null
+                : IconButton(
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textSecondary,
+                      size: 18.sp,
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                      });
+                    },
+                  ),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(vertical: 16.h),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickFilters() {
+    Widget buildChip({
+      required _VetQuickFilter filter,
+      required String label,
+      required IconData icon,
+    }) {
+      final selected = _activeQuickFilter == filter;
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            _activeQuickFilter = filter;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.darkTeal : AppColors.surface,
+            borderRadius: BorderRadius.circular(999.r),
+            border: Border.all(
+              color: selected
+                  ? AppColors.darkTeal
+                  : AppColors.socialBorder.withOpacity(0.8),
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.darkTeal.withOpacity(0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 14.sp,
+                color: selected ? AppColors.surface : AppColors.authTitle,
+              ),
+              SizedBox(width: 6.w),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: selected ? AppColors.surface : AppColors.authTitle,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 14.h),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            buildChip(
+              filter: _VetQuickFilter.all,
+              label: 'All',
+              icon: Icons.grid_view_rounded,
+            ),
+            SizedBox(width: 8.w),
+            buildChip(
+              filter: _VetQuickFilter.topRated,
+              label: 'Top Rated',
+              icon: Icons.star_rounded,
+            ),
+            SizedBox(width: 8.w),
+            buildChip(
+              filter: _VetQuickFilter.affordable,
+              label: 'Under PKR 2000',
+              icon: Icons.payments_rounded,
+            ),
+            SizedBox(width: 8.w),
+            buildChip(
+              filter: _VetQuickFilter.availableNow,
+              label: 'Available',
+              icon: Icons.circle,
+            ),
+          ],
         ),
       ),
     );
@@ -284,8 +446,11 @@ class _VetsListScreenState extends State<VetsListScreen> {
       margin: EdgeInsets.only(bottom: 16.h),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: AppColors.socialBorder.withOpacity(0.7),
+        ),
       ),
       child: Row(
         children: [
@@ -293,7 +458,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
             width: 80.w,
             height: 80.h,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: AppColors.primary.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12.r),
             ),
           ),
@@ -306,7 +471,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
                   width: 120.w,
                   height: 16.h,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: AppColors.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                 ),
@@ -315,7 +480,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
                   width: 80.w,
                   height: 12.h,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: AppColors.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                 ),
@@ -324,7 +489,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
                   width: 100.w,
                   height: 12.h,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: AppColors.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                 ),
@@ -337,18 +502,19 @@ class _VetsListScreenState extends State<VetsListScreen> {
   }
 
   Widget _buildEmptyState() {
+    final hasSearch = _searchQuery.isNotEmpty;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.medical_services_outlined,
+            hasSearch ? Icons.search_off_rounded : Icons.medical_services_outlined,
             size: 64.sp,
             color: AppColors.textSecondary.withOpacity(0.5),
           ),
           SizedBox(height: 16.h),
           Text(
-            'No vets found',
+            hasSearch ? 'No matching vets' : 'No vets found',
             style: TextStyle(
               fontSize: 18.sp,
               color: AppColors.textPrimary,
@@ -357,17 +523,23 @@ class _VetsListScreenState extends State<VetsListScreen> {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Try adjusting your filters',
+            hasSearch
+                ? 'Try another name or specialization keyword'
+                : 'Try adjusting your filters',
             style: TextStyle(
               fontSize: 14.sp,
               color: AppColors.textSecondary,
             ),
+            textAlign: TextAlign.center,
           ),
-          if (_hasActiveFilters) ...[
+          if (_hasActiveFilters || hasSearch || _activeQuickFilter != _VetQuickFilter.all) ...[
             SizedBox(height: 20.h),
             TextButton(
               onPressed: () {
+                _searchController.clear();
                 setState(() {
+                  _searchQuery = '';
+                  _activeQuickFilter = _VetQuickFilter.all;
                   _filterCity = null;
                   _filterSpecialization = null;
                   _filterMinRating = null;
@@ -377,7 +549,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
               child: Text(
                 'Clear Filters',
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: AppColors.authTitle,
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w600,
                 ),
@@ -399,7 +571,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
             Icon(
               Icons.error_outline_rounded,
               size: 64.sp,
-              color: const Color(0xFFEF4444),
+              color: AppColors.error,
             ),
             SizedBox(height: 16.h),
             Text(
@@ -425,13 +597,13 @@ class _VetsListScreenState extends State<VetsListScreen> {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: AppColors.darkTeal,
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(
                   'Try Again',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w600,
                   ),
@@ -445,7 +617,42 @@ class _VetsListScreenState extends State<VetsListScreen> {
   }
 
   Widget _buildList(List<VetProfile> vets, bool hasMore) {
-    if (vets.isEmpty) return _buildEmptyState();
+    var filteredVets = _searchQuery.isEmpty
+        ? vets
+        : vets.where((vet) {
+            final name = vet.fullName.toLowerCase();
+            final degree = vet.degree.toLowerCase();
+            final city = (vet.city ?? '').toLowerCase();
+            final clinic = (vet.clinicName ?? '').toLowerCase();
+            final specs = vet.specialization.join(' ').toLowerCase();
+
+            return name.contains(_searchQuery) ||
+                degree.contains(_searchQuery) ||
+                city.contains(_searchQuery) ||
+                clinic.contains(_searchQuery) ||
+                specs.contains(_searchQuery);
+          }).toList();
+
+    switch (_activeQuickFilter) {
+      case _VetQuickFilter.all:
+        break;
+      case _VetQuickFilter.topRated:
+        filteredVets = filteredVets.where((v) => v.rating >= 4.5).toList();
+        break;
+      case _VetQuickFilter.affordable:
+        filteredVets =
+            filteredVets.where((v) => v.consultationFee <= 2000).toList();
+        break;
+      case _VetQuickFilter.availableNow:
+        filteredVets = filteredVets.where((v) => v.isAvailable).toList();
+        break;
+    }
+
+    if (filteredVets.isEmpty) return _buildEmptyState();
+
+    final showPaginationLoader = hasMore &&
+        _searchQuery.isEmpty &&
+        _activeQuickFilter == _VetQuickFilter.all;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -455,19 +662,23 @@ class _VetsListScreenState extends State<VetsListScreen> {
           minRating: _filterMinRating,
         ));
       },
-      color: AppColors.primary,
+      color: AppColors.darkTeal,
       child: ListView.builder(
         controller: _scrollController,
         padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 100.h),
-        itemCount: vets.length + (hasMore ? 1 : 0),
+        itemCount: filteredVets.length + (showPaginationLoader ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index >= vets.length) {
+          if (index >= filteredVets.length) {
             return Padding(
               padding: EdgeInsets.symmetric(vertical: 20.h),
-              child: const Center(child: CircularProgressIndicator()),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.darkTeal,
+                ),
+              ),
             );
           }
-          return _VetCard(vet: vets[index]);
+          return _VetCard(vet: filteredVets[index], index: index);
         },
       ),
     );
@@ -509,145 +720,219 @@ class _VetsListScreenState extends State<VetsListScreen> {
 
 class _VetCard extends StatelessWidget {
   final VetProfile vet;
+  final int index;
 
-  const _VetCard({required this.vet});
+  const _VetCard({required this.vet, required this.index});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VetDetailScreen(
-            vetId: vet.userId,
-            profilePhotoUrl: vet.profilePhotoUrl,
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 1, end: 0),
+      duration: Duration(milliseconds: 260 + (index * 70)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: 1 - value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * value),
+            child: child,
+          ),
+        );
+      },
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VetDetailScreen(
+              vetId: vet.userId,
+              profilePhotoUrl: vet.profilePhotoUrl,
+            ),
           ),
         ),
-      ),
-      child: Container(
-        margin: EdgeInsets.only(bottom: 16.h),
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 16.h),
+          padding: EdgeInsets.all(14.w),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(
+              color: AppColors.socialBorder.withOpacity(0.8),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Profile Photo
-            Container(
-              width: 80.w,
-              height: 80.h,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16.r),
-                image: vet.profilePhotoUrl != null
-                    ? DecorationImage(
-                        image: NetworkImage(vet.profilePhotoUrl!),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.18),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
               ),
-              child: vet.profilePhotoUrl == null
-                  ? Center(
-                      child: Icon(
-                        Icons.person_rounded,
-                        color: AppColors.primary,
-                        size: 36.sp,
-                      ),
-                    )
-                  : null,
-            ),
-            SizedBox(width: 16.w),
-            
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
+                  Container(
+                    width: 78.w,
+                    height: 78.h,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(16.r),
+                      image: vet.profilePhotoUrl != null
+                          ? DecorationImage(
+                              image: NetworkImage(vet.profilePhotoUrl!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: vet.profilePhotoUrl == null
+                        ? Center(
+                            child: Icon(
+                              Icons.person_rounded,
+                              color: AppColors.darkTeal,
+                              size: 34.sp,
+                            ),
+                          )
+                        : null,
+                  ),
+                  SizedBox(width: 14.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
                           vet.fullName,
                           style: TextStyle(
                             fontSize: 17.sp,
                             color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          '${vet.degree} • ${vet.experience} yrs exp',
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        Row(
+                          children: [
+                            if (vet.rating > 0)
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8.w,
+                                  vertical: 4.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFBBF24).withOpacity(0.18),
+                                  borderRadius: BorderRadius.circular(999.r),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.star_rounded,
+                                      color: const Color(0xFFF59E0B),
+                                      size: 14.sp,
+                                    ),
+                                    SizedBox(width: 3.w),
+                                    Text(
+                                      vet.rating.toStringAsFixed(1),
+                                      style: TextStyle(
+                                        fontSize: 11.sp,
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (vet.rating > 0) SizedBox(width: 6.w),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 4.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: vet.isAvailable
+                                    ? AppColors.success.withOpacity(0.16)
+                                    : AppColors.error.withOpacity(0.14),
+                                borderRadius: BorderRadius.circular(999.r),
+                              ),
+                              child: Text(
+                                vet.isAvailable ? 'Available' : 'Busy',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  color: vet.isAvailable
+                                      ? AppColors.success
+                                      : AppColors.error,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12.h),
+              Row(
+                children: [
+                  if (vet.specialization.isNotEmpty)
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 7.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.googleButton.withOpacity(0.45),
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                        child: Text(
+                          vet.specialization.first,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.authTitle,
                             fontWeight: FontWeight.w600,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (vet.rating > 0) ...[
-                        Icon(
-                          Icons.star_rounded,
-                          color: const Color(0xFFFBBF24),
-                          size: 16.sp,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          vet.rating.toStringAsFixed(1),
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  SizedBox(height: 4.h),
+                    ),
+                  if (vet.specialization.isNotEmpty) SizedBox(width: 10.w),
                   Text(
-                    '${vet.degree} • ${vet.experience} yrs exp',
+                    'PKR ${vet.consultationFee.toStringAsFixed(0)}',
                     style: TextStyle(
-                      fontSize: 13.sp,
-                      color: AppColors.textSecondary,
+                      fontSize: 20.sp,
+                      color: AppColors.authTitle,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                  SizedBox(height: 8.h),
-                  Row(
-                    children: [
-                      if (vet.specialization.isNotEmpty)
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 10.w,
-                            vertical: 4.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6.r),
-                          ),
-                          child: Text(
-                            vet.specialization.first,
-                            style: TextStyle(
-                              fontSize: 11.sp,
-                              color: const Color(0xFF6366F1),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      const Spacer(),
-                      Text(
-                        'PKR ${vet.consultationFee.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
+                  SizedBox(width: 8.w),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.darkTeal,
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                    child: Text(
+                      'View',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: AppColors.surface,
+                        fontWeight: FontWeight.w700,
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -707,7 +992,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -723,7 +1008,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 width: 40.w,
                 height: 4.h,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppColors.primary.withOpacity(0.7),
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
@@ -772,7 +1057,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   SizedBox(height: 10.h),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F7FA),
+                      color: AppColors.surfaceContainer,
+                      border: Border.all(
+                        color: AppColors.socialBorder,
+                      ),
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: TextField(
@@ -820,8 +1108,13 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           ),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppColors.primary
-                                : const Color(0xFFF5F7FA),
+                                ? AppColors.darkTeal
+                                : AppColors.surfaceContainer,
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.darkTeal
+                                  : AppColors.primary.withOpacity(0.2),
+                            ),
                             borderRadius: BorderRadius.circular(20.r),
                           ),
                           child: Text(
@@ -829,7 +1122,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                             style: TextStyle(
                               fontSize: 13.sp,
                               color: isSelected
-                                  ? Colors.white
+                                  ? AppColors.surface
                                   : AppColors.textPrimary,
                               fontWeight:
                                   isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -876,10 +1169,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   SizedBox(height: 10.h),
                   SliderTheme(
                     data: SliderThemeData(
-                      activeTrackColor: AppColors.primary,
-                      inactiveTrackColor: const Color(0xFFF5F7FA),
-                      thumbColor: AppColors.primary,
-                      overlayColor: AppColors.primary.withOpacity(0.1),
+                      activeTrackColor: AppColors.darkTeal,
+                      inactiveTrackColor: AppColors.primary.withOpacity(0.3),
+                      thumbColor: AppColors.darkTeal,
+                      overlayColor: AppColors.darkTeal.withOpacity(0.1),
                       trackHeight: 6.h,
                     ),
                     child: Slider(
@@ -904,14 +1197,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           child: Container(
                             padding: EdgeInsets.symmetric(vertical: 16.h),
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppColors.primary),
+                              border: Border.all(color: AppColors.darkTeal),
                               borderRadius: BorderRadius.circular(14.r),
                             ),
                             child: Center(
                               child: Text(
                                 'Clear',
                                 style: TextStyle(
-                                  color: AppColors.primary,
+                                  color: AppColors.darkTeal,
                                   fontSize: 15.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -937,14 +1230,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           child: Container(
                             padding: EdgeInsets.symmetric(vertical: 16.h),
                             decoration: BoxDecoration(
-                              color: AppColors.primary,
+                              color: AppColors.darkTeal,
                               borderRadius: BorderRadius.circular(14.r),
                             ),
                             child: Center(
                               child: Text(
                                 'Apply Filters',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.surface,
                                   fontSize: 15.sp,
                                   fontWeight: FontWeight.w600,
                                 ),

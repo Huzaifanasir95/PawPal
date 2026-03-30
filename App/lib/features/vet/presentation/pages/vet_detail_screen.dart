@@ -27,13 +27,31 @@ class VetDetailScreen extends StatefulWidget {
   State<VetDetailScreen> createState() => _VetDetailScreenState();
 }
 
-class _VetDetailScreenState extends State<VetDetailScreen> {
+class _VetDetailScreenState extends State<VetDetailScreen>
+    with SingleTickerProviderStateMixin {
   bool _isStartingChat = false;
+  bool _animateIn = false;
+  bool _isChatPressed = false;
+  AnimationController? _pulseController;
+  Animation<double> _pulseScale = const AlwaysStoppedAnimation<double>(1.0);
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
+    _pulseScale = Tween<double>(begin: 1.0, end: 1.02).animate(
+      CurvedAnimation(parent: _pulseController!, curve: Curves.easeInOut),
+    );
+
     context.read<VetBloc>().add(VetEvent.loadVetProfile(widget.vetId));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() => _animateIn = true);
+      }
+    });
   }
 
   void _startChatWithVet(BuildContext context) async {
@@ -53,7 +71,7 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
         statusBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F7FA),
+        backgroundColor: AppColors.authBackground,
         body: MultiBlocListener(
           listeners: [
             BlocListener<VetBloc, VetState>(
@@ -118,7 +136,7 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
 
   Widget _buildLoading() {
     return const Center(
-      child: CircularProgressIndicator(color: AppColors.primary),
+      child: CircularProgressIndicator(color: AppColors.darkTeal),
     );
   }
 
@@ -163,13 +181,13 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
                       child: Container(
                         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: AppColors.darkTeal,
                           borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: Text(
                           'Try Again',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.surface,
                             fontSize: 15.sp,
                             fontWeight: FontWeight.w600,
                           ),
@@ -189,46 +207,70 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
   Widget _buildContent(VetProfile vet) {
     return Stack(
       children: [
-        CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: SafeArea(
-                bottom: false,
+        Positioned(
+          top: -60.h,
+          right: -40.w,
+          child: Container(
+            width: 180.w,
+            height: 180.h,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primary.withOpacity(0.18),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 120.h,
+          left: -50.w,
+          child: Container(
+            width: 140.w,
+            height: 140.h,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.googleButton.withOpacity(0.14),
+            ),
+          ),
+        ),
+        Column(
+          children: [
+            SafeArea(bottom: false, child: _buildHeader(vet)),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
                 child: Column(
                   children: [
-                    _buildHeader(vet),
-                    _buildProfileSection(vet),
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 120.h),
-                      child: Column(
-                        children: [
-                          _buildInfoCard(vet),
-                          SizedBox(height: 16.h),
-                          if (vet.specialization.isNotEmpty) ...[
-                            _buildSpecializationsCard(vet),
-                            SizedBox(height: 16.h),
-                          ],
-                          if (vet.clinicName != null || vet.clinicAddress != null) ...[
-                            _buildClinicCard(vet),
-                            SizedBox(height: 16.h),
-                          ],
-                          _buildFeeCard(vet),
-                          SizedBox(height: 16.h),
-                          if (vet.bio != null) _buildAboutCard(vet),
-                        ],
+                    _buildEntranceSection(index: 0, child: _buildProfileSection(vet)),
+                    _buildEntranceSection(index: 1, child: _buildInfoCard(vet)),
+                    SizedBox(height: 14.h),
+                    if (vet.specialization.isNotEmpty) ...[
+                      _buildEntranceSection(
+                        index: 2,
+                        child: _buildSpecializationsCard(vet),
                       ),
-                    ),
+                      SizedBox(height: 14.h),
+                    ],
+                    if (vet.clinicName != null || vet.clinicAddress != null) ...[
+                      _buildEntranceSection(index: 3, child: _buildClinicCard(vet)),
+                      SizedBox(height: 14.h),
+                    ],
+                    _buildEntranceSection(index: 4, child: _buildFeeCard(vet)),
+                    if (vet.bio != null) ...[
+                      SizedBox(height: 14.h),
+                      _buildEntranceSection(index: 5, child: _buildAboutCard(vet)),
+                    ],
+                    SizedBox(height: 8.h),
                   ],
                 ),
               ),
             ),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 14.h),
+                child: _buildEntranceSection(index: 6, child: _buildChatButton()),
+              ),
+            ),
           ],
-        ),
-        Positioned(
-          left: 20.w,
-          right: 20.w,
-          bottom: 32.h,
-          child: _buildChatButton(),
         ),
       ],
     );
@@ -245,11 +287,12 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
               width: 44.w,
               height: 44.h,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: AppColors.socialBorder),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: AppColors.primary.withOpacity(0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -257,7 +300,7 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
               ),
               child: Icon(
                 Icons.arrow_back_rounded,
-                color: AppColors.textPrimary,
+                color: AppColors.accent,
                 size: 22.sp,
               ),
             ),
@@ -267,67 +310,67 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
             child: Text(
               'Vet Profile',
               style: TextStyle(
-                fontSize: 20.sp,
+                fontSize: 22.sp,
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          if (vet != null)
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: vet.isAvailable
-                    ? const Color(0xFF10B981).withOpacity(0.1)
-                    : const Color(0xFFEF4444).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8.w,
-                    height: 8.h,
-                    decoration: BoxDecoration(
-                      color: vet.isAvailable
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  SizedBox(width: 6.w),
-                  Text(
-                    vet.isAvailable ? 'Available' : 'Unavailable',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: vet.isAvailable
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          SizedBox(width: 44.w),
         ],
       ),
     );
   }
 
+  Widget _buildEntranceSection({required int index, required Widget child}) {
+    final delayFactor = (index * 0.05).clamp(0.0, 0.3);
+    return AnimatedOpacity(
+      opacity: _animateIn ? 1 : 0,
+      duration: Duration(milliseconds: 280 + (index * 60)),
+      curve: Curves.easeOut,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: _animateIn ? 1 : 0, end: _animateIn ? 0 : 1),
+        duration: Duration(milliseconds: 320 + (index * 70)),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, animatedChild) {
+          return Transform.translate(
+            offset: Offset(0, (20 * (1 - delayFactor)) * value),
+            child: animatedChild,
+          );
+        },
+        child: child,
+      ),
+    );
+  }
+
   Widget _buildProfileSection(VetProfile vet) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 24.h),
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: 14.h),
+      padding: EdgeInsets.fromLTRB(16.w, 18.h, 16.w, 16.h),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22.r),
+        border: Border.all(color: AppColors.socialBorder.withOpacity(0.8)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.15),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           Container(
             width: 100.w,
             height: 100.h,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.googleButton.withOpacity(0.28),
               borderRadius: BorderRadius.circular(24.r),
               border: Border.all(
-                color: AppColors.primary.withOpacity(0.2),
-                width: 3,
+                color: AppColors.socialBorder,
+                width: 2,
               ),
               image: (widget.profilePhotoUrl ?? vet.profilePhotoUrl) != null
                   ? DecorationImage(
@@ -340,57 +383,66 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
                 ? Center(
                     child: Icon(
                       Icons.person_rounded,
-                      color: AppColors.primary,
+                      color: AppColors.darkTeal,
                       size: 48.sp,
                     ),
                   )
                 : null,
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 14.h),
           Text(
             vet.fullName,
+            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 24.sp,
+              fontSize: 26.sp,
               color: AppColors.textPrimary,
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: 2.h),
           Text(
             vet.degree,
             style: TextStyle(
               fontSize: 15.sp,
-              color: AppColors.textSecondary,
+              color: AppColors.authTitle,
+              fontWeight: FontWeight.w600,
             ),
           ),
           if (vet.rating > 0) ...[
-            SizedBox(height: 12.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.star_rounded,
-                  color: const Color(0xFFFBBF24),
-                  size: 20.sp,
-                ),
-                SizedBox(width: 4.w),
-                Text(
-                  vet.rating.toStringAsFixed(1),
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
+            SizedBox(height: 10.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainer,
+                borderRadius: BorderRadius.circular(999.r),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.star_rounded,
+                    color: const Color(0xFFFBBF24),
+                    size: 18.sp,
                   ),
-                ),
-                SizedBox(width: 4.w),
-                Text(
-                  '(${vet.totalReviews} reviews)',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: AppColors.textSecondary,
+                  SizedBox(width: 4.w),
+                  Text(
+                    vet.rating.toStringAsFixed(1),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ],
+                  SizedBox(width: 6.w),
+                  Text(
+                    '${vet.totalReviews} reviews',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ],
@@ -398,15 +450,41 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
     );
   }
 
+  Widget _buildSectionTitle({required IconData icon, required String title}) {
+    return Row(
+      children: [
+        Container(
+          width: 28.w,
+          height: 28.h,
+          decoration: BoxDecoration(
+            color: AppColors.googleButton.withOpacity(0.35),
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          child: Icon(icon, size: 16.sp, color: AppColors.darkTeal),
+        ),
+        SizedBox(width: 8.w),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 17.sp,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildInfoCard(VetProfile vet) {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.socialBorder.withOpacity(0.7)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColors.primary.withOpacity(0.12),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -450,10 +528,10 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
             width: 44.w,
             height: 44.h,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.googleButton.withOpacity(0.35),
               borderRadius: BorderRadius.circular(12.r),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 22.sp),
+            child: Icon(icon, color: AppColors.darkTeal, size: 22.sp),
           ),
           SizedBox(height: 8.h),
           Text(
@@ -484,7 +562,7 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
     return Container(
       width: 1,
       height: 50.h,
-      color: Colors.grey.shade200,
+      color: AppColors.socialBorder.withOpacity(0.8),
     );
   }
 
@@ -493,11 +571,12 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.socialBorder.withOpacity(0.7)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColors.primary.withOpacity(0.12),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -506,37 +585,50 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Specializations',
-            style: TextStyle(
-              fontSize: 17.sp,
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          _buildSectionTitle(icon: Icons.workspace_premium_rounded, title: 'Specializations'),
           SizedBox(height: 16.h),
           Wrap(
             spacing: 8.w,
             runSpacing: 8.h,
-            children: vet.specialization.map((spec) {
-              return Container(
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Text(
-                  spec,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: const Color(0xFF6366F1),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              );
-            }).toList(),
+            children: vet.specialization
+                .asMap()
+                .entries
+                .map((entry) => _buildAnimatedChip(entry.value, entry.key))
+                .toList(),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedChip(String label, int index) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: _animateIn ? 1 : 0, end: _animateIn ? 0 : 1),
+      duration: Duration(milliseconds: 280 + (index * 80)),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: 1 - (value * 0.35),
+          child: Transform.translate(
+            offset: Offset(0, 8 * value),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: AppColors.googleButton.withOpacity(0.45),
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13.sp,
+            color: AppColors.authTitle,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ),
     );
   }
@@ -546,11 +638,12 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.socialBorder.withOpacity(0.7)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColors.primary.withOpacity(0.12),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -559,14 +652,7 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Clinic Information',
-            style: TextStyle(
-              fontSize: 17.sp,
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          _buildSectionTitle(icon: Icons.local_hospital_rounded, title: 'Clinic Information'),
           SizedBox(height: 16.h),
           if (vet.clinicName != null)
             _buildClinicRow(
@@ -600,7 +686,7 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
   Widget _buildClinicRow({required IconData icon, required String value}) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.primary, size: 20.sp),
+        Icon(icon, color: AppColors.darkTeal, size: 20.sp),
         SizedBox(width: 12.w),
         Expanded(
           child: Text(
@@ -620,11 +706,12 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.socialBorder.withOpacity(0.7)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColors.primary.withOpacity(0.12),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -636,14 +723,7 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Consultation Fee',
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              _buildSectionTitle(icon: Icons.payments_rounded, title: 'Consultation Fee'),
               SizedBox(height: 2.h),
               Text(
                 'Per session',
@@ -658,7 +738,7 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
             'PKR ${vet.consultationFee.toStringAsFixed(0)}',
             style: TextStyle(
               fontSize: 22.sp,
-              color: AppColors.primary,
+              color: AppColors.authTitle,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -672,11 +752,12 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.socialBorder.withOpacity(0.7)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColors.primary.withOpacity(0.12),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -685,14 +766,7 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'About',
-            style: TextStyle(
-              fontSize: 17.sp,
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          _buildSectionTitle(icon: Icons.info_outline_rounded, title: 'About'),
           SizedBox(height: 12.h),
           Text(
             vet.bio!,
@@ -709,46 +783,81 @@ class _VetDetailScreenState extends State<VetDetailScreen> {
 
   Widget _buildChatButton() {
     return GestureDetector(
+      onTapDown: _isStartingChat
+          ? null
+          : (_) => setState(() => _isChatPressed = true),
+      onTapUp: _isStartingChat
+          ? null
+          : (_) => setState(() => _isChatPressed = false),
+      onTapCancel: _isStartingChat
+          ? null
+          : () => setState(() => _isChatPressed = false),
       onTap: _isStartingChat ? null : () => _startChatWithVet(context),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16.h),
-        decoration: BoxDecoration(
-          color: _isStartingChat ? AppColors.textSecondary : AppColors.primary,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (_isStartingChat)
-              SizedBox(
-                width: 20.w,
-                height: 20.h,
-                child: const CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            else
-              Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 22.sp),
-            SizedBox(width: 10.w),
-            Text(
-              _isStartingChat ? 'Starting Chat...' : 'Start Chat',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
+      child: AnimatedBuilder(
+        animation: _pulseScale,
+        builder: (context, child) {
+          final shouldPulse = !_isStartingChat && !_isChatPressed;
+          return Transform.scale(
+            scale: shouldPulse ? _pulseScale.value : 1,
+            child: child,
+          );
+        },
+        child: AnimatedScale(
+          scale: _isChatPressed ? 0.98 : 1,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            padding: EdgeInsets.symmetric(vertical: 16.h),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: _isStartingChat
+                    ? [AppColors.textSecondary, AppColors.textSecondary]
+                    : [AppColors.darkTeal, AppColors.authTitle],
               ),
+              borderRadius: BorderRadius.circular(16.r),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.darkTeal.withOpacity(_isChatPressed ? 0.15 : 0.25),
+                  blurRadius: _isChatPressed ? 8 : 16,
+                  offset: Offset(0, _isChatPressed ? 3 : 6),
+                ),
+              ],
             ),
-          ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isStartingChat)
+                  SizedBox(
+                    width: 20.w,
+                    height: 20.h,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.surface),
+                    ),
+                  )
+                else
+                  Icon(Icons.chat_bubble_rounded, color: AppColors.surface, size: 22.sp),
+                SizedBox(width: 10.w),
+                Text(
+                  _isStartingChat ? 'Starting Chat...' : 'Start Chat',
+                  style: TextStyle(
+                    color: AppColors.surface,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _pulseController?.dispose();
+    super.dispose();
   }
 }

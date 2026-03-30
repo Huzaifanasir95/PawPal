@@ -498,6 +498,40 @@ func (r *MarketplaceRepository) GetOrders(ctx context.Context, buyerID uuid.UUID
 		); err != nil {
 			return nil, 0, err
 		}
+
+		// Populate order items for list view summaries (item count + first product name)
+		itemRows, err := r.db.Query(ctx, `
+			SELECT oi.id, oi.order_id, oi.product_id,
+			       COALESCE(p.name, ''), COALESCE(p.images[1], ''),
+			       oi.seller_id, u.display_name,
+			       oi.quantity, oi.unit_price, oi.total_price, oi.seller_status, oi.created_at
+			FROM order_items oi
+			LEFT JOIN products p ON p.id = oi.product_id
+			LEFT JOIN users u ON u.id = oi.seller_id
+			WHERE oi.order_id = $1
+			ORDER BY oi.created_at ASC`, o.ID)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		for itemRows.Next() {
+			var item models.OrderItem
+			if err := itemRows.Scan(
+				&item.ID, &item.OrderID, &item.ProductID, &item.ProductName, &item.ProductImage,
+				&item.SellerID, &item.SellerName,
+				&item.Quantity, &item.UnitPrice, &item.TotalPrice, &item.SellerStatus, &item.CreatedAt,
+			); err != nil {
+				itemRows.Close()
+				return nil, 0, err
+			}
+			o.Items = append(o.Items, item)
+		}
+		if err := itemRows.Err(); err != nil {
+			itemRows.Close()
+			return nil, 0, err
+		}
+		itemRows.Close()
+
 		orders = append(orders, o)
 	}
 	return orders, total, rows.Err()

@@ -89,10 +89,44 @@ class CartScreen extends StatelessWidget {
 
           return Column(
             children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 6.h),
+                child: Row(
+                  children: [
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12.w, vertical: 7.h),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(
+                            color: AppColors.primary.withOpacity(0.25)),
+                      ),
+                      child: Text(
+                        '${state.items.length} items in your cart',
+                        style: GoogleFonts.mulish(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF2C6E69),
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Review before checkout',
+                      style: GoogleFonts.mulish(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Expanded(
                 child: ListView.separated(
                   padding:
-                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                      EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
                   itemCount: state.items.length,
                   separatorBuilder: (_, __) => SizedBox(height: 12.h),
                   itemBuilder: (context, i) {
@@ -116,123 +150,139 @@ class CartScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.primary.withOpacity(0.18)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          // Image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10.r),
-            child: SizedBox(
-              width: 72.w,
-              height: 72.w,
-              child: product?.firstImage.isNotEmpty == true
-                  ? CachedNetworkImage(
-                      imageUrl: product!.firstImage,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: const Color(0xFFF3EFE8)),
-                      errorWidget: (_, __, ___) =>
-                          Container(color: const Color(0xFFF3EFE8)),
-                    )
-                  : Container(
-                      color: const Color(0xFFF3EFE8),
-                      child: Icon(Icons.shopping_bag_outlined,
-                          size: 28.sp, color: AppColors.primary),
-                    ),
-            ),
-          ),
-
-          SizedBox(width: 12.w),
-
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product?.name ?? 'Product',
-                  style: GoogleFonts.mulish(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF191D21),
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  'PKR ${product?.price.toStringAsFixed(0) ?? '0'}',
-                  style: GoogleFonts.mulish(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF2C6E69),
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                Row(
-                  children: [
-                    // Quantity controls
-                    _quantityBtn(Icons.remove_rounded, () {
-                      context
-                          .read<CartCubit>()
-                          .updateQuantity(item.id, item.quantity - 1);
-                    }),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w),
-                      child: Text(
-                        '${item.quantity}',
-                        style: GoogleFonts.mulish(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF191D21),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10.r),
+                child: SizedBox(
+                  width: 72.w,
+                  height: 72.w,
+                  child: product?.firstImage.isNotEmpty == true
+                      ? CachedNetworkImage(
+                          imageUrl: product!.firstImage,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) =>
+                              Container(color: const Color(0xFFF3EFE8)),
+                          errorWidget: (_, __, ___) =>
+                              Container(color: const Color(0xFFF3EFE8)),
+                        )
+                      : Container(
+                          color: const Color(0xFFF3EFE8),
+                          child: Icon(Icons.shopping_bag_outlined,
+                              size: 28.sp, color: AppColors.primary),
                         ),
-                      ),
-                    ),
-                    _quantityBtn(Icons.add_rounded, () {
-                      context
-                          .read<CartCubit>()
-                          .updateQuantity(item.id, item.quantity + 1);
-                    }),
-
-                    const Spacer(),
-
-                    // Total
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'PKR ${item.totalPrice.toStringAsFixed(0)}',
+                      product?.name ?? 'Product',
                       style: GoogleFonts.mulish(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w800,
+                        height: 1.3,
                         color: const Color(0xFF191D21),
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 6.h),
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 9.w, vertical: 4.h),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.16),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: Text(
+                            'Unit PKR ${product?.price.toStringAsFixed(0) ?? '0'}',
+                            style: GoogleFonts.mulish(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF2C6E69),
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'PKR ${item.totalPrice.toStringAsFixed(0)}',
+                          style: GoogleFonts.mulish(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF191D21),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-
-          // Delete button
-          Padding(
-            padding: EdgeInsets.only(left: 8.w),
-            child: GestureDetector(
-              onTap: () => context.read<CartCubit>().removeItem(item.id),
-              child: Container(
-                padding: EdgeInsets.all(6.w),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEE2E2),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Icon(Icons.delete_outline_rounded,
-                    size: 18.sp, color: const Color(0xFFEF4444)),
               ),
-            ),
+              SizedBox(width: 8.w),
+              GestureDetector(
+                onTap: () => context.read<CartCubit>().removeItem(item.id),
+                child: Container(
+                  padding: EdgeInsets.all(6.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(9.r),
+                  ),
+                  child: Icon(Icons.delete_outline_rounded,
+                      size: 18.sp, color: const Color(0xFFEF4444)),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          Row(
+            children: [
+              Text(
+                'Quantity',
+                style: GoogleFonts.mulish(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              SizedBox(width: 10.w),
+              _quantityBtn(Icons.remove_rounded, () {
+                context
+                    .read<CartCubit>()
+                    .updateQuantity(item.id, item.quantity - 1);
+              }),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                child: Text(
+                  '${item.quantity}',
+                  style: GoogleFonts.mulish(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF191D21),
+                  ),
+                ),
+              ),
+              _quantityBtn(Icons.add_rounded, () {
+                context
+                    .read<CartCubit>()
+                    .updateQuantity(item.id, item.quantity + 1);
+              }),
+            ],
           ),
         ],
       ),
@@ -261,6 +311,22 @@ class CartScreen extends StatelessWidget {
         top: false,
         child: Column(
           children: [
+            Row(
+              children: [
+                Icon(Icons.receipt_long_outlined,
+                    size: 18.sp, color: const Color(0xFF2C6E69)),
+                SizedBox(width: 8.w),
+                Text(
+                  'Order Summary',
+                  style: GoogleFonts.mulish(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF191D21),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
             _summaryRow('Subtotal', 'PKR ${subtotal.toStringAsFixed(0)}'),
             SizedBox(height: 8.h),
             _summaryRow('Delivery', 'PKR ${delivery.toStringAsFixed(0)}'),

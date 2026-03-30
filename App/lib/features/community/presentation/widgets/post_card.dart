@@ -67,20 +67,27 @@ class _PostCardState extends State<PostCard> {
       borderRadius: BorderRadius.circular(16.r),
       child: Container(
         width: double.infinity,
-        margin: EdgeInsets.symmetric(vertical: 8.h),
+        margin: EdgeInsets.symmetric(vertical: 6.h),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFF1F6F8),
+              Color(0xFFDDE9EE),
+            ],
+          ),
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8.r,
-              offset: Offset(0, 2.h),
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 12.r,
+              offset: Offset(0, 5.h),
             ),
           ],
           border: Border.all(
-            color: AppColors.primary.withOpacity(0.1),
-            width: 1.w,
+            color: const Color(0xFFB9CBD4),
+            width: 1,
           ),
         ),
         child: Column(
@@ -167,15 +174,15 @@ class _PostCardState extends State<PostCard> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: AppColors.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(
                     PostCategory.getLabel(widget.post.category),
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 10.sp,
-                      color: const Color(0xFF2C6E69),
-                      fontWeight: FontWeight.w500,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -229,42 +236,58 @@ class _PostCardState extends State<PostCard> {
             child: Row(
               children: [
                 // Like Button
-                InkWell(
-                  onTap: _isLikeLoading ? null : () async {
-                    if (widget.onLike != null) {
-                      setState(() => _isLikeLoading = true);
-                      widget.onLike!();
-                      // Reset loading state after a longer delay to prevent spam
-                      await Future.delayed(const Duration(seconds: 2));
-                      if (mounted) {
-                        setState(() => _isLikeLoading = false);
-                      }
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(20.r),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.favorite,
-                          color: _isLikeLoading 
-                            ? Colors.grey 
-                            : widget.post.likesCount > 0 ? Colors.red : Colors.grey,
-                          size: 20.w,
-                        ),
-                        SizedBox(width: 6.w),
-                        Text(
-                          '${widget.post.likesCount}',
-                          style: AppTextStyles.onboardingBody.copyWith(
-                            fontSize: 14.sp,
-                            color: _isLikeLoading 
-                              ? Colors.grey 
-                              : widget.post.likesCount > 0 ? Colors.red : Colors.grey,
-                            fontWeight: FontWeight.w500,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  decoration: BoxDecoration(
+                    color: widget.post.likesCount > 0
+                        ? Colors.red.withOpacity(0.08)
+                        : Colors.white.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(color: const Color(0xFFCCD8DF)),
+                  ),
+                  child: InkWell(
+                    onTap: _isLikeLoading
+                        ? null
+                        : () async {
+                            if (widget.onLike != null) {
+                              setState(() => _isLikeLoading = true);
+                              widget.onLike!();
+                              // Prevent rapid repeated likes
+                              await Future.delayed(const Duration(seconds: 2));
+                              if (mounted) {
+                                setState(() => _isLikeLoading = false);
+                              }
+                            }
+                          },
+                    borderRadius: BorderRadius.circular(20.r),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.favorite,
+                            color: _isLikeLoading
+                                ? Colors.grey
+                                : widget.post.likesCount > 0
+                                    ? Colors.red
+                                    : Colors.grey,
+                            size: 20.w,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 6.w),
+                          Text(
+                            '${widget.post.likesCount}',
+                            style: AppTextStyles.onboardingBody.copyWith(
+                              fontSize: 14.sp,
+                              color: _isLikeLoading
+                                  ? Colors.grey
+                                  : widget.post.likesCount > 0
+                                      ? Colors.red
+                                      : Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -272,35 +295,41 @@ class _PostCardState extends State<PostCard> {
                 SizedBox(width: 16.w),
 
                 // Comment Button
-                InkWell(
-                  onTap: _toggleCommentInput,
-                  borderRadius: BorderRadius.circular(20.r),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.comment,
-                          color: Colors.grey,
-                          size: 20.w,
-                        ),
-                        SizedBox(width: 6.w),
-                        Text(
-                          '${widget.post.commentsCount}',
-                          style: AppTextStyles.onboardingBody.copyWith(
-                            fontSize: 14.sp,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(color: const Color(0xFFCCD8DF)),
+                  ),
+                  child: InkWell(
+                    onTap: _toggleCommentInput,
+                    borderRadius: BorderRadius.circular(20.r),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.comment,
                             color: Colors.grey,
-                            fontWeight: FontWeight.w500,
+                            size: 20.w,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 6.w),
+                          Text(
+                            '${widget.post.commentsCount}',
+                            style: AppTextStyles.onboardingBody.copyWith(
+                              fontSize: 14.sp,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
 
                 const Spacer(),
-
-               
               ],
             ),
           ),
@@ -312,8 +341,8 @@ class _PostCardState extends State<PostCard> {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: AppColors.primary.withOpacity(0.1),
-                    width: 1.w,
+                    color: const Color(0xFFCCD8DF),
+                    width: 1,
                   ),
                 ),
               ),
@@ -387,7 +416,8 @@ class _PostCardState extends State<PostCard> {
             ),
         ],
       ),
-     ) );
+      ),
+    );
   }
 
   String _formatTimestamp(DateTime timestamp) {

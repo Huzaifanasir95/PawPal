@@ -80,6 +80,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildCheckoutHeader(),
+
+                SizedBox(height: 14.h),
+
                 // Order summary card
                 _buildSection(
                   title: 'Order Summary',
@@ -89,33 +93,55 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ...widget.cartItems.map(
                         (item) => Padding(
                           padding: EdgeInsets.only(bottom: 8.h),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  item.product?.name ?? 'Product',
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10.w, vertical: 9.h),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F6F2),
+                              borderRadius: BorderRadius.circular(10.r),
+                              border: Border.all(
+                                color: AppColors.primary.withOpacity(0.16),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    item.product?.name ?? 'Product',
+                                    style: GoogleFonts.mulish(
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w, vertical: 3.h),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.22),
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                  child: Text(
+                                    'x${item.quantity}',
+                                    style: GoogleFonts.mulish(
+                                      fontSize: 11.sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF2C6E69),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 10.w),
+                                Text(
+                                  'PKR ${item.totalPrice.toStringAsFixed(0)}',
                                   style: GoogleFonts.mulish(
                                       fontSize: 13.sp,
-                                      color: AppColors.textPrimary),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                      fontWeight: FontWeight.w800,
+                                      color: const Color(0xFF191D21)),
                                 ),
-                              ),
-                              Text(
-                                '×${item.quantity}',
-                                style: GoogleFonts.mulish(
-                                    fontSize: 12.sp,
-                                    color: AppColors.textSecondary),
-                              ),
-                              SizedBox(width: 12.w),
-                              Text(
-                                'PKR ${item.totalPrice.toStringAsFixed(0)}',
-                                style: GoogleFonts.mulish(
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF191D21)),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -178,6 +204,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 _buildSection(
                   title: 'Delivery Address',
                   icon: Icons.location_on_outlined,
+                  subtitle: 'Where should we deliver your order?',
                   child: Column(
                     children: [
                       _buildTextField(
@@ -216,6 +243,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 _buildSection(
                   title: 'Payment Method',
                   icon: Icons.payment_outlined,
+                  subtitle: 'Choose your preferred payment option',
                   child: Column(
                     children: [
                       _buildPaymentOption(
@@ -248,6 +276,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 _buildSection(
                   title: 'Order Notes (Optional)',
                   icon: Icons.note_outlined,
+                  subtitle: 'Mention any delivery preferences',
                   child: _buildTextField(
                     controller: _notesController,
                     hint: 'Any special instructions for your order...',
@@ -313,6 +342,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget _buildSection({
     required String title,
     required IconData icon,
+    String? subtitle,
     required Widget child,
   }) {
     return Container(
@@ -320,6 +350,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.primary.withOpacity(0.16)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -345,8 +376,67 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ],
           ),
+          if (subtitle != null) ...[
+            SizedBox(height: 4.h),
+            Text(
+              subtitle,
+              style: GoogleFonts.mulish(
+                fontSize: 12.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
           SizedBox(height: 12.h),
           child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCheckoutHeader() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36.w,
+            height: 36.w,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.24),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Icon(Icons.verified_user_outlined,
+                size: 18.sp, color: const Color(0xFF2C6E69)),
+          ),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Secure Checkout',
+                  style: GoogleFonts.mulish(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF191D21),
+                  ),
+                ),
+                Text(
+                  'Review your details and place order confidently',
+                  style: GoogleFonts.mulish(
+                    fontSize: 11.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

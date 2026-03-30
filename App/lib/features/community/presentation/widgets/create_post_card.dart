@@ -20,21 +20,28 @@ class CreatePostCard extends StatelessWidget {
       },
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.all(20.w),
-        margin: EdgeInsets.symmetric(vertical: 8.h),
+        padding: EdgeInsets.all(16.w),
+        margin: EdgeInsets.symmetric(vertical: 6.h),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFF1F6F8),
+              Color(0xFFDDE9EE),
+            ],
+          ),
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8.r,
-              offset: Offset(0, 2.h),
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 12.r,
+              offset: Offset(0, 5.h),
             ),
           ],
           border: Border.all(
-            color: AppColors.primary.withOpacity(0.1),
-            width: 1.w,
+            color: const Color(0xFFB9CBD4),
+            width: 1,
           ),
         ),
         child: Row(
@@ -42,10 +49,10 @@ class CreatePostCard extends StatelessWidget {
             // User Avatar
             CircleAvatar(
               radius: 24.r,
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.primary.withOpacity(0.18),
               child: Icon(
                 Icons.person,
-                color: AppColors.surface,
+                color: AppColors.primary,
                 size: 24.w,
               ),
             ),
@@ -59,8 +66,8 @@ class CreatePostCard extends StatelessWidget {
                     'Share your thoughts...',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 16.sp,
-                      color: const Color(0xFFA1A1A1),
-                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   SizedBox(height: 4.h),
@@ -82,10 +89,17 @@ class CreatePostCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.primary,
                 borderRadius: BorderRadius.circular(24.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: Icon(
                 Icons.add,
-                color: AppColors.surface,
+                color: Colors.white,
                 size: 24.w,
               ),
             ),

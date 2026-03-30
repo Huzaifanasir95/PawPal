@@ -8,6 +8,7 @@ import '../cubit/marketplace_cubit.dart';
 import '../cubit/marketplace_state.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/cart_state.dart';
+import 'cart_screen.dart';
 import '../../data/repositories/marketplace_repository.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -134,27 +135,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                         ),
 
-                      // Price badge
-                      Positioned(
-                        top: 80.h,
-                        right: 16.w,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 12.w, vertical: 6.h),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2C6E69),
-                            borderRadius: BorderRadius.circular(20.r),
-                          ),
-                          child: Text(
-                            'PKR ${product.price.toStringAsFixed(0)}',
-                            style: GoogleFonts.mulish(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -199,69 +179,58 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           style: GoogleFonts.mulish(
                             fontSize: 22.sp,
                             fontWeight: FontWeight.w800,
+                            height: 1.25,
                             color: const Color(0xFF191D21),
                           ),
                         ),
 
-                        SizedBox(height: 8.h),
+                        SizedBox(height: 10.h),
 
-                        // Rating row
-                        Row(
-                          children: [
-                            ...List.generate(
-                              5,
-                              (i) => Icon(
-                                i < product.rating.round()
-                                    ? Icons.star_rounded
-                                    : Icons.star_outline_rounded,
-                                color: const Color(0xFFFFA726),
-                                size: 18.sp,
-                              ),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 12.w, vertical: 10.h),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14.r),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.28),
                             ),
-                            SizedBox(width: 8.w),
-                            Text(
-                              '${product.rating.toStringAsFixed(1)} (${product.totalReviews} reviews)',
-                              style: GoogleFonts.mulish(
-                                fontSize: 13.sp,
-                                color: AppColors.textSecondary,
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Price',
+                                style: GoogleFonts.mulish(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: 6.h),
-                        Text(
-                          '${product.totalSold} sold',
-                          style: GoogleFonts.mulish(
-                            fontSize: 12.sp,
-                            color: AppColors.textSecondary,
+                              SizedBox(width: 8.w),
+                              Text(
+                                'PKR ${product.price.toStringAsFixed(0)}',
+                                style: GoogleFonts.mulish(
+                                  fontSize: 22.sp,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF2C6E69),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
 
-                        SizedBox(height: 16.h),
+                        SizedBox(height: 10.h),
 
-                        // Divider
-                        Divider(color: const Color(0xFFE0E0E0), height: 1.h),
-                        SizedBox(height: 16.h),
+                        _buildStockPill(product.stockQuantity),
 
-                        // Description
-                        Text(
-                          'About this product',
-                          style: GoogleFonts.mulish(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF191D21),
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-                        Text(
-                          product.description,
-                          style: GoogleFonts.mulish(
-                            fontSize: 14.sp,
-                            height: 1.6,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+                        SizedBox(height: 12.h),
+
+                        _buildProductMetaCards(product.rating, product.totalReviews,
+                            product.totalSold),
+
+                        SizedBox(height: 18.h),
+
+                        _buildDescriptionSection(product.description),
 
                         SizedBox(height: 16.h),
 
@@ -269,63 +238,43 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         if (product.sellerName != null) ...[
                           Divider(color: const Color(0xFFE0E0E0), height: 1.h),
                           SizedBox(height: 16.h),
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 18.r,
-                                backgroundColor: AppColors.primary,
-                                child: Icon(Icons.person_outline_rounded,
-                                    size: 18.sp,
-                                    color: const Color(0xFF191D21)),
-                              ),
-                              SizedBox(width: 12.w),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Seller',
-                                      style: GoogleFonts.mulish(
-                                          fontSize: 11.sp,
-                                          color: AppColors.textSecondary)),
-                                  Text(product.sellerName!,
-                                      style: GoogleFonts.mulish(
-                                          fontSize: 14.sp,
-                                          fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF191D21))),
-                                ],
-                              ),
-                            ],
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(14.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16.r),
+                              border: Border.all(
+                                  color: AppColors.primary.withOpacity(0.2)),
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 18.r,
+                                  backgroundColor: AppColors.primary,
+                                  child: Icon(Icons.person_outline_rounded,
+                                      size: 18.sp,
+                                      color: const Color(0xFF191D21)),
+                                ),
+                                SizedBox(width: 12.w),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Seller',
+                                        style: GoogleFonts.mulish(
+                                            fontSize: 11.sp,
+                                            color: AppColors.textSecondary)),
+                                    Text(product.sellerName!,
+                                        style: GoogleFonts.mulish(
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w700,
+                                            color: const Color(0xFF191D21))),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ],
-
-                        SizedBox(height: 24.h),
-
-                        // Stock info
-                        Row(
-                          children: [
-                            Icon(
-                              product.stockQuantity > 0
-                                  ? Icons.check_circle_outline_rounded
-                                  : Icons.cancel_outlined,
-                              size: 16.sp,
-                              color: product.stockQuantity > 0
-                                  ? const Color(0xFF10B981)
-                                  : const Color(0xFFEF4444),
-                            ),
-                            SizedBox(width: 6.w),
-                            Text(
-                              product.stockQuantity > 0
-                                  ? '${product.stockQuantity} in stock'
-                                  : 'Out of stock',
-                              style: GoogleFonts.mulish(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w600,
-                                color: product.stockQuantity > 0
-                                    ? const Color(0xFF10B981)
-                                    : const Color(0xFFEF4444),
-                              ),
-                            ),
-                          ],
-                        ),
 
                         SizedBox(height: 80.h), // padding for bottom bar
                       ],
@@ -404,6 +353,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               child: BlocConsumer<CartCubit, CartState>(
                 listener: (context, state) {
                   if (state.addedProductId != null) {
+                    context.read<CartCubit>().clearAddedProductId();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Added to cart!',
@@ -413,6 +363,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.r)),
                         duration: const Duration(seconds: 2),
+                      ),
+                    );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<CartCubit>(),
+                          child: const CartScreen(),
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (state.error != null && state.error!.isNotEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.error!, style: GoogleFonts.mulish()),
+                        backgroundColor: const Color(0xFFEF4444),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r)),
                       ),
                     );
                   }
@@ -494,6 +465,197 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildProductMetaCards(double rating, int totalReviews, int totalSold) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildMetaCard(
+            icon: Icons.star_rounded,
+            iconColor: const Color(0xFFFFA726),
+            title: rating.toStringAsFixed(1),
+            subtitle: '$totalReviews reviews',
+          ),
+        ),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: _buildMetaCard(
+            icon: Icons.local_shipping_outlined,
+            iconColor: const Color(0xFF2C6E69),
+            title: '$totalSold sold',
+            subtitle: 'Completed orders',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetaCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 11.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18.sp, color: iconColor),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.mulish(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF191D21),
+                  ),
+                ),
+                SizedBox(height: 1.h),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.mulish(
+                    fontSize: 11.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDescriptionSection(String description) {
+    final highlights = _buildDescriptionHighlights(description);
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.description_outlined,
+                  size: 18.sp, color: const Color(0xFF2C6E69)),
+              SizedBox(width: 8.w),
+              Text(
+                'About this product',
+                style: GoogleFonts.mulish(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF191D21),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          ...highlights.map(
+            (item) => Padding(
+              padding: EdgeInsets.only(bottom: 6.h),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.check_circle_rounded,
+                      size: 15.sp, color: const Color(0xFF10B981)),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: GoogleFonts.mulish(
+                        fontSize: 13.sp,
+                        color: const Color(0xFF4B5563),
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            description,
+            style: GoogleFonts.mulish(
+              fontSize: 14.sp,
+              height: 1.65,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStockPill(int stockQuantity) {
+    final inStock = stockQuantity > 0;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 9.h),
+      decoration: BoxDecoration(
+        color: inStock
+            ? const Color(0xFF10B981).withOpacity(0.1)
+            : const Color(0xFFEF4444).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: inStock
+              ? const Color(0xFF10B981).withOpacity(0.35)
+              : const Color(0xFFEF4444).withOpacity(0.35),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            inStock ? Icons.check_circle_rounded : Icons.cancel_rounded,
+            size: 16.sp,
+            color: inStock ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+          ),
+          SizedBox(width: 7.w),
+          Text(
+            inStock ? '$stockQuantity in stock' : 'Out of stock',
+            style: GoogleFonts.mulish(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w700,
+              color: inStock ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _buildDescriptionHighlights(String description) {
+    final cleaned = description.trim();
+    if (cleaned.isEmpty) return ['No description available'];
+
+    final parts = cleaned
+        .split(RegExp(r'[.!?]+\\s*'))
+        .map((e) => e.trim())
+        .where((e) => e.length >= 12)
+        .toList();
+
+    if (parts.isEmpty) return [cleaned];
+    return parts.take(3).toList();
   }
 
   Widget _buildPlaceholder() {

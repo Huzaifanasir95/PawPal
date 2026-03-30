@@ -68,6 +68,49 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Image Gallery
+          if (post.imageUrls.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16.r),
+              child: SizedBox(
+                height: 220.h,
+                child: PageView.builder(
+                  itemCount: post.imageUrls.length,
+                  itemBuilder: (context, index) {
+                    return Image.network(
+                      post.imageUrls[index],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: AppColors.neutral200,
+                        child: Icon(Icons.pets, size: 60.sp, color: AppColors.textSecondary),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            if (post.imageUrls.length > 1)
+              Padding(
+                padding: EdgeInsets.only(top: 8.h),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    post.imageUrls.length,
+                    (index) => Container(
+                      width: 8.w,
+                      height: 8.h,
+                      margin: EdgeInsets.symmetric(horizontal: 3.w),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: index == 0 ? AppColors.primary : AppColors.neutral300,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            SizedBox(height: 16.h),
+          ],
           _buildTypeBadge(post),
           SizedBox(height: 16.h),
           if (post.petName != null) ...[
@@ -223,24 +266,22 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
             ),
           ),
         ),
-        if (post.urgency != null) ...[
-          SizedBox(width: 8.w),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-            decoration: BoxDecoration(
-              color: _urgencyColor(post.urgency).withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20.r),
-            ),
-            child: Text(
-              '${post.urgency!.toUpperCase()} URGENCY',
-              style: AppTextStyles.onboardingBody.copyWith(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w700,
-                color: _urgencyColor(post.urgency),
-              ),
+        SizedBox(width: 8.w),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: _urgencyColor(post.urgency).withOpacity(0.15),
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          child: Text(
+            '${post.urgency.toUpperCase()} URGENCY',
+            style: AppTextStyles.onboardingBody.copyWith(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              color: _urgencyColor(post.urgency),
             ),
           ),
-        ],
+        ),
         const Spacer(),
         Container(
           padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),

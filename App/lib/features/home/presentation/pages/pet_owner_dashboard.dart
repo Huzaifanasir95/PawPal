@@ -11,6 +11,7 @@ import '../../../../core/navigation/app_navigator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../chatbot/presentation/pages/chatbot_screen.dart';
 import '../../../home/presentation/pages/all_categories_page.dart';
+import '../../../pets/presentation/pages/add_pet_screen.dart';
 import '../../../pets/presentation/pages/pet_identification_scan_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
@@ -175,29 +176,61 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                       ),
                     ),
                     SizedBox(height: 14.h),
-                    GestureDetector(
-                      onTap: () => AppNavigator.navigateToMarketplace(context),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 14.w,
-                          vertical: 9.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(18.r),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.42),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () =>
+                              AppNavigator.navigateToMarketplace(context),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14.w,
+                              vertical: 9.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(18.r),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.42),
+                              ),
+                            ),
+                            child: Text(
+                              'Explore App',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ),
-                        child: Text(
-                          'Explore App',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
+                        SizedBox(width: 8.w),
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AddPetScreen(),
+                            ),
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14.w,
+                              vertical: 9.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18.r),
+                            ),
+                            child: Text(
+                              'Add Pet',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
@@ -565,7 +598,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(Icons.home_rounded, 'Home', 0),
-            _buildNavItem(Icons.groups_rounded, 'Community', 1),
+            _buildNavItem(Icons.pets_rounded, 'Add Pet', 1),
             SizedBox(width: 44.w),
             _buildNavItem(Icons.chat_bubble_outline_rounded, 'Messages', 2),
             _buildNavItem(Icons.person_outline_rounded, 'Profile', 3),
@@ -581,7 +614,10 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
       onTap: () {
         setState(() => _currentIndex = index);
         if (index == 1) {
-          AppNavigator.navigateToCommunityHub(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddPetScreen()),
+          );
         } else if (index == 2) {
           AppNavigator.navigateToChats(context);
         } else if (index == 3) {

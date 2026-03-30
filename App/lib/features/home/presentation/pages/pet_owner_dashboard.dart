@@ -120,8 +120,8 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.primary,
-            Color.alphaBlend(Colors.black.withOpacity(0.14), AppColors.primary),
+            const Color(0xFF4E9F9A),
+            const Color(0xFF2F6E72),
           ],
         ),
       ),
@@ -153,7 +153,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                         style: TextStyle(
                           fontSize: 14.sp,
                           height: 1.35,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withOpacity(0.95),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -167,10 +167,10 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                           vertical: 9.h,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withOpacity(0.18),
                           borderRadius: BorderRadius.circular(18.r),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.34),
+                            color: Colors.white.withOpacity(0.42),
                           ),
                         ),
                         child: Text(

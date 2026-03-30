@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
@@ -25,16 +26,46 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   int _currentIndex = 0;
   String _userName = '';
   int _unreadMessages = 0;
+  final ScrollController _categoryScrollController = ScrollController();
+  Timer? _categoryAutoScrollTimer;
+  bool _isCategoryTouching = false;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startCategoryAutoScroll();
+    });
   }
 
   @override
   void dispose() {
+    _categoryAutoScrollTimer?.cancel();
+    _categoryScrollController.dispose();
     super.dispose();
+  }
+
+  void _startCategoryAutoScroll() {
+    _categoryAutoScrollTimer?.cancel();
+    _categoryAutoScrollTimer = Timer.periodic(const Duration(milliseconds: 28),
+        (_) {
+      if (!mounted ||
+          !_categoryScrollController.hasClients ||
+          _isCategoryTouching) {
+        return;
+      }
+
+      final position = _categoryScrollController.position;
+      final nextOffset = _categoryScrollController.offset + 0.7;
+      final loopPoint = position.maxScrollExtent / 2;
+
+      if (loopPoint > 0 && nextOffset >= loopPoint) {
+        _categoryScrollController.jumpTo(nextOffset - loopPoint);
+      } else {
+        _categoryScrollController.jumpTo(nextOffset);
+      }
+    });
   }
 
   Future<void> _loadData() async {
@@ -210,30 +241,53 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
 
   Widget _buildContentSheet() {
     final categories = <_CategoryItem>[
-      _CategoryItem('Food', Icons.fastfood_outlined, () {
-        AppNavigator.navigateToMarketplace(context);
-      }),
-      _CategoryItem('Health', Icons.medical_services_outlined, () {
-        AppNavigator.navigateToVetsList(context);
-      }),
-      _CategoryItem('Toys', Icons.sports_esports_outlined, () {
-        AppNavigator.navigateToMarketplace(context);
-      }),
-      _CategoryItem('Care', Icons.spa_outlined, () {
+      _CategoryItem('Community', Icons.groups_rounded, () {
         AppNavigator.navigateToCommunityHub(context);
       }),
-      _CategoryItem('AI', Icons.smart_toy_outlined, () {
+      _CategoryItem('Lost & Found', Icons.pets_rounded, () {
+        AppNavigator.navigateToCommunityHub(context);
+      }),
+      _CategoryItem('AI Chatbot', Icons.smart_toy_outlined, () {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const ChatbotScreen()),
         );
       }),
+      _CategoryItem('Marketplace', Icons.storefront_rounded, () {
+        AppNavigator.navigateToMarketplace(context);
+      }),
+      _CategoryItem('Adoption', Icons.volunteer_activism_rounded, () {
+        AppNavigator.navigateToCommunityHub(context);
+      }),
+      _CategoryItem('Events', Icons.event_available_rounded, () {
+        AppNavigator.navigateToCommunityHub(context);
+      }),
+      _CategoryItem('Diet Plans', Icons.restaurant_menu_rounded, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+        );
+      }),
+      _CategoryItem('Pet Journals', Icons.edit_note_rounded, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MyPetsScreen()),
+        );
+      }),
     ];
+    final loopedCategories = [...categories, ...categories];
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFECEFF3),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFDCE5EB),
+            Color(0xFFD5E0E7),
+          ],
+        ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(22.r)),
       ),
       child: Padding(
@@ -269,13 +323,22 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
             ),
             SizedBox(height: 14.h),
             SizedBox(
-              height: 94.h,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: categories.length,
-                separatorBuilder: (_, __) => SizedBox(width: 12.w),
-                itemBuilder: (context, index) =>
-                    _buildCategoryChip(categories[index]),
+              height: 102.h,
+              child: Listener(
+                onPointerDown: (_) => _isCategoryTouching = true,
+                onPointerUp: (_) => _isCategoryTouching = false,
+                onPointerCancel: (_) => _isCategoryTouching = false,
+                child: ListView.separated(
+                  controller: _categoryScrollController,
+                  physics: const BouncingScrollPhysics(),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: loopedCategories.length,
+                  separatorBuilder: (_, __) => SizedBox(width: 12.w),
+                  itemBuilder: (context, index) =>
+                      _buildCategoryChip(
+                        loopedCategories[index % categories.length],
+                      ),
+                ),
               ),
             ),
             SizedBox(height: 14.h),
@@ -341,11 +404,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
               child: Container(
                 color: AppColors.primary.withOpacity(0.14),
                 child: Center(
-                  child: Icon(
-                    Icons.pets_rounded,
-                    size: 56.sp,
-                    color: AppColors.primary,
-                  ),
+                  child: const _PromoPawAnimationWidget(),
                 ),
               ),
             ),
@@ -412,26 +471,27 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
     return GestureDetector(
       onTap: item.onTap,
       child: SizedBox(
-        width: 78.w,
+        width: 90.w,
         child: Column(
           children: [
             Container(
-              width: 58.w,
-              height: 58.h,
+              width: 60.w,
+              height: 60.h,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: BorderRadius.circular(999.r),
               ),
               child: Icon(item.icon, size: 27.sp, color: AppColors.primary),
             ),
             SizedBox(height: 8.h),
             Text(
               item.title,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 11.sp,
+                fontSize: 10.5.sp,
+                height: 1.15,
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
@@ -733,6 +793,33 @@ class _InteractivePixelCatWidgetState extends State<_InteractivePixelCatWidget> 
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PromoPawAnimationWidget extends StatelessWidget {
+  const _PromoPawAnimationWidget();
+
+  static const String _promoPawLottieUrl =
+      'https://assets2.lottiefiles.com/packages/lf20_q5pk6p1k.json';
+
+  @override
+  Widget build(BuildContext context) {
+    return Lottie.network(
+      _promoPawLottieUrl,
+      width: 84.w,
+      height: 84.h,
+      fit: BoxFit.contain,
+      repeat: true,
+      animate: true,
+      frameRate: FrameRate.max,
+      errorBuilder: (_, __, ___) {
+        return Icon(
+          Icons.pets_rounded,
+          size: 56.sp,
+          color: AppColors.primary,
+        );
+      },
     );
   }
 }

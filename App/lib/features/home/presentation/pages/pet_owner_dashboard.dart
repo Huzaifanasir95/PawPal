@@ -872,38 +872,39 @@ class _PromoShopPreviewWidgetState extends State<_PromoShopPreviewWidget> {
     if (_imageUrls.isEmpty) {
       return Icon(
         Icons.pets_rounded,
-        size: 56.sp,
+        size: 72.sp,
         color: AppColors.primary,
       );
     }
 
     final imageUrl = _imageUrls[_activeIndex];
 
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 450),
-      switchInCurve: Curves.easeOut,
-      switchOutCurve: Curves.easeIn,
-      child: ClipRRect(
-        key: ValueKey<String>(imageUrl),
-        borderRadius: BorderRadius.circular(12.r),
-        child: Image.network(
-          imageUrl,
-          width: 92.w,
-          height: 92.h,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) {
-            return Container(
-              width: 92.w,
-              height: 92.h,
-              color: Colors.white.withOpacity(0.6),
-              alignment: Alignment.center,
-              child: Icon(
-                Icons.image_not_supported_outlined,
-                color: AppColors.textSecondary,
-                size: 26.sp,
-              ),
-            );
-          },
+    return Padding(
+      padding: EdgeInsets.all(8.w),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 450),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        child: ClipRRect(
+          key: ValueKey<String>(imageUrl),
+          borderRadius: BorderRadius.circular(14.r),
+          child: SizedBox.expand(
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) {
+                return Container(
+                  color: Colors.white.withOpacity(0.6),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.image_not_supported_outlined,
+                    color: AppColors.textSecondary,
+                    size: 30.sp,
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ),
     );

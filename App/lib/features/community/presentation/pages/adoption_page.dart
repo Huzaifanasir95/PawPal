@@ -9,8 +9,21 @@ import '../cubit/adoption_state.dart';
 import 'adoption_detail_page.dart';
 import 'create_adoption_page.dart';
 
-class AdoptionPage extends StatelessWidget {
+class AdoptionPage extends StatefulWidget {
   const AdoptionPage({super.key});
+
+  @override
+  State<AdoptionPage> createState() => _AdoptionPageState();
+}
+
+class _AdoptionPageState extends State<AdoptionPage> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,12 +52,76 @@ class AdoptionPage extends StatelessWidget {
           ),
           body: Column(
             children: [
+              _buildSearchBar(context, state.searchQuery),
               _buildPetTypeFilter(context, state.filterPetType),
               Expanded(child: _buildBody(context, state)),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context, String currentQuery) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
+      child: Container(
+        height: 50.h,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainer,
+          borderRadius: BorderRadius.circular(25.r),
+          border: Border.all(
+            color: AppColors.border,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            SizedBox(width: 16.w),
+            Icon(
+              Icons.search,
+              color: AppColors.textSecondary,
+              size: 20.sp,
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  context.read<AdoptionCubit>().searchListings(value);
+                },
+                style: AppTextStyles.onboardingBody.copyWith(
+                  fontSize: 15.sp,
+                  color: AppColors.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search by pet name...',
+                  hintStyle: AppTextStyles.onboardingBody.copyWith(
+                    fontSize: 15.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ),
+            if (currentQuery.isNotEmpty)
+              IconButton(
+                icon: Icon(
+                  Icons.clear,
+                  color: AppColors.textSecondary,
+                  size: 20.sp,
+                ),
+                onPressed: () {
+                  _searchController.clear();
+                  context.read<AdoptionCubit>().searchListings('');
+                },
+              ),
+            SizedBox(width: 8.w),
+          ],
+        ),
+      ),
     );
   }
 
@@ -107,6 +184,8 @@ class AdoptionPage extends StatelessWidget {
         ),
       );
     }
+    final displayListings = state.filteredListings;
+    
     if (state.listings.isEmpty) {
       return Center(
         child: Column(
@@ -125,15 +204,36 @@ class AdoptionPage extends StatelessWidget {
         ),
       );
     }
+    
+    if (displayListings.isEmpty && state.searchQuery.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64.sp, color: AppColors.textSecondary),
+            SizedBox(height: 12.h),
+            Text(
+              'No pets found matching "${state.searchQuery}"',
+              style: AppTextStyles.onboardingBody.copyWith(
+                fontSize: 16.sp,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+    
     return RefreshIndicator(
       onRefresh: () => context
           .read<AdoptionCubit>()
           .loadListings(petType: state.filterPetType),
       child: ListView.builder(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-        itemCount: state.listings.length,
+        itemCount: displayListings.length,
         itemBuilder: (context, index) =>
-            _buildListingCard(context, state.listings[index]),
+            _buildListingCard(context, displayListings[index]),
       ),
     );
   }

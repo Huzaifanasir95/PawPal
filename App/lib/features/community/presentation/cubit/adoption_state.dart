@@ -7,6 +7,7 @@ class AdoptionState {
   final List<AdoptionListing> listings;
   final AdoptionListing? selectedListing;
   final String? filterPetType;
+  final String searchQuery;
   final String? error;
 
   const AdoptionState({
@@ -16,8 +17,16 @@ class AdoptionState {
     this.listings = const [],
     this.selectedListing,
     this.filterPetType,
+    this.searchQuery = '',
     this.error,
   });
+
+  List<AdoptionListing> get filteredListings {
+    if (searchQuery.isEmpty) return listings;
+    return listings.where((listing) {
+      return listing.petName.toLowerCase().contains(searchQuery.toLowerCase());
+    }).toList();
+  }
 
   AdoptionState copyWith({
     bool? isLoading,
@@ -26,6 +35,7 @@ class AdoptionState {
     List<AdoptionListing>? listings,
     AdoptionListing? selectedListing,
     String? filterPetType,
+    String? searchQuery,
     String? error,
   }) {
     return AdoptionState(
@@ -35,6 +45,7 @@ class AdoptionState {
       listings: listings ?? this.listings,
       selectedListing: selectedListing ?? this.selectedListing,
       filterPetType: filterPetType ?? this.filterPetType,
+      searchQuery: searchQuery ?? this.searchQuery,
       error: error,
     );
   }

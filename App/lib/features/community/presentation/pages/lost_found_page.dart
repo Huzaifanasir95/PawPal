@@ -168,120 +168,160 @@ class LostFoundPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with type badge + urgency
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              decoration: BoxDecoration(
-                color: isLost
-                    ? const Color(0xFFFFEBEE)
-                    : const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(16.r),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    isLost ? Icons.pets : Icons.check_circle_outline,
-                    color: isLost ? AppColors.error : AppColors.success,
-                    size: 20.sp,
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    isLost ? 'LOST' : 'FOUND',
-                    style: AppTextStyles.onboardingBody.copyWith(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
-                      color: isLost ? AppColors.error : AppColors.success,
+            // Image + Info Row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Pet Image
+                if (post.imageUrls.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(16.r),
+                      bottomLeft: Radius.circular(16.r),
                     ),
-                  ),
-                  if (post.petType != null) ...[
-                    SizedBox(width: 8.w),
-                    Text(
-                      '• ${post.petType}',
-                      style: AppTextStyles.onboardingBody.copyWith(
-                        fontSize: 13.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
-                  if (post.urgency != null)
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 8.w, vertical: 3.h),
-                      decoration: BoxDecoration(
-                        color: urgencyColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Text(
-                        post.urgency!.toUpperCase(),
-                        style: AppTextStyles.onboardingBody.copyWith(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w700,
-                          color: urgencyColor,
+                    child: Image.network(
+                      post.imageUrls.first,
+                      width: 120.w,
+                      height: 140.h,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: 120.w,
+                        height: 140.h,
+                        color: isLost ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
+                        child: Icon(
+                          Icons.pets,
+                          size: 40.sp,
+                          color: isLost ? AppColors.error.withOpacity(0.5) : AppColors.success.withOpacity(0.5),
                         ),
                       ),
                     ),
-                ],
-              ),
-            ),
-            // Body
-            Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (post.petName != null)
-                    Text(
-                      post.petName!,
-                      style: AppTextStyles.onboardingTitle.copyWith(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                  )
+                else
+                  Container(
+                    width: 120.w,
+                    height: 140.h,
+                    decoration: BoxDecoration(
+                      color: isLost ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(16.r),
+                        bottomLeft: Radius.circular(16.r),
                       ),
                     ),
-                  if (post.petName != null) SizedBox(height: 4.h),
-                  Text(
-                    post.description,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.onboardingBody.copyWith(
-                      fontSize: 14.sp,
-                      color: AppColors.textSecondary,
+                    child: Icon(
+                      Icons.pets,
+                      size: 40.sp,
+                      color: isLost ? AppColors.error.withOpacity(0.5) : AppColors.success.withOpacity(0.5),
                     ),
                   ),
-                  SizedBox(height: 10.h),
-                  Row(
-                    children: [
-                      if (post.lastSeenLocation != null) ...[
-                        Icon(Icons.location_on_outlined,
-                            size: 14.sp, color: AppColors.textSecondary),
-                        SizedBox(width: 4.w),
-                        Expanded(
-                          child: Text(
-                            post.lastSeenLocation!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.onboardingBody.copyWith(
-                              fontSize: 12.sp,
-                              color: AppColors.textSecondary,
+                // Info section
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.all(12.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Type badge + urgency row
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                              decoration: BoxDecoration(
+                                color: isLost ? AppColors.error : AppColors.success,
+                                borderRadius: BorderRadius.circular(6.r),
+                              ),
+                              child: Text(
+                                isLost ? 'LOST' : 'FOUND',
+                                style: AppTextStyles.onboardingBody.copyWith(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            if (post.petType != null) ...[
+                              SizedBox(width: 6.w),
+                              Text(
+                                '• ${post.petType}',
+                                style: AppTextStyles.onboardingBody.copyWith(
+                                  fontSize: 12.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                            const Spacer(),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+                              decoration: BoxDecoration(
+                                color: urgencyColor.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(6.r),
+                              ),
+                              child: Text(
+                                post.urgency.toUpperCase(),
+                                style: AppTextStyles.onboardingBody.copyWith(
+                                  fontSize: 9.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: urgencyColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8.h),
+                        // Pet name
+                        if (post.petName != null)
+                          Text(
+                            post.petName!,
+                            style: AppTextStyles.onboardingTitle.copyWith(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
                             ),
                           ),
+                        SizedBox(height: 4.h),
+                        // Description
+                        Text(
+                          post.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.onboardingBody.copyWith(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        // Location + time
+                        Row(
+                          children: [
+                            if (post.lastSeenLocation != null) ...[
+                              Icon(Icons.location_on_outlined,
+                                  size: 12.sp, color: AppColors.textSecondary),
+                              SizedBox(width: 2.w),
+                              Expanded(
+                                child: Text(
+                                  post.lastSeenLocation!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.onboardingBody.copyWith(
+                                    fontSize: 11.sp,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            Text(
+                              _timeAgo(post.createdAt),
+                              style: AppTextStyles.onboardingBody.copyWith(
+                                fontSize: 11.sp,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
-                      const Spacer(),
-                      Text(
-                        _timeAgo(post.createdAt),
-                        style: AppTextStyles.onboardingBody.copyWith(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),

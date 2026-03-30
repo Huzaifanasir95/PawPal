@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -190,16 +192,13 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                 height: 134.h,
                 padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(20.r),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  border: Border.all(color: const Color(0xFFDDE2E7)),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(14.r),
-                  child: Image.asset(
-                    'assets/logo/onboarding_page1_pet.png',
-                    fit: BoxFit.cover,
-                  ),
+                  child: const _InteractivePixelCatWidget(),
                 ),
               ),
             ],
@@ -313,7 +312,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
 
   Widget _buildPromoCard() {
     return Container(
-      height: 152.h,
+      height: 158.h,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18.r),
         gradient: LinearGradient(
@@ -335,7 +334,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
       child: Row(
         children: [
           Expanded(
-            flex: 7,
+            flex: 5,
             child: ClipRRect(
               borderRadius:
                   BorderRadius.horizontal(left: Radius.circular(18.r)),
@@ -344,7 +343,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                 child: Center(
                   child: Icon(
                     Icons.pets_rounded,
-                    size: 58.sp,
+                    size: 56.sp,
                     color: AppColors.primary,
                   ),
                 ),
@@ -352,9 +351,9 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
             ),
           ),
           Expanded(
-            flex: 6,
+            flex: 7,
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              padding: EdgeInsets.symmetric(horizontal: 14.w),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,38 +361,38 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                   Text(
                     'PET CARE WEEK',
                     style: TextStyle(
-                      fontSize: 10.sp,
+                      fontSize: 11.sp,
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.8,
                     ),
                   ),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: 6.h),
                   Text(
                     'Save on food, toys & grooming.',
                     style: TextStyle(
-                      fontSize: 14.sp,
+                      fontSize: 15.sp,
                       color: AppColors.textPrimary,
                       fontWeight: FontWeight.w800,
                       height: 1.2,
                     ),
                   ),
-                  SizedBox(height: 10.h),
+                  SizedBox(height: 12.h),
                   GestureDetector(
                     onTap: () => AppNavigator.navigateToMarketplace(context),
                     child: Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 10.w,
-                        vertical: 6.h,
+                        horizontal: 12.w,
+                        vertical: 7.h,
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12.r),
+                        borderRadius: BorderRadius.circular(14.r),
                       ),
                       child: Text(
                         'Shop Now',
                         style: TextStyle(
-                          fontSize: 11.sp,
+                          fontSize: 12.sp,
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
                         ),
@@ -595,6 +594,184 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _InteractivePixelCatWidget extends StatefulWidget {
+  const _InteractivePixelCatWidget();
+
+  @override
+  State<_InteractivePixelCatWidget> createState() =>
+      _InteractivePixelCatWidgetState();
+}
+
+class _InteractivePixelCatWidgetState extends State<_InteractivePixelCatWidget> {
+  int _spriteIndex = 0;
+  Timer? _runTimer;
+
+  static const List<List<String>> _sprites = [
+    [
+      '..................',
+      '...K.........KK...',
+      '..KKK.......KKKK..',
+      '.KKKKKK...KKKKKKK.',
+      'KKKKKKKKKKKKKKKKK.',
+      '.KKKKKKKKKKKKKWKKK',
+      '.KKKKKKKKKKKKKKKK.',
+      '..KKKKKKKKKKKKKK..',
+      '...KKKKKKKKKKKK...',
+      '..KKKKKKKKKKKK....',
+      '.KKK..KKKK..KK....',
+      'KK....KK....KK....',
+      '.K.....K.....K....',
+      '..................',
+    ],
+    [
+      '..................',
+      '..KK.........KK...',
+      '.KKKK.......KKKK..',
+      '.KKKKKK...KKKKKKK.',
+      'KKKKKKKKKKKKKKKKK.',
+      '.KKKKKKKKKKKKKWKKK',
+      '.KKKKKKKKKKKKKKKK.',
+      '..KKKKKKKKKKKKKK..',
+      '...KKKKKKKKKKKK...',
+      '..KKKKKKKKKKKK....',
+      '..KK..KKKK..KKK...',
+      '.K...KK....KK..K..',
+      '....KK....KK......',
+      '..................',
+    ],
+    [
+      '..................',
+      '...K.........KK...',
+      '..KKK.......KKKK..',
+      '.KKKKKK...KKKKKKK.',
+      'KKKKKKKKKKKKKKKKK.',
+      '.KKKKKKKKKKKKKWKKK',
+      '.KKKKKKKKKKKKKKKK.',
+      '..KKKKKKKKKKKKKK..',
+      '...KKKKKKKKKKKK...',
+      '..KKKKKKKKKKKK....',
+      '..KKK..KKKK..KK...',
+      '...KK....KK....KK.',
+      '..KK.....KK.....K.',
+      '..................',
+    ],
+    [
+      '..................',
+      '..KK.........KK...',
+      '.KKKK.......KKKK..',
+      '.KKKKKK...KKKKKKK.',
+      'KKKKKKKKKKKKKKKKK.',
+      '.KKKKKKKKKKKKKWKKK',
+      '.KKKKKKKKKKKKKKKK.',
+      '..KKKKKKKKKKKKKK..',
+      '...KKKKKKKKKKKK...',
+      '..KKKKKKKKKKKK....',
+      '.KK..KKKK..KKK....',
+      'K..KK....KK...K...',
+      '.KK......KK.......',
+      '..................',
+    ],
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _runTimer = Timer.periodic(const Duration(milliseconds: 140), (_) {
+      if (!mounted) return;
+      setState(() {
+        _spriteIndex = (_spriteIndex + 1) % _sprites.length;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _runTimer?.cancel();
+    super.dispose();
+  }
+
+  Color? _pixelColor(String value) {
+    switch (value) {
+      case 'K':
+        return const Color(0xFF121212);
+      default:
+        return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sprite = _sprites[_spriteIndex];
+
+    return Container(
+      color: Colors.white,
+      child: Center(
+        child: AnimatedSlide(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          offset: _spriteIndex.isEven
+              ? const Offset(-0.03, 0)
+              : const Offset(0.03, 0),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 100),
+            switchInCurve: Curves.linear,
+            switchOutCurve: Curves.linear,
+            child: _PixelSprite(
+              key: ValueKey<int>(_spriteIndex),
+              sprite: sprite,
+              pixelColor: _pixelColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PixelSprite extends StatelessWidget {
+  const _PixelSprite({
+    super.key,
+    required this.sprite,
+    required this.pixelColor,
+  });
+
+  final List<String> sprite;
+  final Color? Function(String) pixelColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = sprite.length;
+    final columns = sprite.first.length;
+    const pixel = 4.2;
+
+    return SizedBox(
+      width: columns * pixel,
+      height: rows * pixel,
+      child: GridView.builder(
+        padding: EdgeInsets.zero,
+        itemCount: rows * columns,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
+        ),
+        itemBuilder: (context, index) {
+          final x = index % columns;
+          final y = index ~/ columns;
+          final pixelValue = sprite[y][x];
+
+          return Container(
+            margin: const EdgeInsets.all(0.35),
+            decoration: BoxDecoration(
+              color: pixelColor(pixelValue),
+              borderRadius: BorderRadius.circular(0.8),
+            ),
+          );
+        },
       ),
     );
   }

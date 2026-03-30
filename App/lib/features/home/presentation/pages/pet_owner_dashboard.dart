@@ -7,12 +7,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/di/service_locator.dart';
 import '../../../../core/navigation/app_navigator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../chat/data/repositories/chat_repository.dart';
 import '../../../chatbot/presentation/pages/chatbot_screen.dart';
 import '../../../home/presentation/pages/all_categories_page.dart';
+import '../../../pets/presentation/pages/add_pet_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 
@@ -26,7 +25,6 @@ class PetOwnerDashboard extends StatefulWidget {
 class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   int _currentIndex = 0;
   String _userName = '';
-  int _unreadMessages = 0;
   final ScrollController _categoryScrollController = ScrollController();
   Timer? _categoryAutoScrollTimer;
   bool _isCategoryTouching = false;
@@ -70,21 +68,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   }
 
   Future<void> _loadData() async {
-    try {
-      final chatRepo = getIt<ChatRepository>();
-      final chats = await chatRepo.getMyChats();
-
-      int unread = 0;
-      for (var chat in chats) {
-        unread += chat.unreadCountOwner;
-      }
-
-      if (mounted) {
-        setState(() {
-          _unreadMessages = unread;
-        });
-      }
-    } catch (_) {}
+    // Reserved for future dashboard refresh hooks.
   }
 
   String _getGreeting() {
@@ -580,10 +564,10 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem(Icons.storefront_outlined, 'InStore', 0),
-            _buildNavItem(Icons.local_shipping_outlined, 'Delivery', 1),
+            _buildNavItem(Icons.home_rounded, 'Home', 0),
+            _buildNavItem(Icons.groups_rounded, 'Community', 1),
             SizedBox(width: 44.w),
-            _buildNavItem(Icons.grid_view_rounded, 'Ecomm', 2),
+            _buildNavItem(Icons.chat_bubble_outline_rounded, 'Messages', 2),
             _buildNavItem(Icons.person_outline_rounded, 'Profile', 3),
           ],
         ),
@@ -597,9 +581,9 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
       onTap: () {
         setState(() => _currentIndex = index);
         if (index == 1) {
-          AppNavigator.navigateToVetsList(context);
+          AppNavigator.navigateToCommunityHub(context);
         } else if (index == 2) {
-          AppNavigator.navigateToMarketplace(context);
+          AppNavigator.navigateToChats(context);
         } else if (index == 3) {
           Navigator.push(
             context,
@@ -631,38 +615,17 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
 
   Widget _buildCenterFab() {
     return FloatingActionButton(
-      onPressed: () => AppNavigator.navigateToChats(context),
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AddPetScreen()),
+      ),
       backgroundColor: AppColors.primary,
       elevation: 4,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Center(
-            child: Icon(Icons.qr_code_scanner_rounded,
-                color: Colors.white, size: 28.sp),
-          ),
-          if (_unreadMessages > 0)
-            Positioned(
-              top: -4,
-              right: -6,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE53935),
-                  borderRadius: BorderRadius.circular(10.r),
-                  border: Border.all(color: Colors.white, width: 1.5),
-                ),
-                child: Text(
-                  _unreadMessages > 9 ? '9+' : '$_unreadMessages',
-                  style: TextStyle(
-                    fontSize: 9.sp,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-        ],
+      tooltip: 'Pet Identification',
+      child: Icon(
+        Icons.pets_rounded,
+        color: Colors.white,
+        size: 28.sp,
       ),
     );
   }

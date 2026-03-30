@@ -11,7 +11,7 @@ import '../../../../core/navigation/app_navigator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../chatbot/presentation/pages/chatbot_screen.dart';
 import '../../../home/presentation/pages/all_categories_page.dart';
-import '../../../pets/presentation/pages/add_pet_screen.dart';
+import '../../../pets/presentation/pages/pet_identification_scan_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 
@@ -617,13 +617,13 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
     return FloatingActionButton(
       onPressed: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const AddPetScreen()),
+        MaterialPageRoute(builder: (_) => const PetIdentificationScanScreen()),
       ),
       backgroundColor: AppColors.primary,
       elevation: 4,
       tooltip: 'Pet Identification',
       child: Icon(
-        Icons.pets_rounded,
+        Icons.document_scanner_rounded,
         color: Colors.white,
         size: 28.sp,
       ),

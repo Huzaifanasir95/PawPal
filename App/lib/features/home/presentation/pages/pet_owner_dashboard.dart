@@ -208,7 +208,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const AddPetScreen(),
+                              builder: (_) => const MyPetsScreen(),
                             ),
                           ),
                           child: Container(
@@ -221,7 +221,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                               borderRadius: BorderRadius.circular(18.r),
                             ),
                             child: Text(
-                              'Add Pet',
+                              'My Pets',
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 color: AppColors.primary,

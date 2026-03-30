@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:lottie/lottie.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/navigation/app_navigator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../chatbot/presentation/pages/chatbot_screen.dart';
 import '../../../home/presentation/pages/all_categories_page.dart';
+import '../../../marketplace/data/repositories/marketplace_repository.dart';
 import '../../../pets/presentation/pages/add_pet_screen.dart';
 import '../../../pets/presentation/pages/pet_identification_scan_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
@@ -430,7 +430,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
               child: Container(
                 color: AppColors.primary.withOpacity(0.14),
                 child: Center(
-                  child: const _PromoPawAnimationWidget(),
+                  child: const _PromoShopPreviewWidget(),
                 ),
               ),
             ),
@@ -805,29 +805,107 @@ class _InteractivePixelCatWidgetState extends State<_InteractivePixelCatWidget> 
   }
 }
 
-class _PromoPawAnimationWidget extends StatelessWidget {
-  const _PromoPawAnimationWidget();
+class _PromoShopPreviewWidget extends StatefulWidget {
+  const _PromoShopPreviewWidget();
 
-  static const String _promoPawLottieUrl =
-      'https://assets2.lottiefiles.com/packages/lf20_q5pk6p1k.json';
+  @override
+  State<_PromoShopPreviewWidget> createState() =>
+      _PromoShopPreviewWidgetState();
+}
+
+class _PromoShopPreviewWidgetState extends State<_PromoShopPreviewWidget> {
+  final MarketplaceRepository _marketplaceRepository =
+      MarketplaceRepository.instance;
+  final List<String> _imageUrls = [];
+  Timer? _rotationTimer;
+  int _activeIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadShopImages();
+  }
+
+  Future<void> _loadShopImages() async {
+    try {
+      final products = await _marketplaceRepository.getProducts(limit: 10);
+      final urls = products
+          .map((product) => product.firstImage)
+          .where((url) => url.trim().isNotEmpty)
+          .toSet()
+          .toList();
+
+      if (!mounted) return;
+
+      setState(() {
+        _imageUrls
+          ..clear()
+          ..addAll(urls);
+      });
+
+      _startRotation();
+    } catch (_) {
+      // Keep fallback icon if loading marketplace previews fails.
+    }
+  }
+
+  void _startRotation() {
+    _rotationTimer?.cancel();
+    if (_imageUrls.length < 2) return;
+
+    _rotationTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) {
+      if (!mounted) return;
+      setState(() {
+        _activeIndex = (_activeIndex + 1) % _imageUrls.length;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _rotationTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Lottie.network(
-      _promoPawLottieUrl,
-      width: 84.w,
-      height: 84.h,
-      fit: BoxFit.contain,
-      repeat: true,
-      animate: true,
-      frameRate: FrameRate.max,
-      errorBuilder: (_, __, ___) {
-        return Icon(
-          Icons.pets_rounded,
-          size: 56.sp,
-          color: AppColors.primary,
-        );
-      },
+    if (_imageUrls.isEmpty) {
+      return Icon(
+        Icons.pets_rounded,
+        size: 56.sp,
+        color: AppColors.primary,
+      );
+    }
+
+    final imageUrl = _imageUrls[_activeIndex];
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 450),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: ClipRRect(
+        key: ValueKey<String>(imageUrl),
+        borderRadius: BorderRadius.circular(12.r),
+        child: Image.network(
+          imageUrl,
+          width: 92.w,
+          height: 92.h,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) {
+            return Container(
+              width: 92.w,
+              height: 92.h,
+              color: Colors.white.withOpacity(0.6),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.image_not_supported_outlined,
+                color: AppColors.textSecondary,
+                size: 26.sp,
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }

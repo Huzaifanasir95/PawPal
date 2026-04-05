@@ -10,6 +10,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/navigation/app_navigator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../chatbot/presentation/pages/chatbot_screen.dart';
+import '../../../caregiver/presentation/pages/caregivers_list_screen.dart';
 import '../../../home/presentation/pages/all_categories_page.dart';
 import '../../../marketplace/data/repositories/marketplace_repository.dart';
 import '../../../pets/presentation/pages/add_pet_screen.dart';
@@ -285,6 +286,12 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
       }),
       _CategoryItem('Marketplace', Icons.storefront_rounded, () {
         AppNavigator.navigateToMarketplace(context);
+      }),
+      _CategoryItem('Pet Caregiver', Icons.support_agent_rounded, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CaregiversListScreen()),
+        );
       }),
       _CategoryItem('Adoption', Icons.volunteer_activism_rounded, () {
         AppNavigator.navigateToCommunityHub(context);

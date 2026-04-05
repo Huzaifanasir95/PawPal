@@ -156,11 +156,30 @@ class AuthRepository {
     }
   }
 
-  // Reset password
-  Future<void> resetPassword(String email) async {
+  // Reset password - request OTP/token (returns token for dev; in prod the token is emailed)
+  Future<String> resetPassword(String email) async {
     try {
-      await _apiClient.post('/api/v1/auth/password/reset-request', data: {
+      final response = await _apiClient.post('/api/v1/auth/password/reset-request', data: {
         'email': email,
+      });
+      // Backend returns reset_token in data (dev mode); in prod this comes via email
+      final data = response.data as Map<String, dynamic>;
+      final token = (data['data'] as Map<String, dynamic>?)?['reset_token'] as String? ?? '';
+      return token;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  // Confirm password reset with token + new password
+  Future<void> confirmPasswordReset({
+    required String token,
+    required String newPassword,
+  }) async {
+    try {
+      await _apiClient.post('/api/v1/auth/password/reset', data: {
+        'token': token,
+        'new_password': newPassword,
       });
     } on DioException catch (e) {
       throw _handleDioError(e);

@@ -9,6 +9,7 @@ import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/widgets/custom_password_field.dart';
 import '../bloc/auth_bloc.dart';
 import 'sign_up_screen.dart';
+import 'forgot_password_page.dart';
 
 class SignInScreen extends StatefulWidget {
   final VoidCallback? onNavigateToSignUp;
@@ -157,38 +158,22 @@ class _SignInScreenState extends State<SignInScreen> {
               // Forgot Password Link
               Align(
                 alignment: Alignment.centerRight,
-                child: BlocBuilder<AuthBloc, AuthState>(
-                  builder: (context, state) {
-                    final isLoading = state.maybeWhen(
-                      loading: () => true,
-                      orElse: () => false,
-                    );
-                    
-                    return GestureDetector(
-                      onTap: isLoading ? null : () {
-                        final email = _emailController.text.trim();
-                        if (email.isNotEmpty) {
-                          if (RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-                            context.read<AuthBloc>().add(
-                              AuthEvent.resetPassword(email),
-                            );
-                          } else {
-                            CustomSnackbar.showError(context, 'Please enter a valid email address');
-                          }
-                        } else {
-                          CustomSnackbar.showError(context, 'Please enter your email first');
-                        }
-                      },
-                      child: Text(
-                        AppStrings.forgot,
-                        style: AppTextStyles.onboardingBody.copyWith(
-                          fontSize: 14.sp,
-                          color: isLoading ? AppColors.primary.withOpacity(0.5) : AppColors.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ForgotPasswordPage(),
                       ),
                     );
                   },
+                  child: Text(
+                    AppStrings.forgot,
+                    style: AppTextStyles.onboardingBody.copyWith(
+                      fontSize: 14.sp,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
               

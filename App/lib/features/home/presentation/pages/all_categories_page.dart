@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/navigation/app_navigator.dart';
+import '../../../caregiver/presentation/pages/caregivers_list_screen.dart';
 import '../../../chatbot/presentation/pages/chatbot_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
@@ -51,6 +52,15 @@ class AllCategoriesPage extends StatelessWidget {
         subtitle: 'Food, toys, essentials',
         icon: Icons.storefront_rounded,
         onTap: () => AppNavigator.navigateToMarketplace(context),
+      ),
+      _CategoryAction(
+        title: 'Pet Caregiver Services',
+        subtitle: 'Find trusted pet caregivers',
+        icon: Icons.support_agent_rounded,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CaregiversListScreen()),
+        ),
       ),
       _CategoryAction(
         title: 'Diet Plans',

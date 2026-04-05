@@ -130,14 +130,18 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFECEFF3),
       appBar: AppBar(
         title: Text(
           'Find Caregivers',
-          style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.titleLarge.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.primary,
         elevation: 0,
+        scrolledUnderElevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list, color: AppColors.textPrimary),
@@ -147,8 +151,28 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
       ),
       body: Column(
         children: [
-          _buildSearchBar(),
-          _buildServiceTypeFilter(),
+          Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.primary,
+                  Color(0xFFA9DCD7),
+                ],
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(24.r),
+                bottomRight: Radius.circular(24.r),
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildSearchBar(),
+                _buildServiceTypeFilter(),
+              ],
+            ),
+          ),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -158,7 +182,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                         onRefresh: _loadInitialData,
                         child: ListView.builder(
                           controller: _scrollController,
-                          padding: EdgeInsets.all(16.w),
+                          padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 16.h),
                           itemCount: _caregivers.length + (_isLoadingMore ? 1 : 0),
                           itemBuilder: (context, index) {
                             if (index >= _caregivers.length) {
@@ -181,15 +205,15 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
 
   Widget _buildSearchBar() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      margin: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 12.h),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(18.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -215,15 +239,15 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                 )
               : null,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(18.r),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(18.r),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(18.r),
             borderSide: BorderSide(color: AppColors.primary, width: 2),
           ),
           filled: true,
@@ -239,7 +263,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
   Widget _buildServiceTypeFilter() {
     return Container(
       height: 48.h,
-      margin: EdgeInsets.only(bottom: 12.h),
+      margin: EdgeInsets.only(bottom: 14.h),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -263,26 +287,21 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
                 decoration: BoxDecoration(
-                  gradient: isSelected
-                      ? LinearGradient(
-                          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-                        )
-                      : null,
-                  color: isSelected ? null : AppColors.surface,
-                  borderRadius: BorderRadius.circular(12.r),
+                  color: isSelected ? AppColors.darkTeal : AppColors.surface,
+                  borderRadius: BorderRadius.circular(14.r),
                   border: Border.all(
-                    color: isSelected ? AppColors.primary : AppColors.textSecondary.withOpacity(0.2),
-                    width: isSelected ? 2 : 1,
+                    color: isSelected
+                        ? AppColors.darkTeal
+                        : AppColors.textSecondary.withOpacity(0.18),
+                    width: 1,
                   ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : [],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isSelected ? 0.14 : 0.05),
+                      blurRadius: isSelected ? 10 : 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Center(
                   child: Text(
@@ -382,21 +401,24 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
         );
       },
       child: Container(
-        margin: EdgeInsets.only(bottom: 16.h),
+        margin: EdgeInsets.only(bottom: 14.h),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+            color: const Color(0xFFDAE2E8),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-              spreadRadius: 0,
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(20.r),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -408,8 +430,8 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppColors.primary.withOpacity(0.05),
-                      AppColors.primary.withOpacity(0.02),
+                      AppColors.primary.withOpacity(0.22),
+                      AppColors.primary.withOpacity(0.08),
                     ],
                   ),
                 ),

@@ -183,8 +183,10 @@ class _SignInScreenState extends State<SignInScreen> {
                         AppStrings.forgot,
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 14.sp,
-                          color: isLoading ? AppColors.primary.withOpacity(0.5) : AppColors.primary,
-                          fontWeight: FontWeight.w500,
+                          color: isLoading
+                              ? AppColors.textSecondary.withOpacity(0.6)
+                              : AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     );

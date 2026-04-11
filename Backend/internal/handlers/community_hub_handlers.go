@@ -13,10 +13,10 @@ import (
 
 type CommunityHubHandlers struct {
 	repo     *repositories.CommunityHubRepository
-	userRepo *repositories.UserRepository
+	userRepo repositories.UserRepository
 }
 
-func NewCommunityHubHandlers(repo *repositories.CommunityHubRepository, userRepo *repositories.UserRepository) *CommunityHubHandlers {
+func NewCommunityHubHandlers(repo *repositories.CommunityHubRepository, userRepo repositories.UserRepository) *CommunityHubHandlers {
 	return &CommunityHubHandlers{repo: repo, userRepo: userRepo}
 }
 

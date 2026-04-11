@@ -16,11 +16,11 @@ import (
 type CaregiverHandler struct {
 	repo        *repositories.CaregiverRepository
 	bookingRepo *repositories.BookingRepository
-	userRepo    *repositories.UserRepository
+	userRepo    repositories.UserRepository
 }
 
 // NewCaregiverHandler creates a new caregiver handler
-func NewCaregiverHandler(repo *repositories.CaregiverRepository, bookingRepo *repositories.BookingRepository, userRepo *repositories.UserRepository) *CaregiverHandler {
+func NewCaregiverHandler(repo *repositories.CaregiverRepository, bookingRepo *repositories.BookingRepository, userRepo repositories.UserRepository) *CaregiverHandler {
 	return &CaregiverHandler{
 		repo:        repo,
 		bookingRepo: bookingRepo,

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -219,7 +220,7 @@ func (h *AuthHandlers) ResetPassword(c *gin.Context) {
 // GetProfile handles getting current user profile
 func (h *AuthHandlers) GetProfile(c *gin.Context) {
 	userID := c.MustGet("userID").(string)
-	
+
 	// Parse UUID
 	user, err := h.authService.GetUserByID(c.Request.Context(), parseUUID(userID))
 	if err != nil || user == nil {
@@ -247,7 +248,7 @@ func (h *AuthHandlers) GetProfile(c *gin.Context) {
 // UpdateProfile handles updating user profile
 func (h *AuthHandlers) UpdateProfile(c *gin.Context) {
 	userID := c.MustGet("userID").(string)
-	
+
 	var req models.UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.GenericResponse{
@@ -300,7 +301,7 @@ func (h *AuthHandlers) UpdateProfile(c *gin.Context) {
 	})
 }
 
-// SetUserRole sets the user's role (petowner or vet)
+// SetUserRole sets the user's account type/role.
 func (h *AuthHandlers) SetUserRole(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -323,17 +324,13 @@ func (h *AuthHandlers) SetUserRole(c *gin.Context) {
 		return
 	}
 
-	// Normalize role format (accept both "pet_owner" and "petowner")
-	normalizedRole := req.Role
-	if req.Role == "pet_owner" {
-		normalizedRole = "petowner"
-	}
+	normalizedRole := normalizeAccountType(req.Role)
 
 	// Validate role
-	if normalizedRole != "petowner" && normalizedRole != "vet" {
+	if normalizedRole == "" {
 		c.JSON(http.StatusBadRequest, models.GenericResponse{
 			Success: false,
-			Message: "Invalid role. Must be 'pet_owner' or 'vet'",
+			Message: "Invalid role. Must be one of: pet_owner, vet, seller, caregiver",
 		})
 		return
 	}
@@ -366,3 +363,20 @@ func (h *AuthHandlers) SetUserRole(c *gin.Context) {
 	})
 }
 
+// normalizeAccountType converts supported role/account aliases into canonical values.
+func normalizeAccountType(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "pet_owner", "petowner", "pet-owner", "owner":
+		return "pet_owner"
+	case "vet", "veterinarian", "veterinary":
+		return "vet"
+	case "seller", "vendor", "merchant", "shop_owner", "shopowner":
+		return "seller"
+	case "caregiver", "care_giver", "pet_caregiver":
+		return "caregiver"
+	case "admin":
+		return "admin"
+	default:
+		return ""
+	}
+}

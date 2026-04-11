@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -29,14 +30,14 @@ var (
 
 // AuthService handles authentication operations
 type AuthService struct {
-	userRepo     *repositories.UserRepository
-	jwtSecret    []byte
-	accessExpiry time.Duration
+	userRepo      repositories.UserRepository
+	jwtSecret     []byte
+	accessExpiry  time.Duration
 	refreshExpiry time.Duration
 }
 
 // NewAuthService creates a new AuthService
-func NewAuthService(userRepo *repositories.UserRepository) *AuthService {
+func NewAuthService(userRepo repositories.UserRepository) *AuthService {
 	secret := os.Getenv("SUPABASE_JWT_SECRET")
 	if secret == "" {
 		secret = os.Getenv("JWT_SECRET")
@@ -78,15 +79,20 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.SignUpRequest) (*m
 		return nil, err
 	}
 
+	accountType := "pet_owner"
+	if req.AccountType != nil {
+		normalized := normalizeAccountType(*req.AccountType)
+		if normalized != "" {
+			accountType = normalized
+		}
+	}
+
 	// Create user
 	user := &models.User{
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
 		DisplayName:  req.DisplayName,
-		AccountType:  "pet_owner",
-	}
-	if req.AccountType != nil {
-		user.AccountType = *req.AccountType
+		AccountType:  accountType,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
@@ -423,22 +429,22 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 		}
 
 		// Create new user with Google info and selected account type
-		accountType := *req.AccountType
-		if accountType != "pet_owner" && accountType != "vet" {
-			accountType = "pet_owner" // Default to pet_owner if invalid
+		accountType := normalizeAccountType(*req.AccountType)
+		if accountType == "" {
+			accountType = "pet_owner"
 		}
 
 		user = &models.User{
-			Email:          tokenInfo.Email,
-			DisplayName:    &tokenInfo.Name,
-			AvatarURL:      &tokenInfo.Picture,
-			PasswordHash:   "", // No password for Google users
-			AccountType:    accountType,
-			IsActive:       true,
-			EmailVerified:  tokenInfo.EmailVerified == "true",
-			GoogleID:       &tokenInfo.Sub,
+			Email:         tokenInfo.Email,
+			DisplayName:   &tokenInfo.Name,
+			AvatarURL:     &tokenInfo.Picture,
+			PasswordHash:  "", // No password for Google users
+			AccountType:   accountType,
+			IsActive:      true,
+			EmailVerified: tokenInfo.EmailVerified == "true",
+			GoogleID:      &tokenInfo.Sub,
 		}
-		
+
 		if req.DisplayName != nil && *req.DisplayName != "" {
 			user.DisplayName = req.DisplayName
 		}
@@ -465,7 +471,7 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 			user.EmailVerified = true
 			needsUpdate = true
 		}
-		
+
 		if needsUpdate {
 			if err := s.userRepo.Update(ctx, user); err != nil {
 				return nil, err
@@ -533,4 +539,21 @@ func (s *AuthService) verifyGoogleIDToken(idToken string) (*GoogleTokenInfo, err
 	// }
 
 	return &tokenInfo, nil
+}
+
+func normalizeAccountType(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "pet_owner", "petowner", "pet-owner", "owner":
+		return "pet_owner"
+	case "vet", "veterinarian", "veterinary":
+		return "vet"
+	case "seller", "vendor", "merchant", "shop_owner", "shopowner":
+		return "seller"
+	case "caregiver", "care_giver", "pet_caregiver":
+		return "caregiver"
+	case "admin":
+		return "admin"
+	default:
+		return ""
+	}
 }

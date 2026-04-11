@@ -15,11 +15,12 @@ import (
 // MarketplaceHandlers handles marketplace endpoints
 type MarketplaceHandlers struct {
 	marketplaceRepo *repositories.MarketplaceRepository
+	userRepo        repositories.UserRepository
 }
 
 // NewMarketplaceHandlers creates new MarketplaceHandlers
-func NewMarketplaceHandlers(repo *repositories.MarketplaceRepository) *MarketplaceHandlers {
-	return &MarketplaceHandlers{marketplaceRepo: repo}
+func NewMarketplaceHandlers(repo *repositories.MarketplaceRepository, userRepo repositories.UserRepository) *MarketplaceHandlers {
+	return &MarketplaceHandlers{marketplaceRepo: repo, userRepo: userRepo}
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -48,6 +49,26 @@ func parsePagination(c *gin.Context) (page, limit int) {
 		limit = 20
 	}
 	return
+}
+
+func (h *MarketplaceHandlers) requireSellerAccess(c *gin.Context, userID uuid.UUID) bool {
+	user, err := h.userRepo.GetByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to verify account type"})
+		return false
+	}
+	if user == nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "User not found"})
+		return false
+	}
+
+	accountType := normalizeAccountType(user.AccountType)
+	if accountType != "seller" && accountType != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Seller account required"})
+		return false
+	}
+
+	return true
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
@@ -126,6 +147,9 @@ func (h *MarketplaceHandlers) GetMyProducts(c *gin.Context) {
 	if !ok {
 		return
 	}
+	if !h.requireSellerAccess(c, userID) {
+		return
+	}
 	page, limit := parsePagination(c)
 
 	products, total, err := h.marketplaceRepo.GetSellerProducts(c.Request.Context(), userID, page, limit)
@@ -154,6 +178,9 @@ func (h *MarketplaceHandlers) GetMyProducts(c *gin.Context) {
 func (h *MarketplaceHandlers) CreateProduct(c *gin.Context) {
 	userID, ok := getAuthUserID(c)
 	if !ok {
+		return
+	}
+	if !h.requireSellerAccess(c, userID) {
 		return
 	}
 
@@ -195,6 +222,9 @@ func (h *MarketplaceHandlers) UpdateProduct(c *gin.Context) {
 	if !ok {
 		return
 	}
+	if !h.requireSellerAccess(c, userID) {
+		return
+	}
 
 	productID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -224,6 +254,9 @@ func (h *MarketplaceHandlers) UpdateProduct(c *gin.Context) {
 func (h *MarketplaceHandlers) DeleteProduct(c *gin.Context) {
 	userID, ok := getAuthUserID(c)
 	if !ok {
+		return
+	}
+	if !h.requireSellerAccess(c, userID) {
 		return
 	}
 
@@ -529,18 +562,28 @@ func (h *MarketplaceHandlers) GetOrder(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Order not found"})
 		return
 	}
-	// Users can only see their own orders
+	// Buyers can see their own orders; sellers can see orders containing their items.
 	if order.BuyerID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Access denied"})
-		return
+		canManage, err := h.marketplaceRepo.SellerCanManageOrder(c.Request.Context(), orderID, userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to verify order access"})
+			return
+		}
+		if !canManage {
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Access denied"})
+			return
+		}
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "order": order})
 }
 
 // UpdateOrderStatus lets a seller/admin update the order status
 func (h *MarketplaceHandlers) UpdateOrderStatus(c *gin.Context) {
-	_, ok := getAuthUserID(c)
+	userID, ok := getAuthUserID(c)
 	if !ok {
+		return
+	}
+	if !h.requireSellerAccess(c, userID) {
 		return
 	}
 
@@ -550,13 +593,23 @@ func (h *MarketplaceHandlers) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
+	canManage, err := h.marketplaceRepo.SellerCanManageOrder(c.Request.Context(), orderID, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to verify order ownership"})
+		return
+	}
+	if !canManage {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You can only update your own customer orders"})
+		return
+	}
+
 	var req models.UpdateOrderStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 		return
 	}
 
-	if err := h.marketplaceRepo.UpdateOrderStatus(c.Request.Context(), orderID, req.Status, req.TrackingNumber); err != nil {
+	if err := h.marketplaceRepo.UpdateSellerOrderStatus(c.Request.Context(), orderID, userID, req.Status, req.TrackingNumber); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to update order status"})
 		return
 	}
@@ -567,6 +620,9 @@ func (h *MarketplaceHandlers) UpdateOrderStatus(c *gin.Context) {
 func (h *MarketplaceHandlers) GetSellerOrders(c *gin.Context) {
 	userID, ok := getAuthUserID(c)
 	if !ok {
+		return
+	}
+	if !h.requireSellerAccess(c, userID) {
 		return
 	}
 	page, limit := parsePagination(c)

@@ -24,7 +24,8 @@ class MarketplaceRepository {
       throw Exception(response.data['error'] ?? 'Failed to load categories');
     } on DioException catch (e) {
       throw Exception(
-          e.response?.data?['error'] ?? 'Network error: ${e.message}');
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
     }
   }
 
@@ -63,22 +64,26 @@ class MarketplaceRepository {
       throw Exception(response.data['error'] ?? 'Failed to load products');
     } on DioException catch (e) {
       throw Exception(
-          e.response?.data?['error'] ?? 'Network error: ${e.message}');
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
     }
   }
 
   Future<Product> getProductById(String productId) async {
     try {
-      final response =
-          await _apiClient.get('/api/v1/marketplace/products/$productId');
+      final response = await _apiClient.get(
+        '/api/v1/marketplace/products/$productId',
+      );
       if (response.data['success'] == true) {
         return Product.fromJson(
-            response.data['product'] as Map<String, dynamic>);
+          response.data['product'] as Map<String, dynamic>,
+        );
       }
       throw Exception(response.data['error'] ?? 'Failed to load product');
     } on DioException catch (e) {
       throw Exception(
-          e.response?.data?['error'] ?? 'Network error: ${e.message}');
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
     }
   }
 
@@ -90,12 +95,71 @@ class MarketplaceRepository {
       );
       if (response.data['success'] == true) {
         return Product.fromJson(
-            response.data['product'] as Map<String, dynamic>);
+          response.data['product'] as Map<String, dynamic>,
+        );
       }
       throw Exception(response.data['error'] ?? 'Failed to create product');
     } on DioException catch (e) {
       throw Exception(
-          e.response?.data?['error'] ?? 'Network error: ${e.message}');
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
+    }
+  }
+
+  Future<List<Product>> getMyProducts({int page = 1, int limit = 50}) async {
+    try {
+      final response = await _apiClient.get(
+        '/api/v1/marketplace/products/mine',
+        queryParameters: {'page': page, 'limit': limit},
+      );
+      if (response.data['success'] == true) {
+        final list = response.data['products'] as List<dynamic>;
+        return list
+            .map((e) => Product.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      throw Exception(response.data['error'] ?? 'Failed to load your products');
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
+    }
+  }
+
+  Future<Product> updateProduct(
+    String productId,
+    UpdateProductRequest request,
+  ) async {
+    try {
+      final response = await _apiClient.put(
+        '/api/v1/marketplace/products/$productId',
+        data: request.toJson(),
+      );
+      if (response.data['success'] == true) {
+        return Product.fromJson(
+          response.data['product'] as Map<String, dynamic>,
+        );
+      }
+      throw Exception(response.data['error'] ?? 'Failed to update product');
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
+    }
+  }
+
+  Future<void> deleteProduct(String productId) async {
+    try {
+      final response = await _apiClient.delete(
+        '/api/v1/marketplace/products/$productId',
+      );
+      if (response.data['success'] != true) {
+        throw Exception(response.data['error'] ?? 'Failed to delete product');
+      }
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
     }
   }
 
@@ -113,7 +177,8 @@ class MarketplaceRepository {
       throw Exception(response.data['error'] ?? 'Failed to load cart');
     } on DioException catch (e) {
       throw Exception(
-          e.response?.data?['error'] ?? 'Network error: ${e.message}');
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
     }
   }
 
@@ -124,31 +189,35 @@ class MarketplaceRepository {
         data: {'productId': productId, 'quantity': quantity},
       );
       if (response.data['success'] == true) {
-        final itemJson = response.data['cartItem'] ?? response.data['cart_item'];
+        final itemJson =
+            response.data['cartItem'] ?? response.data['cart_item'];
         if (itemJson is Map<String, dynamic>) {
           return CartItem.fromJson(itemJson);
         }
         return CartItem.fromJson(
-            response.data['cartItem'] as Map<String, dynamic>);
+          response.data['cartItem'] as Map<String, dynamic>,
+        );
       }
       throw Exception(response.data['error'] ?? 'Failed to add to cart');
     } on DioException catch (e) {
       throw Exception(
-          e.response?.data?['error'] ?? 'Network error: ${e.message}');
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
     }
   }
 
   Future<void> removeFromCart(String cartItemId) async {
     try {
-      final response =
-          await _apiClient.delete('/api/v1/marketplace/cart/$cartItemId');
+      final response = await _apiClient.delete(
+        '/api/v1/marketplace/cart/$cartItemId',
+      );
       if (response.data['success'] != true) {
-        throw Exception(
-            response.data['error'] ?? 'Failed to remove from cart');
+        throw Exception(response.data['error'] ?? 'Failed to remove from cart');
       }
     } on DioException catch (e) {
       throw Exception(
-          e.response?.data?['error'] ?? 'Network error: ${e.message}');
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
     }
   }
 
@@ -163,7 +232,8 @@ class MarketplaceRepository {
       }
     } on DioException catch (e) {
       throw Exception(
-          e.response?.data?['error'] ?? 'Network error: ${e.message}');
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
     }
   }
 
@@ -181,7 +251,8 @@ class MarketplaceRepository {
       throw Exception(response.data['error'] ?? 'Failed to place order');
     } on DioException catch (e) {
       throw Exception(
-          e.response?.data?['error'] ?? 'Network error: ${e.message}');
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
     }
   }
 
@@ -200,21 +271,65 @@ class MarketplaceRepository {
       throw Exception(response.data['error'] ?? 'Failed to load orders');
     } on DioException catch (e) {
       throw Exception(
-          e.response?.data?['error'] ?? 'Network error: ${e.message}');
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
     }
   }
 
   Future<Order> getOrderById(String orderId) async {
     try {
-      final response =
-          await _apiClient.get('/api/v1/marketplace/orders/$orderId');
+      final response = await _apiClient.get(
+        '/api/v1/marketplace/orders/$orderId',
+      );
       if (response.data['success'] == true) {
         return Order.fromJson(response.data['order'] as Map<String, dynamic>);
       }
       throw Exception(response.data['error'] ?? 'Failed to load order');
     } on DioException catch (e) {
       throw Exception(
-          e.response?.data?['error'] ?? 'Network error: ${e.message}');
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
+    }
+  }
+
+  Future<List<Order>> getSellerOrders({int page = 1, int limit = 50}) async {
+    try {
+      final response = await _apiClient.get(
+        '/api/v1/marketplace/seller/orders',
+        queryParameters: {'page': page, 'limit': limit},
+      );
+      if (response.data['success'] == true) {
+        final list = response.data['orders'] as List<dynamic>;
+        return list
+            .map((e) => Order.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      throw Exception(response.data['error'] ?? 'Failed to load seller orders');
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
+    }
+  }
+
+  Future<void> updateOrderStatus(
+    String orderId,
+    UpdateOrderStatusRequest request,
+  ) async {
+    try {
+      final response = await _apiClient.put(
+        '/api/v1/marketplace/orders/$orderId/status',
+        data: request.toJson(),
+      );
+      if (response.data['success'] != true) {
+        throw Exception(
+          response.data['error'] ?? 'Failed to update order status',
+        );
+      }
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
     }
   }
 }

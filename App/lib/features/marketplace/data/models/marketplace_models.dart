@@ -18,7 +18,7 @@ class ProductCategory {
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String? ?? '',
-      icon: json['icon'] as String?,
+      icon: (json['iconUrl'] ?? json['icon']) as String?,
       isActive: json['isActive'] as bool? ?? true,
     );
   }
@@ -87,7 +87,9 @@ class Product {
       totalSold: json['totalSold'] as int? ?? 0,
       sellerName: json['sellerName'] as String?,
       categoryName: json['categoryName'] as String?,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -115,9 +117,10 @@ class CartItem {
       userId: json['userId'] as String,
       productId: json['productId'] as String,
       quantity: json['quantity'] as int? ?? 1,
-      product: json['product'] != null
-          ? Product.fromJson(json['product'] as Map<String, dynamic>)
-          : null,
+      product:
+          json['product'] != null
+              ? Product.fromJson(json['product'] as Map<String, dynamic>)
+              : null,
     );
   }
 
@@ -133,6 +136,7 @@ class OrderItem {
   final double unitPrice;
   final double totalPrice;
   final String? sellerName;
+  final String sellerStatus;
 
   const OrderItem({
     required this.id,
@@ -143,6 +147,7 @@ class OrderItem {
     required this.unitPrice,
     required this.totalPrice,
     this.sellerName,
+    this.sellerStatus = 'pending',
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
@@ -155,6 +160,7 @@ class OrderItem {
       unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0.0,
       totalPrice: (json['totalPrice'] as num?)?.toDouble() ?? 0.0,
       sellerName: json['sellerName'] as String?,
+      sellerStatus: json['sellerStatus'] as String? ?? 'pending',
     );
   }
 }
@@ -168,6 +174,9 @@ class Order {
   final double totalAmount;
   final String currency;
   final String shippingAddress;
+  final String? shippingCity;
+  final String? shippingPhone;
+  final String? trackingNumber;
   final String? notes;
   final List<OrderItem> items;
   final DateTime createdAt;
@@ -181,6 +190,9 @@ class Order {
     required this.totalAmount,
     required this.currency,
     required this.shippingAddress,
+    this.shippingCity,
+    this.shippingPhone,
+    this.trackingNumber,
     this.notes,
     required this.items,
     required this.createdAt,
@@ -190,9 +202,10 @@ class Order {
     final rawItems = json['items'];
     List<OrderItem> itemList = [];
     if (rawItems is List) {
-      itemList = rawItems
-          .map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
-          .toList();
+      itemList =
+          rawItems
+              .map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
+              .toList();
     }
 
     return Order(
@@ -204,21 +217,33 @@ class Order {
       totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
       currency: json['currency'] as String? ?? 'PKR',
       shippingAddress: json['shippingAddress'] as String? ?? '',
+      shippingCity: json['shippingCity'] as String?,
+      shippingPhone: json['shippingPhone'] as String?,
+      trackingNumber: json['trackingNumber'] as String?,
       notes: json['notes'] as String?,
       items: itemList,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 
   String get statusLabel {
     switch (status) {
-      case 'pending': return 'Pending';
-      case 'confirmed': return 'Confirmed';
-      case 'processing': return 'Processing';
-      case 'shipped': return 'Shipped';
-      case 'delivered': return 'Delivered';
-      case 'cancelled': return 'Cancelled';
-      default: return status;
+      case 'pending':
+        return 'Pending';
+      case 'confirmed':
+        return 'Confirmed';
+      case 'processing':
+        return 'Processing';
+      case 'shipped':
+        return 'Shipped';
+      case 'delivered':
+        return 'Delivered';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
     }
   }
 }
@@ -245,34 +270,88 @@ class CreateProductRequest {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'description': description,
-        'price': price,
-        'currency': currency,
-        'stock_quantity': stockQuantity,
-        if (categoryId != null) 'category_id': categoryId,
-        if (petType != null) 'pet_type': petType,
-        'images': images,
-      };
+    'name': name,
+    'description': description,
+    'price': price,
+    'currency': currency,
+    'stockQuantity': stockQuantity,
+    if (categoryId != null) 'categoryId': categoryId,
+    if (petType != null) 'petType': petType,
+    'images': images,
+  };
+}
+
+class UpdateProductRequest {
+  final String? name;
+  final String? description;
+  final double? price;
+  final String? currency;
+  final int? stockQuantity;
+  final String? categoryId;
+  final String? petType;
+  final List<String>? images;
+  final bool? isActive;
+
+  const UpdateProductRequest({
+    this.name,
+    this.description,
+    this.price,
+    this.currency,
+    this.stockQuantity,
+    this.categoryId,
+    this.petType,
+    this.images,
+    this.isActive,
+  });
+
+  Map<String, dynamic> toJson() => {
+    if (name != null) 'name': name,
+    if (description != null) 'description': description,
+    if (price != null) 'price': price,
+    if (currency != null) 'currency': currency,
+    if (stockQuantity != null) 'stockQuantity': stockQuantity,
+    if (categoryId != null) 'categoryId': categoryId,
+    if (petType != null) 'petType': petType,
+    if (images != null) 'images': images,
+    if (isActive != null) 'isActive': isActive,
+  };
 }
 
 class PlaceOrderRequest {
   final List<Map<String, dynamic>> items;
   final String shippingAddress;
+  final String? shippingCity;
+  final String? shippingPhone;
   final String paymentMethod;
   final String? notes;
 
   const PlaceOrderRequest({
-    required this.items,
+    this.items = const [],
     required this.shippingAddress,
+    this.shippingCity,
+    this.shippingPhone,
     required this.paymentMethod,
     this.notes,
   });
 
   Map<String, dynamic> toJson() => {
-        'Items': items,
-        'ShippingAddress': shippingAddress,
-        'PaymentMethod': paymentMethod,
-        if (notes != null) 'Notes': notes,
-      };
+    if (items.isNotEmpty) 'items': items,
+    'shippingAddress': shippingAddress,
+    if (shippingCity != null) 'shippingCity': shippingCity,
+    if (shippingPhone != null) 'shippingPhone': shippingPhone,
+    'paymentMethod': paymentMethod,
+    if (notes != null) 'notes': notes,
+  };
+}
+
+class UpdateOrderStatusRequest {
+  final String status;
+  final String? trackingNumber;
+
+  const UpdateOrderStatusRequest({required this.status, this.trackingNumber});
+
+  Map<String, dynamic> toJson() => {
+    'status': status,
+    if (trackingNumber?.isNotEmpty == true) 'trackingNumber': trackingNumber,
+  };
 }

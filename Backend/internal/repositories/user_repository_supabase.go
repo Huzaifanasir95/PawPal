@@ -109,20 +109,20 @@ func (r *UserRepositorySupabase) GetUserByEmail(ctx context.Context, email strin
 
 	// Use a temporary struct that includes password_hash for unmarshaling
 	var rawUsers []struct {
-		ID           uuid.UUID  `json:"id"`
-		Email        string     `json:"email"`
-		PasswordHash string     `json:"password_hash"`
-		DisplayName  *string    `json:"display_name"`
-		AccountType  string     `json:"account_type"`
-		UserRole     string     `json:"user_role"`
-		AvatarURL    *string    `json:"avatar_url"`
-		IsActive     bool       `json:"is_active"`
+		ID            uuid.UUID `json:"id"`
+		Email         string    `json:"email"`
+		PasswordHash  string    `json:"password_hash"`
+		DisplayName   *string   `json:"display_name"`
+		AccountType   string    `json:"account_type"`
+		UserRole      string    `json:"user_role"`
+		AvatarURL     *string   `json:"avatar_url"`
+		IsActive      bool      `json:"is_active"`
 		EmailVerified bool      `json:"email_verified"`
-		GoogleID     *string    `json:"google_id"`
-		CreatedAt    time.Time  `json:"created_at"`
-		UpdatedAt    time.Time  `json:"updated_at"`
+		GoogleID      *string   `json:"google_id"`
+		CreatedAt     time.Time `json:"created_at"`
+		UpdatedAt     time.Time `json:"updated_at"`
 	}
-	
+
 	if err := json.Unmarshal(respData, &rawUsers); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
@@ -374,7 +374,15 @@ func (r *UserRepositorySupabase) SetUserRole(ctx context.Context, userID uuid.UU
 	}
 
 	data := map[string]interface{}{
-		"user_role": role,
+		"account_type": role,
+	}
+
+	// user_role can be an enum in older schemas, so only write known legacy-safe values.
+	switch role {
+	case "pet_owner", "petowner":
+		data["user_role"] = "petowner"
+	case "vet", "admin":
+		data["user_role"] = role
 	}
 
 	_, err := r.client.Update(ctx, "users", query, data)

@@ -198,15 +198,15 @@ func (r *PetRepository) GetVerifiedByOwnerID(ctx context.Context, ownerID uuid.U
 	return pets, nil
 }
 
-// SearchByBreed searches pets by breed for a user
-func (r *PetRepository) SearchByBreed(ctx context.Context, ownerID uuid.UUID, breed string) ([]models.Pet, error) {
+// SearchByBreed searches pets by breed
+func (r *PetRepository) SearchByBreed(ctx context.Context, breed string) ([]models.Pet, error) {
 	query := `
 		SELECT id, owner_id, name, type, breed, age, age_unit, gender, color, weight, weight_unit,
 			image_url, image_local_path, image_urls, is_verified, verification_confidence,
 			verified_breed, bio, is_adopted, created_at, updated_at
-		FROM pets WHERE owner_id = $1 AND breed = $2 ORDER BY created_at DESC`
+		FROM pets WHERE breed = $1 ORDER BY created_at DESC`
 
-	rows, err := r.db.Query(ctx, query, ownerID, breed)
+	rows, err := r.db.Query(ctx, query, breed)
 	if err != nil {
 		return nil, err
 	}
@@ -280,9 +280,90 @@ func (r *PetRepository) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 // GetCount gets the pet count for a user
-func (r *PetRepository) GetCount(ctx context.Context, ownerID uuid.UUID) (int, error) {
+func (r *PetRepository) GetCount(ctx context.Context, ownerID uuid.UUID) (int64, error) {
 	query := `SELECT COUNT(*) FROM pets WHERE owner_id = $1`
-	var count int
+	var count int64
 	err := r.db.QueryRow(ctx, query, ownerID).Scan(&count)
 	return count, err
+}
+
+// GetVerified gets all verified pets.
+func (r *PetRepository) GetVerified(ctx context.Context) ([]models.Pet, error) {
+	query := `
+		SELECT id, owner_id, name, type, breed, age, age_unit, gender, color, weight, weight_unit,
+			image_url, image_local_path, image_urls, is_verified, verification_confidence,
+			verified_breed, bio, is_adopted, created_at, updated_at
+		FROM pets WHERE is_verified = true ORDER BY created_at DESC`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var pets []models.Pet
+	for rows.Next() {
+		pet := models.Pet{}
+		err := rows.Scan(
+			&pet.ID,
+			&pet.OwnerID,
+			&pet.Name,
+			&pet.Type,
+			&pet.Breed,
+			&pet.Age,
+			&pet.AgeUnit,
+			&pet.Gender,
+			&pet.Color,
+			&pet.Weight,
+			&pet.WeightUnit,
+			&pet.ImageURL,
+			&pet.ImageLocalPath,
+			&pet.ImageURLs,
+			&pet.IsVerified,
+			&pet.VerificationConfidence,
+			&pet.VerifiedBreed,
+			&pet.Bio,
+			&pet.IsAdopted,
+			&pet.CreatedAt,
+			&pet.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		pets = append(pets, pet)
+	}
+	return pets, nil
+}
+
+// Standard adapter methods for interface compatibility.
+func (r *PetRepository) CreatePet(ctx context.Context, pet *models.Pet) error {
+	return r.Create(ctx, pet)
+}
+
+func (r *PetRepository) GetPetByID(ctx context.Context, petID uuid.UUID) (*models.Pet, error) {
+	return r.GetByID(ctx, petID)
+}
+
+func (r *PetRepository) GetPetsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]models.Pet, error) {
+	return r.GetByOwnerID(ctx, ownerID)
+}
+
+func (r *PetRepository) UpdatePet(ctx context.Context, pet *models.Pet) error {
+	return r.Update(ctx, pet)
+}
+
+func (r *PetRepository) DeletePet(ctx context.Context, petID uuid.UUID) error {
+	return r.Delete(ctx, petID)
+}
+
+func (r *PetRepository) GetVerifiedPets(ctx context.Context) ([]models.Pet, error) {
+	return r.GetVerified(ctx)
+}
+
+func (r *PetRepository) SearchPetsByBreed(ctx context.Context, breed string) ([]models.Pet, error) {
+	return r.SearchByBreed(ctx, breed)
+}
+
+func (r *PetRepository) GetPetCount(ctx context.Context, ownerID uuid.UUID) (int64, error) {
+	return r.GetCount(ctx, ownerID)
 }

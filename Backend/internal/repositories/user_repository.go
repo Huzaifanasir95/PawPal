@@ -144,10 +144,20 @@ func (r *UserRepositoryPG) Delete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-// SetUserRole sets the user's role (petowner or vet)
+// SetUserRole updates account_type and keeps legacy user_role in sync when possible.
 func (r *UserRepositoryPG) SetUserRole(ctx context.Context, userID uuid.UUID, role string) error {
-	// Update both account_type and user_role to keep them in sync
-	query := `UPDATE users SET account_type = $2, user_role = $2, updated_at = $3 WHERE id = $1`
+	query := `
+		UPDATE users
+		SET
+			account_type = $2,
+			user_role = CASE
+				WHEN $2 = 'pet_owner' OR $2 = 'petowner' THEN 'petowner'::user_role
+				WHEN $2 = 'vet' THEN 'vet'::user_role
+				WHEN $2 = 'admin' THEN 'admin'::user_role
+				ELSE user_role
+			END,
+			updated_at = $3
+		WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, userID, role, time.Now())
 	return err
 }

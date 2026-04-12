@@ -272,7 +272,15 @@ func (h *AuthHandlers) UpdateProfile(c *gin.Context) {
 		user.DisplayName = req.DisplayName
 	}
 	if req.AccountType != nil {
-		user.AccountType = *req.AccountType
+		normalizedRole := normalizeAccountType(*req.AccountType)
+		if normalizedRole == "" {
+			c.JSON(http.StatusBadRequest, models.GenericResponse{
+				Success: false,
+				Message: "Invalid account type",
+			})
+			return
+		}
+		user.AccountType = normalizedRole
 	}
 	if req.AvatarURL != nil {
 		user.AvatarURL = req.AvatarURL

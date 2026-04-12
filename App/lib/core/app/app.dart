@@ -122,10 +122,10 @@ class _AuthFlowState extends State<AuthFlow> {
           initial: () => const AuthNavigator(),
           loading: () => const AuthNavigator(), // Don't show full-screen loading
           authenticated: (user) {
-            // Force immediate rebuild by creating new widget key
-            return RoleBasedHomeWrapper(
+            // Use role from auth payload immediately, avoiding an extra profile fetch.
+            return RoleBasedHome(
               key: ValueKey('home_${user.uid}_${user.accountType}'),
-              authRepository: widget.authRepository,
+              initialAccountType: user.accountType,
             );
           },
           unauthenticated: () => const AuthNavigator(),
@@ -153,47 +153,6 @@ class OnboardingScreenWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return OnboardingScreen(
       onComplete: onComplete,
-    );
-  }
-}
-
-class RoleBasedHomeWrapper extends StatelessWidget {
-  final AuthRepository authRepository;
-
-  const RoleBasedHomeWrapper({
-    super.key,
-    required this.authRepository,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: authRepository.getAccountType(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-        
-        final accountType = snapshot.data;
-        if (accountType == null || accountType.isEmpty) {
-          // User needs to select account type
-          return AccountTypeSelectionScreen(
-            onAccountTypeSelected: () {
-              // Navigate to home after selection
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const RoleBasedHome()),
-              );
-            },
-          );
-        } else {
-          // User has account type, show role-based home
-          return const RoleBasedHome();
-        }
-      },
     );
   }
 }

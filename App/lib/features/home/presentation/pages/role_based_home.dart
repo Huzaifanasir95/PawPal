@@ -10,7 +10,9 @@ import 'package:pawpawl/core/di/service_locator.dart';
 /// - Shows SellerDashboardScreen for users with 'seller' role
 /// - Shows regular HomeScreen for 'pet_owner' role
 class RoleBasedHome extends StatefulWidget {
-  const RoleBasedHome({super.key});
+  final String? initialAccountType;
+
+  const RoleBasedHome({super.key, this.initialAccountType});
 
   @override
   State<RoleBasedHome> createState() => _RoleBasedHomeState();
@@ -22,17 +24,50 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   @override
   void initState() {
     super.initState();
-    _accountTypeFuture = _getAccountType();
+    final initial = _normalizeAccountType(widget.initialAccountType);
+    if (widget.initialAccountType != null && widget.initialAccountType!.isNotEmpty) {
+      _accountTypeFuture = Future<String?>.value(initial);
+    } else {
+      _accountTypeFuture = _getAccountType();
+    }
   }
 
   Future<String?> _getAccountType() async {
     try {
       final authRepo = getIt<AuthRepository>();
-      return await authRepo.getAccountType();
+      return _normalizeAccountType(await authRepo.getAccountType());
     } catch (e) {
       // If error fetching account type, default to pet_owner
       debugPrint('Error fetching account type: $e');
       return 'pet_owner';
+    }
+  }
+
+  String _normalizeAccountType(String? rawAccountType) {
+    final accountType = rawAccountType?.trim().toLowerCase();
+    switch (accountType) {
+      case 'vet':
+      case 'veterinarian':
+      case 'veterinary':
+        return 'vet';
+      case 'seller':
+      case 'vendor':
+      case 'merchant':
+      case 'shop_owner':
+      case 'shop owner':
+      case 'shopowner':
+        return 'seller';
+      case 'pet_owner':
+      case 'petowner':
+      case 'pet-owner':
+      case 'pet owner':
+      case 'owner':
+      case 'caregiver':
+      case 'care_giver':
+      case 'pet_caregiver':
+      case 'admin':
+      default:
+        return 'pet_owner';
     }
   }
 
@@ -50,7 +85,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
 
         // Check account type and show appropriate screen
         // Normalize account type (backend may return "petowner" or "pet_owner")
-        final accountType = snapshot.data?.toLowerCase();
+        final accountType = _normalizeAccountType(snapshot.data);
 
         if (accountType == 'vet') {
           return const VetHomeScreen();

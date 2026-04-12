@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -19,14 +20,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     
     // Listen to auth state changes with debouncing
     _authStateSubscription = _authRepository.authStateChanges.listen((user) {
-      print('👂 Auth state changed: user=${user?.email ?? "null"}');
+      _debugLog('👂 Auth state changed: user=${user?.email ?? "null"}');
       if (!isClosed) {
         // Remove debouncing check for more reliable auth state updates
         if (user != null) {
-          print('➕ Adding userChanged event');
+          _debugLog('➕ Adding userChanged event');
           add(AuthEvent.userChanged(user));
         } else {
-          print('➖ Adding signedOut event');
+          _debugLog('➖ Adding signedOut event');
           add(const AuthEvent.signedOut());
         }
       }
@@ -40,7 +41,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     on<_SignUpWithEmail>((event, emit) async {
       if (!isClosed) {
-        await _onSignUpWithEmail(event.email, event.password, event.name, emit);
+        await _onSignUpWithEmail(
+          event.email,
+          event.password,
+          event.name,
+          event.accountType,
+          emit,
+        );
       }
     });
 
@@ -144,6 +151,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     String email,
     String password,
     String? name,
+    String? accountType,
     Emitter<AuthState> emit,
   ) async {
     if (isClosed) return;
@@ -153,6 +161,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         email: email,
         password: password,
         displayName: name,
+        accountType: accountType,
       );
       // The stream will handle emitting the authenticated state
     } catch (e) {
@@ -203,7 +212,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // Check if this is a new user who needs to select account type
       if (authResponse.isNewUser) {
         if (!isClosed) {
-          print('🆕 New user detected, showing account type selection');
+          _debugLog('🆕 New user detected, showing account type selection');
           emit(AuthState.accountTypeRequired(
             googleAuth.idToken!,
             googleUser.displayName,
@@ -211,11 +220,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           ));
         }
       } else {
-        print('✅ Existing user, authentication complete');
+        _debugLog('✅ Existing user, authentication complete');
         // For existing users, the stream will handle emitting the authenticated state
       }
     } catch (e) {
-      print('❌ Google Sign-In error: $e');
+      _debugLog('❌ Google Sign-In error: $e');
       if (!isClosed) {
         emit(AuthState.error(e.toString()));
       }
@@ -232,17 +241,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (isClosed) return;
     emit(const AuthState.loading());
     try {
-      print('📝 Completing Google Sign-In with account type: $accountType');
+      _debugLog('📝 Completing Google Sign-In with account type: $accountType');
       await _authRepository.signInWithGoogle(
         idToken: idToken,
         displayName: displayName,
         photoUrl: photoUrl,
         accountType: accountType,
       );
-      print('✅ Account creation complete');
+      _debugLog('✅ Account creation complete');
       // The stream will handle emitting the authenticated state
     } catch (e) {
-      print('❌ Complete Google Sign-In error: $e');
+      _debugLog('❌ Complete Google Sign-In error: $e');
       if (!isClosed) {
         emit(AuthState.error(e.toString()));
       }
@@ -251,14 +260,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onSignOut(Emitter<AuthState> emit) async {
     if (isClosed) return;
-    print('AuthBloc: Starting sign out');
+    _debugLog('AuthBloc: Starting sign out');
     emit(const AuthState.loading());
     try {
       await _authRepository.signOut();
-      print('AuthBloc: Sign out completed');
+      _debugLog('AuthBloc: Sign out completed');
       // The stream will handle emitting the unauthenticated state
     } catch (e) {
-      print('AuthBloc: Sign out error: $e');
+      _debugLog('AuthBloc: Sign out error: $e');
       if (!isClosed) {
         emit(AuthState.error(e.toString()));
       }
@@ -281,19 +290,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onUserChanged(AuthUser user, Emitter<AuthState> emit) {
-    print('🔄 _onUserChanged called: ${user.email}, accountType: ${user.accountType}');
+    _debugLog('🔄 _onUserChanged called: ${user.email}, accountType: ${user.accountType}');
     if (!isClosed) {
-      print('✨ Emitting authenticated state');
+      _debugLog('✨ Emitting authenticated state');
       emit(AuthState.authenticated(user));
     } else {
-      print('⚠️ Bloc is closed, cannot emit state');
+      _debugLog('⚠️ Bloc is closed, cannot emit state');
     }
   }
 
   void _onSignedOut(Emitter<AuthState> emit) {
-    print('👋 _onSignedOut called');
+    _debugLog('👋 _onSignedOut called');
     if (!isClosed) {
       emit(const AuthState.unauthenticated());
+    }
+  }
+
+  void _debugLog(String message) {
+    if (kDebugMode) {
+      debugPrint(message);
     }
   }
 

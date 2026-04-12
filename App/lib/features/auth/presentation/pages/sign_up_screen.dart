@@ -5,7 +5,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/app_images.dart';
-import '../../../../core/services/api_client.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/widgets/custom_password_field.dart';
 import '../bloc/auth_bloc.dart';
@@ -447,7 +446,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                         // Validate fields
                         final name = _nameController.text.trim();
-                        final email = _emailController.text.trim();
+                        final email = _emailController.text.trim().toLowerCase();
                         final password = _passwordController.text;
                         final confirmPassword = _confirmPasswordController.text;
 
@@ -506,50 +505,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           final authBloc = context.read<AuthBloc>();
                           if (!authBloc.isClosed) {
                             authBloc.add(
-                              AuthEvent.signUpWithEmail(email, password, name),
+                              AuthEvent.signUpWithEmail(
+                                email,
+                                password,
+                                name,
+                                _accountType,
+                              ),
                             );
-
-                            // Wait for authentication to complete, then set the user role
-                            final subscription = authBloc.stream.listen((
-                              authState,
-                            ) async {
-                              authState.maybeWhen(
-                                authenticated: (user) async {
-                                  // User is authenticated, tokens are stored
-                                  try {
-                                    final apiClient = ApiClient.instance;
-                                    await apiClient.post(
-                                      '/api/v1/auth/set-role',
-                                      data: {'role': _accountType},
-                                    );
-                                    debugPrint(
-                                      'Successfully set user role to: $_accountType',
-                                    );
-
-                                    // If user selected vet role, navigate to vet profile setup
-                                    if (_accountType == 'vet' && mounted) {
-                                      // Small delay to ensure state is updated
-                                      await Future.delayed(
-                                        const Duration(milliseconds: 300),
-                                      );
-                                      if (mounted) {
-                                        // Navigation will be handled by AuthBlocListener
-                                        // which will redirect to VetHomeScreen via RoleBasedHome
-                                        // The VetHomeScreen will detect missing profile and show setup
-                                      }
-                                    }
-                                  } catch (e) {
-                                    debugPrint('Failed to set user role: $e');
-                                  }
-                                },
-                                orElse: () {},
-                              );
-                            });
-
-                            // Clean up subscription after a short delay
-                            Future.delayed(const Duration(seconds: 3), () {
-                              subscription.cancel();
-                            });
                           }
                         } catch (e) {
                           debugPrint('Sign-up error: $e');

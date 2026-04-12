@@ -1,12 +1,8 @@
-import 'dart:io';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:injectable/injectable.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
+import 'package:flutter_image_compress/flutter_image_compress.dart' hide XFile;
 
 @injectable
 class ImageService {
@@ -14,76 +10,99 @@ class ImageService {
   static const int maxAvatarSizeBytes = 200000;
 
   /// Compress image before uploading
-  Future<XFile?> _compressImage(XFile imageFile) async {
+  Future<Uint8List> _compressImage(
+    XFile imageFile,
+    CompressFormat format,
+  ) async {
     try {
-      final dir = await getTemporaryDirectory();
-      final targetPath = path.join(
-        dir.path,
-        '${DateTime.now().millisecondsSinceEpoch}_compressed.jpg',
-      );
+      final originalBytes = await imageFile.readAsBytes();
+      var optimizedBytes = originalBytes;
 
-      final result = await FlutterImageCompress.compressAndGetFile(
-        imageFile.path,
-        targetPath,
-        quality: 70,
-        minWidth: 800,
-        minHeight: 800,
-        format: CompressFormat.jpeg,
-      );
+      // Multiple quality passes to keep payload small while preserving usable quality.
+      for (final quality in [75, 65, 55, 45]) {
+        final compressed = await FlutterImageCompress.compressWithList(
+          originalBytes,
+          quality: quality,
+          minWidth: 1024,
+          minHeight: 1024,
+          format: format,
+        );
 
-      if (result != null) {
-        final originalSize = await File(imageFile.path).length();
-        final compressedSize = await File(result.path).length();
-        debugPrint(
-            '✅ Image compressed: ${(originalSize / 1024).round()}KB → ${(compressedSize / 1024).round()}KB');
-        return result;
+        if (compressed.isNotEmpty) {
+          optimizedBytes = Uint8List.fromList(compressed);
+          if (optimizedBytes.length <= maxAvatarSizeBytes) {
+            break;
+          }
+        }
       }
-      return imageFile;
+
+      if (optimizedBytes.length != originalBytes.length) {
+        debugPrint(
+          '✅ Image compressed: ${(originalBytes.length / 1024).round()}KB → ${(optimizedBytes.length / 1024).round()}KB',
+        );
+      }
+
+      return optimizedBytes;
     } catch (e) {
       debugPrint('⚠️  Compression failed: $e, using original');
-      return imageFile;
+      return imageFile.readAsBytes();
     }
   }
 
   /// Convert image file to base64 data URL with compression
   Future<String?> _imageToBase64DataUrl(XFile imageFile) async {
-    // Compress the image first
-    final compressedFile = await _compressImage(imageFile);
-    if (compressedFile == null) {
-      return null;
-    }
+    final extension = _extractExtension(imageFile);
+    final compressFormat = _getCompressFormat(extension);
 
-    final bytes = await File(compressedFile.path).readAsBytes();
+    final bytes = await _compressImage(imageFile, compressFormat);
+    if (bytes.isEmpty) return null;
 
     // Check final size
     if (bytes.length > maxAvatarSizeBytes) {
       debugPrint(
-          '⚠️  Compressed image (${(bytes.length / 1024).toStringAsFixed(1)}KB) still exceeds 200KB');
-      debugPrint('💡 Consider using an even smaller image or implement proper file upload');
+        '⚠️  Compressed image (${(bytes.length / 1024).toStringAsFixed(1)}KB) still exceeds 200KB',
+      );
+      debugPrint(
+        '💡 Consider using an even smaller image or implement proper file upload',
+      );
     } else {
       debugPrint('✅ Image ready: ${(bytes.length / 1024).round()}KB');
     }
 
     final base64String = base64Encode(bytes);
 
-    // Determine MIME type - always use JPEG after compression
-    final mimeType = 'image/jpeg';
+    // Determine MIME type from the selected compression format.
+    final mimeType = _getMimeTypeForFormat(compressFormat);
 
     // Return as data URL (data:image/jpeg;base64,...)
     return 'data:$mimeType;base64,$base64String';
   }
 
-  /// Get MIME type from file extension
-  String _getMimeType(String extension) {
+  String _extractExtension(XFile imageFile) {
+    final source = imageFile.name.isNotEmpty ? imageFile.name : imageFile.path;
+    final dotIndex = source.lastIndexOf('.');
+    if (dotIndex == -1 || dotIndex == source.length - 1) {
+      return '';
+    }
+    return source.substring(dotIndex + 1).toLowerCase();
+  }
+
+  CompressFormat _getCompressFormat(String extension) {
     switch (extension) {
-      case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
       case 'png':
-        return 'image/png';
-      case 'gif':
-        return 'image/gif';
+        return CompressFormat.png;
       case 'webp':
+        return CompressFormat.webp;
+      default:
+        return CompressFormat.jpeg;
+    }
+  }
+
+  String _getMimeTypeForFormat(CompressFormat format) {
+    switch (format) {
+      case CompressFormat.png:
+        return 'image/png';
+      case CompressFormat.webp:
         return 'image/webp';
       default:
         return 'image/jpeg';
@@ -102,7 +121,7 @@ class ImageService {
 
   /// Upload a single image - returns base64 data URL
   /// TEMPORARY SOLUTION: Uses base64 encoding. In production, implement multipart file upload to backend.
-  /// This is not scalable for large images or high volume. 
+  /// This is not scalable for large images or high volume.
   /// TODO: Implement proper file upload endpoint in backend:
   /// - POST /api/upload with multipart/form-data
   /// - Store files on disk or cloud storage (S3, GCS, etc)
@@ -118,7 +137,10 @@ class ImageService {
   }
 
   /// Upload multiple images - returns list of base64 data URLs
-  Future<List<String>> uploadImages(List<XFile> imageFiles, {String? folder}) async {
+  Future<List<String>> uploadImages(
+    List<XFile> imageFiles, {
+    String? folder,
+  }) async {
     try {
       final List<String> imageUrls = [];
 

@@ -1,13 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/di/service_locator.dart';
 import '../../../../core/navigation/app_navigator.dart';
+import '../../../../core/utils/image_service.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 import '../../data/models/marketplace_models.dart';
 import '../../data/repositories/marketplace_repository.dart';
 import 'seller_order_detail_screen.dart';
 import '../widgets/order_status_badge.dart';
+
+class _ProductDialogResult {
+  final String? productId;
+  final CreateProductRequest? createRequest;
+  final UpdateProductRequest? updateRequest;
+  final List<XFile> localImages;
+
+  const _ProductDialogResult.create(
+    this.createRequest, {
+    this.localImages = const [],
+  }) : productId = null,
+       updateRequest = null;
+
+  const _ProductDialogResult.edit(
+    this.productId,
+    this.updateRequest, {
+    this.localImages = const [],
+  }) : createRequest = null;
+}
 
 class SellerDashboardScreen extends StatefulWidget {
   const SellerDashboardScreen({super.key});
@@ -18,6 +41,8 @@ class SellerDashboardScreen extends StatefulWidget {
 
 class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   final MarketplaceRepository _repo = MarketplaceRepository.instance;
+  final ImagePicker _imagePicker = ImagePicker();
+  final ImageService _imageService = getIt<ImageService>();
 
   bool _isLoading = true;
   bool _isSubmitting = false;
@@ -72,30 +97,63 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6F2),
+      backgroundColor: const Color(0xFFF1F6FA),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: const Color(0xFFF1F6FA),
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'Seller Dashboard',
-          style: GoogleFonts.mulish(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF191D21),
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Seller HQ',
+              style: GoogleFonts.mulish(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF102A43),
+              ),
+            ),
+            Text(
+              'Manage products and dispatch in one place',
+              style: GoogleFonts.mulish(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF486581),
+              ),
+            ),
+          ],
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.refresh_rounded,
-              size: 22.sp,
-              color: const Color(0xFF191D21),
+          Padding(
+            padding: EdgeInsets.only(right: 12.w),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: const Color(0xFFD9E2EC)),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  size: 20.sp,
+                  color: const Color(0xFF243B53),
+                ),
+                onPressed: _isSubmitting ? null : () => _loadDashboard(),
+              ),
             ),
-            onPressed: _isSubmitting ? null : () => _loadDashboard(),
           ),
         ],
       ),
-      body: _buildBody(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [const Color(0xFFF4F8FC), const Color(0xFFEAF1F8)],
+          ),
+        ),
+        child: _buildBody(),
+      ),
       bottomNavigationBar: _buildBottomBar(),
     );
   }
@@ -154,8 +212,10 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
             child: Column(
               children: [
+                _buildHeroBanner(),
+                SizedBox(height: 12.h),
                 _buildStatsGrid(),
-                SizedBox(height: 10.h),
+                SizedBox(height: 12.h),
                 _buildTabSwitcher(),
               ],
             ),
@@ -183,6 +243,126 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             ),
           Expanded(
             child: _tabIndex == 0 ? _buildInventoryTab() : _buildOrdersTab(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroBanner() {
+    final pendingOrders =
+        _sellerOrders
+            .where(
+              (o) => [
+                'pending',
+                'confirmed',
+                'processing',
+              ].contains(_sellerOrderStatus(o)),
+            )
+            .length;
+    final lowStock = _myProducts.where((p) => p.stockQuantity <= 5).length;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20.r),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF334E68), Color(0xFF1F3C5A)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF102A43).withValues(alpha: 0.22),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Today\'s Snapshot',
+            style: GoogleFonts.mulish(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFFBCCCDC),
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            'You have $pendingOrders orders to process',
+            style: GoogleFonts.mulish(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          Row(
+            children: [
+              Expanded(
+                child: _heroInfoPill(
+                  icon: Icons.warning_amber_rounded,
+                  label: 'Low stock',
+                  value: '$lowStock items',
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: _heroInfoPill(
+                  icon: Icons.inventory_2_outlined,
+                  label: 'Listings',
+                  value: '${_myProducts.length} total',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroInfoPill({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 9.h),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFFD9E2EC), size: 16.sp),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.mulish(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFBCCCDC),
+                  ),
+                ),
+                Text(
+                  value,
+                  style: GoogleFonts.mulish(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -260,33 +440,48 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
 
   Widget _statCard(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: EdgeInsets.all(12.w),
+      padding: EdgeInsets.all(13.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: color.withOpacity(0.22)),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF102A43).withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20.sp, color: color),
+          Container(
+            width: 28.w,
+            height: 28.w,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(9.r),
+            ),
+            child: Icon(icon, size: 16.sp, color: color),
+          ),
           SizedBox(height: 7.h),
           Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.mulish(
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w800,
-              color: const Color(0xFF191D21),
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w900,
+              color: const Color(0xFF102A43),
             ),
           ),
           Text(
             label,
             style: GoogleFonts.mulish(
               fontSize: 11.sp,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
+              color: const Color(0xFF486581),
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -295,7 +490,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }
 
   Widget _buildTabSwitcher() {
-    Widget chip(String label, int index) {
+    Widget chip(String label, IconData icon, int index) {
       final selected = _tabIndex == index;
       return Expanded(
         child: GestureDetector(
@@ -304,24 +499,34 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             duration: const Duration(milliseconds: 180),
             padding: EdgeInsets.symmetric(vertical: 10.h),
             decoration: BoxDecoration(
-              color: selected ? const Color(0xFF2C6E69) : Colors.white,
-              borderRadius: BorderRadius.circular(12.r),
+              color:
+                  selected ? const Color(0xFF243B53) : const Color(0xFFF7FAFC),
+              borderRadius: BorderRadius.circular(14.r),
               border: Border.all(
                 color:
                     selected
-                        ? const Color(0xFF2C6E69)
-                        : AppColors.primary.withOpacity(0.2),
+                        ? const Color(0xFF243B53)
+                        : const Color(0xFFD9E2EC),
               ),
             ),
-            child: Center(
-              child: Text(
-                label,
-                style: GoogleFonts.mulish(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w700,
-                  color: selected ? Colors.white : const Color(0xFF2C6E69),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 15.sp,
+                  color: selected ? Colors.white : const Color(0xFF243B53),
                 ),
-              ),
+                SizedBox(width: 6.w),
+                Text(
+                  label,
+                  style: GoogleFonts.mulish(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w800,
+                    color: selected ? Colors.white : const Color(0xFF243B53),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -329,7 +534,11 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     }
 
     return Row(
-      children: [chip('Inventory', 0), SizedBox(width: 8.w), chip('Orders', 1)],
+      children: [
+        chip('Inventory', Icons.inventory_2_outlined, 0),
+        SizedBox(width: 10.w),
+        chip('Orders', Icons.local_shipping_outlined, 1),
+      ],
     );
   }
 
@@ -346,17 +555,18 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               label: Text(
                 'Add New Product',
                 style: GoogleFonts.mulish(
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   fontSize: 14.sp,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2C6E69),
+                backgroundColor: const Color(0xFF243B53),
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 14.h),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
+                  borderRadius: BorderRadius.circular(14.r),
                 ),
+                elevation: 0,
               ),
             ),
           ),
@@ -386,18 +596,19 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
 
   Widget _buildProductCard(Product product) {
     final lowStock = product.stockQuantity <= 5;
+    final imageUrl = product.images.isNotEmpty ? product.images.first : null;
 
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.18)),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: const Color(0xFFD9E2EC)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF102A43).withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -407,6 +618,17 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(
+                width: 56.w,
+                height: 56.w,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F4F8),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: _buildProductImagePreview(imageUrl),
+              ),
+              SizedBox(width: 10.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,42 +638,43 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                       style: GoogleFonts.mulish(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF191D21),
+                        color: const Color(0xFF102A43),
                       ),
                     ),
                     SizedBox(height: 4.h),
                     Text(
                       'PKR ${product.price.toStringAsFixed(0)}',
                       style: GoogleFonts.mulish(
-                        fontSize: 16.sp,
+                        fontSize: 15.sp,
                         fontWeight: FontWeight.w900,
-                        color: const Color(0xFF2C6E69),
+                        color: const Color(0xFF243B53),
                       ),
                     ),
                   ],
                 ),
               ),
-              IconButton(
+              PopupMenuButton<String>(
                 icon: Icon(
-                  Icons.edit_outlined,
-                  size: 20.sp,
-                  color: const Color(0xFF2C6E69),
+                  Icons.more_horiz_rounded,
+                  size: 22.sp,
+                  color: const Color(0xFF486581),
                 ),
-                onPressed:
-                    _isSubmitting
-                        ? null
-                        : () => _openProductDialog(product: product),
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.delete_outline_rounded,
-                  size: 20.sp,
-                  color: const Color(0xFFEF4444),
-                ),
-                onPressed:
-                    _isSubmitting
-                        ? null
-                        : () => _confirmDeactivateProduct(product),
+                onSelected: (value) {
+                  if (_isSubmitting) return;
+                  if (value == 'edit') {
+                    _openProductDialog(product: product);
+                  } else {
+                    _confirmDeactivateProduct(product);
+                  }
+                },
+                itemBuilder:
+                    (context) => [
+                      const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                      const PopupMenuItem(
+                        value: 'remove',
+                        child: Text('Remove'),
+                      ),
+                    ],
               ),
             ],
           ),
@@ -476,6 +699,59 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 _pill(product.petType!, const Color(0xFF0EA5E9)),
             ],
           ),
+          SizedBox(height: 10.h),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed:
+                      _isSubmitting
+                          ? null
+                          : () => _openProductDialog(product: product),
+                  icon: Icon(Icons.edit_outlined, size: 16.sp),
+                  label: Text(
+                    'Edit',
+                    style: GoogleFonts.mulish(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF243B53),
+                    side: const BorderSide(color: Color(0xFFBCCCDC)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed:
+                      _isSubmitting
+                          ? null
+                          : () => _confirmDeactivateProduct(product),
+                  icon: Icon(Icons.delete_outline_rounded, size: 16.sp),
+                  label: Text(
+                    'Remove',
+                    style: GoogleFonts.mulish(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFE3E3),
+                    foregroundColor: const Color(0xFF9B1C1C),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -485,9 +761,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Text(
         text,
@@ -531,13 +807,13 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.18)),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: const Color(0xFFD9E2EC)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF102A43).withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -551,8 +827,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   'Order #${order.id.substring(0, 8).toUpperCase()}',
                   style: GoogleFonts.mulish(
                     fontSize: 14.sp,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF191D21),
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF102A43),
                   ),
                 ),
               ),
@@ -564,7 +840,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             _formatDate(order.createdAt),
             style: GoogleFonts.mulish(
               fontSize: 11.sp,
-              color: AppColors.textSecondary,
+              color: const Color(0xFF627D98),
             ),
           ),
           SizedBox(height: 10.h),
@@ -581,8 +857,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                             '${item.productName} x${item.quantity}',
                             style: GoogleFonts.mulish(
                               fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF4B5563),
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF334E68),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -592,8 +868,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                           'PKR ${item.totalPrice.toStringAsFixed(0)}',
                           style: GoogleFonts.mulish(
                             fontSize: 12.sp,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF191D21),
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF102A43),
                           ),
                         ),
                       ],
@@ -605,7 +881,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               '+ ${order.items.length - 2} more item(s)',
               style: GoogleFonts.mulish(
                 fontSize: 11.sp,
-                color: AppColors.textSecondary,
+                color: const Color(0xFF627D98),
               ),
             ),
           SizedBox(height: 8.h),
@@ -613,8 +889,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             width: double.infinity,
             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 9.h),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F6F2),
+              color: const Color(0xFFF7FAFC),
               borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: const Color(0xFFE4ECF3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -623,7 +900,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   'Deliver to: ${order.shippingAddress}',
                   style: GoogleFonts.mulish(
                     fontSize: 11.sp,
-                    color: AppColors.textSecondary,
+                    color: const Color(0xFF486581),
                   ),
                 ),
                 if (order.shippingPhone != null &&
@@ -632,7 +909,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                     'Phone: ${order.shippingPhone}',
                     style: GoogleFonts.mulish(
                       fontSize: 11.sp,
-                      color: AppColors.textSecondary,
+                      color: const Color(0xFF486581),
                     ),
                   ),
                 SizedBox(height: 4.h),
@@ -641,7 +918,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   style: GoogleFonts.mulish(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF2C6E69),
+                    color: const Color(0xFF243B53),
                   ),
                 ),
               ],
@@ -661,29 +938,28 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 style: GoogleFonts.mulish(
                   fontSize: 11.sp,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E3A8A),
+                  color: const Color(0xFF1E429F),
                 ),
               ),
             ),
           if (order.trackingNumber?.isNotEmpty == true) SizedBox(height: 8.h),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
+            child: ElevatedButton.icon(
               onPressed:
                   _isSubmitting ? null : () => _openSellerOrderDetail(order),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF2C6E69),
-                side: BorderSide(
-                  color: const Color(0xFF2C6E69).withValues(alpha: 0.4),
-                ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF243B53),
+                foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 11.h),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.r),
                 ),
+                elevation: 0,
               ),
               icon: Icon(Icons.visibility_outlined, size: 17.sp),
               label: Text(
-                'Manage Order',
+                'Open Order Workspace',
                 style: GoogleFonts.mulish(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w800,
@@ -825,6 +1101,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }
 
   Future<void> _openProductDialog({Product? product}) async {
+    FocusManager.instance.primaryFocus?.unfocus();
     final isEdit = product != null;
 
     final nameController = TextEditingController(text: product?.name ?? '');
@@ -844,8 +1121,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     String? selectedCategoryId = product?.categoryId;
     String? selectedPetType = product?.petType;
     bool isActive = product?.isActive ?? true;
+    List<XFile> selectedLocalImages = [];
 
-    await showDialog<void>(
+    final result = await showDialog<_ProductDialogResult>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
@@ -934,6 +1212,106 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                         'Image URLs (comma separated)',
                         maxLines: 2,
                       ),
+                      SizedBox(height: 10.h),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed:
+                              _isSubmitting
+                                  ? null
+                                  : () async {
+                                    FocusManager.instance.primaryFocus
+                                        ?.unfocus();
+                                    final picked = await _imagePicker
+                                        .pickMultiImage(imageQuality: 80);
+                                    if (picked.isEmpty) return;
+                                    setDialogState(() {
+                                      selectedLocalImages = [
+                                        ...selectedLocalImages,
+                                        ...picked,
+                                      ];
+                                    });
+                                  },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF243B53),
+                            side: BorderSide(
+                              color: const Color(
+                                0xFF243B53,
+                              ).withValues(alpha: 0.35),
+                            ),
+                            padding: EdgeInsets.symmetric(vertical: 10.h),
+                          ),
+                          icon: Icon(Icons.upload_file_rounded, size: 16.sp),
+                          label: Text(
+                            'Add Images From Device',
+                            style: GoogleFonts.mulish(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (selectedLocalImages.isNotEmpty) ...[
+                        SizedBox(height: 8.h),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(10.w),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF7FAFC),
+                            borderRadius: BorderRadius.circular(10.r),
+                            border: Border.all(color: const Color(0xFFD9E2EC)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Selected local files: ${selectedLocalImages.length}',
+                                style: GoogleFonts.mulish(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF243B53),
+                                ),
+                              ),
+                              SizedBox(height: 6.h),
+                              ...selectedLocalImages.asMap().entries.map(
+                                (entry) => Padding(
+                                  padding: EdgeInsets.only(bottom: 4.h),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          entry.value.name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.mulish(
+                                            fontSize: 11.sp,
+                                            color: const Color(0xFF486581),
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        visualDensity: VisualDensity.compact,
+                                        icon: Icon(
+                                          Icons.close_rounded,
+                                          size: 16.sp,
+                                          color: const Color(0xFF9B1C1C),
+                                        ),
+                                        onPressed: () {
+                                          setDialogState(() {
+                                            selectedLocalImages.removeAt(
+                                              entry.key,
+                                            );
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       if (isEdit) ...[
                         SizedBox(height: 10.h),
                         SwitchListTile.adaptive(
@@ -959,7 +1337,12 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               actions: [
                 TextButton(
                   onPressed:
-                      _isSubmitting ? null : () => Navigator.pop(dialogContext),
+                      _isSubmitting
+                          ? null
+                          : () {
+                            FocusManager.instance.primaryFocus?.unfocus();
+                            Navigator.pop(dialogContext);
+                          },
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
@@ -995,32 +1378,44 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                                     .where((e) => e.isNotEmpty)
                                     .toList();
 
-                            Navigator.pop(dialogContext);
+                            FocusManager.instance.primaryFocus?.unfocus();
+                            await Future<void>.delayed(
+                              const Duration(milliseconds: 16),
+                            );
+                            if (!dialogContext.mounted) return;
 
                             if (isEdit) {
-                              await _submitEditProduct(
-                                product.id,
-                                UpdateProductRequest(
-                                  name: name,
-                                  description: description,
-                                  price: price,
-                                  stockQuantity: stock,
-                                  categoryId: selectedCategoryId,
-                                  petType: selectedPetType,
-                                  images: images,
-                                  isActive: isActive,
+                              Navigator.pop(
+                                dialogContext,
+                                _ProductDialogResult.edit(
+                                  product.id,
+                                  UpdateProductRequest(
+                                    name: name,
+                                    description: description,
+                                    price: price,
+                                    stockQuantity: stock,
+                                    categoryId: selectedCategoryId,
+                                    petType: selectedPetType,
+                                    images: images,
+                                    isActive: isActive,
+                                  ),
+                                  localImages: selectedLocalImages,
                                 ),
                               );
                             } else {
-                              await _submitCreateProduct(
-                                CreateProductRequest(
-                                  name: name,
-                                  description: description,
-                                  price: price,
-                                  stockQuantity: stock,
-                                  categoryId: selectedCategoryId,
-                                  petType: selectedPetType,
-                                  images: images,
+                              Navigator.pop(
+                                dialogContext,
+                                _ProductDialogResult.create(
+                                  CreateProductRequest(
+                                    name: name,
+                                    description: description,
+                                    price: price,
+                                    stockQuantity: stock,
+                                    categoryId: selectedCategoryId,
+                                    petType: selectedPetType,
+                                    images: images,
+                                  ),
+                                  localImages: selectedLocalImages,
                                 ),
                               );
                             }
@@ -1043,6 +1438,24 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     priceController.dispose();
     stockController.dispose();
     imagesController.dispose();
+
+    if (result == null) return;
+
+    if (result.updateRequest != null && result.productId != null) {
+      await _submitEditProduct(
+        result.productId!,
+        result.updateRequest!,
+        localImages: result.localImages,
+      );
+      return;
+    }
+
+    if (result.createRequest != null) {
+      await _submitCreateProduct(
+        result.createRequest!,
+        localImages: result.localImages,
+      );
+    }
   }
 
   InputDecoration _dialogDecoration(String label) {
@@ -1070,13 +1483,30 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     );
   }
 
-  Future<void> _submitCreateProduct(CreateProductRequest request) async {
+  Future<void> _submitCreateProduct(
+    CreateProductRequest request, {
+    List<XFile> localImages = const [],
+  }) async {
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      await _repo.createProduct(request);
+      final uploadedLocalImages = await _uploadLocalProductImages(localImages);
+      if (uploadedLocalImages == null) return;
+
+      final resolvedRequest = CreateProductRequest(
+        name: request.name,
+        description: request.description,
+        price: request.price,
+        currency: request.currency,
+        stockQuantity: request.stockQuantity,
+        categoryId: request.categoryId,
+        petType: request.petType,
+        images: [...request.images, ...uploadedLocalImages],
+      );
+
+      await _repo.createProduct(resolvedRequest);
       await _loadDashboard(showLoader: false);
       _showSnack('Product created successfully');
     } catch (e) {
@@ -1092,14 +1522,35 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
 
   Future<void> _submitEditProduct(
     String productId,
-    UpdateProductRequest request,
-  ) async {
+    UpdateProductRequest request, {
+    List<XFile> localImages = const [],
+  }) async {
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      await _repo.updateProduct(productId, request);
+      final uploadedLocalImages = await _uploadLocalProductImages(localImages);
+      if (uploadedLocalImages == null) return;
+
+      final mergedImages = [
+        ...(request.images ?? const <String>[]),
+        ...uploadedLocalImages,
+      ];
+
+      final resolvedRequest = UpdateProductRequest(
+        name: request.name,
+        description: request.description,
+        price: request.price,
+        currency: request.currency,
+        stockQuantity: request.stockQuantity,
+        categoryId: request.categoryId,
+        petType: request.petType,
+        images: mergedImages,
+        isActive: request.isActive,
+      );
+
+      await _repo.updateProduct(productId, resolvedRequest);
       await _loadDashboard(showLoader: false);
       _showSnack('Product updated successfully');
     } catch (e) {
@@ -1111,6 +1562,35 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
         });
       }
     }
+  }
+
+  Future<List<String>?> _uploadLocalProductImages(
+    List<XFile> localImages,
+  ) async {
+    if (localImages.isEmpty) {
+      return const <String>[];
+    }
+
+    final uploaded = await _imageService.uploadImages(
+      localImages,
+      folder: 'marketplace/products',
+    );
+
+    if (uploaded.isEmpty) {
+      _showSnack(
+        'Failed to upload local images. Please try another image.',
+        isError: true,
+      );
+      return null;
+    }
+
+    if (uploaded.length < localImages.length) {
+      _showSnack(
+        'Some local images failed to upload. Continuing with available uploads.',
+      );
+    }
+
+    return uploaded;
   }
 
   Future<void> _confirmDeactivateProduct(Product product) async {
@@ -1201,6 +1681,50 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             isError ? const Color(0xFFEF4444) : const Color(0xFF2C6E69),
         behavior: SnackBarBehavior.floating,
       ),
+    );
+  }
+
+  Widget _buildProductImagePreview(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return Icon(
+        Icons.inventory_2_outlined,
+        size: 20.sp,
+        color: const Color(0xFF627D98),
+      );
+    }
+
+    if (imageUrl.startsWith('data:image/')) {
+      try {
+        final base64Data = imageUrl.split(',').last;
+        final bytes = base64Decode(base64Data);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder:
+              (_, __, ___) => Icon(
+                Icons.image_not_supported_outlined,
+                size: 18.sp,
+                color: const Color(0xFF829AB1),
+              ),
+        );
+      } catch (_) {
+        return Icon(
+          Icons.image_not_supported_outlined,
+          size: 18.sp,
+          color: const Color(0xFF829AB1),
+        );
+      }
+    }
+
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder:
+          (_, __, ___) => Icon(
+            Icons.image_not_supported_outlined,
+            size: 18.sp,
+            color: const Color(0xFF829AB1),
+          ),
     );
   }
 }

@@ -86,7 +86,7 @@ func (r *UserRepositoryPG) GetByID(ctx context.Context, id uuid.UUID) (*models.U
 func (r *UserRepositoryPG) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
 		SELECT id, email, password_hash, display_name, account_type, avatar_url, is_active, email_verified, google_id, created_at, updated_at
-		FROM users WHERE email = $1`
+		FROM users WHERE LOWER(email) = LOWER($1)`
 
 	user := &models.User{}
 	err := r.db.QueryRow(ctx, query, email).Scan(

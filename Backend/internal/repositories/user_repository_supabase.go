@@ -98,7 +98,7 @@ func (r *UserRepositorySupabase) GetUserByID(ctx context.Context, userID uuid.UU
 
 func (r *UserRepositorySupabase) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := map[string]string{
-		"email":  fmt.Sprintf("eq.%s", url.QueryEscape(email)),
+		"email":  fmt.Sprintf("ilike.%s", url.QueryEscape(email)),
 		"select": "*",
 	}
 

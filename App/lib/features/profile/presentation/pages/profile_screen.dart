@@ -11,7 +11,6 @@ import '../../../../core/utils/image_service.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/data/models/auth_user.dart';
-import '../../../auth/presentation/pages/sign_in_screen.dart';
 import '../../data/repositories/profile_repository.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -41,11 +40,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     switch (backendType.toLowerCase()) {
       case 'vet':
       case 'veterinarian':
+      case 'veterinary':
         return 'Veterinarian';
+      case 'seller':
+      case 'vendor':
+      case 'merchant':
+      case 'shop_owner':
+      case 'shop owner':
+      case 'shopowner':
+        return 'Seller';
       case 'petowner':
       case 'pet_owner':
       case 'pet owner':
+      case 'pet-owner':
         return 'Pet Owner';
+      case 'caregiver':
+      case 'care_giver':
+      case 'pet_caregiver':
+        return 'Caregiver';
+      case 'admin':
+        return 'Admin';
       case 'breeder':
         return 'Breeder';
       case 'pet sitter':
@@ -215,7 +229,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -265,6 +281,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
 
+      if (!mounted) return;
       final profileRepo = ProfileRepository(context.read<AuthBloc>().authRepository);
 
       await profileRepo.updateUserProfile(
@@ -295,7 +312,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
     } finally {
-      setState(() => _isUpdating = false);
+      if (mounted) {
+        setState(() => _isUpdating = false);
+      }
     }
   }
 
@@ -501,6 +520,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
+    if (!mounted) return;
+
     if (shouldLogout == true) {
       context.read<AuthBloc>().add(const AuthEvent.signOut());
     }
@@ -518,16 +539,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       listener: (context, state) {
         state.maybeWhen(
           unauthenticated: () {
-            // User logged out, navigate to sign in screen
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (context) => BlocProvider.value(
-                  value: context.read<AuthBloc>(),
-                  child: const SignInScreen(),
-                ),
-              ),
-              (route) => false,
-            );
+            if (!mounted) return;
+
+            // Close profile screen and let AuthFlow switch the root content.
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
           },
           orElse: () {},
         );

@@ -389,7 +389,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 }
                 _lastButtonPress = now;
                 
-                final email = _emailController.text.trim();
+                final email = _emailController.text.trim().toLowerCase();
                 final password = _passwordController.text;
                 
                 // Validate fields

@@ -64,8 +64,13 @@ type Claims struct {
 
 // SignUp creates a new user
 func (s *AuthService) SignUp(ctx context.Context, req *models.SignUpRequest) (*models.AuthResponse, error) {
+	normalizedEmail := strings.ToLower(strings.TrimSpace(req.Email))
+	if normalizedEmail == "" {
+		return nil, ErrInvalidCredentials
+	}
+
 	// Check if user already exists
-	existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
+	existingUser, err := s.userRepo.GetByEmail(ctx, normalizedEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +94,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.SignUpRequest) (*m
 
 	// Create user
 	user := &models.User{
-		Email:        req.Email,
+		Email:        normalizedEmail,
 		PasswordHash: string(hashedPassword),
 		DisplayName:  req.DisplayName,
 		AccountType:  accountType,
@@ -129,8 +134,13 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.SignUpRequest) (*m
 
 // SignIn authenticates a user
 func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest) (*models.AuthResponse, error) {
+	normalizedEmail := strings.ToLower(strings.TrimSpace(req.Email))
+	if normalizedEmail == "" {
+		return nil, ErrInvalidCredentials
+	}
+
 	// Get user by email
-	user, err := s.userRepo.GetByEmail(ctx, req.Email)
+	user, err := s.userRepo.GetByEmail(ctx, normalizedEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -405,8 +415,13 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 		return nil, fmt.Errorf("invalid Google token: %w", err)
 	}
 
+	normalizedGoogleEmail := strings.ToLower(strings.TrimSpace(tokenInfo.Email))
+	if normalizedGoogleEmail == "" {
+		return nil, fmt.Errorf("google account email is missing")
+	}
+
 	// Check if user exists
-	user, err := s.userRepo.GetByEmail(ctx, tokenInfo.Email)
+	user, err := s.userRepo.GetByEmail(ctx, normalizedGoogleEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -421,7 +436,7 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 				Message:   "Account type required for new user",
 				IsNewUser: true,
 				User: &models.UserProfile{
-					Email:       tokenInfo.Email,
+					Email:       normalizedGoogleEmail,
 					DisplayName: &tokenInfo.Name,
 					AvatarURL:   &tokenInfo.Picture,
 				},
@@ -435,7 +450,7 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 		}
 
 		user = &models.User{
-			Email:         tokenInfo.Email,
+			Email:         normalizedGoogleEmail,
 			DisplayName:   &tokenInfo.Name,
 			AvatarURL:     &tokenInfo.Picture,
 			PasswordHash:  "", // No password for Google users

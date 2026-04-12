@@ -109,40 +109,72 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
     final order = _order;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6F2),
+      backgroundColor: const Color(0xFFF1F6FA),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: const Color(0xFFF1F6FA),
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 20.sp,
-            color: const Color(0xFF191D21),
+            color: const Color(0xFF102A43),
           ),
           onPressed: () => Navigator.pop(context, _hasUpdates),
         ),
-        title: Text(
-          'Manage Order',
-          style: GoogleFonts.mulish(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF191D21),
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Order Workspace',
+              style: GoogleFonts.mulish(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF102A43),
+              ),
+            ),
+            Text(
+              'Track fulfillment and delivery details',
+              style: GoogleFonts.mulish(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF486581),
+              ),
+            ),
+          ],
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.refresh_rounded,
-              size: 22.sp,
-              color: const Color(0xFF191D21),
+          Padding(
+            padding: EdgeInsets.only(right: 10.w),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: const Color(0xFFD9E2EC)),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  size: 20.sp,
+                  color: const Color(0xFF243B53),
+                ),
+                onPressed:
+                    _isSubmitting ? null : () => _loadOrder(showLoader: false),
+              ),
             ),
-            onPressed:
-                _isSubmitting ? null : () => _loadOrder(showLoader: false),
           ),
         ],
       ),
-      body: Builder(
-        builder: (_) {
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [const Color(0xFFF4F8FC), const Color(0xFFEAF1F8)],
+          ),
+        ),
+        child: Builder(
+          builder: (_) {
           if (_isLoading && order == null) {
             return const Center(
               child: CircularProgressIndicator(color: Color(0xFF2C6E69)),
@@ -226,7 +258,8 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
               ],
             ),
           );
-        },
+          },
+        ),
       ),
     );
   }
@@ -249,7 +282,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                       style: GoogleFonts.mulish(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w900,
-                        color: const Color(0xFF191D21),
+                        color: const Color(0xFF102A43),
                       ),
                     ),
                     SizedBox(height: 3.h),
@@ -257,7 +290,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                       _formatDateTime(order.createdAt),
                       style: GoogleFonts.mulish(
                         fontSize: 12.sp,
-                        color: AppColors.textSecondary,
+                        color: const Color(0xFF486581),
                       ),
                     ),
                   ],
@@ -271,8 +304,9 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
             width: double.infinity,
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F6F2),
+              color: const Color(0xFFF7FAFC),
               borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: const Color(0xFFE4ECF3)),
             ),
             child: Row(
               children: [
@@ -287,7 +321,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                   child: _metricTile(
                     label: 'Your amount',
                     value: 'PKR ${sellerTotal.toStringAsFixed(0)}',
-                    color: const Color(0xFF2C6E69),
+                    color: const Color(0xFF243B53),
                   ),
                 ),
               ],
@@ -310,8 +344,8 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
           label,
           style: GoogleFonts.mulish(
             fontSize: 11.sp,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF627D98),
           ),
         ),
         SizedBox(height: 2.h),
@@ -367,7 +401,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
             style: GoogleFonts.mulish(
               fontSize: 15.sp,
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF191D21),
+              color: const Color(0xFF102A43),
             ),
           ),
           SizedBox(height: 10.h),
@@ -428,8 +462,8 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                                 active ? FontWeight.w800 : FontWeight.w600,
                             color:
                                 done || active
-                                    ? const Color(0xFF191D21)
-                                    : AppColors.textSecondary,
+                                    ? const Color(0xFF102A43)
+                                    : const Color(0xFF627D98),
                           ),
                         ),
                         if (active)
@@ -469,7 +503,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
             style: GoogleFonts.mulish(
               fontSize: 15.sp,
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF191D21),
+              color: const Color(0xFF102A43),
             ),
           ),
           SizedBox(height: 10.h),
@@ -542,9 +576,9 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                           ? null
                           : () => _saveUpdate(forcedStatus: 'shipped'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF2C6E69),
+                    foregroundColor: const Color(0xFF243B53),
                     side: BorderSide(
-                      color: const Color(0xFF2C6E69).withValues(alpha: 0.45),
+                      color: const Color(0xFF334E68).withValues(alpha: 0.4),
                     ),
                     padding: EdgeInsets.symmetric(vertical: 11.h),
                     shape: RoundedRectangleBorder(
@@ -567,12 +601,13 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                   onPressed:
                       _isSubmitting || isClosed ? null : () => _saveUpdate(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2C6E69),
+                    backgroundColor: const Color(0xFF243B53),
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 11.h),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.r),
                     ),
+                    elevation: 0,
                   ),
                   icon: Icon(Icons.save_outlined, size: 16.sp),
                   label: Text(
@@ -601,7 +636,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
             style: GoogleFonts.mulish(
               fontSize: 15.sp,
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF191D21),
+              color: const Color(0xFF102A43),
             ),
           ),
           SizedBox(height: 10.h),
@@ -656,7 +691,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
             style: GoogleFonts.mulish(
               fontSize: 15.sp,
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF191D21),
+              color: const Color(0xFF102A43),
             ),
           ),
           SizedBox(height: 10.h),
@@ -694,7 +729,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                             style: GoogleFonts.mulish(
                               fontSize: 13.sp,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF191D21),
+                              color: const Color(0xFF102A43),
                             ),
                           ),
                           SizedBox(height: 3.h),
@@ -702,7 +737,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                             'Qty ${item.quantity} x PKR ${item.unitPrice.toStringAsFixed(0)}',
                             style: GoogleFonts.mulish(
                               fontSize: 11.sp,
-                              color: AppColors.textSecondary,
+                              color: const Color(0xFF627D98),
                             ),
                           ),
                         ],
@@ -716,7 +751,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                           style: GoogleFonts.mulish(
                             fontSize: 12.sp,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF191D21),
+                            color: const Color(0xFF102A43),
                           ),
                         ),
                         SizedBox(height: 3.h),
@@ -752,7 +787,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                 style: GoogleFonts.mulish(
                   fontSize: 11.sp,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+                  color: const Color(0xFF627D98),
                 ),
               ),
               SizedBox(height: 2.h),
@@ -761,7 +796,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                 style: GoogleFonts.mulish(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF191D21),
+                  color: const Color(0xFF102A43),
                 ),
               ),
             ],
@@ -776,13 +811,13 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.18)),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: const Color(0xFFD9E2EC)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF102A43).withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),

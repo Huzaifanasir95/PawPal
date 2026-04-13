@@ -47,6 +47,21 @@ func (r *MarketplaceRepository) GetCategories(ctx context.Context) ([]models.Pro
 	return cats, rows.Err()
 }
 
+// CategoryExists checks whether a category exists.
+func (r *MarketplaceRepository) CategoryExists(ctx context.Context, categoryID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(
+		ctx,
+		`SELECT EXISTS(SELECT 1 FROM product_categories WHERE id = $1)`,
+		categoryID,
+	).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 // ─── Products ─────────────────────────────────────────────────────────────────
 
 // CreateProduct inserts a new product listing
@@ -264,10 +279,11 @@ func (r *MarketplaceRepository) UpdateProduct(ctx context.Context, productID, se
 
 	var catID *uuid.UUID
 	if req.CategoryID != nil && *req.CategoryID != "" {
-		parsed, err := uuid.Parse(*req.CategoryID)
-		if err == nil {
-			catID = &parsed
+		parsed, err := uuid.Parse(strings.TrimSpace(*req.CategoryID))
+		if err != nil {
+			return nil, fmt.Errorf("invalid category_id: %w", err)
 		}
+		catID = &parsed
 	}
 
 	var p models.Product

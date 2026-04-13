@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"errors"
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"pawpal-backend/internal/models"
 	"pawpal-backend/internal/repositories"
@@ -69,6 +72,36 @@ func (h *MarketplaceHandlers) requireSellerAccess(c *gin.Context, userID uuid.UU
 	}
 
 	return true
+}
+
+func productWriteErrorResponse(err error) (int, string) {
+	if err == nil {
+		return http.StatusInternalServerError, "Failed to process product request"
+	}
+
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case "22P02":
+			return http.StatusBadRequest, "Invalid field format"
+		case "23503":
+			if strings.Contains(strings.ToLower(pgErr.ConstraintName), "category") {
+				return http.StatusBadRequest, "Invalid categoryId"
+			}
+			return http.StatusBadRequest, "Referenced resource does not exist"
+		case "23514":
+			return http.StatusBadRequest, "Invalid product data"
+		}
+	}
+
+	lower := strings.ToLower(err.Error())
+	if strings.Contains(lower, "invalid category") ||
+		strings.Contains(lower, "category_id") ||
+		strings.Contains(lower, "categoryid") {
+		return http.StatusBadRequest, "Invalid categoryId"
+	}
+
+	return http.StatusInternalServerError, "Failed to process product request"
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
@@ -190,9 +223,51 @@ func (h *MarketplaceHandlers) CreateProduct(c *gin.Context) {
 		return
 	}
 
+	name := strings.TrimSpace(req.Name)
+	description := strings.TrimSpace(req.Description)
+	categoryIDRaw := strings.TrimSpace(req.CategoryID)
+
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "name is required"})
+		return
+	}
+	if description == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "description is required"})
+		return
+	}
+	if req.Price <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "price must be greater than 0"})
+		return
+	}
+	if req.StockQuantity < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "stockQuantity must be 0 or greater"})
+		return
+	}
+	if categoryIDRaw == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "categoryId is required"})
+		return
+	}
+
+	categoryID, err := uuid.Parse(categoryIDRaw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "categoryId must be a valid UUID"})
+		return
+	}
+
+	categoryExists, err := h.marketplaceRepo.CategoryExists(c.Request.Context(), categoryID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate category"})
+		return
+	}
+	if !categoryExists {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid categoryId"})
+		return
+	}
+
 	product := &models.Product{
-		Name:               req.Name,
-		Description:        req.Description,
+		CategoryID:         &categoryID,
+		Name:               name,
+		Description:        description,
 		Price:              req.Price,
 		Currency:           req.Currency,
 		StockQuantity:      req.StockQuantity,
@@ -202,15 +277,9 @@ func (h *MarketplaceHandlers) CreateProduct(c *gin.Context) {
 		WeightGrams:        req.WeightGrams,
 	}
 
-	if req.CategoryID != nil && *req.CategoryID != "" {
-		catID, err := uuid.Parse(*req.CategoryID)
-		if err == nil {
-			product.CategoryID = &catID
-		}
-	}
-
 	if err := h.marketplaceRepo.CreateProduct(c.Request.Context(), product, userID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to create product"})
+		status, message := productWriteErrorResponse(err)
+		c.JSON(status, gin.H{"success": false, "error": message})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"success": true, "product": product})
@@ -238,9 +307,31 @@ func (h *MarketplaceHandlers) UpdateProduct(c *gin.Context) {
 		return
 	}
 
+	if req.CategoryID != nil && strings.TrimSpace(*req.CategoryID) != "" {
+		categoryID, err := uuid.Parse(strings.TrimSpace(*req.CategoryID))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "categoryId must be a valid UUID"})
+			return
+		}
+
+		exists, err := h.marketplaceRepo.CategoryExists(c.Request.Context(), categoryID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate category"})
+			return
+		}
+		if !exists {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid categoryId"})
+			return
+		}
+
+		normalizedCategoryID := categoryID.String()
+		req.CategoryID = &normalizedCategoryID
+	}
+
 	product, err := h.marketplaceRepo.UpdateProduct(c.Request.Context(), productID, userID, &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to update product"})
+		status, message := productWriteErrorResponse(err)
+		c.JSON(status, gin.H{"success": false, "error": message})
 		return
 	}
 	if product == nil {

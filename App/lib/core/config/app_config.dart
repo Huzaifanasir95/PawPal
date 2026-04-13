@@ -22,6 +22,7 @@ class AppConfig {
   
   /// 🎯 UPDATE THIS TO YOUR NGROK URL FOR EMULATOR TESTING
   /// Replace with your ngrok URL from: ngrok http 8081
+  ///                             https://terminational-severer-aubrianna.ngrok-free.dev
   static const String ngrokUrl = 'https://terminational-severer-aubrianna.ngrok-free.dev'; // ngrok URL for emulator
 
   static String get backendBaseUrl {

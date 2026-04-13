@@ -34,7 +34,7 @@ type AuthResponse struct {
 	AccessToken  string       `json:"accessToken,omitempty"`
 	RefreshToken string       `json:"refreshToken,omitempty"`
 	ExpiresIn    int64        `json:"expiresIn,omitempty"` // Token expiry in seconds
-	IsNewUser    bool         `json:"isNewUser,omitempty"`  // Indicates if this is a new user needing account setup
+	IsNewUser    bool         `json:"isNewUser,omitempty"` // Indicates if this is a new user needing account setup
 }
 
 // RefreshTokenRequest represents a token refresh request
@@ -58,6 +58,16 @@ type UpdateProfileRequest struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	AccountType *string `json:"accountType,omitempty"`
 	AvatarURL   *string `json:"avatarUrl,omitempty"`
+}
+
+// AddRoleRequest represents a request to assign an additional role to a user.
+type AddRoleRequest struct {
+	Role string `json:"role" binding:"required"`
+}
+
+// SwitchRoleRequest represents a request to switch the active role.
+type SwitchRoleRequest struct {
+	Role string `json:"role" binding:"required"`
 }
 
 // Pet Request/Response types
@@ -267,6 +277,7 @@ type GenericResponse struct {
 	Message string      `json:"message,omitempty"`
 	Data    interface{} `json:"data,omitempty"`
 }
+
 // ─── Lost & Found Request/Response ──────────────────────────────
 
 type CreateLostFoundRequest struct {
@@ -286,12 +297,12 @@ type CreateLostFoundRequest struct {
 }
 
 type UpdateLostFoundRequest struct {
-	Description      *string  `json:"description,omitempty"`
-	LastSeenLocation *string  `json:"lastSeenLocation,omitempty"`
-	Urgency          *string  `json:"urgency,omitempty"`
-	ContactPhone     *string  `json:"contactPhone,omitempty"`
-	ContactEmail     *string  `json:"contactEmail,omitempty"`
-	Status           *string  `json:"status,omitempty"`
+	Description      *string `json:"description,omitempty"`
+	LastSeenLocation *string `json:"lastSeenLocation,omitempty"`
+	Urgency          *string `json:"urgency,omitempty"`
+	ContactPhone     *string `json:"contactPhone,omitempty"`
+	ContactEmail     *string `json:"contactEmail,omitempty"`
+	Status           *string `json:"status,omitempty"`
 }
 
 // ─── Adoption Request/Response ──────────────────────────────────
@@ -455,18 +466,18 @@ type AddBlockedDateRequest struct {
 
 // CreateBookingRequest represents a request to create a booking
 type CreateBookingRequest struct {
-	CaregiverID          uuid.UUID   `json:"caregiverId" binding:"required"`
-	ServiceID            uuid.UUID   `json:"serviceId" binding:"required"`
-	PetIDs               []uuid.UUID `json:"petIds" binding:"required,min=1"`
-	StartDatetime        string      `json:"startDatetime" binding:"required"` // ISO 8601
-	EndDatetime          string      `json:"endDatetime" binding:"required"`
-	ServiceLocationType  string      `json:"serviceLocationType" binding:"required,oneof=owner_home caregiver_home pickup_location outdoor"`
-	ServiceAddress       *string     `json:"serviceAddress,omitempty"`
-	ServiceLatitude      *float64    `json:"serviceLatitude,omitempty"`
-	ServiceLongitude     *float64    `json:"serviceLongitude,omitempty"`
-	SpecialInstructions  *string     `json:"specialInstructions,omitempty"`
-	EmergencyContactName *string     `json:"emergencyContactName,omitempty"`
-	EmergencyContactPhone *string    `json:"emergencyContactPhone,omitempty"`
+	CaregiverID           uuid.UUID   `json:"caregiverId" binding:"required"`
+	ServiceID             uuid.UUID   `json:"serviceId" binding:"required"`
+	PetIDs                []uuid.UUID `json:"petIds" binding:"required,min=1"`
+	StartDatetime         string      `json:"startDatetime" binding:"required"` // ISO 8601
+	EndDatetime           string      `json:"endDatetime" binding:"required"`
+	ServiceLocationType   string      `json:"serviceLocationType" binding:"required,oneof=owner_home caregiver_home pickup_location outdoor"`
+	ServiceAddress        *string     `json:"serviceAddress,omitempty"`
+	ServiceLatitude       *float64    `json:"serviceLatitude,omitempty"`
+	ServiceLongitude      *float64    `json:"serviceLongitude,omitempty"`
+	SpecialInstructions   *string     `json:"specialInstructions,omitempty"`
+	EmergencyContactName  *string     `json:"emergencyContactName,omitempty"`
+	EmergencyContactPhone *string     `json:"emergencyContactPhone,omitempty"`
 }
 
 // RespondToBookingRequest represents caregiver response to booking
@@ -488,11 +499,11 @@ type StartServiceRequest struct {
 
 // UpdateTrackingRequest represents GPS tracking update
 type UpdateTrackingRequest struct {
-	Latitude       float64 `json:"latitude" binding:"required"`
-	Longitude      float64 `json:"longitude" binding:"required"`
+	Latitude       float64  `json:"latitude" binding:"required"`
+	Longitude      float64  `json:"longitude" binding:"required"`
 	AccuracyMeters *float64 `json:"accuracyMeters,omitempty"`
-	ActivityType   *string `json:"activityType,omitempty"`
-	Note           *string `json:"note,omitempty"`
+	ActivityType   *string  `json:"activityType,omitempty"`
+	Note           *string  `json:"note,omitempty"`
 }
 
 // SubmitCompletionReportRequest represents service completion report
@@ -544,17 +555,17 @@ type ProcessPaymentRequest struct {
 
 // SearchCaregiversRequest represents caregiver search filters
 type SearchCaregiversRequest struct {
-	ServiceType     *string  `json:"serviceType,omitempty"`
-	City            *string  `json:"city,omitempty"`
-	Latitude        *float64 `json:"latitude,omitempty"`
-	Longitude       *float64 `json:"longitude,omitempty"`
-	RadiusKm        *int     `json:"radiusKm,omitempty"`
-	PetType         *string  `json:"petType,omitempty"`
-	PetSize         *string  `json:"petSize,omitempty"`
-	MinRating       *float64 `json:"minRating,omitempty"`
-	MaxRate         *float64 `json:"maxRate,omitempty"`
-	VerifiedOnly    bool     `json:"verifiedOnly"`
-	AvailableDate   *string  `json:"availableDate,omitempty"` // YYYY-MM-DD
-	Page            int      `json:"page"`
-	Limit           int      `json:"limit"`
+	ServiceType   *string  `json:"serviceType,omitempty"`
+	City          *string  `json:"city,omitempty"`
+	Latitude      *float64 `json:"latitude,omitempty"`
+	Longitude     *float64 `json:"longitude,omitempty"`
+	RadiusKm      *int     `json:"radiusKm,omitempty"`
+	PetType       *string  `json:"petType,omitempty"`
+	PetSize       *string  `json:"petSize,omitempty"`
+	MinRating     *float64 `json:"minRating,omitempty"`
+	MaxRate       *float64 `json:"maxRate,omitempty"`
+	VerifiedOnly  bool     `json:"verifiedOnly"`
+	AvailableDate *string  `json:"availableDate,omitempty"` // YYYY-MM-DD
+	Page          int      `json:"page"`
+	Limit         int      `json:"limit"`
 }

@@ -18,11 +18,8 @@ import '../../core/utils/image_service.dart';
 
 class AuthFlow extends StatefulWidget {
   final AuthRepository authRepository;
-  
-  const AuthFlow({
-    super.key,
-    required this.authRepository,
-  });
+
+  const AuthFlow({super.key, required this.authRepository});
 
   @override
   State<AuthFlow> createState() => _AuthFlowState();
@@ -32,6 +29,43 @@ class _AuthFlowState extends State<AuthFlow> {
   bool _showOnboarding = true;
   bool _isLoading = true;
 
+  bool _shouldListen(AuthState current) {
+    return current.maybeWhen(
+      accountTypeRequired: (_, __, ___) => true,
+      orElse: () => false,
+    );
+  }
+
+  bool _shouldBuild(AuthState previous, AuthState current) {
+    if (identical(previous, current)) {
+      return false;
+    }
+
+    if (previous.runtimeType != current.runtimeType) {
+      return true;
+    }
+
+    return current.maybeWhen(
+      authenticated: (user) {
+        final previousUser = previous.maybeWhen(
+          authenticated: (value) => value,
+          orElse: () => null,
+        );
+
+        return previousUser?.id != user.id ||
+            previousUser?.accountType != user.accountType;
+      },
+      error: (message) {
+        final previousMessage = previous.maybeWhen(
+          error: (value) => value,
+          orElse: () => null,
+        );
+        return previousMessage != message;
+      },
+      orElse: () => false,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -40,8 +74,9 @@ class _AuthFlowState extends State<AuthFlow> {
 
   Future<void> _checkOnboardingStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    final hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
-    
+    final hasCompletedOnboarding =
+        prefs.getBool('hasCompletedOnboarding') ?? false;
+
     if (mounted) {
       setState(() {
         _showOnboarding = !hasCompletedOnboarding;
@@ -53,7 +88,7 @@ class _AuthFlowState extends State<AuthFlow> {
   void _onOnboardingComplete() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('hasCompletedOnboarding', true);
-    
+
     if (mounted) {
       setState(() {
         _showOnboarding = false;
@@ -64,63 +99,53 @@ class _AuthFlowState extends State<AuthFlow> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_showOnboarding) {
-      return OnboardingScreenWrapper(
-        onComplete: _onOnboardingComplete,
-      );
+      return OnboardingScreenWrapper(onComplete: _onOnboardingComplete);
     }
-    
+
     // After onboarding, listen to auth state changes
     return BlocConsumer<AuthBloc, AuthState>(
-      listenWhen: (previous, current) {
-        debugPrint('🎯 AuthFlow listenWhen: previous=${previous.toString()}, current=${current.toString()}');
-        return true; // Always listen
-      },
-      buildWhen: (previous, current) {
-        debugPrint('🎯 AuthFlow buildWhen: previous=${previous.toString()}, current=${current.toString()}');
-        return true; // Always rebuild
-      },
+      listenWhen: (_, current) => _shouldListen(current),
+      buildWhen: (previous, current) => _shouldBuild(previous, current),
       listener: (context, state) {
-        debugPrint('🎭 AuthFlow listener called: ${state.toString()}');
         state.when(
           initial: () {},
           loading: () {},
-          authenticated: (user) {
-            debugPrint('🎭 AuthFlow listener: authenticated ${user.email}');
-            // Navigation is handled in the builder
-          },
+          authenticated: (_) {},
           unauthenticated: () {},
-          error: (message) {},
+          error: (_) {},
           passwordResetSent: () {},
           accountTypeRequired: (idToken, displayName, photoUrl) {
-            // Navigate to account type selection
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<AuthBloc>(),
-                  child: AccountTypeSelectionScreen(
-                    idToken: idToken,
-                    displayName: displayName,
-                    photoUrl: photoUrl,
-                  ),
+            if (!mounted) return;
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder:
+                      (_) => BlocProvider.value(
+                        value: context.read<AuthBloc>(),
+                        child: AccountTypeSelectionScreen(
+                          idToken: idToken,
+                          displayName: displayName,
+                          photoUrl: photoUrl,
+                        ),
+                      ),
                 ),
-              ),
-            );
+              );
+            });
           },
         );
       },
       builder: (context, state) {
-        debugPrint('🏗️ AuthFlow builder called: ${state.toString()}');
         return state.when(
           initial: () => const AuthNavigator(),
-          loading: () => const AuthNavigator(), // Don't show full-screen loading
+          loading:
+              () => const AuthNavigator(), // Don't show full-screen loading
           authenticated: (user) {
             // Use role from auth payload immediately, avoiding an extra profile fetch.
             return RoleBasedHome(
@@ -143,17 +168,12 @@ class _AuthFlowState extends State<AuthFlow> {
 
 class OnboardingScreenWrapper extends StatelessWidget {
   final VoidCallback onComplete;
-  
-  const OnboardingScreenWrapper({
-    super.key,
-    required this.onComplete,
-  });
+
+  const OnboardingScreenWrapper({super.key, required this.onComplete});
 
   @override
   Widget build(BuildContext context) {
-    return OnboardingScreen(
-      onComplete: onComplete,
-    );
+    return OnboardingScreen(onComplete: onComplete);
   }
 }
 
@@ -165,7 +185,7 @@ class PawPawlApp extends StatefulWidget {
 }
 
 class _PawPawlAppState extends State<PawPawlApp> {
-  final AuthRepository _authRepository = AuthRepository();
+  final AuthRepository _authRepository = getIt<AuthRepository>();
   late AuthBloc _authBloc;
 
   @override
@@ -187,24 +207,12 @@ class _PawPawlAppState extends State<PawPawlApp> {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider.value(
-          value: _authBloc,
-        ),
-        BlocProvider(
-          create: (context) => getIt<CommunityBloc>(),
-        ),
-        BlocProvider(
-          create: (context) => getIt<VetBloc>(),
-        ),
-        BlocProvider(
-          create: (context) => getIt<ChatBloc>(),
-        ),
-        Provider<AuthRepository>.value(
-          value: _authRepository,
-        ),
-        Provider<ImageService>(
-          create: (context) => getIt<ImageService>(),
-        ),
+        BlocProvider.value(value: _authBloc),
+        BlocProvider(create: (context) => getIt<CommunityBloc>()),
+        BlocProvider(create: (context) => getIt<VetBloc>()),
+        BlocProvider(create: (context) => getIt<ChatBloc>()),
+        Provider<AuthRepository>.value(value: _authRepository),
+        Provider<ImageService>(create: (context) => getIt<ImageService>()),
       ],
       child: ScreenUtilInit(
         designSize: const Size(390, 844),

@@ -13,6 +13,7 @@ part 'auth_bloc.freezed.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
   late final StreamSubscription<AuthUser?> _authStateSubscription;
+  String? _lastAuthSnapshot;
 
   AuthBloc({required AuthRepository authRepository})
       : _authRepository = authRepository,
@@ -20,16 +21,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     
     // Listen to auth state changes with debouncing
     _authStateSubscription = _authRepository.authStateChanges.listen((user) {
-      _debugLog('👂 Auth state changed: user=${user?.email ?? "null"}');
-      if (!isClosed) {
-        // Remove debouncing check for more reliable auth state updates
-        if (user != null) {
-          _debugLog('➕ Adding userChanged event');
-          add(AuthEvent.userChanged(user));
-        } else {
-          _debugLog('➖ Adding signedOut event');
-          add(const AuthEvent.signedOut());
-        }
+      if (isClosed) return;
+
+      final snapshot =
+          user == null
+              ? 'signed_out'
+              : '${user.id}:${user.accountType ?? ''}:${user.updatedAt?.millisecondsSinceEpoch ?? 0}';
+
+      if (snapshot == _lastAuthSnapshot) {
+        return;
+      }
+      _lastAuthSnapshot = snapshot;
+
+      if (user != null) {
+        add(AuthEvent.userChanged(user));
+      } else {
+        add(const AuthEvent.signedOut());
       }
     });
 
@@ -174,13 +181,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onSignInWithGoogle(Emitter<AuthState> emit) async {
     if (isClosed) return;
     emit(const AuthState.loading());
+
+    if (kIsWeb) {
+      if (!isClosed) {
+        emit(
+          const AuthState.error(
+            'Google Sign-In is not configured for web. Use email/password or configure web client ID.',
+          ),
+        );
+      }
+      return;
+    }
     
     // Keep reference to Google Sign In instance
     final googleSignIn = GoogleSignIn();
     
     try {
       // Sign out first to ensure fresh login
-      await googleSignIn.signOut();
+      try {
+        await googleSignIn.signOut();
+      } catch (_) {}
       
       // Get the Google user
       final googleUser = await googleSignIn.signIn();
@@ -290,18 +310,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onUserChanged(AuthUser user, Emitter<AuthState> emit) {
-    _debugLog('🔄 _onUserChanged called: ${user.email}, accountType: ${user.accountType}');
+    final shouldSkip = state.maybeWhen(
+      authenticated: (currentUser) =>
+          currentUser.id == user.id &&
+          (currentUser.accountType ?? '') == (user.accountType ?? ''),
+      orElse: () => false,
+    );
+
+    if (shouldSkip) {
+      return;
+    }
+
     if (!isClosed) {
-      _debugLog('✨ Emitting authenticated state');
       emit(AuthState.authenticated(user));
-    } else {
-      _debugLog('⚠️ Bloc is closed, cannot emit state');
     }
   }
 
   void _onSignedOut(Emitter<AuthState> emit) {
-    _debugLog('👋 _onSignedOut called');
-    if (!isClosed) {
+    if (!isClosed && state is! _Unauthenticated) {
       emit(const AuthState.unauthenticated());
     }
   }

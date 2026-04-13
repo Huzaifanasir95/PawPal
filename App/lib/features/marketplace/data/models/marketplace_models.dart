@@ -254,7 +254,7 @@ class CreateProductRequest {
   final double price;
   final String currency;
   final int stockQuantity;
-  final String? categoryId;
+  final String categoryId;
   final String? petType;
   final List<String> images;
 
@@ -264,7 +264,7 @@ class CreateProductRequest {
     required this.price,
     this.currency = 'PKR',
     required this.stockQuantity,
-    this.categoryId,
+    required this.categoryId,
     this.petType,
     this.images = const [],
   });
@@ -275,7 +275,7 @@ class CreateProductRequest {
     'price': price,
     'currency': currency,
     'stockQuantity': stockQuantity,
-    if (categoryId != null) 'categoryId': categoryId,
+    'categoryId': categoryId,
     if (petType != null) 'petType': petType,
     'images': images,
   };

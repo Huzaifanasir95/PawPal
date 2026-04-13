@@ -248,57 +248,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     setState(() => _isUpdating = true);
 
+    String? avatarUrl;
+    String? warningMessage;
+
     try {
-      String? avatarUrl;
-      
       // Upload image if selected
       if (_selectedImage != null) {
         try {
           final imageService = getIt<ImageService>();
           avatarUrl = await imageService.uploadImage(_selectedImage!);
           if (avatarUrl == null) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Image upload failed - please use a smaller image'),
-                backgroundColor: AppColors.error,
-              ),
-            );
-            setState(() => _isUpdating = false);
-            return;
+            warningMessage =
+                'Profile image could not be uploaded. Other profile changes will still be saved.';
           }
         } catch (e) {
           debugPrint('Failed to upload avatar: $e');
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Image upload error: $e'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-          setState(() => _isUpdating = false);
-          return;
+          warningMessage =
+              'Profile image upload failed. Other profile changes will still be saved.';
+          avatarUrl = null;
         }
       }
 
       if (!mounted) return;
       final profileRepo = ProfileRepository(context.read<AuthBloc>().authRepository);
 
-      await profileRepo.updateUserProfile(
-        displayName: _displayNameController.text.trim(),
-        avatarUrl: avatarUrl,
-      );
+      try {
+        await profileRepo.updateUserProfile(
+          displayName: _displayNameController.text.trim(),
+          avatarUrl: avatarUrl,
+        );
+      } catch (e) {
+        final errorText = e.toString().toLowerCase();
+        final isAvatarRelatedFailure =
+            avatarUrl != null &&
+            (errorText.contains('avatar') ||
+                errorText.contains('image') ||
+                errorText.contains('insert') ||
+                errorText.contains('upload'));
+
+        if (!isAvatarRelatedFailure) {
+          rethrow;
+        }
+
+        warningMessage =
+            'Profile details were saved, but profile image could not be stored.';
+
+        await profileRepo.updateUserProfile(
+          displayName: _displayNameController.text.trim(),
+        );
+      }
 
       // Reload profile
       await _loadUserProfile();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully!'),
-          backgroundColor: AppColors.success,
-        ),
-      );
+
+      if (warningMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(warningMessage),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
       
       setState(() {
         _selectedImage = null;

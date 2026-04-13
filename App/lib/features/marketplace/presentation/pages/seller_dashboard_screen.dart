@@ -1118,7 +1118,11 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
       text: product?.images.join(', ') ?? '',
     );
 
-    String? selectedCategoryId = product?.categoryId;
+    String? selectedCategoryId;
+    if (product?.categoryId != null &&
+        _categories.any((category) => category.id == product!.categoryId)) {
+      selectedCategoryId = product!.categoryId;
+    }
     String? selectedPetType = product?.petType;
     bool isActive = product?.isActive ?? true;
     List<XFile> selectedLocalImages = [];
@@ -1162,12 +1166,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                       DropdownButtonFormField<String?>(
                         initialValue: selectedCategoryId,
                         isExpanded: true,
-                        decoration: _dialogDecoration('Category (optional)'),
+                        decoration: _dialogDecoration('Category *'),
                         items: [
-                          const DropdownMenuItem<String?>(
-                            value: null,
-                            child: Text('No category'),
-                          ),
                           ..._categories.map(
                             (category) => DropdownMenuItem<String?>(
                               value: category.id,
@@ -1359,6 +1359,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                             final stock = int.tryParse(
                               stockController.text.trim(),
                             );
+                            final selectedCategory =
+                                selectedCategoryId?.trim() ?? '';
 
                             if (name.isEmpty ||
                                 description.isEmpty ||
@@ -1366,6 +1368,30 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                                 stock == null) {
                               _showSnack(
                                 'Please fill all required fields',
+                                isError: true,
+                              );
+                              return;
+                            }
+
+                            if (price <= 0) {
+                              _showSnack(
+                                'Price must be greater than 0',
+                                isError: true,
+                              );
+                              return;
+                            }
+
+                            if (stock < 0) {
+                              _showSnack(
+                                'Stock quantity cannot be negative',
+                                isError: true,
+                              );
+                              return;
+                            }
+
+                            if (selectedCategory.isEmpty) {
+                              _showSnack(
+                                'Please select a product category',
                                 isError: true,
                               );
                               return;
@@ -1411,7 +1437,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                                     description: description,
                                     price: price,
                                     stockQuantity: stock,
-                                    categoryId: selectedCategoryId,
+                                    categoryId: selectedCategory,
                                     petType: selectedPetType,
                                     images: images,
                                   ),

@@ -46,6 +46,7 @@ func main() {
 		{"005 - Marketplace", "internal/database/migrations/005_marketplace.sql"},
 		{"006 - Community Hub", "internal/database/migrations/006_community_hub.sql"},
 		{"007 - Caregiver System", "internal/database/migrations/007_caregiver_system.sql"},
+		{"008 - User Roles", "internal/database/migrations/008_user_roles.sql"},
 	}
 
 	for _, m := range migrations {

@@ -63,12 +63,17 @@ func (h *AuthHandlers) SignIn(c *gin.Context) {
 	response, err := h.authService.SignIn(c.Request.Context(), &req)
 	if err != nil {
 		status := http.StatusInternalServerError
+		message := "Invalid email or password"
 		if err == services.ErrInvalidCredentials {
 			status = http.StatusUnauthorized
 		}
+		if err == services.ErrPasswordLoginUnavailable {
+			status = http.StatusUnauthorized
+			message = "This account uses Google sign-in. Use Google sign-in or reset password first"
+		}
 		c.JSON(status, models.AuthResponse{
 			Success: false,
-			Message: "Invalid email or password",
+			Message: message,
 		})
 		return
 	}
@@ -233,15 +238,7 @@ func (h *AuthHandlers) GetProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.GenericResponse{
 		Success: true,
-		Data: &models.UserProfile{
-			ID:          user.ID,
-			Email:       user.Email,
-			DisplayName: user.DisplayName,
-			AccountType: &user.AccountType,
-			AvatarURL:   user.AvatarURL,
-			CreatedAt:   user.CreatedAt,
-			UpdatedAt:   user.UpdatedAt,
-		},
+		Data:    h.buildUserProfile(c, user),
 	})
 }
 
@@ -280,6 +277,14 @@ func (h *AuthHandlers) UpdateProfile(c *gin.Context) {
 			})
 			return
 		}
+
+		if _, err := h.authService.AddUserRole(c.Request.Context(), user.ID, normalizedRole); err != nil {
+			c.JSON(http.StatusInternalServerError, models.GenericResponse{
+				Success: false,
+				Message: "Failed to assign account role",
+			})
+			return
+		}
 		user.AccountType = normalizedRole
 	}
 	if req.AvatarURL != nil {
@@ -297,15 +302,7 @@ func (h *AuthHandlers) UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, models.GenericResponse{
 		Success: true,
 		Message: "Profile updated successfully",
-		Data: &models.UserProfile{
-			ID:          user.ID,
-			Email:       user.Email,
-			DisplayName: user.DisplayName,
-			AccountType: &user.AccountType,
-			AvatarURL:   user.AvatarURL,
-			CreatedAt:   user.CreatedAt,
-			UpdatedAt:   user.UpdatedAt,
-		},
+		Data:    h.buildUserProfile(c, user),
 	})
 }
 
@@ -353,7 +350,15 @@ func (h *AuthHandlers) SetUserRole(c *gin.Context) {
 	}
 
 	// Update user role
-	if err := h.authService.SetUserRole(c.Request.Context(), user.ID, normalizedRole); err != nil {
+	if _, err := h.authService.AddUserRole(c.Request.Context(), user.ID, normalizedRole); err != nil {
+		c.JSON(http.StatusInternalServerError, models.GenericResponse{
+			Success: false,
+			Message: "Failed to assign user role",
+		})
+		return
+	}
+
+	if _, err := h.authService.SwitchActiveRole(c.Request.Context(), user.ID, normalizedRole); err != nil {
 		c.JSON(http.StatusInternalServerError, models.GenericResponse{
 			Success: false,
 			Message: "Failed to set user role",
@@ -365,10 +370,170 @@ func (h *AuthHandlers) SetUserRole(c *gin.Context) {
 		Success: true,
 		Message: "User role set successfully",
 		Data: gin.H{
-			"userId": user.ID,
-			"role":   normalizedRole,
+			"userId":     user.ID,
+			"role":       normalizedRole,
+			"activeRole": normalizedRole,
 		},
 	})
+}
+
+// GetUserRoles returns all assigned roles for the authenticated user.
+func (h *AuthHandlers) GetUserRoles(c *gin.Context) {
+	userID := parseUUID(c.MustGet("userID").(string))
+
+	user, err := h.authService.GetUserByID(c.Request.Context(), userID)
+	if err != nil || user == nil {
+		c.JSON(http.StatusNotFound, models.GenericResponse{
+			Success: false,
+			Message: "User not found",
+		})
+		return
+	}
+
+	roles, err := h.authService.GetUserRoles(c.Request.Context(), user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.GenericResponse{
+			Success: false,
+			Message: "Failed to load user roles",
+		})
+		return
+	}
+
+	activeRole := normalizeAccountType(user.AccountType)
+	if activeRole == "" {
+		activeRole = "pet_owner"
+	}
+
+	c.JSON(http.StatusOK, models.GenericResponse{
+		Success: true,
+		Data: gin.H{
+			"userId":     user.ID,
+			"roles":      roles,
+			"activeRole": activeRole,
+		},
+	})
+}
+
+// AddUserRole assigns an additional role to the authenticated user.
+func (h *AuthHandlers) AddUserRole(c *gin.Context) {
+	userID := parseUUID(c.MustGet("userID").(string))
+
+	var req models.AddRoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.GenericResponse{
+			Success: false,
+			Message: "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	normalizedRole := normalizeAccountType(req.Role)
+	if normalizedRole == "" {
+		c.JSON(http.StatusBadRequest, models.GenericResponse{
+			Success: false,
+			Message: "Invalid role. Must be one of: pet_owner, vet, seller, caregiver",
+		})
+		return
+	}
+
+	roles, err := h.authService.AddUserRole(c.Request.Context(), userID, normalizedRole)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.GenericResponse{
+			Success: false,
+			Message: "Failed to add role: " + err.Error(),
+		})
+		return
+	}
+
+	user, _ := h.authService.GetUserByID(c.Request.Context(), userID)
+	activeRole := "pet_owner"
+	if user != nil {
+		if normalized := normalizeAccountType(user.AccountType); normalized != "" {
+			activeRole = normalized
+		}
+	}
+
+	c.JSON(http.StatusOK, models.GenericResponse{
+		Success: true,
+		Message: "Role added successfully",
+		Data: gin.H{
+			"roles":      roles,
+			"activeRole": activeRole,
+		},
+	})
+}
+
+// SwitchActiveRole switches the user's active role after backend validation.
+func (h *AuthHandlers) SwitchActiveRole(c *gin.Context) {
+	userID := parseUUID(c.MustGet("userID").(string))
+
+	var req models.SwitchRoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.GenericResponse{
+			Success: false,
+			Message: "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	normalizedRole := normalizeAccountType(req.Role)
+	if normalizedRole == "" {
+		c.JSON(http.StatusBadRequest, models.GenericResponse{
+			Success: false,
+			Message: "Invalid role. Must be one of: pet_owner, vet, seller, caregiver",
+		})
+		return
+	}
+
+	roles, err := h.authService.SwitchActiveRole(c.Request.Context(), userID, normalizedRole)
+	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "not assigned") {
+			c.JSON(http.StatusForbidden, models.GenericResponse{
+				Success: false,
+				Message: "Role is not assigned to this user",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, models.GenericResponse{
+			Success: false,
+			Message: "Failed to switch role",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.GenericResponse{
+		Success: true,
+		Message: "Active role switched",
+		Data: gin.H{
+			"roles":      roles,
+			"activeRole": normalizedRole,
+		},
+	})
+}
+
+func (h *AuthHandlers) buildUserProfile(c *gin.Context, user *models.User) *models.UserProfile {
+	roles, err := h.authService.GetUserRoles(c.Request.Context(), user.ID)
+	if err != nil || len(roles) == 0 {
+		roles = []string{"pet_owner"}
+	}
+
+	activeRole := normalizeAccountType(user.AccountType)
+	if activeRole == "" {
+		activeRole = "pet_owner"
+	}
+
+	return &models.UserProfile{
+		ID:          user.ID,
+		Email:       user.Email,
+		DisplayName: user.DisplayName,
+		AccountType: &activeRole,
+		Roles:       roles,
+		ActiveRole:  &activeRole,
+		AvatarURL:   user.AvatarURL,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+	}
 }
 
 // normalizeAccountType converts supported role/account aliases into canonical values.

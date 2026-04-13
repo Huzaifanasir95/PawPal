@@ -2,10 +2,14 @@ package repositories
 
 import (
 	"context"
+	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"pawpal-backend/internal/models"
@@ -146,20 +150,154 @@ func (r *UserRepositoryPG) Delete(ctx context.Context, id uuid.UUID) error {
 
 // SetUserRole updates account_type and keeps legacy user_role in sync when possible.
 func (r *UserRepositoryPG) SetUserRole(ctx context.Context, userID uuid.UUID, role string) error {
+	normalizedRole := normalizeAccountRole(role)
+	if normalizedRole == "" {
+		return fmt.Errorf("invalid role: %s", role)
+	}
+
+	if err := r.AddUserRole(ctx, userID, normalizedRole); err != nil && !isUndefinedTableError(err) {
+		return err
+	}
+
 	query := `
 		UPDATE users
 		SET
 			account_type = $2,
 			user_role = CASE
-				WHEN $2 = 'pet_owner' OR $2 = 'petowner' THEN 'petowner'::user_role
-				WHEN $2 = 'vet' THEN 'vet'::user_role
-				WHEN $2 = 'admin' THEN 'admin'::user_role
+				WHEN $2 = 'pet_owner' THEN 'petowner'
+				WHEN $2 = 'vet' THEN 'vet'
 				ELSE user_role
 			END,
 			updated_at = $3
 		WHERE id = $1`
-	_, err := r.db.Exec(ctx, query, userID, role, time.Now())
+	_, err := r.db.Exec(ctx, query, userID, normalizedRole, time.Now())
 	return err
+}
+
+// AddUserRole adds a role assignment to the user without changing active role.
+func (r *UserRepositoryPG) AddUserRole(ctx context.Context, userID uuid.UUID, role string) error {
+	normalizedRole := normalizeAccountRole(role)
+	if normalizedRole == "" {
+		return fmt.Errorf("invalid role: %s", role)
+	}
+
+	query := `
+		INSERT INTO user_roles (id, user_id, role, created_at)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (user_id, role) DO NOTHING`
+
+	_, err := r.db.Exec(ctx, query, uuid.New(), userID, normalizedRole, time.Now())
+	return err
+}
+
+// GetUserRoles returns all roles assigned to a user.
+func (r *UserRepositoryPG) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	query := `SELECT role FROM user_roles WHERE user_id = $1`
+	rows, err := r.db.Query(ctx, query, userID)
+	if err != nil {
+		if isUndefinedTableError(err) {
+			return r.getLegacyUserRoles(ctx, userID)
+		}
+		return nil, err
+	}
+	defer rows.Close()
+
+	roles := make([]string, 0)
+	for rows.Next() {
+		var role string
+		if err := rows.Scan(&role); err != nil {
+			return nil, err
+		}
+		normalized := normalizeAccountRole(role)
+		if normalized != "" {
+			roles = append(roles, normalized)
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	roles = uniqueSortedRoles(roles)
+	if len(roles) > 0 {
+		return roles, nil
+	}
+
+	legacyRoles, err := r.getLegacyUserRoles(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, role := range legacyRoles {
+		_ = r.AddUserRole(ctx, userID, role)
+	}
+
+	return legacyRoles, nil
+}
+
+func (r *UserRepositoryPG) getLegacyUserRoles(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	query := `SELECT account_type FROM users WHERE id = $1`
+	var accountType string
+
+	err := r.db.QueryRow(ctx, query, userID).Scan(&accountType)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return []string{"pet_owner"}, nil
+		}
+		return nil, err
+	}
+
+	normalized := normalizeAccountRole(accountType)
+	if normalized == "" {
+		normalized = "pet_owner"
+	}
+
+	return []string{normalized}, nil
+}
+
+func uniqueSortedRoles(roles []string) []string {
+	seen := make(map[string]struct{}, len(roles))
+	unique := make([]string, 0, len(roles))
+
+	for _, role := range roles {
+		if role == "" {
+			continue
+		}
+		if _, exists := seen[role]; exists {
+			continue
+		}
+		seen[role] = struct{}{}
+		unique = append(unique, role)
+	}
+
+	if len(unique) == 0 {
+		return []string{"pet_owner"}
+	}
+
+	sort.Strings(unique)
+	return unique
+}
+
+func normalizeAccountRole(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "pet_owner", "petowner", "pet-owner", "owner":
+		return "pet_owner"
+	case "vet", "veterinarian", "veterinary":
+		return "vet"
+	case "seller", "vendor", "merchant", "shop_owner", "shopowner":
+		return "seller"
+	case "caregiver", "care_giver", "pet_caregiver":
+		return "caregiver"
+	case "admin":
+		return "admin"
+	default:
+		return ""
+	}
+}
+
+func isUndefinedTableError(err error) bool {
+	pgErr, ok := err.(*pgconn.PgError)
+	return ok && pgErr.Code == "42P01"
 }
 
 // CreateRefreshToken creates a new refresh token

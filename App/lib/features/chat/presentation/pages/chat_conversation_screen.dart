@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/chat_cache_service.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/services/websocket_service.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
@@ -33,6 +34,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   final _wsService = WebSocketService();
+  final _chatCacheService = ChatCacheService();
   StreamSubscription? _wsMessageSubscription;
   StreamSubscription? _wsConnectionSubscription;
   Timer? _sendTimeoutTimer;
@@ -61,8 +63,24 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       );
     }
     
+    _hydrateCachedConversation();
     _connectWebSocket();
     context.read<ChatBloc>().add(ChatEvent.loadChat(widget.chatId));
+  }
+
+  Future<void> _hydrateCachedConversation() async {
+    final cachedThread = await _chatCacheService.readThread(widget.chatId);
+    if (!mounted || cachedThread == null) {
+      return;
+    }
+
+    setState(() {
+      _lastChat = cachedThread.chat;
+      _lastMessages = cachedThread.messages;
+      _isLoadingMessages = false;
+    });
+
+    _scrollToBottom();
   }
 
   void _connectWebSocket() async {
@@ -101,6 +119,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             _lastMessages = [..._lastMessages, newMessage];
           }
         });
+
+        _persistConversationCache();
         
         _scrollToBottom();
       }
@@ -159,6 +179,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       _lastMessages = [..._lastMessages, tempMessage];
     });
 
+    _persistConversationCache();
+
     _messageController.clear();
 
     _sendTimeoutTimer = Timer(const Duration(seconds: 15), () {
@@ -208,6 +230,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     _pendingTempMessageId = null;
     _pendingMessageContent = null;
+  }
+
+  Future<void> _persistConversationCache() async {
+    final chat = _lastChat;
+    if (chat == null) {
+      return;
+    }
+
+    await _chatCacheService.writeThread(chat, _lastMessages);
   }
 
   void _restoreFailedDraft() {
@@ -288,6 +319,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 _isSending = false;
                 _replacePendingMessage(message);
               });
+              _persistConversationCache();
               _scrollToBottom();
             },
             chatLoaded: (chat, messages, hasMore, currentPage) {
@@ -309,6 +341,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 _isSending = false;
                 _isLoadingMessages = false;
               });
+              _persistConversationCache();
               _scrollToBottom();
             },
             orElse: () {},

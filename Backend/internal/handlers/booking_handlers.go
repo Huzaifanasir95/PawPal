@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"pawpal-backend/internal/models"
@@ -62,20 +64,34 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		return
 	}
 
-	// Parse datetimes
-	startDatetime, err := time.Parse(time.RFC3339, req.StartDatetime)
+	// Parse datetimes (accept strict RFC3339 plus legacy ISO strings without timezone)
+	startDatetime, err := parseBookingDatetime(req.StartDatetime)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start datetime format"})
 		return
 	}
-	endDatetime, err := time.Parse(time.RFC3339, req.EndDatetime)
+	endDatetime, err := parseBookingDatetime(req.EndDatetime)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end datetime format"})
 		return
 	}
 
-	if endDatetime.Before(startDatetime) {
+	startDatetime = startDatetime.UTC()
+	endDatetime = endDatetime.UTC()
+
+	if !endDatetime.After(startDatetime) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "End time must be after start time"})
+		return
+	}
+
+	if startDatetime.Before(time.Now().UTC().Add(5 * time.Minute)) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Booking start time must be in the future"})
+		return
+	}
+
+	serviceAddress := sanitizeOptionalText(req.ServiceAddress)
+	if req.ServiceLocationType == "owner_home" && serviceAddress == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Service address is required for owner_home bookings"})
 		return
 	}
 
@@ -134,10 +150,10 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		StartDatetime:         startDatetime,
 		EndDatetime:           endDatetime,
 		ServiceLocationType:   req.ServiceLocationType,
-		ServiceAddress:        req.ServiceAddress,
+		ServiceAddress:        serviceAddress,
 		ServiceLatitude:       req.ServiceLatitude,
 		ServiceLongitude:      req.ServiceLongitude,
-		SpecialInstructions:   req.SpecialInstructions,
+		SpecialInstructions:   sanitizeOptionalText(req.SpecialInstructions),
 		EmergencyContactName:  req.EmergencyContactName,
 		EmergencyContactPhone: req.EmergencyContactPhone,
 		BaseAmount:            baseAmount,
@@ -154,6 +170,40 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"booking": booking})
+}
+
+func parseBookingDatetime(raw string) (time.Time, error) {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return time.Time{}, fmt.Errorf("datetime is required")
+	}
+
+	withTimezoneLayouts := []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+	}
+
+	for _, layout := range withTimezoneLayouts {
+		parsed, err := time.Parse(layout, value)
+		if err == nil {
+			return parsed, nil
+		}
+	}
+
+	withoutTimezoneLayouts := []string{
+		"2006-01-02T15:04:05.999999999",
+		"2006-01-02T15:04:05",
+		"2006-01-02T15:04",
+	}
+
+	for _, layout := range withoutTimezoneLayouts {
+		parsed, err := time.ParseInLocation(layout, value, time.Local)
+		if err == nil {
+			return parsed, nil
+		}
+	}
+
+	return time.Time{}, fmt.Errorf("invalid datetime format")
 }
 
 // GetBooking returns a booking by ID

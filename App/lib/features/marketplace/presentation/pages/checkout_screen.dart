@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../data/models/marketplace_models.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/cart_state.dart';
@@ -37,15 +36,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6F2),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: const Color(0xFF191D21),
+            color: colorScheme.onSurface,
             size: 20.sp,
           ),
           onPressed: () => Navigator.pop(context),
@@ -55,7 +57,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           style: GoogleFonts.mulish(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF191D21),
+            color: colorScheme.onSurface,
           ),
         ),
       ),
@@ -68,7 +70,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.error!, style: GoogleFonts.mulish()),
-                backgroundColor: const Color(0xFFEF4444),
+                backgroundColor: colorScheme.error,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.r),
@@ -103,10 +105,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               vertical: 9.h,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8F6F2),
+                              color: colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(10.r),
                               border: Border.all(
-                                color: AppColors.primary.withOpacity(0.16),
+                                color: colorScheme.outline.withValues(alpha: 0.24),
                               ),
                             ),
                             child: Row(
@@ -117,7 +119,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     style: GoogleFonts.mulish(
                                       fontSize: 13.sp,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary,
+                                      color: colorScheme.onSurface,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -129,7 +131,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     vertical: 3.h,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.22),
+                                    color: colorScheme.primary.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(12.r),
                                   ),
                                   child: Text(
@@ -137,7 +139,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     style: GoogleFonts.mulish(
                                       fontSize: 11.sp,
                                       fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF2C6E69),
+                                      color: colorScheme.primary,
                                     ),
                                   ),
                                 ),
@@ -147,7 +149,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   style: GoogleFonts.mulish(
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF191D21),
+                                    color: colorScheme.onSurface,
                                   ),
                                 ),
                               ],
@@ -155,7 +157,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                       ),
-                      Divider(color: const Color(0xFFE0E0E0), height: 1.h),
+                      Divider(color: colorScheme.outline.withValues(alpha: 0.35), height: 1.h),
                       SizedBox(height: 8.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -164,7 +166,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             'Subtotal',
                             style: GoogleFonts.mulish(
                               fontSize: 13.sp,
-                              color: AppColors.textSecondary,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                           Text(
@@ -172,7 +174,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             style: GoogleFonts.mulish(
                               fontSize: 13.sp,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF191D21),
+                              color: colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -185,7 +187,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             'Delivery',
                             style: GoogleFonts.mulish(
                               fontSize: 13.sp,
-                              color: AppColors.textSecondary,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                           Text(
@@ -193,7 +195,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             style: GoogleFonts.mulish(
                               fontSize: 13.sp,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF191D21),
+                              color: colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -207,7 +209,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             style: GoogleFonts.mulish(
                               fontSize: 15.sp,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF191D21),
+                              color: colorScheme.onSurface,
                             ),
                           ),
                           Text(
@@ -215,7 +217,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             style: GoogleFonts.mulish(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w800,
-                              color: const Color(0xFF2C6E69),
+                              color: colorScheme.primary,
                             ),
                           ),
                         ],
@@ -324,7 +326,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ? null
                                 : () => _placeOrder(context),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2C6E69),
+                          backgroundColor: colorScheme.primary,
                           padding: EdgeInsets.symmetric(vertical: 16.h),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14.r),
@@ -336,8 +338,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ? SizedBox(
                                   width: 22.w,
                                   height: 22.w,
-                                  child: const CircularProgressIndicator(
-                                    color: Colors.white,
+                                  child: CircularProgressIndicator(
+                                    color: colorScheme.onPrimary,
                                     strokeWidth: 2.5,
                                   ),
                                 )
@@ -346,14 +348,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   children: [
                                     Icon(
                                       Icons.check_circle_outline_rounded,
-                                      color: Colors.white,
+                                      color: colorScheme.onPrimary,
                                       size: 20.sp,
                                     ),
                                     SizedBox(width: 8.w),
                                     Text(
                                       'Place Order',
                                       style: GoogleFonts.mulish(
-                                        color: Colors.white,
+                                        color: colorScheme.onPrimary,
                                         fontWeight: FontWeight.w700,
                                         fontSize: 16.sp,
                                       ),
@@ -380,15 +382,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     String? subtitle,
     required Widget child,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.16)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: colorScheme.shadow.withValues(alpha: 0.07),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -399,14 +403,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, size: 18.sp, color: const Color(0xFF2C6E69)),
+              Icon(icon, size: 18.sp, color: colorScheme.primary),
               SizedBox(width: 8.w),
               Text(
                 title,
                 style: GoogleFonts.mulish(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF191D21),
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -417,7 +421,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               subtitle,
               style: GoogleFonts.mulish(
                 fontSize: 12.sp,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -429,13 +433,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildCheckoutHeader() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.24)),
       ),
       child: Row(
         children: [
@@ -443,13 +449,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             width: 36.w,
             height: 36.w,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.24),
+              color: colorScheme.primary.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: Icon(
               Icons.verified_user_outlined,
               size: 18.sp,
-              color: const Color(0xFF2C6E69),
+              color: colorScheme.primary,
             ),
           ),
           SizedBox(width: 10.w),
@@ -462,14 +468,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   style: GoogleFonts.mulish(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF191D21),
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   'Review your details and place order confidently',
                   style: GoogleFonts.mulish(
                     fontSize: 11.sp,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -487,6 +493,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
@@ -494,35 +502,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       validator: validator,
       style: GoogleFonts.mulish(
         fontSize: 14.sp,
-        color: const Color(0xFF191D21),
+        color: colorScheme.onSurface,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: GoogleFonts.mulish(
           fontSize: 13.sp,
-          color: AppColors.textSecondary,
+          color: colorScheme.onSurfaceVariant,
         ),
         filled: true,
-        fillColor: const Color(0xFFF8F6F2),
+        fillColor: colorScheme.surfaceContainerHighest,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.28), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: const BorderSide(color: Color(0xFF2C6E69), width: 1.5),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1),
+          borderSide: BorderSide(color: colorScheme.error, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+          borderSide: BorderSide(color: colorScheme.error, width: 1.5),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
       ),
@@ -536,6 +544,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     required IconData icon,
   }) {
     final selected = _selectedPayment == value;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () => setState(() => _selectedPayment = value),
       child: AnimatedContainer(
@@ -544,11 +554,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         decoration: BoxDecoration(
           color:
               selected
-                  ? const Color(0xFF2C6E69).withOpacity(0.08)
-                  : const Color(0xFFF8F6F2),
+                  ? colorScheme.primary.withValues(alpha: 0.1)
+                  : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
-            color: selected ? const Color(0xFF2C6E69) : const Color(0xFFE0E0E0),
+            color: selected
+                ? colorScheme.primary
+                : colorScheme.outline.withValues(alpha: 0.3),
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -560,14 +572,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               decoration: BoxDecoration(
                 color:
                     selected
-                        ? const Color(0xFF2C6E69)
-                        : const Color(0xFFE0E0E0),
+                        ? colorScheme.primary
+                        : colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(10.r),
               ),
               child: Icon(
                 icon,
                 size: 18.sp,
-                color: selected ? Colors.white : AppColors.textSecondary,
+                color: selected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
               ),
             ),
             SizedBox(width: 12.w),
@@ -580,14 +592,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     style: GoogleFonts.mulish(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF191D21),
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   Text(
                     subtitle,
                     style: GoogleFonts.mulish(
                       fontSize: 11.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -601,8 +613,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 border: Border.all(
                   color:
                       selected
-                          ? const Color(0xFF2C6E69)
-                          : const Color(0xFFCCCCCC),
+                          ? colorScheme.primary
+                          : colorScheme.outline,
                   width: 2,
                 ),
               ),
@@ -612,9 +624,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         child: Container(
                           width: 10.w,
                           height: 10.w,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Color(0xFF2C6E69),
+                            color: colorScheme.primary,
                           ),
                         ),
                       )
@@ -646,11 +658,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _showOrderSuccessDialog(BuildContext context, order) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder:
           (_) => Dialog(
+            backgroundColor: colorScheme.surface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24.r),
             ),
@@ -663,13 +678,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     width: 72.w,
                     height: 72.w,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.12),
+                      color: colorScheme.tertiary.withValues(alpha: 0.14),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.check_circle_rounded,
                       size: 40.sp,
-                      color: const Color(0xFF10B981),
+                      color: colorScheme.tertiary,
                     ),
                   ),
                   SizedBox(height: 16.h),
@@ -678,7 +693,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     style: GoogleFonts.mulish(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF191D21),
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   SizedBox(height: 8.h),
@@ -687,7 +702,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     textAlign: TextAlign.center,
                     style: GoogleFonts.mulish(
                       fontSize: 13.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                       height: 1.5,
                     ),
                   ),
@@ -702,7 +717,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             Navigator.pop(context); // close cart
                           },
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF2C6E69)),
+                            side: BorderSide(color: colorScheme.primary),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12.r),
                             ),
@@ -711,7 +726,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           child: Text(
                             'Continue',
                             style: GoogleFonts.mulish(
-                              color: const Color(0xFF2C6E69),
+                              color: colorScheme.primary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -732,7 +747,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2C6E69),
+                            backgroundColor: colorScheme.primary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12.r),
                             ),
@@ -742,7 +757,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           child: Text(
                             'My Orders',
                             style: GoogleFonts.mulish(
-                              color: Colors.white,
+                              color: colorScheme.onPrimary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),

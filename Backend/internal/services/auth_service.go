@@ -412,7 +412,36 @@ func (s *AuthService) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]str
 	}
 
 	if len(roles) == 0 {
+		user, userErr := s.userRepo.GetByID(ctx, userID)
+		if userErr != nil {
+			return nil, userErr
+		}
+
+		if user != nil {
+			if normalized := normalizeAccountType(user.AccountType); normalized != "" {
+				return []string{normalized}, nil
+			}
+		}
+
 		return []string{"pet_owner"}, nil
+	}
+
+	user, userErr := s.userRepo.GetByID(ctx, userID)
+	if userErr == nil && user != nil {
+		activeRole := normalizeAccountType(user.AccountType)
+		if activeRole != "" {
+			containsActive := false
+			for _, role := range roles {
+				if normalizeAccountType(role) == activeRole {
+					containsActive = true
+					break
+				}
+			}
+
+			if !containsActive {
+				roles = append(roles, activeRole)
+			}
+		}
 	}
 
 	return roles, nil

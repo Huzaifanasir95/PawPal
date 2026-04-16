@@ -18,17 +18,36 @@ class VetAppointmentRepository {
         data: request.toJson(),
       );
 
-      if (response.data['success'] != true) {
+      final payload = response.data;
+      if (payload is! Map<String, dynamic>) {
+        throw Exception('Unexpected server response while creating appointment');
+      }
+
+      final success = payload['success'];
+      if (success is bool && !success) {
         throw Exception(
-          response.data['error'] ?? 'Failed to create appointment',
+          (payload['error'] ?? payload['message'] ?? 'Failed to create appointment')
+              .toString(),
         );
       }
 
+      final nestedData = payload['data'];
+      final dynamic appointmentJson =
+          payload['appointment'] ??
+          (nestedData is Map ? nestedData['appointment'] : null) ??
+          (nestedData is Map ? nestedData : null);
+
+      if (appointmentJson is! Map) {
+        throw Exception('Appointment was created but response payload was incomplete');
+      }
+
       return VetAppointment.fromJson(
-        response.data['appointment'] as Map<String, dynamic>,
+        Map<String, dynamic>.from(appointmentJson as Map),
       );
     } on DioException catch (e) {
       throw _handleError(e, 'Failed to create appointment');
+    } catch (e) {
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 
@@ -52,20 +71,29 @@ class VetAppointmentRepository {
         queryParameters: query,
       );
 
-      if (response.data['success'] != true) {
+      final payload = response.data;
+      if (payload is! Map<String, dynamic>) {
+        throw Exception('Unexpected server response while loading appointments');
+      }
+
+      if (payload['success'] != true) {
         throw Exception(
-          response.data['error'] ?? 'Failed to fetch appointments',
+          payload['error'] ?? 'Failed to fetch appointments',
         );
       }
 
       final items =
-          (response.data['appointments'] as List? ?? [])
+          (payload['appointments'] as List? ?? [])
               .map(
-                (item) => VetAppointment.fromJson(item as Map<String, dynamic>),
+                (item) => VetAppointment.fromJson(
+                  Map<String, dynamic>.from(item as Map),
+                ),
               )
               .toList();
 
-      final pagination = (response.data['pagination'] as Map?) ?? const {};
+      final pagination =
+          (payload['pagination'] as Map?)?.cast<String, dynamic>() ??
+          const <String, dynamic>{};
 
       return (
         appointments: items,
@@ -75,6 +103,8 @@ class VetAppointmentRepository {
       );
     } on DioException catch (e) {
       throw _handleError(e, 'Failed to fetch appointments');
+    } catch (e) {
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 

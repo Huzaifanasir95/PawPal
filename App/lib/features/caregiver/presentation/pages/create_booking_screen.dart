@@ -291,8 +291,54 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         SizedBox(height: 16.h),
         _buildTimeSelectors(),
         SizedBox(height: 16.h),
+        _buildDateTimeValidationHint(),
+        SizedBox(height: 12.h),
         _buildAvailabilityHint(),
       ],
+    );
+  }
+
+  Widget _buildDateTimeValidationHint() {
+    final start = _buildStartDateTime();
+    final end = _buildEndDateTime();
+    final nowCutoff = DateTime.now().add(const Duration(minutes: 5));
+
+    String? message;
+    Color tone = Colors.green;
+    IconData icon = Icons.check_circle;
+
+    if (!end.isAfter(start)) {
+      message = 'End time must be after the start time.';
+      tone = Colors.orange;
+      icon = Icons.warning_amber_rounded;
+    } else if (!start.isAfter(nowCutoff)) {
+      message = 'Start time should be at least 5 minutes in the future.';
+      tone = Colors.orange;
+      icon = Icons.schedule_rounded;
+    } else {
+      message = 'Selected time range is valid.';
+    }
+
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: tone.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: tone, size: 20.w),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: tone.withValues(alpha: 0.92),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -868,14 +914,45 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
       case 0:
         return _selectedService != null;
       case 1:
-        return true;
+        return _hasValidDateTimeRange() && _isStartTimeInFuture();
       case 2:
         return _selectedPetIds.isNotEmpty;
       case 3:
-        return _locationType == 'caregiver_home' || _addressController.text.isNotEmpty;
+        return _locationType == 'caregiver_home' ||
+            _addressController.text.trim().isNotEmpty;
       default:
         return false;
     }
+  }
+
+  DateTime _buildStartDateTime() {
+    return DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+  }
+
+  DateTime _buildEndDateTime() {
+    return DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _endTime.hour,
+      _endTime.minute,
+    );
+  }
+
+  bool _hasValidDateTimeRange() {
+    return _buildEndDateTime().isAfter(_buildStartDateTime());
+  }
+
+  bool _isStartTimeInFuture() {
+    return _buildStartDateTime().isAfter(
+      DateTime.now().add(const Duration(minutes: 5)),
+    );
   }
 
   void _handleNext() {
@@ -923,36 +1000,66 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
   }
 
   Future<void> _submitBooking() async {
+    if (_selectedService == null) {
+      CustomSnackbar.showError(context, 'Please select a service first');
+      return;
+    }
+
+    if (_selectedPetIds.isEmpty) {
+      CustomSnackbar.showError(context, 'Please select at least one pet');
+      return;
+    }
+
+    if (_selectedPetIds.length > widget.caregiver.maxPetsAtOnce) {
+      CustomSnackbar.showError(
+        context,
+        'You can select up to ${widget.caregiver.maxPetsAtOnce} pets for this service',
+      );
+      return;
+    }
+
+    if (!_hasValidDateTimeRange()) {
+      CustomSnackbar.showError(
+        context,
+        'End time must be later than start time',
+      );
+      return;
+    }
+
+    if (!_isStartTimeInFuture()) {
+      CustomSnackbar.showError(
+        context,
+        'Please choose a start time at least 5 minutes in the future',
+      );
+      return;
+    }
+
+    final trimmedAddress = _addressController.text.trim();
+    if (_locationType == 'owner_home' && trimmedAddress.isEmpty) {
+      CustomSnackbar.showError(
+        context,
+        'Please enter your service address',
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
 
     try {
-      final startDatetime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _startTime.hour,
-        _startTime.minute,
-      );
-
-      final endDatetime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _endTime.hour,
-        _endTime.minute,
-      );
+      final startDatetime = _buildStartDateTime();
+      final endDatetime = _buildEndDateTime();
+      final trimmedInstructions = _instructionsController.text.trim();
 
       final request = CreateBookingRequest(
         caregiverId: widget.caregiver.id,
         serviceId: _selectedService!.id,
         petIds: _selectedPetIds,
-        startDatetime: startDatetime.toIso8601String(),
-        endDatetime: endDatetime.toIso8601String(),
+        startDatetime: startDatetime.toUtc().toIso8601String(),
+        endDatetime: endDatetime.toUtc().toIso8601String(),
         serviceLocationType: _locationType,
-        serviceAddress: _locationType == 'owner_home' ? _addressController.text : null,
-        specialInstructions: _instructionsController.text.isNotEmpty 
-            ? _instructionsController.text 
-            : null,
+        serviceAddress: _locationType == 'owner_home' ? trimmedAddress : null,
+        specialInstructions:
+            trimmedInstructions.isNotEmpty ? trimmedInstructions : null,
       );
 
       final booking = await _repository.createBooking(request);

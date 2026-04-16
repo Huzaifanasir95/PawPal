@@ -142,11 +142,6 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
       normalized.add(_normalizeAccountType(fallbackRole));
     }
 
-    if (!normalized.contains('pet_owner')) {
-      // Always keep pet owner eligible and discoverable in role management flows.
-      normalized.add('pet_owner');
-    }
-
     return normalized;
   }
 

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../data/models/breed_prediction_model.dart';
 import '../../data/services/breed_verification_service.dart';
 
@@ -71,12 +70,18 @@ class _PetIdentificationScanScreenState
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFE6EEF2),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Pet Identification'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        title: Text(
+          'Pet Identification',
+          style: TextStyle(color: colorScheme.onSurface),
+        ),
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: colorScheme.onSurface,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -88,15 +93,17 @@ class _PetIdentificationScanScreenState
                 width: double.infinity,
                 padding: EdgeInsets.all(14.w),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F6F8),
+                  color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(16.r),
-                  border: Border.all(color: const Color(0xFFBCD0D9)),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.28),
+                  ),
                 ),
                 child: Text(
                   'Scan a random pet image to identify breed. Result is temporary and will not be saved to your account or database.',
                   style: TextStyle(
                     fontSize: 12.sp,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                     height: 1.35,
                   ),
@@ -107,9 +114,11 @@ class _PetIdentificationScanScreenState
                 width: double.infinity,
                 height: 220.h,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(18.r),
-                  border: Border.all(color: const Color(0xFFCAD8DF)),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.28),
+                  ),
                 ),
                 child:
                     _selectedImage == null
@@ -119,14 +128,14 @@ class _PetIdentificationScanScreenState
                             Icon(
                               Icons.document_scanner_rounded,
                               size: 48.sp,
-                              color: AppColors.primary,
+                              color: colorScheme.primary,
                             ),
                             SizedBox(height: 8.h),
                             Text(
                               'No image selected yet',
                               style: TextStyle(
                                 fontSize: 13.sp,
-                                color: AppColors.textSecondary,
+                                color: colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -201,13 +210,13 @@ class _PetIdentificationScanScreenState
                 Center(
                   child: Column(
                     children: [
-                      const CircularProgressIndicator(),
+                      CircularProgressIndicator(color: colorScheme.primary),
                       SizedBox(height: 8.h),
                       Text(
                         'Analyzing pet breed...',
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -219,9 +228,11 @@ class _PetIdentificationScanScreenState
                   width: double.infinity,
                   padding: EdgeInsets.all(14.w),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(color: const Color(0xFFCAD8DF)),
+                    border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.28),
+                    ),
                   ),
                   child:
                       _scanResult!.success
@@ -232,7 +243,7 @@ class _PetIdentificationScanScreenState
                                 'Top Match: ${_scanResult!.predicted ?? 'Unknown'}',
                                 style: TextStyle(
                                   fontSize: 16.sp,
-                                  color: AppColors.textPrimary,
+                                  color: colorScheme.onSurface,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -241,7 +252,7 @@ class _PetIdentificationScanScreenState
                                 'Confidence: ${_percent(_scanResult!.confidence ?? 0)}',
                                 style: TextStyle(
                                   fontSize: 12.sp,
-                                  color: AppColors.textSecondary,
+                                  color: colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -258,7 +269,7 @@ class _PetIdentificationScanScreenState
                                           '${prediction.rank}. ${prediction.breed}',
                                           style: TextStyle(
                                             fontSize: 12.sp,
-                                            color: AppColors.textPrimary,
+                                            color: colorScheme.onSurface,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -267,7 +278,7 @@ class _PetIdentificationScanScreenState
                                         _percent(prediction.confidence),
                                         style: TextStyle(
                                           fontSize: 12.sp,
-                                          color: AppColors.primary,
+                                          color: colorScheme.primary,
                                           fontWeight: FontWeight.w700,
                                         ),
                                       ),
@@ -282,7 +293,7 @@ class _PetIdentificationScanScreenState
                                 'Unable to identify breed for this image.',
                             style: TextStyle(
                               fontSize: 12.sp,
-                              color: const Color(0xFFC62828),
+                              color: colorScheme.error,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

@@ -497,7 +497,24 @@ func (h *AuthHandlers) GetUserRoles(c *gin.Context) {
 
 	activeRole := normalizeAccountType(user.AccountType)
 	if activeRole == "" {
-		activeRole = "pet_owner"
+		if len(roles) > 0 {
+			activeRole = normalizeAccountType(roles[0])
+		}
+		if activeRole == "" {
+			activeRole = "pet_owner"
+		}
+	}
+
+	containsActive := false
+	for _, role := range roles {
+		if normalizeAccountType(role) == activeRole {
+			containsActive = true
+			break
+		}
+	}
+
+	if !containsActive {
+		roles = append(roles, activeRole)
 	}
 
 	c.JSON(http.StatusOK, models.GenericResponse{
@@ -609,14 +626,26 @@ func (h *AuthHandlers) SwitchActiveRole(c *gin.Context) {
 }
 
 func (h *AuthHandlers) buildUserProfile(c *gin.Context, user *models.User) *models.UserProfile {
-	roles, err := h.authService.GetUserRoles(c.Request.Context(), user.ID)
-	if err != nil || len(roles) == 0 {
-		roles = []string{"pet_owner"}
-	}
-
 	activeRole := normalizeAccountType(user.AccountType)
 	if activeRole == "" {
 		activeRole = "pet_owner"
+	}
+
+	roles, err := h.authService.GetUserRoles(c.Request.Context(), user.ID)
+	if err != nil || len(roles) == 0 {
+		roles = []string{activeRole}
+	}
+
+	containsActive := false
+	for _, role := range roles {
+		if normalizeAccountType(role) == activeRole {
+			containsActive = true
+			break
+		}
+	}
+
+	if !containsActive {
+		roles = append(roles, activeRole)
 	}
 
 	return &models.UserProfile{

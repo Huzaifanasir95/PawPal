@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:convert';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/api_client.dart';
 import '../cubit/marketplace_cubit.dart';
 import '../cubit/marketplace_state.dart';
@@ -65,23 +64,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Icon(
                     Icons.error_outline_rounded,
                     size: 48.sp,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                   SizedBox(height: 12.h),
                   Text(
                     state.error ?? 'Product not found',
-                    style: GoogleFonts.mulish(color: AppColors.textSecondary),
+                    style: GoogleFonts.mulish(color: colorScheme.onSurfaceVariant),
                   ),
                   SizedBox(height: 16.h),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: colorScheme.primary,
                     ),
                     child: Text(
                       'Go Back',
                       style: GoogleFonts.mulish(
-                        color: const Color(0xFF191D21),
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -103,15 +102,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               SliverAppBar(
                 expandedHeight: 320.h,
                 pinned: true,
-                backgroundColor: AppColors.primary,
+                backgroundColor: colorScheme.surface,
                 leading: Padding(
                   padding: EdgeInsets.all(8.w),
                   child: CircleAvatar(
-                    backgroundColor: Colors.white,
+                    backgroundColor: colorScheme.surface,
                     child: IconButton(
                       icon: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: const Color(0xFF191D21),
+                        color: colorScheme.onSurface,
                         size: 16.sp,
                       ),
                       onPressed: () => Navigator.pop(context),
@@ -183,16 +182,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             if (product.categoryName != null)
                               _buildChip(
                                 product.categoryName!,
-                                AppColors.primary.withOpacity(0.3),
-                                const Color(0xFF2C6E69),
+                                colorScheme.primary.withValues(alpha: 0.2),
+                                colorScheme.primary,
                               ),
                             if (product.petType != null) ...[
                               SizedBox(width: 8.w),
                               _buildChip(
                                 product.petType![0].toUpperCase() +
                                     product.petType!.substring(1),
-                                const Color(0xFFFFF3E0),
-                                const Color(0xFFE65100),
+                                colorScheme.secondaryContainer,
+                                colorScheme.onSecondaryContainer,
                               ),
                             ],
                           ],
@@ -207,7 +206,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             fontSize: 22.sp,
                             fontWeight: FontWeight.w800,
                             height: 1.25,
-                            color: const Color(0xFF191D21),
+                            color: colorScheme.onSurface,
                           ),
                         ),
 
@@ -219,10 +218,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             vertical: 10.h,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: colorScheme.surface,
                             borderRadius: BorderRadius.circular(14.r),
                             border: Border.all(
-                              color: AppColors.primary.withOpacity(0.28),
+                              color: colorScheme.outline.withValues(alpha: 0.28),
                             ),
                           ),
                           child: Row(
@@ -232,7 +231,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 style: GoogleFonts.mulish(
                                   fontSize: 12.sp,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               SizedBox(width: 8.w),
@@ -241,7 +240,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 style: GoogleFonts.mulish(
                                   fontSize: 22.sp,
                                   fontWeight: FontWeight.w900,
-                                  color: const Color(0xFF2C6E69),
+                                  color: colorScheme.primary,
                                 ),
                               ),
                             ],
@@ -272,27 +271,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                         // Seller
                         if (product.sellerName != null) ...[
-                          Divider(color: const Color(0xFFE0E0E0), height: 1.h),
+                          Divider(
+                            color: colorScheme.outline.withValues(alpha: 0.35),
+                            height: 1.h,
+                          ),
                           SizedBox(height: 16.h),
                           Container(
                             width: double.infinity,
                             padding: EdgeInsets.all(14.w),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(16.r),
                               border: Border.all(
-                                color: AppColors.primary.withOpacity(0.2),
+                                color: colorScheme.outline.withValues(alpha: 0.25),
                               ),
                             ),
                             child: Row(
                               children: [
                                 CircleAvatar(
                                   radius: 18.r,
-                                  backgroundColor: AppColors.primary,
+                                  backgroundColor: colorScheme.primary.withValues(alpha: 0.18),
                                   child: Icon(
                                     Icons.person_outline_rounded,
                                     size: 18.sp,
-                                    color: const Color(0xFF191D21),
+                                    color: colorScheme.primary,
                                   ),
                                 ),
                                 SizedBox(width: 12.w),
@@ -303,7 +305,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       'Seller',
                                       style: GoogleFonts.mulish(
                                         fontSize: 11.sp,
-                                        color: AppColors.textSecondary,
+                                        color: colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                     Text(
@@ -311,7 +313,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       style: GoogleFonts.mulish(
                                         fontSize: 14.sp,
                                         fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF191D21),
+                                        color: colorScheme.onSurface,
                                       ),
                                     ),
                                   ],
@@ -353,7 +355,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: colorScheme.shadow.withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -366,7 +368,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             // Quantity selector
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF3EFE8),
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Row(
@@ -384,7 +386,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       style: GoogleFonts.mulish(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF191D21),
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -410,7 +412,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           'Added to cart!',
                           style: GoogleFonts.mulish(),
                         ),
-                        backgroundColor: const Color(0xFF2C6E69),
+                        backgroundColor: colorScheme.tertiary,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.r),
@@ -437,7 +439,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           state.error!,
                           style: GoogleFonts.mulish(),
                         ),
-                        backgroundColor: const Color(0xFFEF4444),
+                        backgroundColor: colorScheme.error,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.r),
@@ -459,7 +461,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       backgroundColor:
                           inStock
                               ? colorScheme.primary
-                              : AppColors.textSecondary,
+                              : colorScheme.onSurfaceVariant,
                       padding: EdgeInsets.symmetric(vertical: 14.h),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14.r),
@@ -471,8 +473,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ? SizedBox(
                               width: 20.w,
                               height: 20.w,
-                              child: const CircularProgressIndicator(
-                                color: Colors.white,
+                              child: CircularProgressIndicator(
+                                color: colorScheme.onPrimary,
                                 strokeWidth: 2,
                               ),
                             )
@@ -481,7 +483,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               children: [
                                 Icon(
                                   Icons.shopping_cart_outlined,
-                                  color: Colors.white,
+                                  color: colorScheme.onPrimary,
                                   size: 18.sp,
                                 ),
                                 SizedBox(width: 8.w),
@@ -490,7 +492,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       ? 'Your Listing'
                                       : (inStock ? 'Add to Cart' : 'Out of Stock'),
                                   style: GoogleFonts.mulish(
-                                    color: Colors.white,
+                                    color: colorScheme.onPrimary,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 15.sp,
                                   ),
@@ -530,6 +532,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<void> _showReviewDialog(Product product) async {
+    final colorScheme = Theme.of(context).colorScheme;
     final currentUserId = ApiClient.instance.userId;
     if (currentUserId != null && currentUserId == product.sellerId) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -538,7 +541,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             'You cannot review your own product.',
             style: GoogleFonts.mulish(),
           ),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -566,7 +569,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     'Reviews can only be submitted after delivery.',
                     style: GoogleFonts.mulish(
                       fontSize: 12.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(height: 12.h),
@@ -580,7 +583,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         },
                         icon: Icon(
                           index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                          color: const Color(0xFFFFA726),
+                          color: colorScheme.secondary,
                         ),
                       ),
                     ),
@@ -628,7 +631,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   e.toString().replaceAll('Exception: ', ''),
                                   style: GoogleFonts.mulish(),
                                 ),
-                                backgroundColor: const Color(0xFFEF4444),
+                                backgroundColor: colorScheme.error,
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -659,7 +662,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Review submitted!', style: GoogleFonts.mulish()),
-          backgroundColor: const Color(0xFF2C6E69),
+          backgroundColor: colorScheme.tertiary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -671,6 +674,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildReviewsSection(Product product) {
+    final colorScheme = Theme.of(context).colorScheme;
     final currentUserId = ApiClient.instance.userId;
     final canAttemptReview = currentUserId == null || currentUserId != product.sellerId;
 
@@ -678,23 +682,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.reviews_outlined, size: 18.sp, color: const Color(0xFF2C6E69)),
+              Icon(Icons.reviews_outlined, size: 18.sp, color: colorScheme.primary),
               SizedBox(width: 8.w),
               Text(
                 'Customer Reviews',
                 style: GoogleFonts.mulish(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF191D21),
+                  color: colorScheme.onSurface,
                 ),
               ),
               const Spacer(),
@@ -712,7 +716,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           if (_isLoadingReviews)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 12.h),
-              child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              child: Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: colorScheme.primary,
+                ),
+              ),
             )
           else if (_reviewsError != null)
             Padding(
@@ -721,7 +730,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 _reviewsError!,
                 style: GoogleFonts.mulish(
                   fontSize: 12.sp,
-                  color: const Color(0xFFEF4444),
+                  color: colorScheme.error,
                 ),
               ),
             )
@@ -732,7 +741,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 'No reviews yet. Purchase and receive the product to leave the first review.',
                 style: GoogleFonts.mulish(
                   fontSize: 13.sp,
-                  color: AppColors.textSecondary,
+                  color: colorScheme.onSurfaceVariant,
                   height: 1.4,
                 ),
               ),
@@ -747,11 +756,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildReviewTile(ProductReview review) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: EdgeInsets.only(top: 10.h),
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F6F2),
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Column(
@@ -761,7 +772,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             children: [
               CircleAvatar(
                 radius: 14.r,
-                backgroundColor: AppColors.primary.withOpacity(0.25),
+                backgroundColor: colorScheme.primary.withValues(alpha: 0.2),
                 child: Text(
                   (review.userName ?? 'P').isNotEmpty
                       ? (review.userName ?? 'P')[0].toUpperCase()
@@ -769,7 +780,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   style: GoogleFonts.mulish(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF191D21),
+                    color: colorScheme.primary,
                   ),
                 ),
               ),
@@ -780,7 +791,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   style: GoogleFonts.mulish(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF191D21),
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -788,7 +799,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 _formatReviewDate(review.createdAt),
                 style: GoogleFonts.mulish(
                   fontSize: 11.sp,
-                  color: AppColors.textSecondary,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -800,7 +811,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               (index) => Icon(
                 index < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
                 size: 16.sp,
-                color: const Color(0xFFFFA726),
+                color: colorScheme.secondary,
               ),
             ),
           ),
@@ -810,7 +821,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               review.comment!,
               style: GoogleFonts.mulish(
                 fontSize: 13.sp,
-                color: const Color(0xFF4B5563),
+                color: colorScheme.onSurfaceVariant,
                 height: 1.45,
               ),
             ),
@@ -831,13 +842,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _quantityButton(IconData icon, VoidCallback onTap) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 36.w,
         height: 36.w,
         alignment: Alignment.center,
-        child: Icon(icon, size: 18.sp, color: const Color(0xFF191D21)),
+        child: Icon(icon, size: 18.sp, color: colorScheme.onSurface),
       ),
     );
   }
@@ -870,7 +883,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         Expanded(
           child: _buildMetaCard(
             icon: Icons.star_rounded,
-            iconColor: const Color(0xFFFFA726),
+            iconColor: Theme.of(context).colorScheme.secondary,
             title: rating.toStringAsFixed(1),
             subtitle: '$totalReviews reviews',
           ),
@@ -879,7 +892,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         Expanded(
           child: _buildMetaCard(
             icon: Icons.local_shipping_outlined,
-            iconColor: const Color(0xFF2C6E69),
+            iconColor: Theme.of(context).colorScheme.primary,
             title: '$totalSold sold',
             subtitle: 'Completed orders',
           ),
@@ -894,12 +907,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     required String title,
     required String subtitle,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 11.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
@@ -916,7 +931,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   style: GoogleFonts.mulish(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF191D21),
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 SizedBox(height: 1.h),
@@ -926,7 +941,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.mulish(
                     fontSize: 11.sp,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -938,15 +953,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildDescriptionSection(String description) {
+    final colorScheme = Theme.of(context).colorScheme;
     final highlights = _buildDescriptionHighlights(description);
 
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -956,7 +972,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               Icon(
                 Icons.description_outlined,
                 size: 18.sp,
-                color: const Color(0xFF2C6E69),
+                color: colorScheme.primary,
               ),
               SizedBox(width: 8.w),
               Text(
@@ -964,7 +980,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 style: GoogleFonts.mulish(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF191D21),
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -979,7 +995,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Icon(
                     Icons.check_circle_rounded,
                     size: 15.sp,
-                    color: const Color(0xFF10B981),
+                    color: colorScheme.tertiary,
                   ),
                   SizedBox(width: 8.w),
                   Expanded(
@@ -987,7 +1003,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       item,
                       style: GoogleFonts.mulish(
                         fontSize: 13.sp,
-                        color: const Color(0xFF4B5563),
+                        color: colorScheme.onSurfaceVariant,
                         height: 1.5,
                       ),
                     ),
@@ -1002,7 +1018,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             style: GoogleFonts.mulish(
               fontSize: 14.sp,
               height: 1.65,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -1011,20 +1027,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildStockPill(int stockQuantity) {
+    final colorScheme = Theme.of(context).colorScheme;
     final inStock = stockQuantity > 0;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 9.h),
       decoration: BoxDecoration(
         color:
             inStock
-                ? const Color(0xFF10B981).withOpacity(0.1)
-                : const Color(0xFFEF4444).withOpacity(0.1),
+                ? colorScheme.tertiary.withValues(alpha: 0.1)
+                : colorScheme.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color:
               inStock
-                  ? const Color(0xFF10B981).withOpacity(0.35)
-                  : const Color(0xFFEF4444).withOpacity(0.35),
+                  ? colorScheme.tertiary.withValues(alpha: 0.35)
+                  : colorScheme.error.withValues(alpha: 0.35),
         ),
       ),
       child: Row(
@@ -1033,7 +1050,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           Icon(
             inStock ? Icons.check_circle_rounded : Icons.cancel_rounded,
             size: 16.sp,
-            color: inStock ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+            color: inStock ? colorScheme.tertiary : colorScheme.error,
           ),
           SizedBox(width: 7.w),
           Text(
@@ -1042,7 +1059,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               fontSize: 13.sp,
               fontWeight: FontWeight.w700,
               color:
-                  inStock ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                  inStock ? colorScheme.tertiary : colorScheme.error,
             ),
           ),
         ],
@@ -1066,13 +1083,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildPlaceholder() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
-      color: const Color(0xFFF3EFE8),
+      color: colorScheme.surfaceContainerHighest,
       child: Center(
         child: Icon(
           Icons.shopping_bag_outlined,
           size: 64.sp,
-          color: AppColors.primary,
+          color: colorScheme.primary,
         ),
       ),
     );
@@ -1096,7 +1115,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return CachedNetworkImage(
       imageUrl: imageUrl,
       fit: BoxFit.cover,
-      placeholder: (_, __) => Container(color: const Color(0xFFF3EFE8)),
+      placeholder: (_, __) =>
+          Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
       errorWidget: (_, __, ___) => _buildPlaceholder(),
     );
   }

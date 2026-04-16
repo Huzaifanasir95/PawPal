@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/api_client.dart';
 import '../../data/models/marketplace_models.dart';
 import '../../data/repositories/marketplace_repository.dart';
@@ -233,16 +232,19 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
   }
 
   Widget _buildSearchBar(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
       child: Container(
         height: 50.h,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(25.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: colorScheme.shadow.withValues(alpha: isDark ? 0.32 : 0.08),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -252,17 +254,17 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
           children: [
             SizedBox(width: 16.w),
             Icon(Icons.search_rounded,
-                color: AppColors.textSecondary, size: 20.sp),
+                color: colorScheme.onSurfaceVariant, size: 20.sp),
             SizedBox(width: 10.w),
             Expanded(
               child: TextField(
                 controller: _searchController,
                 style: GoogleFonts.mulish(
-                    fontSize: 14.sp, color: const Color(0xFF191D21)),
+                    fontSize: 14.sp, color: colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Search products...',
                   hintStyle: GoogleFonts.mulish(
-                      fontSize: 14.sp, color: AppColors.textSecondary),
+                      fontSize: 14.sp, color: colorScheme.onSurfaceVariant),
                   border: InputBorder.none,
                   isDense: true,
                 ),
@@ -284,7 +286,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                 child: Padding(
                   padding: EdgeInsets.only(right: 12.w),
                   child: Icon(Icons.close_rounded,
-                      color: AppColors.textSecondary, size: 18.sp),
+                      color: colorScheme.onSurfaceVariant, size: 18.sp),
                 ),
               ),
           ],
@@ -294,6 +296,8 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
   }
 
   Widget _buildCategoryChips(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return BlocBuilder<MarketplaceCubit, MarketplaceState>(
       builder: (context, state) {
         if (state.categories.isEmpty) return const SizedBox.shrink();
@@ -322,13 +326,13 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                   padding: EdgeInsets.symmetric(horizontal: 14.w),
                   decoration: BoxDecoration(
                     color: selected
-                        ? AppColors.primary
-                        : Colors.white,
+                        ? colorScheme.primaryContainer
+                        : colorScheme.surface,
                     borderRadius: BorderRadius.circular(20.r),
                     border: Border.all(
                       color: selected
-                          ? const Color(0xFF7FC9C2)
-                          : AppColors.primary.withOpacity(0.35),
+                          ? colorScheme.primary
+                          : colorScheme.outline.withValues(alpha: 0.5),
                     ),
                   ),
                   child: Center(
@@ -339,8 +343,8 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                         fontWeight:
                             selected ? FontWeight.w700 : FontWeight.w500,
                         color: selected
-                            ? const Color(0xFF191D21)
-                            : const Color(0xFF6A6A6A),
+                            ? colorScheme.onPrimaryContainer
+                            : colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -354,10 +358,12 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
   }
 
   Widget _buildProductGrid(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return BlocBuilder<MarketplaceCubit, MarketplaceState>(
       builder: (context, state) {
         if (state.isLoading) {
-          return SliverToBoxAdapter(child: _buildLoadingSkeleton());
+          return SliverToBoxAdapter(child: _buildLoadingSkeleton(context));
         }
 
         if (state.error != null && state.products.isEmpty) {
@@ -368,21 +374,21 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                 child: Column(
                   children: [
                     Icon(Icons.error_outline_rounded,
-                        size: 48.sp, color: AppColors.textSecondary),
+                      size: 48.sp, color: colorScheme.onSurfaceVariant),
                     SizedBox(height: 12.h),
                     Text(state.error!,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.mulish(
-                            color: AppColors.textSecondary)),
+                        color: colorScheme.onSurfaceVariant)),
                     SizedBox(height: 16.h),
                     ElevatedButton(
                       onPressed: () =>
                           context.read<MarketplaceCubit>().loadInitial(),
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary),
+                        backgroundColor: colorScheme.primary),
                       child: Text('Retry',
                           style: GoogleFonts.mulish(
-                              color: const Color(0xFF191D21),
+                          color: colorScheme.onPrimary,
                               fontWeight: FontWeight.w700)),
                     ),
                   ],
@@ -402,7 +408,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                 child: Column(
                   children: [
                     Icon(Icons.shopping_bag_outlined,
-                        size: 56.sp, color: AppColors.primary),
+                      size: 56.sp, color: colorScheme.primary),
                     SizedBox(height: 16.h),
                     Text(
                         _searchQuery.isNotEmpty
@@ -412,7 +418,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                         style: GoogleFonts.mulish(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: colorScheme.onSurface,
                         )),
                     SizedBox(height: 8.h),
                     Text(
@@ -420,7 +426,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                             ? 'Try a different search term'
                             : 'Try adjusting your filters',
                         style: GoogleFonts.mulish(
-                            color: AppColors.textSecondary)),
+                            color: colorScheme.onSurfaceVariant)),
                   ],
                 ),
               ),
@@ -467,11 +473,11 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
           onPressed: () => _openCart(context),
           backgroundColor: Theme.of(context).colorScheme.primary,
           icon: Icon(Icons.shopping_cart_rounded,
-              color: Colors.white, size: 20.sp),
+              color: Theme.of(context).colorScheme.onPrimary, size: 20.sp),
           label: Text(
             'Cart ($count)',
             style: GoogleFonts.mulish(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
               fontWeight: FontWeight.w700,
               fontSize: 14.sp,
             ),
@@ -481,7 +487,9 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
     );
   }
 
-  Widget _buildLoadingSkeleton() {
+  Widget _buildLoadingSkeleton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: GridView.builder(
@@ -496,7 +504,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
         itemCount: 6,
         itemBuilder: (_, __) => Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16.r),
           ),
           child: Column(
@@ -505,7 +513,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                 flex: 3,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF3EFE8),
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.vertical(
                         top: Radius.circular(16.r)),
                   ),
@@ -522,7 +530,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                         height: 10.h,
                         width: 60.w,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF3EFE8),
+                          color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                       ),
@@ -531,7 +539,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                         height: 14.h,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF3EFE8),
+                          color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                       ),

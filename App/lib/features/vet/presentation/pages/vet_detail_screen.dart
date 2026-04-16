@@ -1143,6 +1143,14 @@ class _VetDetailScreenState extends State<VetDetailScreen>
   Future<void> _showBookAppointmentSheet(VetProfile vet) async {
     if (_isBookingAppointment) return;
 
+    if (vet.userId.trim().isEmpty) {
+      CustomSnackbar.showError(
+        context,
+        'Unable to book this vet right now. Missing vet account reference.',
+      );
+      return;
+    }
+
     setState(() => _isBookingAppointment = true);
 
     final petRepository = PetRepositoryApi();
@@ -1179,7 +1187,13 @@ class _VetDetailScreenState extends State<VetDetailScreen>
     final symptomsController = TextEditingController();
     final notesController = TextEditingController();
 
-    String selectedPetId = pets.first.id;
+    String selectedPetId =
+        pets
+            .firstWhere(
+              (pet) => pet.id.trim().isNotEmpty,
+              orElse: () => pets.first,
+            )
+            .id;
     String meetingType = 'in_person';
     int duration = 30;
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
@@ -1228,6 +1242,22 @@ class _VetDetailScreenState extends State<VetDetailScreen>
                 return;
               }
 
+              if (reason.length < 3) {
+                CustomSnackbar.showError(
+                  context,
+                  'Reason should be at least 3 characters',
+                );
+                return;
+              }
+
+              if (selectedPetId.trim().isEmpty) {
+                CustomSnackbar.showError(
+                  context,
+                  'Please select a valid pet profile',
+                );
+                return;
+              }
+
               final appointmentDateTime = DateTime(
                 selectedDate.year,
                 selectedDate.month,
@@ -1249,19 +1279,32 @@ class _VetDetailScreenState extends State<VetDetailScreen>
               setSheetState(() => isSubmitting = true);
 
               try {
+                final normalizedMeetingType =
+                    meetingType == 'video' ||
+                            meetingType == 'chat' ||
+                            meetingType == 'in_person'
+                        ? meetingType
+                        : 'in_person';
+                final normalizedDuration =
+                    <int>{15, 30, 45, 60}.contains(duration)
+                        ? duration
+                        : 30;
+
                 await appointmentRepository.createAppointment(
                   CreateVetAppointmentRequest(
                     vetUserId: vet.userId,
-                    petId: selectedPetId,
+                    petId: selectedPetId.trim(),
                     appointmentDatetime: appointmentDateTime,
-                    durationMinutes: duration,
-                    meetingType: meetingType,
+                    durationMinutes: normalizedDuration,
+                    meetingType: normalizedMeetingType,
                     reason: reason,
                     symptoms: symptomsController.text.trim(),
                     ownerNotes: notesController.text.trim(),
                     clinicAddress:
-                        meetingType == 'in_person'
-                            ? (vet.clinicAddress ?? '')
+                        normalizedMeetingType == 'in_person'
+                            ? (vet.clinicAddress?.trim().isNotEmpty == true
+                                ? vet.clinicAddress!.trim()
+                                : null)
                             : null,
                   ),
                 );

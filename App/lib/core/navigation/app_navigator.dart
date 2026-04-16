@@ -96,10 +96,16 @@ class AppNavigator {
   }
 
   /// Navigate to the Community Hub (forum, lost & found, adoption, events)
-  static Future<void> navigateToCommunityHub(BuildContext context) {
+  static Future<void> navigateToCommunityHub(
+    BuildContext context, {
+    int initialTabIndex = 0,
+  }) {
     return Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const CommunityHubPage()),
+      MaterialPageRoute(
+        builder:
+            (context) => CommunityHubPage(initialTabIndex: initialTabIndex),
+      ),
     );
   }
 

@@ -274,6 +274,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(18.r)),
       ),
       builder: (sheetContext) {
+        final colorScheme = Theme.of(sheetContext).colorScheme;
+
         return SafeArea(
           child: Padding(
             padding: EdgeInsets.fromLTRB(14.w, 12.h, 14.w, 16.h),
@@ -285,7 +287,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   'Add Role',
                   style: AppTextStyles.onboardingTitle.copyWith(
                     fontSize: 18.sp,
-                    color: AppColors.textPrimary,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -294,7 +296,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   'Add another role to unlock related dashboards and tools.',
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 12.sp,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
                 SizedBox(height: 10.h),
@@ -426,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     'Home Pixel Pet Style',
                     style: AppTextStyles.onboardingTitle.copyWith(
                       fontSize: 18.sp,
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -435,7 +437,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     'Choose how your running pet looks on the home card.',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 13.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(height: 10.h),
@@ -443,12 +445,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return RadioListTile<String>(
                       value: theme,
                       groupValue: _selectedPixelTheme,
-                      activeColor: AppColors.primary,
+                      activeColor: colorScheme.primary,
                       title: Text(
                         _themeLabel(theme),
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 15.sp,
-                          color: AppColors.textPrimary,
+                          color: colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -458,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             : 'Running pixel cat variant',
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 12.sp,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                       onChanged: (value) {
@@ -915,6 +917,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfileImage() {
     final imageUrl = _userProfile?.photoURL;
+    final avatarColor = Theme.of(context).colorScheme.primary;
 
     if (_selectedImage != null) {
       if (_selectedImageBytes != null) {
@@ -927,7 +930,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (snapshot.hasData) {
             return Image.memory(snapshot.data!, fit: BoxFit.cover);
           }
-          return Icon(Icons.person, size: 50.sp, color: AppColors.primary);
+          return Icon(Icons.person, size: 50.sp, color: avatarColor);
         },
       );
     } else if (imageUrl != null && imageUrl.isNotEmpty) {
@@ -940,12 +943,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             bytes,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
-              return Icon(Icons.person, size: 50.sp, color: AppColors.primary);
+              return Icon(Icons.person, size: 50.sp, color: avatarColor);
             },
           );
         } catch (e) {
           debugPrint('Failed to decode base64 image: $e');
-          return Icon(Icons.person, size: 50.sp, color: AppColors.primary);
+          return Icon(Icons.person, size: 50.sp, color: avatarColor);
         }
       } else {
         // Regular HTTP URL
@@ -953,12 +956,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           imageUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            return Icon(Icons.person, size: 50.sp, color: AppColors.primary);
+            return Icon(Icons.person, size: 50.sp, color: avatarColor);
           },
         );
       }
     } else {
-      return Icon(Icons.person, size: 50.sp, color: AppColors.primary);
+      return Icon(Icons.person, size: 50.sp, color: avatarColor);
     }
   }
 
@@ -1021,12 +1024,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showImageSourceDialog() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
       builder:
-          (context) => SafeArea(
+          (context) {
+            final colorScheme = Theme.of(context).colorScheme;
+
+            return SafeArea(
             child: Padding(
               padding: EdgeInsets.all(20.w),
               child: Column(
@@ -1035,7 +1041,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ListTile(
                     leading: Icon(
                       Icons.photo_library,
-                      color: AppColors.primary,
+                      color: colorScheme.primary,
                     ),
                     title: Text(
                       'Choose from Gallery',
@@ -1047,7 +1053,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
                   ListTile(
-                    leading: Icon(Icons.camera_alt, color: AppColors.primary),
+                    leading: Icon(Icons.camera_alt, color: colorScheme.primary),
                     title: Text(
                       'Take a Photo',
                       style: AppTextStyles.bodyMedium,
@@ -1059,11 +1065,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   if (_userProfile?.photoURL != null || _selectedImage != null)
                     ListTile(
-                      leading: Icon(Icons.delete, color: AppColors.error),
+                      leading: Icon(Icons.delete, color: colorScheme.error),
                       title: Text(
                         'Remove Photo',
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.error,
+                          color: colorScheme.error,
                         ),
                       ),
                       onTap: () {
@@ -1077,7 +1083,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-          ),
+            );
+            },
     );
   }
 
@@ -1085,20 +1092,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder:
-          (context) => AlertDialog(
-            backgroundColor: AppColors.surface,
+          (context) {
+            final colorScheme = Theme.of(context).colorScheme;
+
+            return AlertDialog(
+            backgroundColor: colorScheme.surface,
             title: Text(
               'Logout',
               style: AppTextStyles.onboardingTitle.copyWith(
                 fontSize: 20.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
               ),
             ),
             content: Text(
               'Are you sure you want to logout?',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 16.sp,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             actions: [
@@ -1108,7 +1118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   'Cancel',
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 16.sp,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -1118,13 +1128,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   'Logout',
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 16.sp,
-                    color: AppColors.primary,
+                    color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
-          ),
+          );
+          },
     );
 
     if (!mounted) return;
@@ -1259,11 +1270,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     height: 108.h,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: AppColors.primary.withOpacity(
+                                      color: colorScheme.primary.withOpacity(
                                         0.12,
                                       ),
                                       border: Border.all(
-                                        color: AppColors.primary,
+                                        color: colorScheme.primary,
                                         width: 3.w,
                                       ),
                                     ),
@@ -1280,7 +1291,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         width: 34.w,
                                         height: 34.h,
                                         decoration: BoxDecoration(
-                                          color: AppColors.primary,
+                                          color: colorScheme.primary,
                                           shape: BoxShape.circle,
                                           border: Border.all(
                                             color: colorScheme.surface,
@@ -1290,7 +1301,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         child: Icon(
                                           Icons.camera_alt,
                                           size: 16.sp,
-                                          color: Colors.white,
+                                          color: colorScheme.onPrimary,
                                         ),
                                       ),
                                     ),
@@ -1302,7 +1313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 _userProfile?.displayName ?? 'User',
                                 style: AppTextStyles.onboardingTitle.copyWith(
                                   fontSize: 27.sp,
-                                  color: AppColors.textPrimary,
+                                  color: colorScheme.onSurface,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -1312,7 +1323,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 textAlign: TextAlign.center,
                                 style: AppTextStyles.onboardingBody.copyWith(
                                   fontSize: 14.sp,
-                                  color: AppColors.textSecondary,
+                                  color: colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1324,7 +1335,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     vertical: 6.h,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.12),
+                                    color: colorScheme.primaryContainer,
                                     borderRadius: BorderRadius.circular(20.r),
                                   ),
                                   child: Text(
@@ -1334,7 +1345,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     style: AppTextStyles.onboardingBody
                                         .copyWith(
                                           fontSize: 13.sp,
-                                          color: AppColors.primary,
+                                          color: colorScheme.primary,
                                           fontWeight: FontWeight.w700,
                                         ),
                                   ),
@@ -1378,14 +1389,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     width: 34.w,
                                     height: 34.h,
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withOpacity(
+                                      color: colorScheme.primary.withOpacity(
                                         0.15,
                                       ),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
                                       Icons.edit_outlined,
-                                      color: AppColors.primary,
+                                      color: colorScheme.primary,
                                       size: 18.sp,
                                     ),
                                   ),
@@ -1400,7 +1411,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           style: AppTextStyles.onboardingTitle
                                               .copyWith(
                                                 fontSize: 19.sp,
-                                                color: AppColors.textPrimary,
+                                                color: colorScheme.onSurface,
                                                 fontWeight: FontWeight.w700,
                                               ),
                                         ),
@@ -1410,7 +1421,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           style: AppTextStyles.onboardingBody
                                               .copyWith(
                                                 fontSize: 12.sp,
-                                                color: AppColors.textSecondary,
+                                                color:
+                                                    colorScheme.onSurfaceVariant,
                                               ),
                                         ),
                                       ],
@@ -1563,12 +1575,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 34.w,
                 height: 34.h,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.15),
+                  color: colorScheme.primary.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.manage_accounts_outlined,
-                  color: AppColors.primary,
+                  color: colorScheme.primary,
                   size: 18.sp,
                 ),
               ),
@@ -1603,8 +1615,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             LinearProgressIndicator(
               minHeight: 3,
               borderRadius: BorderRadius.circular(999.r),
-              color: AppColors.primary,
-              backgroundColor: AppColors.primary.withOpacity(0.2),
+              color: colorScheme.primary,
+              backgroundColor: colorScheme.primary.withOpacity(0.2),
             ),
           ],
           SizedBox(height: 12.h),
@@ -1620,7 +1632,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 7.h),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.15),
+              color: colorScheme.primary.withOpacity(0.15),
               borderRadius: BorderRadius.circular(999.r),
             ),
             child: Text(
@@ -1754,12 +1766,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 34.w,
                 height: 34.h,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.15),
+                  color: colorScheme.primary.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.palette_outlined,
-                  color: AppColors.primary,
+                  color: colorScheme.primary,
                   size: 18.sp,
                 ),
               ),

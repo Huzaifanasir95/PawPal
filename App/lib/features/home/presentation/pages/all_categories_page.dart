@@ -21,25 +21,37 @@ class AllCategoriesPage extends StatelessWidget {
         title: 'Community',
         subtitle: 'Forums and support',
         icon: Icons.groups_rounded,
-        onTap: () => AppNavigator.navigateToCommunityHub(context),
+        onTap: () => AppNavigator.navigateToCommunityHub(
+          context,
+          initialTabIndex: 0,
+        ),
       ),
       _CategoryAction(
         title: 'Lost & Found',
         subtitle: 'Report and discover pets',
         icon: Icons.pets_rounded,
-        onTap: () => AppNavigator.navigateToCommunityHub(context),
+        onTap: () => AppNavigator.navigateToCommunityHub(
+          context,
+          initialTabIndex: 1,
+        ),
       ),
       _CategoryAction(
         title: 'Adoption',
         subtitle: 'Find new companions',
         icon: Icons.volunteer_activism_rounded,
-        onTap: () => AppNavigator.navigateToCommunityHub(context),
+        onTap: () => AppNavigator.navigateToCommunityHub(
+          context,
+          initialTabIndex: 2,
+        ),
       ),
       _CategoryAction(
         title: 'Events',
         subtitle: 'Meetups and activities',
         icon: Icons.event_available_rounded,
-        onTap: () => AppNavigator.navigateToCommunityHub(context),
+        onTap: () => AppNavigator.navigateToCommunityHub(
+          context,
+          initialTabIndex: 3,
+        ),
       ),
       _CategoryAction(
         title: 'AI Chatbot',

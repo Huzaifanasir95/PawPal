@@ -20,7 +20,18 @@ import 'adoption_page.dart';
 import 'events_page.dart';
 
 class CommunityHubPage extends StatelessWidget {
-  const CommunityHubPage({super.key});
+  final int initialTabIndex;
+
+  const CommunityHubPage({
+    super.key,
+    this.initialTabIndex = 0,
+  });
+
+  int _normalizedTabIndex() {
+    if (initialTabIndex < 0) return 0;
+    if (initialTabIndex > 3) return 3;
+    return initialTabIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,13 +42,15 @@ class CommunityHubPage extends StatelessWidget {
         BlocProvider(create: (_) => AdoptionCubit(repo)..loadListings()),
         BlocProvider(create: (_) => EventsCubit(repo)..loadEvents()),
       ],
-      child: const _CommunityHubView(),
+      child: _CommunityHubView(initialTabIndex: _normalizedTabIndex()),
     );
   }
 }
 
 class _CommunityHubView extends StatefulWidget {
-  const _CommunityHubView();
+  final int initialTabIndex;
+
+  const _CommunityHubView({required this.initialTabIndex});
 
   @override
   State<_CommunityHubView> createState() => _CommunityHubViewState();
@@ -50,7 +63,11 @@ class _CommunityHubViewState extends State<_CommunityHubView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
   }
 
   @override
@@ -61,20 +78,35 @@ class _CommunityHubViewState extends State<_CommunityHubView>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFD6E2E8),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF4E9F9A),
+        backgroundColor:
+            isDark ? colorScheme.surfaceContainerHighest : colorScheme.primary,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white, size: 24.sp),
+          icon: Icon(
+            Icons.arrow_back,
+            color:
+                isDark
+                    ? colorScheme.onSurface
+                    : colorScheme.onPrimary,
+            size: 24.sp,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Community Hub',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
-            color: Colors.white,
+            color:
+                isDark
+                    ? colorScheme.onSurface
+                    : colorScheme.onPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -83,11 +115,15 @@ class _CommunityHubViewState extends State<_CommunityHubView>
           controller: _tabController,
           isScrollable: true,
           tabAlignment: TabAlignment.center,
-          indicatorColor: const Color(0xFF19262D),
+          indicatorColor:
+              isDark ? colorScheme.primary : colorScheme.onPrimary,
           indicatorWeight: 2.6,
           indicatorSize: TabBarIndicatorSize.label,
-          labelColor: const Color(0xFF19262D),
-          unselectedLabelColor: Colors.white.withOpacity(0.65),
+          labelColor:
+              isDark ? colorScheme.onSurface : colorScheme.onPrimary,
+          unselectedLabelColor:
+              (isDark ? colorScheme.onSurface : colorScheme.onPrimary)
+                  .withValues(alpha: 0.68),
           labelStyle: AppTextStyles.onboardingBody.copyWith(
             fontSize: 14.sp,
             fontWeight: FontWeight.w700,
@@ -193,16 +229,25 @@ class _ForumTabState extends State<_ForumTab> {
 
   Widget _buildForumContent(List<Post> posts) {
     final filteredPosts = _applyFilters(posts);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFDDE8ED),
-            Color(0xFFD2DEE5),
-          ],
+          colors:
+              isDark
+                  ? <Color>[
+                    colorScheme.surface,
+                    colorScheme.surfaceContainerHighest,
+                  ]
+                  : const <Color>[
+                    Color(0xFFDDE8ED),
+                    Color(0xFFD2DEE5),
+                  ],
         ),
       ),
       child: SingleChildScrollView(
@@ -214,16 +259,27 @@ class _ForumTabState extends State<_ForumTab> {
               width: double.infinity,
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFF1F6F8),
-                    Color(0xFFDDE9EE),
-                  ],
+                  colors:
+                      isDark
+                          ? <Color>[
+                            colorScheme.surfaceContainer,
+                            colorScheme.surfaceContainerHighest,
+                          ]
+                          : const <Color>[
+                            Color(0xFFF1F6F8),
+                            Color(0xFFDDE9EE),
+                          ],
                 ),
                 borderRadius: BorderRadius.circular(14.r),
-                border: Border.all(color: const Color(0xFFB9CBD4)),
+                border: Border.all(
+                  color:
+                      isDark
+                          ? colorScheme.outline.withValues(alpha: 0.35)
+                          : const Color(0xFFB9CBD4),
+                ),
               ),
               child: Column(
                 children: [
@@ -232,36 +288,43 @@ class _ForumTabState extends State<_ForumTab> {
                     onChanged: (_) => setState(() {}),
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 14.sp,
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Search forum posts',
                       hintStyle: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 13.sp,
-                        color: AppColors.textSecondary,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       prefixIcon: Icon(
                         Icons.search,
-                        color: AppColors.primary,
+                        color: colorScheme.primary,
                         size: 20.sp,
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.78),
+                      fillColor:
+                          isDark
+                              ? colorScheme.surface.withValues(alpha: 0.75)
+                              : Colors.white.withValues(alpha: 0.78),
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 12.w,
                         vertical: 10.h,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide(color: const Color(0xFFC6D6DE)),
+                        borderSide: BorderSide(
+                          color: colorScheme.outline.withValues(alpha: 0.35),
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide(color: const Color(0xFFC6D6DE)),
+                        borderSide: BorderSide(
+                          color: colorScheme.outline.withValues(alpha: 0.35),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide(color: AppColors.primary),
+                        borderSide: BorderSide(color: colorScheme.primary),
                       ),
                     ),
                   ),
@@ -309,7 +372,7 @@ class _ForumTabState extends State<_ForumTab> {
                     'No posts found for current filters.',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 16.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -415,12 +478,20 @@ class _ForumTabState extends State<_ForumTab> {
     required String Function(String value) itemLabelBuilder,
     required ValueChanged<String?> onChanged,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 2.h),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.78),
+        color:
+            isDark
+                ? colorScheme.surface.withValues(alpha: 0.72)
+                : Colors.white.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFC6D6DE)),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.32),
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -428,10 +499,14 @@ class _ForumTabState extends State<_ForumTab> {
           isExpanded: true,
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 12.sp,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
-          icon: Icon(Icons.keyboard_arrow_down_rounded, size: 18.sp),
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 18.sp,
+            color: colorScheme.onSurfaceVariant,
+          ),
           onChanged: onChanged,
           items: items
               .map(

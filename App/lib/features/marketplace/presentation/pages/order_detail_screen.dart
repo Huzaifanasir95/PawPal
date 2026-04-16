@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../data/models/marketplace_models.dart';
 import '../cubit/orders_cubit.dart';
 import '../cubit/orders_state.dart';
@@ -29,14 +28,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6F2),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: const Color(0xFF191D21), size: 20.sp),
+              color: colorScheme.onSurface, size: 20.sp),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -44,22 +46,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           style: GoogleFonts.mulish(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF191D21),
+            color: colorScheme.onSurface,
           ),
         ),
       ),
       body: BlocBuilder<OrdersCubit, OrdersState>(
         builder: (context, state) {
           if (state.isLoadingDetail) {
-            return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF2C6E69)));
+            return Center(
+                child: CircularProgressIndicator(color: colorScheme.primary));
           }
 
           final order = state.selectedOrder;
           if (order == null) {
             return Center(
               child: Text(state.error ?? 'Order not found',
-                  style: GoogleFonts.mulish(color: AppColors.textSecondary)),
+                  style: GoogleFonts.mulish(color: colorScheme.onSurfaceVariant)),
             );
           }
 
@@ -88,7 +90,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                 style: GoogleFonts.mulish(
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF191D21),
+                                  color: colorScheme.onSurface,
                                 ),
                               ),
                               SizedBox(height: 2.h),
@@ -96,7 +98,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                 _formatDate(order.createdAt),
                                 style: GoogleFonts.mulish(
                                   fontSize: 12.sp,
-                                  color: AppColors.textSecondary,
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -126,7 +128,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           children: [
                             if (i > 0)
                               Divider(
-                                  color: const Color(0xFFF0F0F0), height: 1.h),
+                                  color: colorScheme.outline.withValues(alpha: 0.25), height: 1.h),
                             if (i > 0) SizedBox(height: 12.h),
                             _buildOrderItemRow(item),
                             SizedBox(height: i < order.items.length - 1 ? 12.h : 0),
@@ -150,7 +152,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       SizedBox(height: 8.h),
                       _priceRow('Delivery', 'PKR 150'),
                       SizedBox(height: 8.h),
-                      Divider(color: const Color(0xFFE0E0E0), height: 1.h),
+                      Divider(color: colorScheme.outline.withValues(alpha: 0.35), height: 1.h),
                       SizedBox(height: 8.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -159,13 +161,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                               style: GoogleFonts.mulish(
                                   fontSize: 15.sp,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF191D21))),
+                                  color: colorScheme.onSurface)),
                           Text(
                             'PKR ${(order.totalAmount + 150).toStringAsFixed(0)}',
                             style: GoogleFonts.mulish(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w800,
-                                color: const Color(0xFF2C6E69)),
+                                color: colorScheme.primary),
                           ),
                         ],
                       ),
@@ -187,7 +189,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         order.shippingAddress,
                       ),
                       SizedBox(height: 12.h),
-                      Divider(color: const Color(0xFFF0F0F0), height: 1.h),
+                      Divider(color: colorScheme.outline.withValues(alpha: 0.25), height: 1.h),
                       SizedBox(height: 12.h),
                       _infoRow(
                         Icons.payment_outlined,
@@ -195,12 +197,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         _paymentLabel(order.paymentMethod),
                       ),
                       SizedBox(height: 12.h),
-                      Divider(color: const Color(0xFFF0F0F0), height: 1.h),
+                      Divider(color: colorScheme.outline.withValues(alpha: 0.25), height: 1.h),
                       SizedBox(height: 12.h),
                       Row(
                         children: [
                           Icon(Icons.receipt_outlined,
-                              size: 18.sp, color: const Color(0xFF2C6E69)),
+                              size: 18.sp, color: colorScheme.primary),
                           SizedBox(width: 10.w),
                           Expanded(
                             child: Column(
@@ -209,7 +211,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                 Text('Payment Status',
                                     style: GoogleFonts.mulish(
                                         fontSize: 12.sp,
-                                        color: AppColors.textSecondary)),
+                                        color: colorScheme.onSurfaceVariant)),
                                 SizedBox(height: 2.h),
                                 OrderStatusBadge(status: order.paymentStatus),
                               ],
@@ -219,7 +221,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       ),
                       if (order.notes != null && order.notes!.isNotEmpty) ...[
                         SizedBox(height: 12.h),
-                        Divider(color: const Color(0xFFF0F0F0), height: 1.h),
+                        Divider(color: colorScheme.outline.withValues(alpha: 0.25), height: 1.h),
                         SizedBox(height: 12.h),
                         _infoRow(
                           Icons.note_outlined,
@@ -241,20 +243,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildOrderMetaStrip(Order order) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.2),
+              color: colorScheme.primary.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Text(
@@ -262,7 +266,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               style: GoogleFonts.mulish(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF2C6E69),
+                color: colorScheme.primary,
               ),
             ),
           ),
@@ -270,7 +274,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF5FF),
+              color: colorScheme.secondaryContainer,
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Text(
@@ -278,7 +282,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               style: GoogleFonts.mulish(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E3A8A),
+                color: colorScheme.onSecondaryContainer,
               ),
             ),
           ),
@@ -288,7 +292,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             style: GoogleFonts.mulish(
               fontSize: 15.sp,
               fontWeight: FontWeight.w900,
-              color: const Color(0xFF2C6E69),
+              color: colorScheme.primary,
             ),
           ),
         ],
@@ -297,6 +301,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildStatusTimeline(String currentStatus) {
+    final colorScheme = Theme.of(context).colorScheme;
     final stages = [
       'pending',
       'confirmed',
@@ -309,17 +314,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         decoration: BoxDecoration(
-          color: const Color(0xFFEF4444).withOpacity(0.08),
+          color: colorScheme.errorContainer,
           borderRadius: BorderRadius.circular(8.r),
         ),
         child: Row(
           children: [
             Icon(Icons.cancel_outlined,
-                size: 16.sp, color: const Color(0xFFEF4444)),
+                size: 16.sp, color: colorScheme.onErrorContainer),
             SizedBox(width: 8.w),
             Text('This order was cancelled',
                 style: GoogleFonts.mulish(
-                    fontSize: 12.sp, color: const Color(0xFFEF4444))),
+                    fontSize: 12.sp, color: colorScheme.onErrorContainer)),
           ],
         ),
       );
@@ -344,18 +349,18 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: done
-                          ? const Color(0xFF2C6E69)
-                          : const Color(0xFFE0E0E0),
+                          ? colorScheme.primary
+                          : colorScheme.outline.withValues(alpha: 0.35),
                       border: Border.all(
                         color: done
-                            ? const Color(0xFF2C6E69)
-                            : const Color(0xFFE0E0E0),
+                            ? colorScheme.primary
+                            : colorScheme.outline.withValues(alpha: 0.35),
                         width: 2,
                       ),
                     ),
                     child: done
                         ? Icon(Icons.check_rounded,
-                            size: 10.sp, color: Colors.white)
+                            size: 10.sp, color: colorScheme.onPrimary)
                         : null,
                   ),
                   SizedBox(height: 4.h),
@@ -366,8 +371,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       fontWeight:
                           done ? FontWeight.w700 : FontWeight.w400,
                       color: done
-                          ? const Color(0xFF2C6E69)
-                          : AppColors.textSecondary,
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -379,8 +384,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     height: 2.h,
                     margin: EdgeInsets.only(bottom: 16.h),
                     color: i < currentIdx
-                        ? const Color(0xFF2C6E69)
-                        : const Color(0xFFE0E0E0),
+                        ? colorScheme.primary
+                        : colorScheme.outline.withValues(alpha: 0.35),
                   ),
                 ),
             ],
@@ -391,6 +396,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildOrderItemRow(OrderItem item) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -404,14 +411,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     imageUrl: item.productImage,
                     fit: BoxFit.cover,
                     placeholder: (_, __) =>
-                        Container(color: const Color(0xFFF3EFE8)),
+                    Container(color: colorScheme.surfaceContainerHighest),
                     errorWidget: (_, __, ___) =>
-                        Container(color: const Color(0xFFF3EFE8)),
+                    Container(color: colorScheme.surfaceContainerHighest),
                   )
                 : Container(
-                    color: const Color(0xFFF3EFE8),
+                  color: colorScheme.surfaceContainerHighest,
                     child: Icon(Icons.shopping_bag_outlined,
-                        size: 22.sp, color: AppColors.primary),
+                    size: 22.sp, color: colorScheme.primary),
                   ),
           ),
         ),
@@ -425,7 +432,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 style: GoogleFonts.mulish(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF191D21),
+                  color: colorScheme.onSurface,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -435,7 +442,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   'by ${item.sellerName}',
                   style: GoogleFonts.mulish(
                     fontSize: 11.sp,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
             ],
@@ -449,14 +456,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               style: GoogleFonts.mulish(
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF191D21),
+                color: colorScheme.onSurface,
               ),
             ),
             SizedBox(height: 4.h),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
+                color: colorScheme.primary.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(10.r),
               ),
               child: Text(
@@ -464,7 +471,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 style: GoogleFonts.mulish(
                   fontSize: 11.sp,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF2C6E69),
+                  color: colorScheme.primary,
                 ),
               ),
             ),
@@ -475,15 +482,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildCard({required Widget child}) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.17)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.22)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: colorScheme.shadow.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -494,16 +503,18 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildSectionTitle(String title, IconData icon) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       children: [
-        Icon(icon, size: 17.sp, color: const Color(0xFF2C6E69)),
+        Icon(icon, size: 17.sp, color: colorScheme.primary),
         SizedBox(width: 7.w),
         Text(
           title,
           style: GoogleFonts.mulish(
             fontSize: 15.sp,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF191D21),
+            color: colorScheme.onSurface,
           ),
         ),
       ],
@@ -511,26 +522,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _priceRow(String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
             style: GoogleFonts.mulish(
-                fontSize: 13.sp, color: AppColors.textSecondary)),
+                fontSize: 13.sp, color: colorScheme.onSurfaceVariant)),
         Text(value,
             style: GoogleFonts.mulish(
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF191D21))),
+                color: colorScheme.onSurface)),
       ],
     );
   }
 
   Widget _infoRow(IconData icon, String title, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18.sp, color: const Color(0xFF2C6E69)),
+        Icon(icon, size: 18.sp, color: colorScheme.primary),
         SizedBox(width: 10.w),
         Expanded(
           child: Column(
@@ -538,13 +553,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             children: [
               Text(title,
                   style: GoogleFonts.mulish(
-                      fontSize: 12.sp, color: AppColors.textSecondary)),
+                      fontSize: 12.sp, color: colorScheme.onSurfaceVariant)),
               SizedBox(height: 2.h),
               Text(value,
                   style: GoogleFonts.mulish(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF191D21))),
+                      color: colorScheme.onSurface)),
             ],
           ),
         ),

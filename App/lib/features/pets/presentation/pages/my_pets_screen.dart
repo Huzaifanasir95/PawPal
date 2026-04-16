@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/pet_model.dart';
 import '../../data/repositories/pet_repository_api.dart';
@@ -20,12 +19,14 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
   final _petRepository = PetRepositoryApi();
 
   Widget _buildImageFromPath(String path) {
+    final iconColor = Theme.of(context).colorScheme.primary;
+
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return Image.network(
         path,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return Icon(Icons.pets, color: AppColors.primary, size: 40.sp);
+          return Icon(Icons.pets, color: iconColor, size: 40.sp);
         },
       );
     }
@@ -38,12 +39,12 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
             snapshot.data!,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
-              return Icon(Icons.pets, color: AppColors.primary, size: 40.sp);
+              return Icon(Icons.pets, color: iconColor, size: 40.sp);
             },
           );
         }
 
-        return Icon(Icons.pets, color: AppColors.primary, size: 40.sp);
+        return Icon(Icons.pets, color: iconColor, size: 40.sp);
       },
     );
   }
@@ -62,25 +63,38 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor:
+            isDark ? colorScheme.surfaceContainerHighest : colorScheme.primary,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.accent, size: 24.sp),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? colorScheme.onSurface : colorScheme.onPrimary,
+            size: 24.sp,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'My Pets',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
-            color: AppColors.accent,
+            color: isDark ? colorScheme.onSurface : colorScheme.onPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.add, color: AppColors.accent, size: 24.sp),
+            icon: Icon(
+              Icons.add,
+              color: isDark ? colorScheme.onSurface : colorScheme.onPrimary,
+              size: 24.sp,
+            ),
             onPressed: _navigateToAddPet,
           ),
         ],
@@ -91,7 +105,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
               ),
             );
           }
@@ -104,14 +118,14 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
                   Icon(
                     Icons.error_outline,
                     size: 60.sp,
-                    color: AppColors.error,
+                    color: colorScheme.error,
                   ),
                   SizedBox(height: 16.h),
                   Text(
                     'Error loading pets',
                     style: AppTextStyles.onboardingTitle.copyWith(
                       fontSize: 20.sp,
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   SizedBox(height: 8.h),
@@ -119,7 +133,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
                     snapshot.error.toString(),
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 14.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -145,13 +159,13 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateToAddPet,
-        backgroundColor: AppColors.accent,
-        icon: Icon(Icons.add, color: AppColors.textOnSecondary),
+        backgroundColor: colorScheme.primary,
+        icon: Icon(Icons.add, color: colorScheme.onPrimary),
         label: Text(
           'Add Pet',
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 16.sp,
-            color: AppColors.textOnSecondary,
+            color: colorScheme.onPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -160,6 +174,8 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
   }
 
   Widget _buildEmptyState() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -167,14 +183,14 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
           Icon(
             Icons.pets,
             size: 100.sp,
-            color: AppColors.primary.withOpacity(0.5),
+            color: colorScheme.primary.withValues(alpha: 0.5),
           ),
           SizedBox(height: 20.h),
           Text(
             'No Pets Yet',
             style: AppTextStyles.onboardingTitle.copyWith(
               fontSize: 24.sp,
-              color: AppColors.textPrimary,
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -183,14 +199,14 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
             'Add your first pet to get started!',
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 16.sp,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
           SizedBox(height: 30.h),
           ElevatedButton.icon(
             onPressed: _navigateToAddPet,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
+              backgroundColor: colorScheme.primary,
               padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.r),
@@ -198,14 +214,14 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
             ),
             icon: Icon(
               Icons.add,
-              color: AppColors.textOnSecondary,
+              color: colorScheme.onPrimary,
               size: 20.sp,
             ),
             label: Text(
               'Add Your First Pet',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 16.sp,
-                color: AppColors.textOnSecondary,
+                color: colorScheme.onPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -216,14 +232,16 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
   }
 
   Widget _buildPetCard(PetModel pet) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow,
+            color: colorScheme.shadow.withValues(alpha: 0.14),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -238,7 +256,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
               width: 80.w,
               height: 80.h,
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainer,
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child:
@@ -247,7 +265,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
                         borderRadius: BorderRadius.circular(12.r),
                         child: _buildImageFromPath(pet.imageLocalPath!),
                       )
-                      : Icon(Icons.pets, color: AppColors.primary, size: 40.sp),
+                      : Icon(Icons.pets, color: colorScheme.primary, size: 40.sp),
             ),
             SizedBox(width: 12.w),
             // Pet Info
@@ -261,7 +279,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
                         pet.name,
                         style: AppTextStyles.onboardingTitle.copyWith(
                           fontSize: 18.sp,
-                          color: AppColors.textPrimary,
+                          color: colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -269,7 +287,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
                         SizedBox(width: 4.w),
                         Icon(
                           Icons.verified,
-                          color: AppColors.success,
+                          color: colorScheme.tertiary,
                           size: 18.sp,
                         ),
                       ],
@@ -280,7 +298,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
                     pet.breed,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 14.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(height: 4.h),
@@ -288,7 +306,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
                     '${pet.age} ${pet.ageUnit} • ${pet.gender}',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 12.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -306,7 +324,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
               },
               icon: Icon(
                 Icons.arrow_forward_ios,
-                color: AppColors.primary,
+                color: colorScheme.primary,
                 size: 20.sp,
               ),
             ),

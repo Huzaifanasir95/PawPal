@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/breed_prediction_model.dart';
 import '../../data/services/breed_verification_service.dart';
@@ -125,6 +124,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
   }
 
   Widget _buildSelectedImagePreview(XFile image) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return FutureBuilder<Uint8List>(
       future: image.readAsBytes(),
       builder: (context, snapshot) {
@@ -139,7 +140,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
         if (snapshot.hasError) {
           return Center(
-            child: Icon(Icons.pets, color: AppColors.primary, size: 32.sp),
+            child: Icon(Icons.pets, color: colorScheme.primary, size: 32.sp),
           );
         }
 
@@ -147,13 +148,13 @@ class _AddPetScreenState extends State<AddPetScreen> {
           return Center(
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
             ),
           );
         }
 
         return Center(
-          child: Icon(Icons.pets, color: AppColors.primary, size: 32.sp),
+          child: Icon(Icons.pets, color: colorScheme.primary, size: 32.sp),
         );
       },
     );
@@ -198,23 +199,25 @@ class _AddPetScreenState extends State<AddPetScreen> {
   }
 
   void _showBreedVerificationDialog(PredictionResult result) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            backgroundColor: AppColors.surface,
+            backgroundColor: colorScheme.surface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16.r),
             ),
             title: Row(
               children: [
-                Icon(Icons.verified, color: AppColors.success, size: 24.sp),
+                Icon(Icons.verified, color: colorScheme.tertiary, size: 24.sp),
                 SizedBox(width: 8.w),
                 Text(
                   'Breed Verified!',
                   style: AppTextStyles.onboardingTitle.copyWith(
                     fontSize: 20.sp,
-                    color: AppColors.textPrimary,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -228,7 +231,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                   'Top Predictions:',
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 16.sp,
-                    color: AppColors.textPrimary,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -244,7 +247,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                             '${prediction.rank}. ${prediction.breed}',
                             style: AppTextStyles.onboardingBody.copyWith(
                               fontSize: 14.sp,
-                              color: AppColors.textPrimary,
+                              color: colorScheme.onSurface,
                             ),
                           ),
                         ),
@@ -281,7 +284,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                   'OK',
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 16.sp,
-                    color: AppColors.primary,
+                    color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -292,20 +295,23 @@ class _AddPetScreenState extends State<AddPetScreen> {
   }
 
   Color _getConfidenceColor(double confidence) {
-    if (confidence >= 0.8) return AppColors.success;
-    if (confidence >= 0.5) return AppColors.warning;
-    return AppColors.error;
+    final colorScheme = Theme.of(context).colorScheme;
+    if (confidence >= 0.8) return colorScheme.tertiary;
+    if (confidence >= 0.5) return colorScheme.secondary;
+    return colorScheme.error;
   }
 
   void _showErrorSnackBar(String message) {
+    final colorScheme = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.error),
+      SnackBar(content: Text(message), backgroundColor: colorScheme.error),
     );
   }
 
   void _showSuccessSnackBar(String message) {
+    final colorScheme = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.success),
+      SnackBar(content: Text(message), backgroundColor: colorScheme.tertiary),
     );
   }
 
@@ -323,7 +329,9 @@ class _AddPetScreenState extends State<AddPetScreen> {
         builder:
             (context) => Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
               ),
             ),
       );
@@ -393,29 +401,42 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFD6E2E8),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF4E9F9A),
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white, size: 24.sp),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface, size: 24.sp),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Add Pet',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
-            color: Colors.white,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w700,
           ),
         ),
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFDDE8ED), Color(0xFFD2DEE5)],
+            colors: isDark
+                ? [
+                    colorScheme.surface,
+                    colorScheme.surfaceContainerHighest,
+                  ]
+                : [
+                    colorScheme.surface,
+                    colorScheme.surfaceContainer,
+                  ],
           ),
         ),
         child: SingleChildScrollView(
@@ -449,16 +470,16 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                 onTap: _showImageSourceDialog,
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF4F8FA),
+                                    color: colorScheme.surfaceContainerHighest,
                                     borderRadius: BorderRadius.circular(16.r),
                                     border: Border.all(
-                                      color: const Color(0xFFBDD0D9),
+                                      color: colorScheme.outline.withValues(alpha: 0.35),
                                       width: 1.6,
                                     ),
                                   ),
                                   child: Icon(
                                     Icons.add_a_photo,
-                                    color: AppColors.primary,
+                                    color: colorScheme.primary,
                                     size: 48.sp,
                                   ),
                                 ),
@@ -476,8 +497,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                     border: Border.all(
                                       color:
                                           isPrimary
-                                              ? AppColors.primary
-                                              : const Color(0xFFCAD8DF),
+                                              ? colorScheme.primary
+                                              : colorScheme.outline.withValues(alpha: 0.35),
                                       width: isPrimary ? 2.4 : 1,
                                     ),
                                   ),
@@ -492,13 +513,13 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                     right: 8.w,
                                     child: Container(
                                       padding: EdgeInsets.all(4.w),
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFF2E7D32),
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.tertiary,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         Icons.verified,
-                                        color: Colors.white,
+                                        color: colorScheme.onTertiary,
                                         size: 16.sp,
                                       ),
                                     ),
@@ -511,14 +532,12 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                     child: Container(
                                       padding: EdgeInsets.all(4.w),
                                       decoration: BoxDecoration(
-                                        color: AppColors.error.withOpacity(
-                                          0.85,
-                                        ),
+                                        color: colorScheme.error.withValues(alpha: 0.85),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         Icons.close,
-                                        color: Colors.white,
+                                        color: colorScheme.onError,
                                         size: 16.sp,
                                       ),
                                     ),
@@ -534,9 +553,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                         vertical: 4.h,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withOpacity(
-                                          0.85,
-                                        ),
+                                        color: colorScheme.primary.withValues(alpha: 0.85),
                                         borderRadius: BorderRadius.circular(
                                           8.r,
                                         ),
@@ -546,7 +563,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                         style: AppTextStyles.onboardingBody
                                             .copyWith(
                                               fontSize: 10.sp,
-                                              color: Colors.white,
+                                              color: colorScheme.onPrimary,
                                               fontWeight: FontWeight.w600,
                                             ),
                                       ),
@@ -565,8 +582,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
                             child: ElevatedButton.icon(
                               onPressed: _isVerifying ? null : _verifyBreed,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF3D8986),
-                                foregroundColor: Colors.white,
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: colorScheme.onPrimary,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12.r),
                                 ),
@@ -576,11 +593,11 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                       ? SizedBox(
                                         width: 16.w,
                                         height: 16.h,
-                                        child: const CircularProgressIndicator(
+                                        child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
+                                                colorScheme.onPrimary,
                                               ),
                                         ),
                                       )
@@ -589,7 +606,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                 _isVerifying ? 'Verifying...' : 'Verify Breed',
                                 style: AppTextStyles.onboardingBody.copyWith(
                                   fontSize: 14.sp,
-                                  color: Colors.white,
+                                  color: colorScheme.onPrimary,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -693,7 +710,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                             'Gender',
                             style: AppTextStyles.onboardingTitle.copyWith(
                               fontSize: 16.sp,
-                              color: AppColors.textPrimary,
+                              color: colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -791,7 +808,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                           'Add Health Records',
                           style: AppTextStyles.onboardingBody.copyWith(
                             fontSize: 16.sp,
-                            color: AppColors.textPrimary,
+                            color: colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -799,7 +816,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                           'Include vaccination status, medical conditions, and vet information',
                           style: AppTextStyles.onboardingBody.copyWith(
                             fontSize: 13.sp,
-                            color: AppColors.textSecondary,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                         value: _hasHealthRecord,
@@ -808,7 +825,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                             _hasHealthRecord = value;
                           });
                         },
-                        activeColor: AppColors.primary,
+                        activeColor: colorScheme.primary,
                       ),
                       if (_hasHealthRecord) ...[
                         SizedBox(height: 8.h),
@@ -818,7 +835,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                             'Is Vaccinated',
                             style: AppTextStyles.onboardingBody.copyWith(
                               fontSize: 15.sp,
-                              color: AppColors.textPrimary,
+                              color: colorScheme.onSurface,
                             ),
                           ),
                           value: _isVaccinated,
@@ -827,7 +844,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                               _isVaccinated = value;
                             });
                           },
-                          activeColor: AppColors.primary,
+                          activeColor: colorScheme.primary,
                         ),
                         if (_isVaccinated) ...[
                           SizedBox(height: 10.h),
@@ -872,7 +889,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                             'Veterinarian Information',
                             style: AppTextStyles.onboardingTitle.copyWith(
                               fontSize: 16.sp,
-                              color: AppColors.textPrimary,
+                              color: colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -910,7 +927,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                             'Emergency Contact',
                             style: AppTextStyles.onboardingTitle.copyWith(
                               fontSize: 16.sp,
-                              color: AppColors.textPrimary,
+                              color: colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -935,7 +952,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                             'Pet Insurance (Optional)',
                             style: AppTextStyles.onboardingTitle.copyWith(
                               fontSize: 16.sp,
-                              color: AppColors.textPrimary,
+                              color: colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -970,7 +987,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                   child: ElevatedButton(
                     onPressed: _submitPet,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF19262D),
+                      backgroundColor: colorScheme.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16.r),
                       ),
@@ -980,7 +997,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                       'Register Pet',
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 18.sp,
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1001,20 +1018,28 @@ class _AddPetScreenState extends State<AddPetScreen> {
     required IconData icon,
     required Widget child,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 14.h),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFF1F6F8), Color(0xFFDDE9EE)],
+          colors: [
+            colorScheme.surface,
+            colorScheme.surfaceContainerHighest,
+          ],
         ),
         borderRadius: BorderRadius.circular(18.r),
-        border: Border.all(color: const Color(0xFFB9CBD4), width: 1),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.3),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: colorScheme.shadow.withValues(alpha: 0.08),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -1029,10 +1054,10 @@ class _AddPetScreenState extends State<AddPetScreen> {
                 width: 34.w,
                 height: 34.h,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.15),
+                  color: colorScheme.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: AppColors.primary, size: 18.sp),
+                child: Icon(icon, color: colorScheme.primary, size: 18.sp),
               ),
               SizedBox(width: 10.w),
               Expanded(
@@ -1043,7 +1068,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                       title,
                       style: AppTextStyles.onboardingTitle.copyWith(
                         fontSize: 17.sp,
-                        color: AppColors.textPrimary,
+                        color: colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1052,7 +1077,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                       subtitle,
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 12.sp,
-                        color: AppColors.textSecondary,
+                        color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w500,
                         height: 1.25,
                       ),
@@ -1078,6 +1103,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
     int maxLines = 1,
     Widget? suffix,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1085,7 +1112,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
           label,
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 16.sp,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -1097,32 +1124,36 @@ class _AddPetScreenState extends State<AddPetScreen> {
           validator: validator,
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 16.sp,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: AppTextStyles.onboardingBody.copyWith(
               fontSize: 16.sp,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
             ),
             suffixIcon: suffix,
             filled: true,
-            fillColor: const Color(0xFFF7FBFD),
+            fillColor: colorScheme.surfaceContainerHighest,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14.r),
-              borderSide: const BorderSide(color: Color(0xFFC7D6DE)),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withValues(alpha: 0.35),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14.r),
-              borderSide: const BorderSide(color: Color(0xFFC7D6DE)),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withValues(alpha: 0.35),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14.r),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14.r),
-              borderSide: BorderSide(color: AppColors.error),
+              borderSide: BorderSide(color: colorScheme.error),
             ),
             contentPadding: EdgeInsets.symmetric(
               horizontal: 16.w,
@@ -1140,6 +1171,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
     required List<String> items,
     required void Function(String?) onChanged,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1147,16 +1180,18 @@ class _AddPetScreenState extends State<AddPetScreen> {
           label,
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 16.sp,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
         SizedBox(height: 8.h),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF7FBFD),
+            color: colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(14.r),
-            border: Border.all(color: const Color(0xFFC7D6DE)),
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.35),
+            ),
           ),
           padding: EdgeInsets.symmetric(horizontal: 12.w),
           child: DropdownButton<String>(
@@ -1171,7 +1206,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                       item,
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 16.sp,
-                        color: AppColors.textPrimary,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   );
@@ -1184,6 +1219,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
   }
 
   Widget _buildTypeCard(String title, IconData icon, String type) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isSelected = _petType == type;
     return GestureDetector(
       onTap: () {
@@ -1194,10 +1230,14 @@ class _AddPetScreenState extends State<AddPetScreen> {
       child: Container(
         height: 80.h,
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFD3ECEA) : const Color(0xFFF7FBFD),
+          color: isSelected
+              ? colorScheme.primary.withValues(alpha: 0.14)
+              : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(14.r),
           border: Border.all(
-            color: isSelected ? AppColors.primary : const Color(0xFFC7D6DE),
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.outline.withValues(alpha: 0.35),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -1206,7 +1246,9 @@ class _AddPetScreenState extends State<AddPetScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
               size: 24.sp,
             ),
             SizedBox(height: 8.h),
@@ -1214,7 +1256,9 @@ class _AddPetScreenState extends State<AddPetScreen> {
               title,
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
@@ -1225,6 +1269,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
   }
 
   Widget _buildGenderCard(String title, IconData icon, String gender) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isSelected = _gender == gender;
     return GestureDetector(
       onTap: () {
@@ -1235,10 +1280,14 @@ class _AddPetScreenState extends State<AddPetScreen> {
       child: Container(
         height: 60.h,
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE9F4F3) : const Color(0xFFF7FBFD),
+          color: isSelected
+              ? colorScheme.primary.withValues(alpha: 0.1)
+              : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(14.r),
           border: Border.all(
-            color: isSelected ? AppColors.primary : const Color(0xFFC7D6DE),
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.outline.withValues(alpha: 0.35),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -1247,7 +1296,9 @@ class _AddPetScreenState extends State<AddPetScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
               size: 20.sp,
             ),
             SizedBox(width: 8.w),
@@ -1255,7 +1306,9 @@ class _AddPetScreenState extends State<AddPetScreen> {
               title,
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
@@ -1266,11 +1319,13 @@ class _AddPetScreenState extends State<AddPetScreen> {
   }
 
   void _showImageSourceDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            backgroundColor: AppColors.surface,
+            backgroundColor: colorScheme.surface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16.r),
             ),
@@ -1278,7 +1333,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
               'Choose Image Source',
               style: AppTextStyles.onboardingTitle.copyWith(
                 fontSize: 18.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1286,12 +1341,12 @@ class _AddPetScreenState extends State<AddPetScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
-                  leading: Icon(Icons.camera_alt, color: AppColors.primary),
+                  leading: Icon(Icons.camera_alt, color: colorScheme.primary),
                   title: Text(
                     'Camera',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 16.sp,
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   onTap: () {
@@ -1300,12 +1355,12 @@ class _AddPetScreenState extends State<AddPetScreen> {
                   },
                 ),
                 ListTile(
-                  leading: Icon(Icons.photo_library, color: AppColors.primary),
+                  leading: Icon(Icons.photo_library, color: colorScheme.primary),
                   title: Text(
                     'Gallery',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 16.sp,
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   onTap: () {

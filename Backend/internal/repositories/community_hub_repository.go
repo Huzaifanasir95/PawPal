@@ -234,7 +234,24 @@ func (r *CommunityHubRepository) GetAdoptionListings(ctx context.Context, petTyp
 		return nil, 0, err
 	}
 
-	query := fmt.Sprintf(`SELECT id, user_id, pet_name, pet_type, breed, age, gender, size, color,
+	query := fmt.Sprintf(`SELECT a.id, a.user_id, a.pet_name, a.pet_type, a.breed,
+		COALESCE((
+			SELECT p.is_verified
+			FROM pets p
+			WHERE p.owner_id = a.user_id
+				AND LOWER(p.name) = LOWER(a.pet_name)
+			ORDER BY p.updated_at DESC
+			LIMIT 1
+		), false) AS is_breed_verified,
+		(
+			SELECT p.verified_breed
+			FROM pets p
+			WHERE p.owner_id = a.user_id
+				AND LOWER(p.name) = LOWER(a.pet_name)
+			ORDER BY p.updated_at DESC
+			LIMIT 1
+		) AS verified_breed,
+		age, gender, size, color,
 		description, medical_info, is_vaccinated, is_neutered, is_trained,
 		good_with_kids, good_with_pets, image_urls, location,
 		contact_phone, contact_email, adoption_fee, status, user_name, user_avatar,
@@ -253,6 +270,7 @@ func (r *CommunityHubRepository) GetAdoptionListings(ctx context.Context, petTyp
 	for rows.Next() {
 		var a models.AdoptionListing
 		if err := rows.Scan(&a.ID, &a.UserID, &a.PetName, &a.PetType, &a.Breed,
+			&a.IsBreedVerified, &a.VerifiedBreed,
 			&a.Age, &a.Gender, &a.Size, &a.Color,
 			&a.Description, &a.MedicalInfo, &a.IsVaccinated, &a.IsNeutered, &a.IsTrained,
 			&a.GoodWithKids, &a.GoodWithPets, &a.ImageURLs, &a.Location,
@@ -267,15 +285,33 @@ func (r *CommunityHubRepository) GetAdoptionListings(ctx context.Context, petTyp
 }
 
 func (r *CommunityHubRepository) GetAdoptionByID(ctx context.Context, id uuid.UUID) (*models.AdoptionListing, error) {
-	query := `SELECT id, user_id, pet_name, pet_type, breed, age, gender, size, color,
+	query := `SELECT a.id, a.user_id, a.pet_name, a.pet_type, a.breed,
+		COALESCE((
+			SELECT p.is_verified
+			FROM pets p
+			WHERE p.owner_id = a.user_id
+				AND LOWER(p.name) = LOWER(a.pet_name)
+			ORDER BY p.updated_at DESC
+			LIMIT 1
+		), false) AS is_breed_verified,
+		(
+			SELECT p.verified_breed
+			FROM pets p
+			WHERE p.owner_id = a.user_id
+				AND LOWER(p.name) = LOWER(a.pet_name)
+			ORDER BY p.updated_at DESC
+			LIMIT 1
+		) AS verified_breed,
+		age, gender, size, color,
 		description, medical_info, is_vaccinated, is_neutered, is_trained,
 		good_with_kids, good_with_pets, image_urls, location,
 		contact_phone, contact_email, adoption_fee, status, user_name, user_avatar,
 		created_at, updated_at
-		FROM adoption_listings WHERE id = $1`
+		FROM adoption_listings a WHERE a.id = $1`
 
 	var a models.AdoptionListing
 	err := r.db.QueryRow(ctx, query, id).Scan(&a.ID, &a.UserID, &a.PetName, &a.PetType, &a.Breed,
+		&a.IsBreedVerified, &a.VerifiedBreed,
 		&a.Age, &a.Gender, &a.Size, &a.Color,
 		&a.Description, &a.MedicalInfo, &a.IsVaccinated, &a.IsNeutered, &a.IsTrained,
 		&a.GoodWithKids, &a.GoodWithPets, &a.ImageURLs, &a.Location,
@@ -660,12 +696,29 @@ func (r *CommunityHubRepository) GetMyLostFoundPosts(ctx context.Context, userID
 }
 
 func (r *CommunityHubRepository) GetMyAdoptionListings(ctx context.Context, userID uuid.UUID) ([]models.AdoptionListing, error) {
-	query := `SELECT id, user_id, pet_name, pet_type, breed, age, gender, size, color,
+	query := `SELECT a.id, a.user_id, a.pet_name, a.pet_type, a.breed,
+		COALESCE((
+			SELECT p.is_verified
+			FROM pets p
+			WHERE p.owner_id = a.user_id
+				AND LOWER(p.name) = LOWER(a.pet_name)
+			ORDER BY p.updated_at DESC
+			LIMIT 1
+		), false) AS is_breed_verified,
+		(
+			SELECT p.verified_breed
+			FROM pets p
+			WHERE p.owner_id = a.user_id
+				AND LOWER(p.name) = LOWER(a.pet_name)
+			ORDER BY p.updated_at DESC
+			LIMIT 1
+		) AS verified_breed,
+		age, gender, size, color,
 		description, medical_info, is_vaccinated, is_neutered, is_trained,
 		good_with_kids, good_with_pets, image_urls, location,
 		contact_phone, contact_email, adoption_fee, status, user_name, user_avatar,
 		created_at, updated_at
-		FROM adoption_listings WHERE user_id = $1 ORDER BY created_at DESC`
+		FROM adoption_listings a WHERE a.user_id = $1 ORDER BY a.created_at DESC`
 
 	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
@@ -677,6 +730,7 @@ func (r *CommunityHubRepository) GetMyAdoptionListings(ctx context.Context, user
 	for rows.Next() {
 		var a models.AdoptionListing
 		if err := rows.Scan(&a.ID, &a.UserID, &a.PetName, &a.PetType, &a.Breed,
+			&a.IsBreedVerified, &a.VerifiedBreed,
 			&a.Age, &a.Gender, &a.Size, &a.Color,
 			&a.Description, &a.MedicalInfo, &a.IsVaccinated, &a.IsNeutered, &a.IsTrained,
 			&a.GoodWithKids, &a.GoodWithPets, &a.ImageURLs, &a.Location,

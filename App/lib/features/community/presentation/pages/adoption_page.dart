@@ -299,18 +299,35 @@ class _AdoptionPageState extends State<AdoptionPage> {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            listing.petName,
-                            style: AppTextStyles.onboardingTitle.copyWith(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  listing.petName,
+                                  style: AppTextStyles.onboardingTitle.copyWith(
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (listing.isBreedVerified)
+                                Padding(
+                                  padding: EdgeInsets.only(left: 6.w),
+                                  child: Icon(
+                                    Icons.verified_rounded,
+                                    size: 16.sp,
+                                    color: const Color(0xFF0E9F6E),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                         if (listing.adoptionFee > 0)
                           Text(
-                            '\$${listing.adoptionFee.toStringAsFixed(0)}',
+                            'PKR ${listing.adoptionFee.toStringAsFixed(0)}',
                             style: AppTextStyles.onboardingBody.copyWith(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w700,
@@ -346,6 +363,8 @@ class _AdoptionPageState extends State<AdoptionPage> {
                       spacing: 6.w,
                       runSpacing: 4.h,
                       children: [
+                        if (listing.isBreedVerified)
+                          _badge('Breed Verified', const Color(0xFF0E9F6E)),
                         if (listing.isVaccinated == true)
                           _badge('Vaccinated', AppColors.success),
                         if (listing.isNeutered == true)

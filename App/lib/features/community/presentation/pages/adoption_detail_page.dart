@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/community_hub_models.dart';
@@ -16,6 +19,58 @@ class AdoptionDetailPage extends StatefulWidget {
 }
 
 class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
+  Widget _buildAvatarFromPath(String? path) {
+    if (path == null || path.trim().isEmpty) {
+      return Icon(Icons.person, size: 28.sp, color: Colors.white);
+    }
+
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            Icon(Icons.person, size: 28.sp, color: Colors.white),
+      );
+    }
+
+    if (path.startsWith('data:image/')) {
+      try {
+        final comma = path.indexOf(',');
+        if (comma > 0 && comma < path.length - 1) {
+          final bytes = base64Decode(path.substring(comma + 1));
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                Icon(Icons.person, size: 28.sp, color: Colors.white),
+          );
+        }
+      } catch (_) {
+        return Icon(Icons.person, size: 28.sp, color: Colors.white);
+      }
+    }
+
+    final localPath = path.startsWith('file://')
+        ? (Uri.tryParse(path)?.toFilePath() ?? path)
+        : path;
+
+    return FutureBuilder<Uint8List>(
+      future: XFile(localPath).readAsBytes(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Image.memory(
+            snapshot.data!,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                Icon(Icons.person, size: 28.sp, color: Colors.white),
+          );
+        }
+
+        return Icon(Icons.person, size: 28.sp, color: Colors.white);
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -129,14 +184,31 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(
-                        listing.petName,
-                        style: AppTextStyles.onboardingTitle.copyWith(
-                          fontSize: 32.sp,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.5,
-                        ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              listing.petName,
+                              style: AppTextStyles.onboardingTitle.copyWith(
+                                fontSize: 32.sp,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                                letterSpacing: -0.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (listing.isBreedVerified)
+                            Padding(
+                              padding: EdgeInsets.only(left: 8.w),
+                              child: Icon(
+                                Icons.verified_rounded,
+                                size: 22.sp,
+                                color: const Color(0xFF0E9F6E),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                     Container(
@@ -154,7 +226,7 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                       ),
                       child: Text(
                         listing.adoptionFee > 0
-                            ? '\$${listing.adoptionFee.toStringAsFixed(0)}'
+                            ? 'PKR ${listing.adoptionFee.toStringAsFixed(0)}'
                             : 'Free',
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 16.sp,
@@ -170,7 +242,10 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                 Text(
                   [
                     listing.petType,
-                    if (listing.breed != null) listing.breed,
+                    if (listing.verifiedBreed != null && listing.verifiedBreed!.isNotEmpty)
+                      listing.verifiedBreed
+                    else if (listing.breed != null)
+                      listing.breed,
                     if (listing.age != null) listing.age,
                     if (listing.gender != null) listing.gender,
                     if (listing.size != null) listing.size,
@@ -182,6 +257,31 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                   ),
                 ),
                 SizedBox(height: 16.h),
+                if (listing.isBreedVerified) ...[
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0E9F6E).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.verified_rounded, color: const Color(0xFF0E9F6E), size: 16.sp),
+                        SizedBox(width: 6.w),
+                        Text(
+                          'Breed Verified',
+                          style: AppTextStyles.onboardingBody.copyWith(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF0E9F6E),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                ],
                 // Status badge
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
@@ -538,12 +638,13 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                         child: CircleAvatar(
                           radius: 28.r,
                           backgroundColor: AppColors.primary,
-                          backgroundImage: listing.userAvatar != null
-                              ? NetworkImage(listing.userAvatar!)
-                              : null,
-                          child: listing.userAvatar == null
-                              ? Icon(Icons.person, size: 28.sp, color: Colors.white)
-                              : null,
+                          child: ClipOval(
+                            child: SizedBox(
+                              width: 56.r,
+                              height: 56.r,
+                              child: _buildAvatarFromPath(listing.userAvatar),
+                            ),
+                          ),
                         ),
                       ),
                       SizedBox(width: 16.w),

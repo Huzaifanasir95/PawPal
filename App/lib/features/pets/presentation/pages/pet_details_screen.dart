@@ -194,8 +194,12 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
       }
     }
 
+    final localPath = path.startsWith('file://')
+        ? (Uri.tryParse(path)?.toFilePath() ?? path)
+        : path;
+
     return FutureBuilder<Uint8List>(
-      future: XFile(path).readAsBytes(),
+      future: XFile(localPath).readAsBytes(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Image.memory(

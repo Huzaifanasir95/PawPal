@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
+import '../../../pets/data/models/pet_model.dart';
+import '../../../pets/data/repositories/pet_repository_api.dart';
 import '../cubit/adoption_cubit.dart';
 import '../cubit/adoption_state.dart';
 
@@ -15,32 +20,145 @@ class CreateAdoptionPage extends StatefulWidget {
 }
 
 class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
+  final _petRepository = PetRepositoryApi();
   final _formKey = GlobalKey<FormState>();
-  final _petNameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _breedController = TextEditingController();
-  final _ageController = TextEditingController();
-  final _colorController = TextEditingController();
   final _medicalInfoController = TextEditingController();
   final _locationController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _feeController = TextEditingController();
 
-  String _petType = 'dog';
-  String? _gender;
-  String? _size;
+  List<PetModel> _pets = [];
+  bool _isLoadingPets = true;
+  String? _petsError;
+  String? _selectedPetId;
+
   bool _isVaccinated = false;
   bool _isNeutered = false;
   bool _isTrained = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadUserPets();
+  }
+
+  Future<void> _loadUserPets() async {
+    setState(() {
+      _isLoadingPets = true;
+      _petsError = null;
+    });
+
+    try {
+      final pets = await _petRepository.getPets();
+      final availablePets = pets.where((pet) => !pet.isAdopted).toList();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _pets = availablePets;
+        _selectedPetId = availablePets.isNotEmpty ? availablePets.first.id : null;
+        _isLoadingPets = false;
+      });
+
+      _applySelectedPetDefaults();
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoadingPets = false;
+        _petsError = e.toString().replaceAll('Exception: ', '');
+      });
+    }
+  }
+
+  PetModel? get _selectedPet {
+    for (final pet in _pets) {
+      if (pet.id == _selectedPetId) {
+        return pet;
+      }
+    }
+    return null;
+  }
+
+  void _applySelectedPetDefaults() {
+    final pet = _selectedPet;
+    if (pet == null) {
+      return;
+    }
+
+    final health = pet.healthRecord;
+    setState(() {
+      _isVaccinated = health?.isVaccinated ?? false;
+      if (_descriptionController.text.trim().isEmpty && pet.bio != null) {
+        _descriptionController.text = pet.bio!;
+      }
+    });
+  }
+
+  Widget _buildPetAvatar(PetModel pet) {
+    final imagePath = (pet.imageUrls != null && pet.imageUrls!.isNotEmpty)
+        ? pet.imageUrls!.first
+        : pet.imageUrl;
+
+    if (imagePath == null || imagePath.trim().isEmpty) {
+      return Icon(Icons.pets_rounded, color: AppColors.primary, size: 18.sp);
+    }
+
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            Icon(Icons.pets_rounded, color: AppColors.primary, size: 18.sp),
+      );
+    }
+
+    if (imagePath.startsWith('data:image/')) {
+      try {
+        final comma = imagePath.indexOf(',');
+        if (comma > 0 && comma < imagePath.length - 1) {
+          final bytes = base64Decode(imagePath.substring(comma + 1));
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                Icon(Icons.pets_rounded, color: AppColors.primary, size: 18.sp),
+          );
+        }
+      } catch (_) {
+        // Fall through to local file read attempt.
+      }
+    }
+
+    final localPath = imagePath.startsWith('file://')
+        ? (Uri.tryParse(imagePath)?.toFilePath() ?? imagePath)
+        : imagePath;
+
+    return FutureBuilder<Uint8List>(
+      future: XFile(localPath).readAsBytes(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Image.memory(
+            snapshot.data!,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                Icon(Icons.pets_rounded, color: AppColors.primary, size: 18.sp),
+          );
+        }
+
+        return Icon(Icons.pets_rounded, color: AppColors.primary, size: 18.sp);
+      },
+    );
+  }
+
+  @override
   void dispose() {
-    _petNameController.dispose();
     _descriptionController.dispose();
-    _breedController.dispose();
-    _ageController.dispose();
-    _colorController.dispose();
     _medicalInfoController.dispose();
     _locationController.dispose();
     _phoneController.dispose();
@@ -78,136 +196,133 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
         ),
         body: SingleChildScrollView(
           padding: EdgeInsets.all(20.w),
-          child: Form(
+          child: _isLoadingPets
+              ? const Center(child: CircularProgressIndicator())
+              : _petsError != null
+                  ? Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            _petsError!,
+                            style: AppTextStyles.onboardingBody.copyWith(
+                              fontSize: 14.sp,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          SizedBox(height: 12.h),
+                          ElevatedButton(
+                            onPressed: _loadUserPets,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _pets.isEmpty
+                      ? Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.pets_outlined,
+                                size: 56.sp,
+                                color: AppColors.textSecondary,
+                              ),
+                              SizedBox(height: 10.h),
+                              Text(
+                                'You have no pets to list for adoption.',
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.onboardingBody.copyWith(
+                                  fontSize: 15.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Pet type
-                _sectionLabel('Pet Type *'),
+                _sectionLabel('Select Your Pet *'),
                 SizedBox(height: 8.h),
-                Wrap(
-                  spacing: 8.w,
-                  children: ['Dog', 'Cat', 'Bird', 'Other'].map((t) {
-                    final val = t.toLowerCase();
-                    final isActive = _petType == val;
-                    return GestureDetector(
-                      onTap: () => setState(() => _petType = val),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 16.w, vertical: 8.h),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? AppColors.accent
-                              : AppColors.surface,
-                          borderRadius: BorderRadius.circular(20.r),
-                          border: Border.all(
-                            color: isActive
-                                ? AppColors.accent
-                                : AppColors.border,
-                          ),
-                        ),
-                        child: Text(
-                          t,
-                          style: AppTextStyles.onboardingBody.copyWith(
-                            fontSize: 13.sp,
-                            color: isActive
-                                ? Colors.white
-                                : AppColors.textPrimary,
-                            fontWeight:
-                                isActive ? FontWeight.w600 : FontWeight.w400,
-                          ),
+                ..._pets.map((pet) {
+                  final isSelected = pet.id == _selectedPetId;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() => _selectedPetId = pet.id);
+                      _applySelectedPetDefaults();
+                    },
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 8.h),
+                      padding: EdgeInsets.all(12.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: isSelected ? AppColors.accent : AppColors.border,
+                          width: isSelected ? 1.8 : 1,
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 20.h),
-
-                _buildField('Pet Name *', _petNameController,
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? 'Required' : null),
-                _buildField('Breed', _breedController),
-                _buildField('Age', _ageController, hint: 'e.g. 2 years'),
-                _buildField('Color', _colorController),
-
-                // Gender
-                _sectionLabel('Gender'),
-                SizedBox(height: 8.h),
-                Wrap(
-                  spacing: 8.w,
-                  children: ['Male', 'Female'].map((g) {
-                    final isActive = _gender == g.toLowerCase();
-                    return GestureDetector(
-                      onTap: () =>
-                          setState(() => _gender = g.toLowerCase()),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 16.w, vertical: 8.h),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? AppColors.accent
-                              : AppColors.surface,
-                          borderRadius: BorderRadius.circular(20.r),
-                          border: Border.all(
-                            color: isActive
-                                ? AppColors.accent
-                                : AppColors.border,
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20.r,
+                            backgroundColor: AppColors.primary.withOpacity(0.12),
+                            child: ClipOval(
+                              child: SizedBox(
+                                width: 40.r,
+                                height: 40.r,
+                                child: _buildPetAvatar(pet),
+                              ),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          g,
-                          style: AppTextStyles.onboardingBody.copyWith(
-                            fontSize: 13.sp,
-                            color: isActive
-                                ? Colors.white
-                                : AppColors.textPrimary,
+                          SizedBox(width: 10.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        pet.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTextStyles.onboardingBody.copyWith(
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    if (pet.isVerified == true)
+                                      Icon(Icons.verified_rounded, color: const Color(0xFF0E9F6E), size: 16.sp),
+                                  ],
+                                ),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  '${pet.type} • ${pet.verifiedBreed ?? pet.breed}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.onboardingBody.copyWith(
+                                    fontSize: 12.sp,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                          SizedBox(width: 8.w),
+                          Icon(
+                            isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                            color: isSelected ? AppColors.accent : AppColors.textSecondary,
+                          ),
+                        ],
                       ),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 16.h),
-
-                // Size
-                _sectionLabel('Size'),
-                SizedBox(height: 8.h),
-                Wrap(
-                  spacing: 8.w,
-                  children: ['Small', 'Medium', 'Large'].map((s) {
-                    final isActive = _size == s.toLowerCase();
-                    return GestureDetector(
-                      onTap: () =>
-                          setState(() => _size = s.toLowerCase()),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 16.w, vertical: 8.h),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? AppColors.accent
-                              : AppColors.surface,
-                          borderRadius: BorderRadius.circular(20.r),
-                          border: Border.all(
-                            color: isActive
-                                ? AppColors.accent
-                                : AppColors.border,
-                          ),
-                        ),
-                        child: Text(
-                          s,
-                          style: AppTextStyles.onboardingBody.copyWith(
-                            fontSize: 13.sp,
-                            color: isActive
-                                ? Colors.white
-                                : AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 20.h),
+                    ),
+                  );
+                }),
+                SizedBox(height: 12.h),
 
                 _buildField('Description *', _descriptionController,
                     maxLines: 4,
@@ -230,7 +345,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
 
                 _buildField('Location', _locationController),
                 _buildField('Adoption Fee', _feeController,
-                    hint: '0 for free',
+                  hint: 'PKR amount (0 for free)',
                     keyboardType: TextInputType.number),
                 _buildField('Contact Phone', _phoneController,
                     keyboardType: TextInputType.phone),
@@ -367,23 +482,35 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
   }
 
   Future<void> _submit() async {
+    final selectedPet = _selectedPet;
+    if (selectedPet == null) {
+      CustomSnackbar.showError(context, 'Please select one of your pets first.');
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
     final feeText = _feeController.text.trim();
     final fee = feeText.isNotEmpty ? double.tryParse(feeText) : null;
 
+    final selectedImages = (selectedPet.imageUrls ?? []).isNotEmpty
+        ? selectedPet.imageUrls
+        : (selectedPet.imageUrl != null ? <String>[selectedPet.imageUrl!] : null);
+
+    final ageText = '${selectedPet.age} ${selectedPet.ageUnit}';
+
     final success = await context.read<AdoptionCubit>().createListing(
-          petName: _petNameController.text.trim(),
-          petType: _petType,
+          petName: selectedPet.name,
+          petType: selectedPet.type,
           description: _descriptionController.text.trim(),
-          breed: _optional(_breedController),
-          age: _optional(_ageController),
-          gender: _gender,
-          size: _size,
-          color: _optional(_colorController),
+          breed: selectedPet.verifiedBreed ?? selectedPet.breed,
+          age: ageText,
+          gender: selectedPet.gender,
+          color: selectedPet.color,
           medicalInfo: _optional(_medicalInfoController),
           isVaccinated: _isVaccinated,
           isNeutered: _isNeutered,
           isTrained: _isTrained,
+          imageUrls: selectedImages,
           location: _optional(_locationController),
           contactPhone: _optional(_phoneController),
           contactEmail: _optional(_emailController),

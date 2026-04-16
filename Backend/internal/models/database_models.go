@@ -302,6 +302,8 @@ type AdoptionListing struct {
 	PetName      string    `json:"petName"`
 	PetType      string    `json:"petType"`
 	Breed        *string   `json:"breed,omitempty"`
+	IsBreedVerified bool    `json:"isBreedVerified"`
+	VerifiedBreed *string   `json:"verifiedBreed,omitempty"`
 	Age          *string   `json:"age,omitempty"`
 	Gender       *string   `json:"gender,omitempty"`
 	Size         *string   `json:"size,omitempty"`

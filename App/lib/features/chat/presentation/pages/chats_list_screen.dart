@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/chat_cache_service.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../data/models/chat_model.dart';
@@ -20,12 +21,44 @@ class ChatsListScreen extends StatefulWidget {
 }
 
 class _ChatsListScreenState extends State<ChatsListScreen> {
+  final _chatCacheService = ChatCacheService();
   List<Chat> _cachedChats = [];
 
   @override
   void initState() {
     super.initState();
+    _hydrateCachedChats();
     context.read<ChatBloc>().add(const ChatEvent.loadChats());
+  }
+
+  String get _currentUserId {
+    return context.read<AuthBloc>().state.maybeWhen(
+      authenticated: (user) => user.id,
+      orElse: () => '',
+    );
+  }
+
+  Future<void> _hydrateCachedChats() async {
+    final userId = _currentUserId;
+    if (userId.isEmpty) {
+      return;
+    }
+
+    final cached = await _chatCacheService.readChatsList(userId);
+    if (!mounted || cached.isEmpty) {
+      return;
+    }
+
+    setState(() => _cachedChats = cached);
+  }
+
+  Future<void> _persistCachedChats(List<Chat> chats) async {
+    final userId = _currentUserId;
+    if (userId.isEmpty) {
+      return;
+    }
+
+    await _chatCacheService.writeChatsList(userId, chats);
   }
 
   @override
@@ -56,6 +89,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                     state.maybeWhen(
                       chatsLoaded: (chats) {
                         setState(() => _cachedChats = chats);
+                        _persistCachedChats(chats);
                       },
                       error: (message) => CustomSnackbar.showError(context, message),
                       chatDeleted: (_) {

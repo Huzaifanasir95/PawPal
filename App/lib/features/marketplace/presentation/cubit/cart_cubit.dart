@@ -8,13 +8,19 @@ class CartCubit extends Cubit<CartState> {
 
   CartCubit(this._repo) : super(const CartState());
 
+  void _safeEmit(CartState newState) {
+    if (!isClosed) {
+      emit(newState);
+    }
+  }
+
   Future<void> loadCart() async {
-    emit(state.copyWith(isLoading: true, error: null));
+    _safeEmit(state.copyWith(isLoading: true, error: null));
     try {
       final items = await _repo.getCart();
-      emit(state.copyWith(isLoading: false, items: items));
+      _safeEmit(state.copyWith(isLoading: false, items: items));
     } catch (e) {
-      emit(state.copyWith(
+      _safeEmit(state.copyWith(
         isLoading: false,
         error: e.toString().replaceAll('Exception: ', ''),
       ));
@@ -22,13 +28,13 @@ class CartCubit extends Cubit<CartState> {
   }
 
   Future<void> addToCart(String productId, int quantity) async {
-    emit(state.copyWith(isAddingToCart: true, error: null, addedProductId: null));
+    _safeEmit(state.copyWith(isAddingToCart: true, error: null, addedProductId: null));
     try {
       await _repo.addToCart(productId, quantity);
       await loadCart();
-      emit(state.copyWith(isAddingToCart: false, addedProductId: productId));
+      _safeEmit(state.copyWith(isAddingToCart: false, addedProductId: productId));
     } catch (e) {
-      emit(state.copyWith(
+      _safeEmit(state.copyWith(
         isAddingToCart: false,
         error: e.toString().replaceAll('Exception: ', ''),
       ));
@@ -39,9 +45,9 @@ class CartCubit extends Cubit<CartState> {
     try {
       await _repo.removeFromCart(cartItemId);
       final updated = state.items.where((i) => i.id != cartItemId).toList();
-      emit(state.copyWith(items: updated));
+      _safeEmit(state.copyWith(items: updated));
     } catch (e) {
-      emit(state.copyWith(error: e.toString().replaceAll('Exception: ', '')));
+      _safeEmit(state.copyWith(error: e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -59,23 +65,23 @@ class CartCubit extends Cubit<CartState> {
         }
         return i;
       }).toList();
-      emit(state.copyWith(items: updated));
+      _safeEmit(state.copyWith(items: updated));
     } catch (e) {
-      emit(state.copyWith(error: e.toString().replaceAll('Exception: ', '')));
+      _safeEmit(state.copyWith(error: e.toString().replaceAll('Exception: ', '')));
     }
   }
 
   Future<void> placeOrder(PlaceOrderRequest request) async {
-    emit(state.copyWith(isPlacingOrder: true, error: null, lastOrder: null));
+    _safeEmit(state.copyWith(isPlacingOrder: true, error: null, lastOrder: null));
     try {
       final order = await _repo.placeOrder(request);
-      emit(state.copyWith(
+      _safeEmit(state.copyWith(
         isPlacingOrder: false,
         lastOrder: order,
         items: [],
       ));
     } catch (e) {
-      emit(state.copyWith(
+      _safeEmit(state.copyWith(
         isPlacingOrder: false,
         error: e.toString().replaceAll('Exception: ', ''),
       ));
@@ -85,7 +91,7 @@ class CartCubit extends Cubit<CartState> {
   double get total => state.items.fold(0.0, (sum, i) => sum + i.totalPrice);
   int get itemCount => state.items.fold(0, (sum, i) => sum + i.quantity);
 
-  void clearError() => emit(state.copyWith(error: null));
-  void clearAddedProductId() => emit(state.copyWith(addedProductId: null));
-  void clearLastOrder() => emit(state.copyWith(lastOrder: null));
+  void clearError() => _safeEmit(state.copyWith(error: null));
+  void clearAddedProductId() => _safeEmit(state.copyWith(addedProductId: null));
+  void clearLastOrder() => _safeEmit(state.copyWith(lastOrder: null));
 }

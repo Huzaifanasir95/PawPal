@@ -8,20 +8,26 @@ class MarketplaceCubit extends Cubit<MarketplaceState> {
 
   MarketplaceCubit(this._repo) : super(const MarketplaceState());
 
+  void _safeEmit(MarketplaceState newState) {
+    if (!isClosed) {
+      emit(newState);
+    }
+  }
+
   Future<void> loadInitial() async {
-    emit(state.copyWith(isLoading: true, error: null));
+    _safeEmit(state.copyWith(isLoading: true, error: null));
     try {
       final results = await Future.wait([
         _repo.getCategories(),
         _repo.getProducts(limit: 20),
       ]);
-      emit(state.copyWith(
+      _safeEmit(state.copyWith(
         isLoading: false,
         categories: results[0] as List<ProductCategory>,
         products: results[1] as List<Product>,
       ));
     } catch (e) {
-      emit(state.copyWith(
+      _safeEmit(state.copyWith(
         isLoading: false,
         error: e.toString().replaceAll('Exception: ', ''),
       ));
@@ -35,7 +41,7 @@ class MarketplaceCubit extends Cubit<MarketplaceState> {
     double? minPrice,
     double? maxPrice,
   }) async {
-    emit(state.copyWith(
+    _safeEmit(state.copyWith(
       isLoadingProducts: true,
       selectedCategoryId: categoryId,
       selectedPetType: petType,
@@ -50,12 +56,12 @@ class MarketplaceCubit extends Cubit<MarketplaceState> {
         minPrice: minPrice,
         maxPrice: maxPrice,
       );
-      emit(state.copyWith(
+      _safeEmit(state.copyWith(
         isLoadingProducts: false,
         products: products,
       ));
     } catch (e) {
-      emit(state.copyWith(
+      _safeEmit(state.copyWith(
         isLoadingProducts: false,
         error: e.toString().replaceAll('Exception: ', ''),
       ));
@@ -63,18 +69,18 @@ class MarketplaceCubit extends Cubit<MarketplaceState> {
   }
 
   Future<void> loadProductDetail(String productId) async {
-    emit(state.copyWith(isLoadingDetail: true, selectedProduct: null, error: null));
+    _safeEmit(state.copyWith(isLoadingDetail: true, selectedProduct: null, error: null));
     try {
       final product = await _repo.getProductById(productId);
-      emit(state.copyWith(isLoadingDetail: false, selectedProduct: product));
+      _safeEmit(state.copyWith(isLoadingDetail: false, selectedProduct: product));
     } catch (e) {
-      emit(state.copyWith(
+      _safeEmit(state.copyWith(
         isLoadingDetail: false,
         error: e.toString().replaceAll('Exception: ', ''),
       ));
     }
   }
 
-  void clearError() => emit(state.copyWith(error: null));
-  void clearSelectedProduct() => emit(state.copyWith(selectedProduct: null));
+  void clearError() => _safeEmit(state.copyWith(error: null));
+  void clearSelectedProduct() => _safeEmit(state.copyWith(selectedProduct: null));
 }

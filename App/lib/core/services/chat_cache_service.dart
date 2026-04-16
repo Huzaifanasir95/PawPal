@@ -36,6 +36,7 @@ class ChatThreadCacheEntry {
 
 class ChatCacheService {
   static const _threadPrefix = 'chat_thread_cache_';
+  static const _chatsPrefix = 'chat_list_cache_';
 
   Future<ChatThreadCacheEntry?> readThread(String chatId) async {
     final prefs = await SharedPreferences.getInstance();
@@ -70,5 +71,37 @@ class ChatCacheService {
     await prefs.remove(_threadKey(chatId));
   }
 
+  Future<List<Chat>> readChatsList(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_chatsKey(userId));
+    if (raw == null || raw.isEmpty) {
+      return const [];
+    }
+
+    try {
+      final decoded = jsonDecode(raw) as List<dynamic>;
+      return decoded
+          .map((item) => Chat.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      await prefs.remove(_chatsKey(userId));
+      return const [];
+    }
+  }
+
+  Future<void> writeChatsList(String userId, List<Chat> chats) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _chatsKey(userId),
+      jsonEncode(chats.map((chat) => chat.toJson()).toList()),
+    );
+  }
+
+  Future<void> clearChatsList(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_chatsKey(userId));
+  }
+
   String _threadKey(String chatId) => '$_threadPrefix$chatId';
+  String _chatsKey(String userId) => '$_chatsPrefix$userId';
 }

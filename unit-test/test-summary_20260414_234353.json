@@ -1,0 +1,13 @@
+﻿{
+    "TestSuites":  [
+                       {
+                           "Duration":  0.41,
+                           "ExitCode":  0,
+                           "Name":  "Breed Identification Tests",
+                           "Passed":  true
+                       }
+                   ],
+    "TotalTests":  0,
+    "PassedTests":  0,
+    "FailedTests":  0
+}

@@ -74,12 +74,12 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                 decoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(0.1),
                 ),
-                child: (listing.imageUrls != null && listing.imageUrls!.isNotEmpty)
+                child: listing.imageUrls.isNotEmpty
                     ? PageView.builder(
-                        itemCount: listing.imageUrls!.length,
+                        itemCount: listing.imageUrls.length,
                         itemBuilder: (context, index) {
                           return Image.network(
-                            listing.imageUrls![index],
+                            listing.imageUrls[index],
                             fit: BoxFit.cover,
                             width: double.infinity,
                             errorBuilder: (context, error, stackTrace) => _buildPlaceholder(listing),
@@ -89,7 +89,7 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                     : _buildPlaceholder(listing),
               ),
               // Image indicators
-              if (listing.imageUrls != null && listing.imageUrls!.length > 1)
+              if (listing.imageUrls.length > 1)
                 Positioned(
                   bottom: 12.h,
                   left: 0,
@@ -97,7 +97,7 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
-                      listing.imageUrls!.length,
+                      listing.imageUrls.length,
                       (index) => Container(
                         width: 8.w,
                         height: 8.h,
@@ -153,8 +153,8 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                         ],
                       ),
                       child: Text(
-                        listing.adoptionFee != null && listing.adoptionFee! > 0
-                            ? '\$${listing.adoptionFee!.toStringAsFixed(0)}'
+                        listing.adoptionFee > 0
+                            ? '\$${listing.adoptionFee.toStringAsFixed(0)}'
                             : 'Free',
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 16.sp,

@@ -25,7 +25,6 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   late BookingRepository _repository;
   ServiceBooking? _booking;
   CompletionReport? _completionReport;
-  List<BookingPayment> _payments = [];
   List<BookingTracking> _tracking = [];
   bool _isLoading = true;
 
@@ -41,18 +40,20 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     try {
       final details = await _repository.getBookingDetails(widget.bookingId);
       final tracking = await _repository.getTracking(widget.bookingId);
-      
+
       setState(() {
         _booking = details.booking;
         _completionReport = details.completionReport;
-        _payments = details.payments ?? [];
         _tracking = tracking;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        CustomSnackbar.showError(context, e.toString().replaceFirst('Exception: ', ''));
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+        );
       }
     }
   }
@@ -64,7 +65,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       appBar: AppBar(
         title: Text(
           'Booking Details',
-          style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.titleLarge.copyWith(
+            color: AppColors.textPrimary,
+          ),
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
@@ -73,36 +76,37 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _booking == null
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _booking == null
               ? const Center(child: Text('Booking not found'))
               : RefreshIndicator(
-                  onRefresh: _loadData,
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(16.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildStatusCard(),
+                onRefresh: _loadData,
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildStatusCard(),
+                      SizedBox(height: 16.h),
+                      _buildDetailsCard(),
+                      SizedBox(height: 16.h),
+                      _buildPricingCard(),
+                      if (_tracking.isNotEmpty) ...[
                         SizedBox(height: 16.h),
-                        _buildDetailsCard(),
-                        SizedBox(height: 16.h),
-                        _buildPricingCard(),
-                        if (_tracking.isNotEmpty) ...[
-                          SizedBox(height: 16.h),
-                          _buildTrackingCard(),
-                        ],
-                        if (_completionReport != null) ...[
-                          SizedBox(height: 16.h),
-                          _buildCompletionReportCard(),
-                        ],
-                        SizedBox(height: 16.h),
-                        _buildActionsCard(),
+                        _buildTrackingCard(),
                       ],
-                    ),
+                      if (_completionReport != null) ...[
+                        SizedBox(height: 16.h),
+                        _buildCompletionReportCard(),
+                      ],
+                      SizedBox(height: 16.h),
+                      _buildActionsCard(),
+                    ],
                   ),
                 ),
+              ),
     );
   }
 
@@ -127,7 +131,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
               children: [
                 Text(
                   _booking!.bookingNumber,
-                  style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 Text(
                   _getStatusText(_booking!.status),
@@ -163,7 +169,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         children: [
           Text(
             'Service Details',
-            style: AppTextStyles.titleMedium.copyWith(color: AppColors.textPrimary),
+            style: AppTextStyles.titleMedium.copyWith(
+              color: AppColors.textPrimary,
+            ),
           ),
           SizedBox(height: 16.h),
           _buildDetailRow(
@@ -219,13 +227,17 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 children: [
                   Text(
                     widget.isCaregiver ? 'Pet Owner' : 'Caregiver',
-                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   Text(
                     widget.isCaregiver
                         ? (_booking!.ownerName ?? 'Pet Owner')
                         : (_booking!.caregiverName ?? 'Caregiver'),
-                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -250,12 +262,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
               children: [
                 Text(
                   label,
-                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-                Text(
-                  value,
-                  style: AppTextStyles.bodyMedium,
-                ),
+                Text(value, style: AppTextStyles.bodyMedium),
               ],
             ),
           ),
@@ -283,7 +294,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         children: [
           Text(
             'Payment Summary',
-            style: AppTextStyles.titleMedium.copyWith(color: AppColors.textPrimary),
+            style: AppTextStyles.titleMedium.copyWith(
+              color: AppColors.textPrimary,
+            ),
           ),
           SizedBox(height: 16.h),
           _buildPriceRow('Base Amount', _booking!.baseAmount),
@@ -291,18 +304,26 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             _buildPriceRow('Additional Pets Fee', _booking!.additionalPetsFee),
           _buildPriceRow('Service Fee', _booking!.serviceFee),
           if (_booking!.discountAmount > 0)
-            _buildPriceRow('Discount', -_booking!.discountAmount, isDiscount: true),
+            _buildPriceRow(
+              'Discount',
+              -_booking!.discountAmount,
+              isDiscount: true,
+            ),
           Divider(height: 24.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Total',
-                style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w700),
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               Text(
                 '${_booking!.currency} ${_booking!.totalAmount.toStringAsFixed(0)}',
-                style: AppTextStyles.titleLarge.copyWith(color: AppColors.primary),
+                style: AppTextStyles.titleLarge.copyWith(
+                  color: AppColors.primary,
+                ),
               ),
             ],
           ),
@@ -311,13 +332,22 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     );
   }
 
-  Widget _buildPriceRow(String label, double amount, {bool isDiscount = false}) {
+  Widget _buildPriceRow(
+    String label,
+    double amount, {
+    bool isDiscount = false,
+  }) {
     return Padding(
       padding: EdgeInsets.only(bottom: 8.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+          Text(
+            label,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
           Text(
             '${isDiscount ? '-' : ''}${_booking!.currency} ${amount.abs().toStringAsFixed(0)}',
             style: AppTextStyles.bodyMedium.copyWith(
@@ -348,7 +378,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         children: [
           Text(
             'Live Tracking',
-            style: AppTextStyles.titleMedium.copyWith(color: AppColors.textPrimary),
+            style: AppTextStyles.titleMedium.copyWith(
+              color: AppColors.textPrimary,
+            ),
           ),
           SizedBox(height: 16.h),
           ..._tracking.map((point) => _buildTrackingPoint(point)),
@@ -369,7 +401,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
               color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.location_on, color: AppColors.primary, size: 16.w),
+            child: Icon(
+              Icons.location_on,
+              color: AppColors.primary,
+              size: 16.w,
+            ),
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -378,18 +414,24 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
               children: [
                 Text(
                   point.activityType ?? 'Location Update',
-                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 if (point.note != null)
                   Text(
                     point.note!,
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 Text(
                   point.recordedAt != null
                       ? '${point.recordedAt!.hour}:${point.recordedAt!.minute.toString().padLeft(2, '0')}'
                       : '',
-                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -418,34 +460,38 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         children: [
           Text(
             'Completion Report',
-            style: AppTextStyles.titleMedium.copyWith(color: AppColors.textPrimary),
+            style: AppTextStyles.titleMedium.copyWith(
+              color: AppColors.textPrimary,
+            ),
           ),
           SizedBox(height: 16.h),
-          Text(
-            _completionReport!.summary,
-            style: AppTextStyles.bodyMedium,
-          ),
+          Text(_completionReport!.summary, style: AppTextStyles.bodyMedium),
           if (_completionReport!.activitiesPerformed.isNotEmpty) ...[
             SizedBox(height: 12.h),
             Text(
               'Activities:',
-              style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
+              style: AppTextStyles.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             Wrap(
               spacing: 8.w,
-              children: _completionReport!.activitiesPerformed.map((activity) {
-                return Chip(
-                  label: Text(activity, style: AppTextStyles.labelSmall),
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
-                );
-              }).toList(),
+              children:
+                  _completionReport!.activitiesPerformed.map((activity) {
+                    return Chip(
+                      label: Text(activity, style: AppTextStyles.labelSmall),
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                    );
+                  }).toList(),
             ),
           ],
           if (_completionReport!.behaviorNotes != null) ...[
             SizedBox(height: 12.h),
             Text(
               'Behavior Notes: ${_completionReport!.behaviorNotes}',
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ],
@@ -596,23 +642,35 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         widget.bookingId,
         RespondToBookingRequest(accept: accept),
       );
-      CustomSnackbar.showSuccess(context, accept ? 'Booking accepted!' : 'Booking declined');
+      CustomSnackbar.showSuccess(
+        context,
+        accept ? 'Booking accepted!' : 'Booking declined',
+      );
       _loadData();
     } catch (e) {
-      CustomSnackbar.showError(context, e.toString().replaceFirst('Exception: ', ''));
+      CustomSnackbar.showError(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+      );
     }
   }
 
   Future<void> _startService() async {
     try {
+      final latitude = _booking?.serviceLatitude;
+      final longitude = _booking?.serviceLongitude;
+
       await _repository.startService(
         widget.bookingId,
-        const StartServiceRequest(latitude: 0, longitude: 0), // TODO: Get actual location
+        StartServiceRequest(latitude: latitude, longitude: longitude),
       );
       CustomSnackbar.showSuccess(context, 'Service started!');
       _loadData();
     } catch (e) {
-      CustomSnackbar.showError(context, e.toString().replaceFirst('Exception: ', ''));
+      CustomSnackbar.showError(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+      );
     }
   }
 
@@ -622,41 +680,42 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Complete Service'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: summaryController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Summary',
-                hintText: 'How did the service go?',
-              ),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Complete Service'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: summaryController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Summary',
+                    hintText: 'How did the service go?',
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                TextField(
+                  controller: behaviorController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Pet Behavior Notes',
+                    hintText: 'Optional notes about pet behavior',
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 16.h),
-            TextField(
-              controller: behaviorController,
-              maxLines: 2,
-              decoration: const InputDecoration(
-                labelText: 'Pet Behavior Notes',
-                hintText: 'Optional notes about pet behavior',
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Complete'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Complete'),
-          ),
-        ],
-      ),
     );
 
     if (result == true && summaryController.text.isNotEmpty) {
@@ -665,13 +724,19 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           widget.bookingId,
           SubmitCompletionReportRequest(
             summary: summaryController.text,
-            behaviorNotes: behaviorController.text.isNotEmpty ? behaviorController.text : null,
+            behaviorNotes:
+                behaviorController.text.isNotEmpty
+                    ? behaviorController.text
+                    : null,
           ),
         );
         CustomSnackbar.showSuccess(context, 'Service completed!');
         _loadData();
       } catch (e) {
-        CustomSnackbar.showError(context, e.toString().replaceFirst('Exception: ', ''));
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+        );
       }
     }
   }
@@ -682,50 +747,52 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Leave a Review'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return IconButton(
-                    icon: Icon(
-                      index < rating ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                      size: 32.w,
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => AlertDialog(
+                  title: const Text('Leave a Review'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          return IconButton(
+                            icon: Icon(
+                              index < rating ? Icons.star : Icons.star_border,
+                              color: Colors.amber,
+                              size: 32.w,
+                            ),
+                            onPressed: () {
+                              setDialogState(() => rating = index + 1);
+                            },
+                          );
+                        }),
+                      ),
+                      SizedBox(height: 16.h),
+                      TextField(
+                        controller: reviewController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Review',
+                          hintText: 'Share your experience...',
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel'),
                     ),
-                    onPressed: () {
-                      setDialogState(() => rating = index + 1);
-                    },
-                  );
-                }),
-              ),
-              SizedBox(height: 16.h),
-              TextField(
-                controller: reviewController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Review',
-                  hintText: 'Share your experience...',
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Submit'),
+                    ),
+                  ],
                 ),
-              ),
-            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Submit'),
-            ),
-          ],
-        ),
-      ),
     );
 
     if (result == true) {
@@ -734,13 +801,17 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           widget.bookingId,
           SubmitOwnerReviewRequest(
             rating: rating,
-            review: reviewController.text.isNotEmpty ? reviewController.text : null,
+            review:
+                reviewController.text.isNotEmpty ? reviewController.text : null,
           ),
         );
         CustomSnackbar.showSuccess(context, 'Review submitted!');
         Navigator.of(context).pop();
       } catch (e) {
-        CustomSnackbar.showError(context, e.toString().replaceFirst('Exception: ', ''));
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+        );
       }
     }
   }
@@ -750,27 +821,31 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancel Booking'),
-        content: TextField(
-          controller: reasonController,
-          maxLines: 2,
-          decoration: const InputDecoration(
-            labelText: 'Reason for cancellation',
-            hintText: 'Please provide a reason',
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Cancel Booking'),
+            content: TextField(
+              controller: reasonController,
+              maxLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'Reason for cancellation',
+                hintText: 'Please provide a reason',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Keep Booking'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text(
+                  'Cancel Booking',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep Booking'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Cancel Booking', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
 
     if (result == true && reasonController.text.isNotEmpty) {
@@ -782,7 +857,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         CustomSnackbar.showSuccess(context, 'Booking cancelled');
         Navigator.of(context).pop();
       } catch (e) {
-        CustomSnackbar.showError(context, e.toString().replaceFirst('Exception: ', ''));
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+        );
       }
     }
   }

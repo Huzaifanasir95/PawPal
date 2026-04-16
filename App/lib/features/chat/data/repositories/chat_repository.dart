@@ -23,11 +23,7 @@ class ChatRepository {
         throw Exception(response.data['error'] ?? 'Failed to start chat');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to start chat';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to start chat');
     }
   }
 
@@ -45,11 +41,7 @@ class ChatRepository {
         throw Exception(response.data['error'] ?? 'Failed to fetch chats');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to fetch chats';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to fetch chats');
     }
   }
 
@@ -64,11 +56,7 @@ class ChatRepository {
         throw Exception(response.data['error'] ?? 'Failed to fetch chat');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to fetch chat';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to fetch chat');
     }
   }
 
@@ -88,13 +76,7 @@ class ChatRepository {
         throw Exception(details != null ? '$error: $details' : error);
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final data = e.response!.data;
-        final error = data is Map ? (data['error'] ?? 'Failed to send message') : 'Failed to send message';
-        final details = data is Map ? data['details'] : null;
-        throw Exception(details != null ? '$error: $details' : error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to send message');
     }
   }
 
@@ -122,11 +104,7 @@ class ChatRepository {
         throw Exception(response.data['error'] ?? 'Failed to fetch messages');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to fetch messages';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to fetch messages');
     }
   }
 
@@ -139,11 +117,7 @@ class ChatRepository {
         throw Exception(response.data['error'] ?? 'Failed to mark message as read');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to mark message as read';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to mark message as read');
     }
   }
 
@@ -156,11 +130,39 @@ class ChatRepository {
         throw Exception(response.data['error'] ?? 'Failed to delete chat');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to delete chat';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to delete chat');
     }
+  }
+
+  Exception _handleError(DioException e, String fallback) {
+    final data = e.response?.data;
+
+    if (data is Map) {
+      final error = data['error'] ?? data['message'];
+      final details = data['details'];
+
+      if (error is String && error.trim().isNotEmpty) {
+        if (details is String && details.trim().isNotEmpty) {
+          return Exception('${error.trim()}: ${details.trim()}');
+        }
+        return Exception(error.trim());
+      }
+    }
+
+    if (data is String && data.trim().isNotEmpty) {
+      return Exception(data.trim());
+    }
+
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout) {
+      return Exception('Network timeout. Please try again.');
+    }
+
+    if (e.response == null) {
+      return Exception('Network error: ${e.message ?? 'Unable to reach server'}');
+    }
+
+    return Exception(fallback);
   }
 }

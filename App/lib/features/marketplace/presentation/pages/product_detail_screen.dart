@@ -5,10 +5,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:convert';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/api_client.dart';
 import '../cubit/marketplace_cubit.dart';
 import '../cubit/marketplace_state.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/cart_state.dart';
+import '../../data/models/marketplace_models.dart';
+import '../../data/repositories/marketplace_repository.dart';
 import 'cart_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -21,26 +24,35 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  final MarketplaceRepository _repo = MarketplaceRepository.instance;
   int _quantity = 1;
   int _selectedImageIndex = 0;
+  bool _isLoadingReviews = false;
+  bool _isSubmittingReview = false;
+  String? _reviewsError;
+  List<ProductReview> _reviews = const <ProductReview>[];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MarketplaceCubit>().loadProductDetail(widget.productId);
+      _loadReviews();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6F2),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: BlocBuilder<MarketplaceCubit, MarketplaceState>(
         builder: (context, state) {
           if (state.isLoadingDetail) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF2C6E69)),
+            return Center(
+              child: CircularProgressIndicator(color: colorScheme.primary),
             );
           }
 
@@ -155,7 +167,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               SliverToBoxAdapter(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F6F2),
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(24.r),
                     ),
@@ -254,6 +266,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                         SizedBox(height: 16.h),
 
+                        _buildReviewsSection(product),
+
+                        SizedBox(height: 16.h),
+
                         // Seller
                         if (product.sellerName != null) ...[
                           Divider(color: const Color(0xFFE0E0E0), height: 1.h),
@@ -319,21 +335,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         builder: (context, state) {
           final product = state.selectedProduct;
           if (product == null) return const SizedBox.shrink();
-          return _buildBottomBar(
-            context,
-            product.stockQuantity > 0,
-            product.id,
-          );
+          return _buildBottomBar(context, product);
         },
       ),
     );
   }
 
-  Widget _buildBottomBar(BuildContext context, bool inStock, String productId) {
+  Widget _buildBottomBar(BuildContext context, Product product) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final inStock = product.stockQuantity > 0;
+    final canAddToCart =
+        ApiClient.instance.userId == null || ApiClient.instance.userId != product.sellerId;
+
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 20.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -432,16 +449,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 builder: (context, cartState) {
                   return ElevatedButton(
                     onPressed:
-                        inStock && !cartState.isAddingToCart
+                        inStock && canAddToCart && !cartState.isAddingToCart
                             ? () => context.read<CartCubit>().addToCart(
-                              productId,
+                              product.id,
                               _quantity,
                             )
                             : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
                           inStock
-                              ? const Color(0xFF2C6E69)
+                              ? colorScheme.primary
                               : AppColors.textSecondary,
                       padding: EdgeInsets.symmetric(vertical: 14.h),
                       shape: RoundedRectangleBorder(
@@ -469,7 +486,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 ),
                                 SizedBox(width: 8.w),
                                 Text(
-                                  inStock ? 'Add to Cart' : 'Out of Stock',
+                                  !canAddToCart
+                                      ? 'Your Listing'
+                                      : (inStock ? 'Add to Cart' : 'Out of Stock'),
                                   style: GoogleFonts.mulish(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
@@ -486,6 +505,329 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _loadReviews() async {
+    setState(() {
+      _isLoadingReviews = true;
+      _reviewsError = null;
+    });
+
+    try {
+      final reviews = await _repo.getProductReviews(widget.productId, limit: 20);
+      if (!mounted) return;
+      setState(() {
+        _reviews = reviews;
+        _isLoadingReviews = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _reviewsError = e.toString().replaceAll('Exception: ', '');
+        _isLoadingReviews = false;
+      });
+    }
+  }
+
+  Future<void> _showReviewDialog(Product product) async {
+    final currentUserId = ApiClient.instance.userId;
+    if (currentUserId != null && currentUserId == product.sellerId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You cannot review your own product.',
+            style: GoogleFonts.mulish(),
+          ),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final commentController = TextEditingController();
+    int rating = 5;
+
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: Text(
+                'Write a Review',
+                style: GoogleFonts.mulish(fontWeight: FontWeight.w800),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Reviews can only be submitted after delivery.',
+                    style: GoogleFonts.mulish(
+                      fontSize: 12.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  Wrap(
+                    spacing: 4.w,
+                    children: List.generate(
+                      5,
+                      (index) => IconButton(
+                        onPressed: () {
+                          setDialogState(() => rating = index + 1);
+                        },
+                        icon: Icon(
+                          index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: const Color(0xFFFFA726),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10.h),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Share your experience (optional)',
+                      hintStyle: GoogleFonts.mulish(fontSize: 13.sp),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: _isSubmittingReview
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(false),
+                  child: Text('Cancel', style: GoogleFonts.mulish()),
+                ),
+                ElevatedButton(
+                  onPressed: _isSubmittingReview
+                      ? null
+                      : () async {
+                          setState(() => _isSubmittingReview = true);
+                          try {
+                            await _repo.addProductReview(
+                              product.id,
+                              CreateProductReviewRequest(
+                                rating: rating,
+                                comment: commentController.text.trim(),
+                              ),
+                            );
+
+                            if (dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop(true);
+                            }
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  e.toString().replaceAll('Exception: ', ''),
+                                  style: GoogleFonts.mulish(),
+                                ),
+                                backgroundColor: const Color(0xFFEF4444),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isSubmittingReview = false);
+                            }
+                          }
+                        },
+                  child: _isSubmittingReview
+                      ? SizedBox(
+                          width: 16.w,
+                          height: 16.h,
+                          child: const CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text('Submit', style: GoogleFonts.mulish(fontWeight: FontWeight.w700)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    commentController.dispose();
+
+    if (submitted == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Review submitted!', style: GoogleFonts.mulish()),
+          backgroundColor: const Color(0xFF2C6E69),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      await _loadReviews();
+      if (mounted) {
+        context.read<MarketplaceCubit>().loadProductDetail(widget.productId);
+      }
+    }
+  }
+
+  Widget _buildReviewsSection(Product product) {
+    final currentUserId = ApiClient.instance.userId;
+    final canAttemptReview = currentUserId == null || currentUserId != product.sellerId;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.reviews_outlined, size: 18.sp, color: const Color(0xFF2C6E69)),
+              SizedBox(width: 8.w),
+              Text(
+                'Customer Reviews',
+                style: GoogleFonts.mulish(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF191D21),
+                ),
+              ),
+              const Spacer(),
+              if (canAttemptReview)
+                TextButton.icon(
+                  onPressed: _isSubmittingReview ? null : () => _showReviewDialog(product),
+                  icon: Icon(Icons.edit_rounded, size: 16.sp),
+                  label: Text(
+                    'Write Review',
+                    style: GoogleFonts.mulish(fontSize: 12.sp, fontWeight: FontWeight.w700),
+                  ),
+                ),
+            ],
+          ),
+          if (_isLoadingReviews)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+              child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else if (_reviewsError != null)
+            Padding(
+              padding: EdgeInsets.only(top: 8.h),
+              child: Text(
+                _reviewsError!,
+                style: GoogleFonts.mulish(
+                  fontSize: 12.sp,
+                  color: const Color(0xFFEF4444),
+                ),
+              ),
+            )
+          else if (_reviews.isEmpty)
+            Padding(
+              padding: EdgeInsets.only(top: 8.h),
+              child: Text(
+                'No reviews yet. Purchase and receive the product to leave the first review.',
+                style: GoogleFonts.mulish(
+                  fontSize: 13.sp,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+            )
+          else
+            Column(
+              children: _reviews.map(_buildReviewTile).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewTile(ProductReview review) {
+    return Container(
+      margin: EdgeInsets.only(top: 10.h),
+      padding: EdgeInsets.all(10.w),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F6F2),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 14.r,
+                backgroundColor: AppColors.primary.withOpacity(0.25),
+                child: Text(
+                  (review.userName ?? 'P').isNotEmpty
+                      ? (review.userName ?? 'P')[0].toUpperCase()
+                      : 'P',
+                  style: GoogleFonts.mulish(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF191D21),
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  review.userName ?? 'Pet owner',
+                  style: GoogleFonts.mulish(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF191D21),
+                  ),
+                ),
+              ),
+              Text(
+                _formatReviewDate(review.createdAt),
+                style: GoogleFonts.mulish(
+                  fontSize: 11.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 6.h),
+          Row(
+            children: List.generate(
+              5,
+              (index) => Icon(
+                index < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                size: 16.sp,
+                color: const Color(0xFFFFA726),
+              ),
+            ),
+          ),
+          if (review.comment != null && review.comment!.trim().isNotEmpty) ...[
+            SizedBox(height: 6.h),
+            Text(
+              review.comment!,
+              style: GoogleFonts.mulish(
+                fontSize: 13.sp,
+                color: const Color(0xFF4B5563),
+                height: 1.45,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatReviewDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inDays < 1) return 'Today';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
+    if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
+    return '${(diff.inDays / 365).floor()}y ago';
   }
 
   Widget _quantityButton(IconData icon, VoidCallback onTap) {

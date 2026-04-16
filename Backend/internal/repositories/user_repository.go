@@ -42,7 +42,7 @@ func (r *UserRepositoryPG) Create(ctx context.Context, user *models.User) error 
 		user.AccountType = "pet_owner"
 	}
 
-	return r.db.QueryRow(ctx, query,
+	err := r.db.QueryRow(ctx, query,
 		user.ID,
 		user.Email,
 		user.PasswordHash,
@@ -55,6 +55,15 @@ func (r *UserRepositoryPG) Create(ctx context.Context, user *models.User) error 
 		user.CreatedAt,
 		user.UpdatedAt,
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		return err
+	}
+
+	if err := r.AddUserRole(ctx, user.ID, user.AccountType); err != nil && !isUndefinedTableError(err) {
+		return err
+	}
+
+	return nil
 }
 
 // GetByID gets a user by ID

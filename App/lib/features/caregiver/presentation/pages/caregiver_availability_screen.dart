@@ -16,7 +16,6 @@ class CaregiverAvailabilityScreen extends StatefulWidget {
 
 class _CaregiverAvailabilityScreenState extends State<CaregiverAvailabilityScreen> {
   late CaregiverRepository _repository;
-  List<CaregiverAvailability> _availability = [];
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -68,7 +67,6 @@ class _CaregiverAvailabilityScreenState extends State<CaregiverAvailabilityScree
       }
 
       setState(() {
-        _availability = availability;
         _isLoading = false;
       });
     } catch (e) {

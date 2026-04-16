@@ -34,34 +34,41 @@ class BookingRepository {
     }
   }
 
-  Future<({
-    ServiceBooking booking,
-    CompletionReport? completionReport,
-    List<ServiceIncident>? incidents,
-    List<BookingPayment>? payments,
-  })> getBookingDetails(String bookingId) async {
+  Future<
+    ({
+      ServiceBooking booking,
+      CompletionReport? completionReport,
+      List<ServiceIncident>? incidents,
+      List<BookingPayment>? payments,
+    })
+  >
+  getBookingDetails(String bookingId) async {
     try {
-      final response = await _apiClient.get('/api/v1/bookings/$bookingId/details');
-      
+      final response = await _apiClient.get('/api/v1/bookings/$bookingId');
+
       final booking = ServiceBooking.fromJson(response.data['booking']);
-      
+
       CompletionReport? completionReport;
       if (response.data['completionReport'] != null) {
-        completionReport = CompletionReport.fromJson(response.data['completionReport']);
+        completionReport = CompletionReport.fromJson(
+          response.data['completionReport'],
+        );
       }
 
       List<ServiceIncident>? incidents;
       if (response.data['incidents'] != null) {
-        incidents = (response.data['incidents'] as List)
-            .map((json) => ServiceIncident.fromJson(json))
-            .toList();
+        incidents =
+            (response.data['incidents'] as List)
+                .map((json) => ServiceIncident.fromJson(json))
+                .toList();
       }
 
       List<BookingPayment>? payments;
       if (response.data['payments'] != null) {
-        payments = (response.data['payments'] as List)
-            .map((json) => BookingPayment.fromJson(json))
-            .toList();
+        payments =
+            (response.data['payments'] as List)
+                .map((json) => BookingPayment.fromJson(json))
+                .toList();
       }
 
       return (
@@ -75,7 +82,8 @@ class BookingRepository {
     }
   }
 
-  Future<({List<ServiceBooking> bookings, int total, int page, int limit})> getMyBookings({
+  Future<({List<ServiceBooking> bookings, int total, int page, int limit})>
+  getMyBookings({
     required String role, // 'owner' or 'caregiver'
     String? status,
     int page = 1,
@@ -94,9 +102,10 @@ class BookingRepository {
         queryParameters: queryParams,
       );
 
-      final bookings = (response.data['bookings'] as List? ?? [])
-          .map((json) => ServiceBooking.fromJson(json))
-          .toList();
+      final bookings =
+          (response.data['bookings'] as List? ?? [])
+              .map((json) => ServiceBooking.fromJson(json))
+              .toList();
 
       return (
         bookings: bookings,
@@ -113,7 +122,10 @@ class BookingRepository {
   // BOOKING ACTIONS
   // ============================================
 
-  Future<void> respondToBooking(String bookingId, RespondToBookingRequest request) async {
+  Future<void> respondToBooking(
+    String bookingId,
+    RespondToBookingRequest request,
+  ) async {
     try {
       await _apiClient.post(
         '/api/v1/bookings/$bookingId/respond',
@@ -124,7 +136,10 @@ class BookingRepository {
     }
   }
 
-  Future<void> cancelBooking(String bookingId, CancelBookingRequest request) async {
+  Future<void> cancelBooking(
+    String bookingId,
+    CancelBookingRequest request,
+  ) async {
     try {
       await _apiClient.post(
         '/api/v1/bookings/$bookingId/cancel',
@@ -135,7 +150,10 @@ class BookingRepository {
     }
   }
 
-  Future<void> startService(String bookingId, StartServiceRequest request) async {
+  Future<void> startService(
+    String bookingId,
+    StartServiceRequest request,
+  ) async {
     try {
       await _apiClient.post(
         '/api/v1/bookings/$bookingId/start',
@@ -150,7 +168,10 @@ class BookingRepository {
   // TRACKING
   // ============================================
 
-  Future<BookingTracking> addTracking(String bookingId, AddTrackingRequest request) async {
+  Future<BookingTracking> addTracking(
+    String bookingId,
+    AddTrackingRequest request,
+  ) async {
     try {
       final response = await _apiClient.post(
         '/api/v1/bookings/$bookingId/tracking',
@@ -164,7 +185,9 @@ class BookingRepository {
 
   Future<List<BookingTracking>> getTracking(String bookingId) async {
     try {
-      final response = await _apiClient.get('/api/v1/bookings/$bookingId/tracking');
+      final response = await _apiClient.get(
+        '/api/v1/bookings/$bookingId/tracking',
+      );
       return (response.data['tracking'] as List? ?? [])
           .map((json) => BookingTracking.fromJson(json))
           .toList();
@@ -182,9 +205,24 @@ class BookingRepository {
     SubmitCompletionReportRequest request,
   ) async {
     try {
+      final payload = <String, dynamic>{
+        'summary': request.summary,
+        if (request.activitiesPerformed != null)
+          'activitiesPerformed': request.activitiesPerformed,
+        if (request.behaviorNotes != null)
+          'behaviorNotes': request.behaviorNotes,
+        if (request.feedingNotes != null) 'feedingNotes': request.feedingNotes,
+        if (request.actualDurationMinutes != null)
+          'actualDurationMinutes': request.actualDurationMinutes,
+        if (request.distanceWalkedKm != null)
+          'distanceWalkedKm': request.distanceWalkedKm,
+        if (request.photos != null && request.photos!.isNotEmpty)
+          'photoUrls': request.photos,
+      };
+
       final response = await _apiClient.post(
         '/api/v1/bookings/$bookingId/complete',
-        data: request.toJson(),
+        data: payload,
       );
       return CompletionReport.fromJson(response.data['report']);
     } on DioException catch (e) {
@@ -196,22 +234,48 @@ class BookingRepository {
   // REVIEWS
   // ============================================
 
-  Future<void> submitOwnerReview(String bookingId, SubmitOwnerReviewRequest request) async {
+  Future<void> submitOwnerReview(
+    String bookingId,
+    SubmitOwnerReviewRequest request,
+  ) async {
     try {
+      final payload = <String, dynamic>{
+        'overallRating': request.rating,
+        if (request.review != null && request.review!.trim().isNotEmpty)
+          'review': request.review,
+        if (request.communicationRating != null)
+          'communicationRating': request.communicationRating,
+        if (request.reliabilityRating != null)
+          'reliabilityRating': request.reliabilityRating,
+        if (request.careQualityRating != null)
+          'careQualityRating': request.careQualityRating,
+      };
+
       await _apiClient.post(
         '/api/v1/bookings/$bookingId/review/owner',
-        data: request.toJson(),
+        data: payload,
       );
     } on DioException catch (e) {
       throw _handleError(e, 'Failed to submit review');
     }
   }
 
-  Future<void> submitCaregiverReview(String bookingId, SubmitCaregiverReviewRequest request) async {
+  Future<void> submitCaregiverReview(
+    String bookingId,
+    SubmitCaregiverReviewRequest request,
+  ) async {
     try {
+      final payload = <String, dynamic>{
+        'overallRating': request.rating,
+        if (request.review != null && request.review!.trim().isNotEmpty)
+          'review': request.review,
+        if (request.petBehaviorRating != null)
+          'petBehaviorRating': request.petBehaviorRating,
+      };
+
       await _apiClient.post(
         '/api/v1/bookings/$bookingId/review/caregiver',
-        data: request.toJson(),
+        data: payload,
       );
     } on DioException catch (e) {
       throw _handleError(e, 'Failed to submit review');
@@ -222,11 +286,17 @@ class BookingRepository {
   // PAYMENTS
   // ============================================
 
-  Future<BookingPayment> processPayment(String bookingId, ProcessPaymentRequest request) async {
+  Future<BookingPayment> processPayment(
+    String bookingId,
+    ProcessPaymentRequest request,
+  ) async {
     try {
       final response = await _apiClient.post(
         '/api/v1/bookings/$bookingId/payments',
-        data: request.toJson(),
+        data: {
+          'paymentMethod': request.paymentMethod,
+          'paymentType': request.paymentType,
+        },
       );
       return BookingPayment.fromJson(response.data['payment']);
     } on DioException catch (e) {
@@ -236,7 +306,9 @@ class BookingRepository {
 
   Future<List<BookingPayment>> getPayments(String bookingId) async {
     try {
-      final response = await _apiClient.get('/api/v1/bookings/$bookingId/payments');
+      final response = await _apiClient.get(
+        '/api/v1/bookings/$bookingId/payments',
+      );
       return (response.data['payments'] as List? ?? [])
           .map((json) => BookingPayment.fromJson(json))
           .toList();
@@ -249,11 +321,22 @@ class BookingRepository {
   // INCIDENTS
   // ============================================
 
-  Future<ServiceIncident> reportIncident(String bookingId, ReportIncidentRequest request) async {
+  Future<ServiceIncident> reportIncident(
+    String bookingId,
+    ReportIncidentRequest request,
+  ) async {
     try {
+      final payload = <String, dynamic>{
+        'incidentType': request.incidentType,
+        'severity': request.severity,
+        'description': request.description,
+        if (request.photos != null && request.photos!.isNotEmpty)
+          'photoUrls': request.photos,
+      };
+
       final response = await _apiClient.post(
         '/api/v1/bookings/$bookingId/incidents',
-        data: request.toJson(),
+        data: payload,
       );
       return ServiceIncident.fromJson(response.data['incident']);
     } on DioException catch (e) {
@@ -267,8 +350,14 @@ class BookingRepository {
 
   Exception _handleError(DioException e, String defaultMessage) {
     if (e.response != null) {
-      final error = e.response!.data['error'] ?? e.response!.data['details'] ?? defaultMessage;
-      return Exception(error);
+      final data = e.response!.data;
+      if (data is Map) {
+        final error = data['error'] ?? data['message'] ?? data['details'];
+        if (error is String && error.trim().isNotEmpty) {
+          return Exception(error.trim());
+        }
+      }
+      return Exception(defaultMessage);
     }
     return Exception('Network error: ${e.message}');
   }

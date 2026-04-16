@@ -743,6 +743,45 @@ func (r *MarketplaceRepository) GetSellerOrders(ctx context.Context, sellerID uu
 
 // ─── Reviews ─────────────────────────────────────────────────────────────────
 
+// BuyerHasDeliveredPurchase checks if a buyer has a delivered purchase for a product.
+// If orderItemID is provided, the delivered check is scoped to that specific order item.
+func (r *MarketplaceRepository) BuyerHasDeliveredPurchase(ctx context.Context, buyerID, productID uuid.UUID, orderItemID *uuid.UUID) (bool, error) {
+	var exists bool
+
+	if orderItemID != nil {
+		err := r.db.QueryRow(ctx, `
+			SELECT EXISTS(
+				SELECT 1
+				FROM order_items oi
+				JOIN orders o ON o.id = oi.order_id
+				WHERE oi.id = $1
+					AND oi.product_id = $2
+					AND o.buyer_id = $3
+					AND (oi.seller_status = 'delivered' OR o.status = 'delivered')
+			)`, *orderItemID, productID, buyerID).Scan(&exists)
+		if err != nil {
+			return false, err
+		}
+
+		return exists, nil
+	}
+
+	err := r.db.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1
+			FROM order_items oi
+			JOIN orders o ON o.id = oi.order_id
+			WHERE oi.product_id = $1
+				AND o.buyer_id = $2
+				AND (oi.seller_status = 'delivered' OR o.status = 'delivered')
+		)`, productID, buyerID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 // AddReview inserts a review and updates the product's aggregate rating
 func (r *MarketplaceRepository) AddReview(ctx context.Context, review *models.ProductReview) error {
 	tx, err := r.db.Begin(ctx)

@@ -45,8 +45,17 @@ class CaregiverRepository {
   Future<({CaregiverProfile profile, List<CaregiverAvailability>? availability, List<CaregiverGalleryItem>? gallery})> getMyProfile() async {
     try {
       final response = await _apiClient.get('/api/v1/caregivers/profile');
-      
-      final profile = CaregiverProfile.fromJson(response.data['profile']);
+
+      final baseProfile = CaregiverProfile.fromJson(response.data['profile']);
+
+      List<CaregiverService> services = const [];
+      if (response.data['services'] != null) {
+        services = (response.data['services'] as List)
+            .map((json) => CaregiverService.fromJson(json))
+            .toList();
+      }
+
+      final profile = baseProfile.copyWith(services: services);
       
       List<CaregiverAvailability>? availability;
       if (response.data['availability'] != null) {
@@ -313,10 +322,26 @@ class CaregiverRepository {
   // ============================================
 
   Exception _handleError(DioException e, String defaultMessage) {
-    if (e.response != null) {
-      final error = e.response!.data['error'] ?? e.response!.data['details'] ?? defaultMessage;
-      return Exception(error);
+    final responseData = e.response?.data;
+
+    if (responseData is Map) {
+      final error =
+          responseData['error'] ??
+          responseData['message'] ??
+          responseData['details'];
+      if (error is String && error.trim().isNotEmpty) {
+        return Exception(error.trim());
+      }
     }
+
+    if (responseData is String && responseData.trim().isNotEmpty) {
+      return Exception(responseData.trim());
+    }
+
+    if (e.response != null) {
+      return Exception(defaultMessage);
+    }
+
     return Exception('Network error: ${e.message}');
   }
 }

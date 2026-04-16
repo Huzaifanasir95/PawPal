@@ -416,6 +416,20 @@ func (h *MarketplaceHandlers) AddProductReview(c *gin.Context) {
 		return
 	}
 
+	product, err := h.marketplaceRepo.GetProductByID(c.Request.Context(), productID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate product"})
+		return
+	}
+	if product == nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Product not found"})
+		return
+	}
+	if product.SellerID == userID {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You cannot review your own product"})
+		return
+	}
+
 	review := &models.ProductReview{
 		ProductID: productID,
 		UserID:    userID,
@@ -426,12 +440,34 @@ func (h *MarketplaceHandlers) AddProductReview(c *gin.Context) {
 	}
 	if req.OrderItemID != "" {
 		oid, err := uuid.Parse(req.OrderItemID)
-		if err == nil {
-			review.OrderItemID = &oid
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid order item ID"})
+			return
 		}
+		review.OrderItemID = &oid
+	}
+
+	hasDeliveredPurchase, err := h.marketplaceRepo.BuyerHasDeliveredPurchase(
+		c.Request.Context(),
+		userID,
+		productID,
+		review.OrderItemID,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate review eligibility"})
+		return
+	}
+	if !hasDeliveredPurchase {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You can review a product only after it is delivered"})
+		return
 	}
 
 	if err := h.marketplaceRepo.AddReview(c.Request.Context(), review); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			c.JSON(http.StatusConflict, gin.H{"success": false, "error": "You have already reviewed this product"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to add review"})
 		return
 	}
@@ -490,6 +526,10 @@ func (h *MarketplaceHandlers) AddToCart(c *gin.Context) {
 	}
 	if !product.IsActive {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Product is no longer available"})
+		return
+	}
+	if product.SellerID == userID {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You cannot add your own product to cart"})
 		return
 	}
 	if product.StockQuantity < req.Quantity {
@@ -575,6 +615,13 @@ func (h *MarketplaceHandlers) PlaceOrder(c *gin.Context) {
 	if len(cartItems) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Cart is empty"})
 		return
+	}
+
+	for _, item := range cartItems {
+		if item.Product != nil && item.Product.SellerID == userID {
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You cannot place an order containing your own product listings"})
+			return
+		}
 	}
 
 	// Build order

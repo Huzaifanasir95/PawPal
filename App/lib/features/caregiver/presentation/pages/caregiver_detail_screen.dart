@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/api_client.dart';
 import '../../data/repositories/caregiver_repository.dart';
 import '../../data/models/caregiver_models.dart';
 import '../../data/models/booking_models.dart';
@@ -90,8 +91,10 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _caregiver == null
@@ -103,12 +106,12 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                       _buildProfileHeader(),
                       SliverToBoxAdapter(
                         child: Container(
-                          color: Colors.white,
+                          color: colorScheme.surface,
                           child: TabBar(
                             controller: _tabController,
-                            labelColor: AppColors.primary,
-                            unselectedLabelColor: AppColors.textSecondary,
-                            indicatorColor: AppColors.primary,
+                            labelColor: colorScheme.primary,
+                            unselectedLabelColor: colorScheme.onSurfaceVariant,
+                            indicatorColor: colorScheme.primary,
                             tabs: const [
                               Tab(text: 'About'),
                               Tab(text: 'Services'),
@@ -1104,6 +1107,8 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
   }
 
   Widget _buildBookButton() {
+    final isOwnProfile = ApiClient.instance.userId == _caregiver?.userId;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
@@ -1137,17 +1142,19 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
             ],
           ),
           child: ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => CreateBookingScreen(
-                    caregiver: _caregiver!,
-                    services: _services,
-                    availability: _availability,
-                  ),
-                ),
-              );
-            },
+            onPressed: isOwnProfile
+                ? null
+                : () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => CreateBookingScreen(
+                          caregiver: _caregiver!,
+                          services: _services,
+                          availability: _availability,
+                        ),
+                      ),
+                    );
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
@@ -1166,7 +1173,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 ),
                 SizedBox(width: 12.w),
                 Text(
-                  'Book Now',
+                  isOwnProfile ? 'This Is Your Profile' : 'Book Now',
                   style: TextStyle(
                     fontSize: 17.sp,
                     fontWeight: FontWeight.w700,

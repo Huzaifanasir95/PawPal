@@ -368,6 +368,48 @@ type RSVPRequest struct {
 	Status string `json:"status" binding:"required,oneof=going interested"`
 }
 
+// ─── Vet Appointment Request/Response ───────────────────────────
+
+type CreateVetAppointmentRequest struct {
+	VetUserID           uuid.UUID `json:"vetUserId" binding:"required"`
+	PetID               uuid.UUID `json:"petId" binding:"required"`
+	AppointmentDatetime string    `json:"appointmentDatetime" binding:"required"` // ISO 8601
+	DurationMinutes     int       `json:"durationMinutes"`
+	MeetingType         string    `json:"meetingType" binding:"omitempty,oneof=in_person video chat"`
+	Reason              string    `json:"reason" binding:"required,min=3"`
+	Symptoms            *string   `json:"symptoms,omitempty"`
+	OwnerNotes          *string   `json:"ownerNotes,omitempty"`
+	ClinicAddress       *string   `json:"clinicAddress,omitempty"`
+}
+
+type RespondVetAppointmentRequest struct {
+	Accept              bool    `json:"accept"`
+	ResponseNote        *string `json:"responseNote,omitempty"`
+	AppointmentDatetime *string `json:"appointmentDatetime,omitempty"` // ISO 8601; optional reschedule by vet
+	MeetingLink         *string `json:"meetingLink,omitempty"`
+}
+
+type CancelVetAppointmentRequest struct {
+	Reason string `json:"reason" binding:"required"`
+}
+
+type CompleteVetAppointmentRequest struct {
+	ResponseNote *string `json:"responseNote,omitempty"`
+}
+
+// ─── Community Advanced Features Request/Response ───────────────
+
+type CreateCommunityGroupRequest struct {
+	Name        string  `json:"name" binding:"required,min=3,max=80"`
+	Description *string `json:"description,omitempty"`
+	Icon        *string `json:"icon,omitempty"`
+	IsPrivate   bool    `json:"isPrivate"`
+}
+
+type AddPostToGroupRequest struct {
+	PostID uuid.UUID `json:"postId" binding:"required"`
+}
+
 // =====================================================
 // CAREGIVER MODULE REQUEST/RESPONSE TYPES
 // =====================================================
@@ -493,8 +535,8 @@ type CancelBookingRequest struct {
 
 // StartServiceRequest represents starting a service
 type StartServiceRequest struct {
-	Latitude  float64 `json:"latitude" binding:"required"`
-	Longitude float64 `json:"longitude" binding:"required"`
+	Latitude  *float64 `json:"latitude,omitempty"`
+	Longitude *float64 `json:"longitude,omitempty"`
 }
 
 // UpdateTrackingRequest represents GPS tracking update

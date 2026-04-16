@@ -203,6 +203,112 @@ func (r *VetRepository) List(ctx context.Context, filters map[string]interface{}
 	return vets, total, nil
 }
 
+// GetReviews returns paginated reviews for a vet user.
+func (r *VetRepository) GetReviews(ctx context.Context, vetUserID uuid.UUID, page, limit int) ([]models.VetReview, int, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	var total int
+	err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM vet_reviews
+		WHERE vet_id = $1
+	`, vetUserID).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	rows, err := r.db.Query(ctx, `
+		SELECT
+			vr.id,
+			vr.vet_id,
+			vr.user_id,
+			u.display_name,
+			u.avatar_url,
+			vr.rating,
+			vr.comment,
+			vr.created_at,
+			vr.updated_at
+		FROM vet_reviews vr
+		JOIN users u ON u.id = vr.user_id
+		WHERE vr.vet_id = $1
+		ORDER BY vr.created_at DESC
+		LIMIT $2 OFFSET $3
+	`, vetUserID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	reviews := make([]models.VetReview, 0)
+	for rows.Next() {
+		var review models.VetReview
+		err := rows.Scan(
+			&review.ID,
+			&review.VetID,
+			&review.UserID,
+			&review.UserName,
+			&review.UserAvatar,
+			&review.Rating,
+			&review.Comment,
+			&review.CreatedAt,
+			&review.UpdatedAt,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		reviews = append(reviews, review)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	return reviews, total, nil
+}
+
+// AddReview creates a review for a vet user.
+func (r *VetRepository) AddReview(ctx context.Context, review *models.VetReview) error {
+	review.ID = uuid.New()
+
+	return r.db.QueryRow(ctx, `
+		INSERT INTO vet_reviews (
+			id,
+			vet_id,
+			user_id,
+			rating,
+			comment,
+			created_at,
+			updated_at
+		) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+		RETURNING created_at, updated_at
+	`, review.ID, review.VetID, review.UserID, review.Rating, review.Comment).Scan(&review.CreatedAt, &review.UpdatedAt)
+}
+
+// UserHasCompletedAppointmentWithVet checks if an owner has at least one completed appointment with the vet.
+func (r *VetRepository) UserHasCompletedAppointmentWithVet(ctx context.Context, ownerID, vetUserID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1
+			FROM vet_appointments
+			WHERE pet_owner_id = $1
+				AND vet_user_id = $2
+				AND status = 'completed'
+		)
+	`, ownerID, vetUserID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 // CheckUserIsVet checks if a user has vet role
 func (r *VetRepository) CheckUserIsVet(ctx context.Context, userID uuid.UUID) (bool, error) {
 	var role sql.NullString

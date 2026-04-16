@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
@@ -8,9 +7,11 @@ import '../../data/repositories/caregiver_repository.dart';
 import '../../data/repositories/booking_repository.dart';
 import '../../data/models/caregiver_models.dart';
 import '../../data/models/booking_models.dart';
+import '../../../profile/presentation/pages/profile_screen.dart';
 import 'caregiver_services_screen.dart';
 import 'caregiver_availability_screen.dart';
 import 'booking_detail_screen.dart';
+import 'caregiver_profile_setup_screen.dart';
 
 class CaregiverHomeScreen extends StatefulWidget {
   const CaregiverHomeScreen({super.key});
@@ -19,16 +20,20 @@ class CaregiverHomeScreen extends StatefulWidget {
   State<CaregiverHomeScreen> createState() => _CaregiverHomeScreenState();
 }
 
-class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTickerProviderStateMixin {
+class _CaregiverHomeScreenState extends State<CaregiverHomeScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late CaregiverRepository _caregiverRepo;
   late BookingRepository _bookingRepo;
 
   CaregiverProfile? _profile;
+  List<CaregiverService> _services = [];
   List<ServiceBooking> _pendingBookings = [];
   List<ServiceBooking> _activeBookings = [];
   List<ServiceBooking> _completedBookings = [];
   bool _isLoading = true;
+  bool _profileSetupRequired = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -46,57 +51,110 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _profileSetupRequired = false;
+    });
+
     try {
       final profileData = await _caregiverRepo.getMyProfile();
-      _profile = profileData.profile;
+      final bookingResults = await Future.wait([
+        _bookingRepo.getMyBookings(role: 'caregiver', status: 'pending'),
+        _bookingRepo.getMyBookings(
+          role: 'caregiver',
+          status: 'accepted,in_progress',
+        ),
+        _bookingRepo.getMyBookings(role: 'caregiver', status: 'completed'),
+      ]);
 
-      // Load bookings for caregiver
-      final pendingResult = await _bookingRepo.getMyBookings(role: 'caregiver', status: 'pending');
-      final activeResult = await _bookingRepo.getMyBookings(role: 'caregiver', status: 'accepted,in_progress');
-      final completedResult = await _bookingRepo.getMyBookings(role: 'caregiver', status: 'completed');
+      if (!mounted) return;
 
       setState(() {
-        _pendingBookings = pendingResult.bookings;
-        _activeBookings = activeResult.bookings;
-        _completedBookings = completedResult.bookings;
+        _profile = profileData.profile;
+        _services = profileData.profile.services;
+        _pendingBookings = bookingResults[0].bookings;
+        _activeBookings = bookingResults[1].bookings;
+        _completedBookings = bookingResults[2].bookings;
         _isLoading = false;
+        _profileSetupRequired = false;
+        _errorMessage = null;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        CustomSnackbar.showError(
-          context,
-          e.toString().replaceFirst('Exception: ', ''),
-        );
+      final message = _normalizeErrorMessage(e);
+      final needsProfileSetup = _isProfileSetupError(message);
+
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _profile = null;
+        _services = [];
+        _pendingBookings = [];
+        _activeBookings = [];
+        _completedBookings = [];
+        _profileSetupRequired = needsProfileSetup;
+        _errorMessage = needsProfileSetup ? null : message;
+      });
+
+      if (!needsProfileSetup && mounted) {
+        CustomSnackbar.showError(context, message);
       }
     }
   }
 
+  String _normalizeErrorMessage(Object error) {
+    return error.toString().replaceFirst('Exception: ', '').trim();
+  }
+
+  bool _isProfileSetupError(String message) {
+    final normalized = message.toLowerCase();
+    return normalized.contains('profile not found') ||
+        normalized.contains('create your profile') ||
+        normalized.contains('caregiver profile not found');
+  }
+
+  Future<void> _openProfileSetup() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const CaregiverProfileSetupScreen()),
+    );
+    if (!mounted) return;
+    await _loadData();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Caregiver Dashboard',
-          style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.titleLarge.copyWith(
+            color: colorScheme.onSurface,
+          ),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: AppColors.textPrimary),
-            onPressed: () {
-              // TODO: Navigate to settings
+            icon: Icon(Icons.settings, color: colorScheme.onSurface),
+            onPressed: () async {
+              await Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+              if (!mounted) return;
+              await _loadData();
             },
           ),
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: AppColors.primary,
+          labelColor: colorScheme.primary,
+          unselectedLabelColor: colorScheme.onSurfaceVariant,
+          indicatorColor: colorScheme.primary,
           tabs: [
             Tab(text: 'Pending (${_pendingBookings.length})'),
             Tab(text: 'Active (${_activeBookings.length})'),
@@ -104,32 +162,161 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
           ],
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              child: Column(
-                children: [
-                  // Stats cards
-                  _buildStatsSection(),
-                  
-                  // Quick actions
-                  _buildQuickActions(),
-                  
-                  // Bookings tabs
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildBookingsList(_pendingBookings, 'pending'),
-                        _buildBookingsList(_activeBookings, 'active'),
-                        _buildBookingsList(_completedBookings, 'completed'),
-                      ],
-                    ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _profileSetupRequired
+              ? RefreshIndicator(
+                onRefresh: _loadData,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 40.h,
                   ),
-                ],
+                  children: [_buildProfileSetupState()],
+                ),
+              )
+              : _errorMessage != null && _profile == null
+              ? RefreshIndicator(
+                onRefresh: _loadData,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 40.h,
+                  ),
+                  children: [_buildLoadErrorState()],
+                ),
+              )
+              : RefreshIndicator(
+                onRefresh: _loadData,
+                child: Column(
+                  children: [
+                    // Stats cards
+                    _buildStatsSection(),
+
+                    // Quick actions
+                    _buildQuickActions(),
+
+                    // Services overview
+                    _buildServicesOverview(),
+
+                    // Bookings tabs
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildBookingsList(_pendingBookings, 'pending'),
+                          _buildBookingsList(_activeBookings, 'active'),
+                          _buildBookingsList(_completedBookings, 'completed'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
+    );
+  }
+
+  Widget _buildProfileSetupState() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.assignment_ind_outlined,
+            size: 56.w,
+            color: colorScheme.primary,
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            'Complete Your Caregiver Profile',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.titleLarge.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
             ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'Set up your profile to start receiving booking requests, manage jobs, and track your activity.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          SizedBox(height: 20.h),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _openProfileSetup,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+              ),
+              icon: const Icon(Icons.arrow_forward),
+              label: const Text('Set Up Profile'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadErrorState() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.wifi_off_rounded,
+            size: 56.w,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            'Unable to Load Dashboard',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.titleLarge.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            _errorMessage ?? 'Please try again.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          SizedBox(height: 20.h),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -149,7 +336,7 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
             icon: Icons.calendar_today,
             value: _profile?.totalBookings.toString() ?? '0',
             label: 'Bookings',
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.primary,
           ),
           SizedBox(width: 12.w),
           _buildStatCard(
@@ -169,15 +356,17 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
     required String label,
     required Color color,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Expanded(
       child: Container(
         padding: EdgeInsets.all(12.w),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -187,8 +376,18 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
           children: [
             Icon(icon, color: color, size: 24.w),
             SizedBox(height: 4.h),
-            Text(value, style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary)),
-            Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary)),
+            Text(
+              value,
+              style: AppTextStyles.titleLarge.copyWith(
+                color: colorScheme.onSurface,
+              ),
+            ),
+            Text(
+              label,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
       ),
@@ -204,10 +403,14 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
             child: _buildActionButton(
               icon: Icons.miscellaneous_services,
               label: 'Services',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const CaregiverServicesScreen()),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const CaregiverServicesScreen(),
+                  ),
                 );
+                if (!mounted) return;
+                await _loadData();
               },
             ),
           ),
@@ -216,10 +419,14 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
             child: _buildActionButton(
               icon: Icons.calendar_month,
               label: 'Availability',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const CaregiverAvailabilityScreen()),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const CaregiverAvailabilityScreen(),
+                  ),
                 );
+                if (!mounted) return;
+                await _loadData();
               },
             ),
           ),
@@ -229,11 +436,102 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
               icon: Icons.photo_library,
               label: 'Gallery',
               onTap: () {
-                // TODO: Navigate to gallery
+                CustomSnackbar.showInfo(
+                  context,
+                  'Gallery management will be available in an upcoming update.',
+                );
               },
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildServicesOverview() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.miscellaneous_services,
+                  size: 18.w,
+                  color: colorScheme.primary,
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  'Active Services',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${_services.length}',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10.h),
+            if (_services.isEmpty)
+              Text(
+                'No services configured yet. Add services to appear in your dashboard and public profile.',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8.w,
+                runSpacing: 8.h,
+                children:
+                    _services
+                        .where((service) => service.isAvailable)
+                        .map(
+                          (service) => Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10.w,
+                              vertical: 6.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary.withValues(
+                                alpha: 0.12,
+                              ),
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
+                            child: Text(
+                              service.serviceTypeDisplayName ??
+                                  service.serviceTypeName ??
+                                  'Service',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -243,20 +541,29 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
     required String label,
     required VoidCallback onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12.r),
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12.h),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.25),
+          ),
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Column(
           children: [
-            Icon(icon, color: AppColors.primary, size: 24.w),
+            Icon(icon, color: colorScheme.primary, size: 24.w),
             SizedBox(height: 4.h),
-            Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.textPrimary)),
+            Text(
+              label,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: colorScheme.onSurface,
+              ),
+            ),
           ],
         ),
       ),
@@ -264,20 +571,28 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
   }
 
   Widget _buildBookingsList(List<ServiceBooking> bookings, String type) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (bookings.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.calendar_today, size: 64.w, color: AppColors.textSecondary),
+            Icon(
+              Icons.calendar_today,
+              size: 64.w,
+              color: colorScheme.onSurfaceVariant,
+            ),
             SizedBox(height: 16.h),
             Text(
               type == 'pending'
                   ? 'No pending booking requests'
                   : type == 'active'
-                      ? 'No active bookings'
-                      : 'No completed bookings yet',
-              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textSecondary),
+                  ? 'No active bookings'
+                  : 'No completed bookings yet',
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -295,14 +610,17 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
   }
 
   Widget _buildBookingCard(ServiceBooking booking, String type) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -312,10 +630,11 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => BookingDetailScreen(
-                bookingId: booking.id,
-                isCaregiver: true,
-              ),
+              builder:
+                  (_) => BookingDetailScreen(
+                    bookingId: booking.id,
+                    isCaregiver: true,
+                  ),
             ),
           );
         },
@@ -332,7 +651,7 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
                     booking.bookingNumber,
                     style: AppTextStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
+                      color: colorScheme.primary,
                     ),
                   ),
                   _buildStatusChip(booking.status),
@@ -343,11 +662,13 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
                 children: [
                   CircleAvatar(
                     radius: 20.r,
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundColor: colorScheme.primary.withValues(
+                      alpha: 0.12,
+                    ),
                     child: Text(
                       (booking.ownerName ?? 'U')[0].toUpperCase(),
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.primary,
+                        color: colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -359,11 +680,16 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
                       children: [
                         Text(
                           booking.ownerName ?? 'Pet Owner',
-                          style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                         Text(
                           booking.serviceName ?? 'Service',
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -373,18 +699,30 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
               SizedBox(height: 12.h),
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 16.w, color: AppColors.textSecondary),
+                  Icon(
+                    Icons.calendar_today,
+                    size: 16.w,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                   SizedBox(width: 8.w),
                   Text(
                     _formatDate(booking.startDatetime),
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   SizedBox(width: 16.w),
-                  Icon(Icons.access_time, size: 16.w, color: AppColors.textSecondary),
+                  Icon(
+                    Icons.access_time,
+                    size: 16.w,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                   SizedBox(width: 8.w),
                   Text(
                     _formatTime(booking.startDatetime, booking.endDatetime),
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -394,13 +732,15 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
                 children: [
                   Text(
                     '${booking.petIds.length} pet(s)',
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   Text(
                     '${booking.currency} ${booking.totalAmount.toStringAsFixed(0)}',
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: colorScheme.primary,
                     ),
                   ),
                 ],
@@ -424,7 +764,8 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
                       child: ElevatedButton(
                         onPressed: () => _respondToBooking(booking.id, true),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
                         ),
                         child: const Text('Accept'),
                       ),
@@ -472,12 +813,15 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Text(
         label,
-        style: AppTextStyles.labelSmall.copyWith(color: color, fontWeight: FontWeight.w600),
+        style: AppTextStyles.labelSmall.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -487,8 +831,10 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
   }
 
   String _formatTime(DateTime start, DateTime end) {
-    final startTime = '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
-    final endTime = '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+    final startTime =
+        '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
+    final endTime =
+        '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
     return '$startTime - $endTime';
   }
 
@@ -504,7 +850,7 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> with SingleTi
           accept ? 'Booking accepted!' : 'Booking declined',
         );
       }
-      _loadData();
+      await _loadData();
     } catch (e) {
       if (mounted) {
         CustomSnackbar.showError(

@@ -4,6 +4,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../pets/data/models/pet_model.dart';
+import '../../../pets/data/repositories/pet_repository_api.dart';
 import '../../data/repositories/booking_repository.dart';
 import '../../data/models/caregiver_models.dart';
 import '../../data/models/booking_models.dart';
@@ -39,7 +41,9 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
 
   // Step 3: Pet Selection
   List<String> _selectedPetIds = [];
-  List<Map<String, String>> _userPets = []; // Mock data - should come from pet repository
+  final PetRepositoryApi _petRepository = getIt<PetRepositoryApi>();
+  List<PetModel> _userPets = [];
+  bool _isLoadingPets = false;
 
   // Step 4: Additional Details
   String _locationType = 'owner_home';
@@ -52,11 +56,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
   void initState() {
     super.initState();
     _repository = getIt<BookingRepository>();
-    // Mock pets - In real app, load from pet repository
-    _userPets = [
-      {'id': 'pet1', 'name': 'Max', 'type': 'Dog'},
-      {'id': 'pet2', 'name': 'Whiskers', 'type': 'Cat'},
-    ];
+    _loadUserPets();
   }
 
   @override
@@ -68,17 +68,19 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Book ${widget.caregiver.userName ?? "Caregiver"}',
-          style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.titleLarge.copyWith(color: theme.colorScheme.onSurface),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -161,6 +163,8 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
   }
 
   Widget _buildServiceStep() {
+    final services = widget.services.where((service) => service.isAvailable).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -174,7 +178,29 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
         ),
         SizedBox(height: 24.h),
-        ...widget.services.map((service) => _buildServiceCard(service)),
+        if (services.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(20.w),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: AppColors.textSecondary.withOpacity(0.2)),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.schedule_outlined, size: 40.w, color: AppColors.textSecondary),
+                SizedBox(height: 10.h),
+                Text(
+                  'No bookable services available right now.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          )
+        else
+          ...services.map((service) => _buildServiceCard(service)),
       ],
     );
   }
@@ -440,7 +466,10 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
         ),
         SizedBox(height: 24.h),
-        ..._userPets.map((pet) => _buildPetCard(pet)),
+        if (_isLoadingPets)
+          const Center(child: CircularProgressIndicator())
+        else
+          ..._userPets.map((pet) => _buildPetCard(pet)),
         if (_userPets.isEmpty)
           Container(
             padding: EdgeInsets.all(24.w),
@@ -453,7 +482,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                 Icon(Icons.pets, size: 48.w, color: AppColors.textSecondary),
                 SizedBox(height: 12.h),
                 Text(
-                  'No pets found',
+                  _isLoadingPets ? 'Loading pets...' : 'No pets found',
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                 ),
                 SizedBox(height: 8.h),
@@ -468,20 +497,22 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     );
   }
 
-  Widget _buildPetCard(Map<String, String> pet) {
-    final isSelected = _selectedPetIds.contains(pet['id']);
+  Widget _buildPetCard(PetModel pet) {
+    final isSelected = _selectedPetIds.contains(pet.id);
+    final petTypeLabel =
+        pet.type.isNotEmpty ? '${pet.type[0].toUpperCase()}${pet.type.substring(1)}' : 'Pet';
     
     return GestureDetector(
       onTap: () {
         setState(() {
           if (isSelected) {
-            _selectedPetIds.remove(pet['id']);
+            _selectedPetIds.remove(pet.id);
           } else {
             if (_selectedService != null && 
                 _selectedPetIds.length < widget.caregiver.maxPetsAtOnce) {
-              _selectedPetIds.add(pet['id']!);
+              _selectedPetIds.add(pet.id);
             } else if (_selectedService == null) {
-              _selectedPetIds.add(pet['id']!);
+              _selectedPetIds.add(pet.id);
             }
           }
         });
@@ -504,11 +535,11 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
               onChanged: (_) {
                 setState(() {
                   if (isSelected) {
-                    _selectedPetIds.remove(pet['id']);
+                    _selectedPetIds.remove(pet.id);
                   } else {
                     if (_selectedService != null && 
                         _selectedPetIds.length < widget.caregiver.maxPetsAtOnce) {
-                      _selectedPetIds.add(pet['id']!);
+                      _selectedPetIds.add(pet.id);
                     }
                   }
                 });
@@ -520,7 +551,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
               radius: 24.r,
               backgroundColor: AppColors.primary.withOpacity(0.1),
               child: Text(
-                pet['type'] == 'Dog' ? '🐕' : '🐈',
+                pet.type.toLowerCase() == 'dog' ? '🐕' : '🐈',
                 style: TextStyle(fontSize: 24.sp),
               ),
             ),
@@ -529,11 +560,11 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  pet['name']!,
+                  pet.name,
                   style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  pet['type']!,
+                  petTypeLabel,
                   style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                 ),
               ],
@@ -951,6 +982,26 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
           e.toString().replaceFirst('Exception: ', ''),
         );
       }
+    }
+  }
+
+  Future<void> _loadUserPets() async {
+    setState(() => _isLoadingPets = true);
+
+    try {
+      final pets = await _petRepository.getPets();
+      if (!mounted) return;
+      setState(() {
+        _userPets = pets;
+        _isLoadingPets = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoadingPets = false);
+      CustomSnackbar.showError(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+      );
     }
   }
 }

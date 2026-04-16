@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/api_client.dart';
 import '../../data/models/marketplace_models.dart';
 import '../../data/repositories/marketplace_repository.dart';
 import '../cubit/marketplace_cubit.dart';
@@ -66,8 +67,11 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6F2),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           Positioned(
@@ -78,7 +82,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
               height: 240.h,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.22),
+                color: colorScheme.primary.withOpacity(0.14),
               ),
             ),
           ),
@@ -90,7 +94,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
               height: 180.h,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFE6F4F2),
+                color: colorScheme.primaryContainer.withOpacity(0.45),
               ),
             ),
           ),
@@ -116,7 +120,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                             style: GoogleFonts.mulish(
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF2C6E69),
+                              color: colorScheme.primary,
                             ),
                           ),
                           const Spacer(),
@@ -126,7 +130,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                               height: 14.h,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: AppColors.darkTeal,
+                                color: colorScheme.primary,
                               ),
                             ),
                         ],
@@ -146,19 +150,21 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
   }
 
   Widget _buildSliverAppBar(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SliverAppBar(
       expandedHeight: 160.h,
       pinned: true,
-      backgroundColor: AppColors.primary,
+      backgroundColor: colorScheme.primary,
       leading: IconButton(
         icon: Icon(Icons.arrow_back_ios_new_rounded,
-            color: const Color(0xFF191D21), size: 20.sp),
+            color: colorScheme.onPrimary, size: 20.sp),
         onPressed: () => Navigator.pop(context),
       ),
       actions: [
         IconButton(
           icon: Icon(Icons.receipt_long_outlined,
-              color: const Color(0xFF191D21), size: 23.sp),
+              color: colorScheme.onPrimary, size: 23.sp),
           onPressed: () => _openOrders(context),
           tooltip: 'My Orders',
         ),
@@ -172,7 +178,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                   label: count > 0 ? Text('$count') : null,
                   isLabelVisible: count > 0,
                   child: Icon(Icons.shopping_cart_outlined,
-                      color: const Color(0xFF191D21), size: 24.sp),
+                      color: colorScheme.onPrimary, size: 24.sp),
                 ),
                 onPressed: () => _openCart(context),
               ),
@@ -182,11 +188,14 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFFB3E0DB), Color(0xFF7FC9C2)],
+              colors: [
+                colorScheme.primary.withOpacity(0.85),
+                colorScheme.primary,
+              ],
             ),
           ),
           child: SafeArea(
@@ -202,7 +211,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                     style: GoogleFonts.mulish(
                       fontSize: 32.sp,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF191D21),
+                      color: colorScheme.onPrimary,
                     ),
                   ),
                   SizedBox(height: 4.h),
@@ -211,7 +220,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
                     style: GoogleFonts.mulish(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF2C6E69),
+                      color: colorScheme.onPrimary.withOpacity(0.88),
                     ),
                   ),
                 ],
@@ -425,12 +434,14 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
             delegate: SliverChildBuilderDelegate(
               (context, i) {
                 final product = filteredProducts[i];
+                final userId = ApiClient.instance.userId;
+                final canAddToCart = userId == null || userId != product.sellerId;
                 return ProductCard(
                   product: product,
                   onTap: () => _openProductDetail(context, product.id),
-                  onAddToCart: () => context
-                      .read<CartCubit>()
-                      .addToCart(product.id, 1),
+                  onAddToCart: canAddToCart
+                      ? () => context.read<CartCubit>().addToCart(product.id, 1)
+                      : null,
                 );
               },
               childCount: filteredProducts.length,
@@ -454,7 +465,7 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
         if (count == 0) return const SizedBox.shrink();
         return FloatingActionButton.extended(
           onPressed: () => _openCart(context),
-          backgroundColor: const Color(0xFF2C6E69),
+          backgroundColor: Theme.of(context).colorScheme.primary,
           icon: Icon(Icons.shopping_cart_rounded,
               color: Colors.white, size: 20.sp),
           label: Text(

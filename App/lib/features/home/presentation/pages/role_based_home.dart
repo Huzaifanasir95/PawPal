@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pawpawl/core/theme/app_theme_controller.dart';
 import 'package:pawpawl/features/auth/data/repositories/auth_repository.dart';
 import 'package:pawpawl/features/caregiver/presentation/pages/caregiver_home_screen.dart';
 import 'package:pawpawl/features/home/presentation/pages/pet_owner_dashboard.dart';
@@ -17,19 +18,11 @@ class RoleBasedHome extends StatefulWidget {
 
 class _RoleBasedHomeState extends State<RoleBasedHome> {
   late final AuthRepository _authRepository;
+  final Map<String, Widget> _dashboardCache = <String, Widget>{};
 
   bool _isLoading = true;
-  bool _isSwitchingRole = false;
   String? _activeRole;
   List<String> _roles = const [];
-  String? _error;
-
-  static const List<String> _supportedRoles = <String>[
-    'pet_owner',
-    'vet',
-    'seller',
-    'caregiver',
-  ];
 
   @override
   void initState() {
@@ -71,18 +64,22 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
       setState(() {
         _roles = normalizedRoles;
         _activeRole = activeRole;
-        _error = null;
         _isLoading = false;
       });
+      _syncThemeRole(activeRole);
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _roles = cachedRoles;
         _activeRole = cachedActiveRole;
-        _error = 'Could not sync role data. Showing cached role.';
         _isLoading = false;
       });
+      _syncThemeRole(cachedActiveRole);
     }
+  }
+
+  void _syncThemeRole(String role) {
+    context.read<AppThemeController>().setActiveRole(role);
   }
 
   String _normalizeAccountType(String? rawAccountType) {
@@ -116,19 +113,6 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     }
   }
 
-  String _roleLabel(String role) {
-    switch (_normalizeAccountType(role)) {
-      case 'vet':
-        return 'Veterinary';
-      case 'seller':
-        return 'Seller';
-      case 'caregiver':
-        return 'Caregiver';
-      default:
-        return 'Pet Owner';
-    }
-  }
-
   List<String> _normalizeRoleList(
     List<String> roles, {
     required String fallbackRole,
@@ -145,244 +129,28 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
       normalized.add(_normalizeAccountType(fallbackRole));
     }
 
+    if (!normalized.contains('pet_owner')) {
+      // Always keep pet owner eligible and discoverable in role management flows.
+      normalized.add('pet_owner');
+    }
+
     return normalized;
-  }
-
-  Future<void> _switchRole(String role) async {
-    final normalized = _normalizeAccountType(role);
-    if (_isSwitchingRole || normalized == _activeRole) return;
-
-    setState(() {
-      _isSwitchingRole = true;
-      _error = null;
-    });
-
-    try {
-      await _authRepository.switchRole(normalized);
-      final roles = await _authRepository.getUserRoles();
-      final normalizedRoles = _normalizeRoleList(
-        roles,
-        fallbackRole: normalized,
-      );
-      final resolvedActive =
-          normalizedRoles.contains(normalized)
-              ? normalized
-              : normalizedRoles.first;
-
-      if (!mounted) return;
-      setState(() {
-        _roles = normalizedRoles;
-        _activeRole = resolvedActive;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString().replaceAll('Exception: ', '');
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_error!)));
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSwitchingRole = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _addRole(String role) async {
-    final normalized = _normalizeAccountType(role);
-    if (_roles.contains(normalized)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Role already assigned')));
-      return;
-    }
-
-    setState(() {
-      _isSwitchingRole = true;
-      _error = null;
-    });
-
-    try {
-      await _authRepository.addUserRole(normalized);
-      await _authRepository.switchRole(normalized);
-      final roles = await _authRepository.getUserRoles();
-      final normalizedRoles = _normalizeRoleList(
-        roles,
-        fallbackRole: normalized,
-      );
-      final resolvedActive =
-          normalizedRoles.contains(normalized)
-              ? normalized
-              : normalizedRoles.first;
-
-      if (!mounted) return;
-      setState(() {
-        _roles = normalizedRoles;
-        _activeRole = resolvedActive;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString().replaceAll('Exception: ', '');
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_error!)));
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSwitchingRole = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _showAddRoleSheet() async {
-    final available =
-        _supportedRoles.where((role) => !_roles.contains(role)).toList();
-    if (available.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('All available roles are already assigned'),
-        ),
-      );
-      return;
-    }
-
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const ListTile(
-                title: Text('Add Role'),
-                subtitle: Text('Assign an additional role to this account'),
-              ),
-              ...available.map(
-                (role) => ListTile(
-                  leading: const Icon(Icons.person_add_alt_1_rounded),
-                  title: Text(_roleLabel(role)),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _addRole(role);
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   Widget _buildDashboard(String role) {
     final normalized = _normalizeAccountType(role);
-    if (normalized == 'vet') {
-      return const VetHomeScreen();
-    }
-    if (normalized == 'seller') {
-      return const SellerDashboardScreen();
-    }
-    if (normalized == 'caregiver') {
-      return const CaregiverHomeScreen();
-    }
-    return const PetOwnerDashboard();
-  }
-
-  Widget _buildRoleSwitcher() {
-    final active = _activeRole ?? 'pet_owner';
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Material(
-          elevation: 6,
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white,
-          child: PopupMenuButton<String>(
-            enabled: !_isSwitchingRole,
-            tooltip: 'Switch role',
-            onSelected: (value) {
-              if (value == 'add') {
-                _showAddRoleSheet();
-                return;
-              }
-              _switchRole(value);
-            },
-            itemBuilder: (context) {
-              final items = <PopupMenuEntry<String>>[];
-
-              for (final role in _roles) {
-                items.add(
-                  PopupMenuItem<String>(
-                    value: role,
-                    child: Row(
-                      children: [
-                        Icon(
-                          role == active
-                              ? Icons.radio_button_checked_rounded
-                              : Icons.radio_button_unchecked_rounded,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(_roleLabel(role)),
-                      ],
-                    ),
-                  ),
-                );
-              }
-
-              items.add(const PopupMenuDivider());
-              items.add(
-                const PopupMenuItem<String>(
-                  value: 'add',
-                  child: Row(
-                    children: [
-                      Icon(Icons.add_circle_outline_rounded, size: 18),
-                      SizedBox(width: 10),
-                      Text('Add role'),
-                    ],
-                  ),
-                ),
-              );
-
-              return items;
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFD8DEE9)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_isSwitchingRole)
-                    const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else
-                    const Icon(Icons.swap_horiz_rounded, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    _roleLabel(active),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    return _dashboardCache.putIfAbsent(normalized, () {
+      if (normalized == 'vet') {
+        return const VetHomeScreen();
+      }
+      if (normalized == 'seller') {
+        return const SellerDashboardScreen();
+      }
+      if (normalized == 'caregiver') {
+        return const CaregiverHomeScreen();
+      }
+      return const PetOwnerDashboard();
+    });
   }
 
   @override
@@ -392,31 +160,12 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     }
 
     final activeRole = _activeRole ?? 'pet_owner';
+    final roleOrder = _normalizeRoleList(_roles, fallbackRole: activeRole);
+    final activeIndex = roleOrder.indexOf(activeRole);
 
-    return Stack(
-      children: [
-        Positioned.fill(child: _buildDashboard(activeRole)),
-        Positioned(top: 0, right: 0, child: _buildRoleSwitcher()),
-        if (_error != null)
-          Positioned(
-            left: 12,
-            right: 12,
-            bottom: 12,
-            child: SafeArea(
-              child: Material(
-                color: const Color(0xFFB00020),
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+    return IndexedStack(
+      index: activeIndex < 0 ? 0 : activeIndex,
+      children: roleOrder.map(_buildDashboard).toList(),
     );
   }
 }

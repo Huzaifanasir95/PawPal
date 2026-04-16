@@ -96,47 +96,40 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F6FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF1F6FA),
+        backgroundColor: theme.scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Seller HQ',
-              style: GoogleFonts.mulish(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w900,
-                color: const Color(0xFF102A43),
-              ),
-            ),
-            Text(
-              'Manage products and dispatch in one place',
-              style: GoogleFonts.mulish(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF486581),
-              ),
-            ),
-          ],
+        title: Text(
+          'Seller Dashboard',
+          style: GoogleFonts.mulish(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w900,
+            color: colorScheme.onSurface,
+          ),
         ),
         actions: [
           Padding(
             padding: EdgeInsets.only(right: 12.w),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: const Color(0xFFD9E2EC)),
+                border: Border.all(
+                  color: colorScheme.outline.withValues(alpha: 0.24),
+                ),
               ),
               child: IconButton(
                 icon: Icon(
                   Icons.refresh_rounded,
                   size: 20.sp,
-                  color: const Color(0xFF243B53),
+                  color: colorScheme.onSurface,
                 ),
                 onPressed: _isSubmitting ? null : () => _loadDashboard(),
               ),
@@ -149,7 +142,13 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [const Color(0xFFF4F8FC), const Color(0xFFEAF1F8)],
+            colors:
+                isDark
+                    ? <Color>[
+                      colorScheme.surface,
+                      colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+                    ]
+                    : const <Color>[Color(0xFFF4F8FC), Color(0xFFEAF1F8)],
           ),
         ),
         child: _buildBody(),
@@ -159,6 +158,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }
 
   Widget _buildBody() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xFF2C6E69)),
@@ -181,18 +182,18 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.mulish(color: AppColors.textSecondary),
+                style: GoogleFonts.mulish(color: colorScheme.onSurfaceVariant),
               ),
               SizedBox(height: 14.h),
               ElevatedButton(
                 onPressed: () => _loadDashboard(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: colorScheme.primary,
                 ),
                 child: Text(
                   'Retry',
                   style: GoogleFonts.mulish(
-                    color: const Color(0xFF191D21),
+                    color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -227,14 +228,16 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF1F2),
+                  color: colorScheme.errorContainer,
                   borderRadius: BorderRadius.circular(10.r),
-                  border: Border.all(color: const Color(0xFFFCA5A5)),
+                  border: Border.all(
+                    color: colorScheme.error.withValues(alpha: 0.35),
+                  ),
                 ),
                 child: Text(
                   _error!,
                   style: GoogleFonts.mulish(
-                    color: const Color(0xFFB91C1C),
+                    color: colorScheme.onErrorContainer,
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
                   ),
@@ -250,6 +253,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }
 
   Widget _buildHeroBanner() {
+    final colorScheme = Theme.of(context).colorScheme;
     final pendingOrders =
         _sellerOrders
             .where(
@@ -261,20 +265,33 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             )
             .length;
     final lowStock = _myProducts.where((p) => p.stockQuantity <= 5).length;
+    final totalProductReviews = _myProducts.fold<int>(
+      0,
+      (sum, product) => sum + product.totalReviews,
+    );
+    final weightedRatings = _myProducts.fold<double>(
+      0,
+      (sum, product) => sum + (product.rating * product.totalReviews),
+    );
+    final sellerRating =
+        totalProductReviews == 0 ? 0.0 : weightedRatings / totalProductReviews;
 
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.r),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF334E68), Color(0xFF1F3C5A)],
+          colors: [
+            colorScheme.primaryContainer,
+            colorScheme.primary,
+          ],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF102A43).withValues(alpha: 0.22),
+            color: colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -288,7 +305,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             style: GoogleFonts.mulish(
               fontSize: 12.sp,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFFBCCCDC),
+              color: colorScheme.onPrimary.withValues(alpha: 0.82),
             ),
           ),
           SizedBox(height: 6.h),
@@ -297,7 +314,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             style: GoogleFonts.mulish(
               fontSize: 18.sp,
               fontWeight: FontWeight.w900,
-              color: Colors.white,
+              color: colorScheme.onPrimary,
             ),
           ),
           SizedBox(height: 12.h),
@@ -313,9 +330,11 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               SizedBox(width: 10.w),
               Expanded(
                 child: _heroInfoPill(
-                  icon: Icons.inventory_2_outlined,
-                  label: 'Listings',
-                  value: '${_myProducts.length} total',
+                  icon: Icons.star_rounded,
+                  label: 'Seller rating',
+                  value: totalProductReviews > 0
+                      ? '${sellerRating.toStringAsFixed(1)} ($totalProductReviews)'
+                      : 'No reviews',
                 ),
               ),
             ],
@@ -330,16 +349,18 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     required String label,
     required String value,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 9.h),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: colorScheme.onPrimary.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: colorScheme.onPrimary.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFFD9E2EC), size: 16.sp),
+          Icon(icon, color: colorScheme.onPrimary.withValues(alpha: 0.86), size: 16.sp),
           SizedBox(width: 8.w),
           Expanded(
             child: Column(
@@ -350,7 +371,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   style: GoogleFonts.mulish(
                     fontSize: 10.sp,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFFBCCCDC),
+                    color: colorScheme.onPrimary.withValues(alpha: 0.78),
                   ),
                 ),
                 Text(
@@ -358,7 +379,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   style: GoogleFonts.mulish(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: colorScheme.onPrimary,
                   ),
                 ),
               ],
@@ -439,10 +460,12 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }
 
   Widget _statCard(String label, String value, IconData icon, Color color) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.all(13.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: color.withValues(alpha: 0.18)),
         boxShadow: [
@@ -473,14 +496,14 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             style: GoogleFonts.mulish(
               fontSize: 16.sp,
               fontWeight: FontWeight.w900,
-              color: const Color(0xFF102A43),
+              color: colorScheme.onSurface,
             ),
           ),
           Text(
             label,
             style: GoogleFonts.mulish(
               fontSize: 11.sp,
-              color: const Color(0xFF486581),
+              color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -490,6 +513,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }
 
   Widget _buildTabSwitcher() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     Widget chip(String label, IconData icon, int index) {
       final selected = _tabIndex == index;
       return Expanded(
@@ -500,13 +525,15 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             padding: EdgeInsets.symmetric(vertical: 10.h),
             decoration: BoxDecoration(
               color:
-                  selected ? const Color(0xFF243B53) : const Color(0xFFF7FAFC),
+                  selected
+                      ? colorScheme.primary
+                      : colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(14.r),
               border: Border.all(
                 color:
                     selected
-                        ? const Color(0xFF243B53)
-                        : const Color(0xFFD9E2EC),
+                        ? colorScheme.primary
+                        : colorScheme.outline.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -515,7 +542,10 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 Icon(
                   icon,
                   size: 15.sp,
-                  color: selected ? Colors.white : const Color(0xFF243B53),
+                  color:
+                      selected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurfaceVariant,
                 ),
                 SizedBox(width: 6.w),
                 Text(
@@ -523,7 +553,10 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   style: GoogleFonts.mulish(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w800,
-                    color: selected ? Colors.white : const Color(0xFF243B53),
+                    color:
+                        selected
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -543,6 +576,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }
 
   Widget _buildInventoryTab() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         Padding(
@@ -560,8 +595,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF243B53),
-                foregroundColor: Colors.white,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
                 padding: EdgeInsets.symmetric(vertical: 14.h),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14.r),
@@ -595,15 +630,16 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }
 
   Widget _buildProductCard(Product product) {
+    final colorScheme = Theme.of(context).colorScheme;
     final lowStock = product.stockQuantity <= 5;
     final imageUrl = product.images.isNotEmpty ? product.images.first : null;
 
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFD9E2EC)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.25)),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF102A43).withValues(alpha: 0.06),
@@ -638,7 +674,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                       style: GoogleFonts.mulish(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF102A43),
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     SizedBox(height: 4.h),
@@ -647,7 +683,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                       style: GoogleFonts.mulish(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w900,
-                        color: const Color(0xFF243B53),
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -657,7 +693,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 icon: Icon(
                   Icons.more_horiz_rounded,
                   size: 22.sp,
-                  color: const Color(0xFF486581),
+                  color: colorScheme.onSurfaceVariant,
                 ),
                 onSelected: (value) {
                   if (_isSubmitting) return;
@@ -717,8 +753,10 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF243B53),
-                    side: const BorderSide(color: Color(0xFFBCCCDC)),
+                    foregroundColor: colorScheme.onSurface,
+                    side: BorderSide(
+                      color: colorScheme.outline.withValues(alpha: 0.45),
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.r),
                     ),
@@ -797,6 +835,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }
 
   Widget _buildSellerOrderCard(Order order) {
+    final colorScheme = Theme.of(context).colorScheme;
     final status = _sellerOrderStatus(order);
     final sellerAmount = order.items.fold<double>(
       0,
@@ -806,9 +845,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFD9E2EC)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.25)),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF102A43).withValues(alpha: 0.06),
@@ -828,7 +867,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   style: GoogleFonts.mulish(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w900,
-                    color: const Color(0xFF102A43),
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -840,7 +879,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             _formatDate(order.createdAt),
             style: GoogleFonts.mulish(
               fontSize: 11.sp,
-              color: const Color(0xFF627D98),
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
           SizedBox(height: 10.h),
@@ -858,7 +897,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                             style: GoogleFonts.mulish(
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF334E68),
+                              color: colorScheme.onSurface,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -869,7 +908,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                           style: GoogleFonts.mulish(
                             fontSize: 12.sp,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF102A43),
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -881,7 +920,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               '+ ${order.items.length - 2} more item(s)',
               style: GoogleFonts.mulish(
                 fontSize: 11.sp,
-                color: const Color(0xFF627D98),
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           SizedBox(height: 8.h),
@@ -889,9 +928,11 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             width: double.infinity,
             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 9.h),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7FAFC),
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(10.r),
-              border: Border.all(color: const Color(0xFFE4ECF3)),
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.2),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -900,7 +941,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   'Deliver to: ${order.shippingAddress}',
                   style: GoogleFonts.mulish(
                     fontSize: 11.sp,
-                    color: const Color(0xFF486581),
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
                 if (order.shippingPhone != null &&
@@ -909,7 +950,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                     'Phone: ${order.shippingPhone}',
                     style: GoogleFonts.mulish(
                       fontSize: 11.sp,
-                      color: const Color(0xFF486581),
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 SizedBox(height: 4.h),
@@ -918,7 +959,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   style: GoogleFonts.mulish(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF243B53),
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -949,8 +990,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               onPressed:
                   _isSubmitting ? null : () => _openSellerOrderDetail(order),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF243B53),
-                foregroundColor: Colors.white,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
                 padding: EdgeInsets.symmetric(vertical: 11.h),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.r),
@@ -992,6 +1033,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     required String title,
     required String subtitle,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 36.w),
@@ -1005,7 +1048,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               style: GoogleFonts.mulish(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF191D21),
+                color: colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1014,7 +1057,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               subtitle,
               style: GoogleFonts.mulish(
                 fontSize: 13.sp,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1025,36 +1068,44 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }
 
   Widget _buildBottomBar() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return BottomAppBar(
-      color: Colors.white,
+      color: colorScheme.surface,
       elevation: 8,
       child: SizedBox(
-        height: 62.h,
+        height: 72.h,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _bottomItem(
-              icon: Icons.dashboard_outlined,
-              label: 'Dashboard',
-              selected: true,
-              onTap: () {},
+            Expanded(
+              child: _bottomItem(
+                icon: Icons.dashboard_outlined,
+                label: 'Dashboard',
+                selected: true,
+                onTap: () {},
+              ),
             ),
-            _bottomItem(
-              icon: Icons.storefront_outlined,
-              label: 'Marketplace',
-              selected: false,
-              onTap: () => AppNavigator.navigateToMarketplace(context),
+            Expanded(
+              child: _bottomItem(
+                icon: Icons.storefront_outlined,
+                label: 'Marketplace',
+                selected: false,
+                onTap: () => AppNavigator.navigateToMarketplace(context),
+              ),
             ),
-            _bottomItem(
-              icon: Icons.person_outline,
-              label: 'Profile',
-              selected: false,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
-              },
+            Expanded(
+              child: _bottomItem(
+                icon: Icons.person_outline,
+                label: 'Profile',
+                selected: false,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -1068,6 +1119,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     required bool selected,
     required VoidCallback onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12.r),
@@ -1079,19 +1132,20 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             Icon(
               icon,
               size: 22.sp,
-              color:
-                  selected ? const Color(0xFF2C6E69) : AppColors.textSecondary,
+              color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
             ),
             SizedBox(height: 2.h),
-            Text(
-              label,
-              style: GoogleFonts.mulish(
-                fontSize: 11.sp,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                color:
-                    selected
-                        ? const Color(0xFF2C6E69)
-                        : AppColors.textSecondary,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: GoogleFonts.mulish(
+                  fontSize: 11.sp,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  color: selected
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],

@@ -128,9 +128,28 @@ func (r *BookingRepository) getBookings(ctx context.Context, filterField string,
 	argNum++
 
 	if status != nil && *status != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("sb.status = $%d", argNum))
-		args = append(args, *status)
-		argNum++
+		statusParts := strings.Split(*status, ",")
+		filteredStatuses := make([]string, 0, len(statusParts))
+		for _, s := range statusParts {
+			trimmed := strings.TrimSpace(s)
+			if trimmed == "" {
+				continue
+			}
+			filteredStatuses = append(filteredStatuses, trimmed)
+		}
+
+		switch len(filteredStatuses) {
+		case 0:
+			// Ignore empty status filters.
+		case 1:
+			whereClauses = append(whereClauses, fmt.Sprintf("sb.status = $%d", argNum))
+			args = append(args, filteredStatuses[0])
+			argNum++
+		default:
+			whereClauses = append(whereClauses, fmt.Sprintf("sb.status = ANY($%d)", argNum))
+			args = append(args, filteredStatuses)
+			argNum++
+		}
 	}
 
 	whereClause := strings.Join(whereClauses, " AND ")
@@ -227,7 +246,7 @@ func (r *BookingRepository) CancelBooking(ctx context.Context, bookingID uuid.UU
 	if isOwner {
 		status = "cancelled_owner"
 	}
-	
+
 	query := `
 		UPDATE service_bookings 
 		SET status = $2,
@@ -388,7 +407,7 @@ func (r *BookingRepository) CreateOwnerReview(ctx context.Context, bookingID uui
 	// First check if review exists for this booking
 	var existingID *uuid.UUID
 	err := r.db.QueryRow(ctx, "SELECT id FROM service_reviews WHERE booking_id = $1", bookingID).Scan(&existingID)
-	
+
 	if err == pgx.ErrNoRows {
 		// Create new review
 		_, err = r.db.Exec(ctx, `
@@ -418,7 +437,7 @@ func (r *BookingRepository) CreateCaregiverReview(ctx context.Context, bookingID
 	// First check if review exists for this booking
 	var existingID *uuid.UUID
 	err := r.db.QueryRow(ctx, "SELECT id FROM service_reviews WHERE booking_id = $1", bookingID).Scan(&existingID)
-	
+
 	if err == pgx.ErrNoRows {
 		// Create new review
 		_, err = r.db.Exec(ctx, `

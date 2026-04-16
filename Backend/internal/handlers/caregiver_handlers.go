@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"pawpal-backend/internal/models"
@@ -53,6 +54,46 @@ func (h *CaregiverHandler) CreateProfile(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	if req.YearsOfExperience < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Years of experience cannot be negative"})
+		return
+	}
+
+	req.Bio = sanitizeOptionalText(req.Bio)
+	req.Headline = sanitizeOptionalText(req.Headline)
+	req.Address = sanitizeOptionalText(req.Address)
+	req.City = sanitizeOptionalText(req.City)
+	req.State = sanitizeOptionalText(req.State)
+	req.PostalCode = sanitizeOptionalText(req.PostalCode)
+	req.OtherPetsDescription = sanitizeOptionalText(req.OtherPetsDescription)
+
+	req.Country = strings.TrimSpace(req.Country)
+	if req.Country == "" {
+		req.Country = "Pakistan"
+	}
+
+	req.AcceptedPetTypes = sanitizeStringList(req.AcceptedPetTypes)
+	if len(req.AcceptedPetTypes) == 0 {
+		req.AcceptedPetTypes = []string{"dog", "cat"}
+	}
+
+	req.AcceptedPetSizes = sanitizeStringList(req.AcceptedPetSizes)
+	if len(req.AcceptedPetSizes) == 0 {
+		req.AcceptedPetSizes = []string{"small", "medium", "large"}
+	}
+
+	req.Certifications = sanitizeStringList(req.Certifications)
+
+	if req.ServiceRadiusKm <= 0 {
+		req.ServiceRadiusKm = 10
+	}
+	if req.MaxPetsAtOnce <= 0 {
+		req.MaxPetsAtOnce = 3
+	}
+	if !req.HasOtherPets {
+		req.OtherPetsDescription = nil
 	}
 
 	uid, err := uuid.Parse(userID.(string))

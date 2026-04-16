@@ -15,14 +15,14 @@ import (
 
 // BookingHandler handles booking-related requests
 type BookingHandler struct {
-	repo         *repositories.BookingRepository
+	repo          *repositories.BookingRepository
 	caregiverRepo *repositories.CaregiverRepository
 }
 
 // NewBookingHandler creates a new booking handler
 func NewBookingHandler(repo *repositories.BookingRepository, caregiverRepo *repositories.CaregiverRepository) *BookingHandler {
 	return &BookingHandler{
-		repo:         repo,
+		repo:          repo,
 		caregiverRepo: caregiverRepo,
 	}
 }
@@ -45,6 +45,20 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	var req models.CreateBookingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	caregiverProfile, err := h.caregiverRepo.GetProfileByID(c.Request.Context(), req.CaregiverID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate caregiver"})
+		return
+	}
+	if caregiverProfile == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Caregiver not found"})
+		return
+	}
+	if caregiverProfile.UserID == uid {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You cannot book your own caregiver profile"})
 		return
 	}
 
@@ -418,7 +432,7 @@ func (h *BookingHandler) StartService(c *gin.Context) {
 		return
 	}
 
-	if err := h.repo.StartService(c.Request.Context(), bookingID, &req.Latitude, &req.Longitude); err != nil {
+	if err := h.repo.StartService(c.Request.Context(), bookingID, req.Latitude, req.Longitude); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start service"})
 		return
 	}

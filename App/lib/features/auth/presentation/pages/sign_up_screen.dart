@@ -139,6 +139,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   hintText: AppStrings.name,
                   icon: Icons.person,
                   controller: _nameController,
+                  keyboardType: TextInputType.name,
                 ),
 
                 SizedBox(height: 20.h),
@@ -146,8 +147,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 // Email Input
                 _buildInputField(
                   hintText: AppStrings.yourEmail,
-                  icon: Icons.check,
+                  icon: Icons.email_outlined,
                   controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
                 ),
 
                 SizedBox(height: 20.h),
@@ -214,7 +216,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ),
                         SizedBox(width: 16.w),
-                        const Expanded(child: SizedBox.shrink()),
+                        Expanded(
+                          child: _buildAccountTypeOption(
+                            'Caregiver',
+                            'caregiver',
+                            Icons.volunteer_activism,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -373,6 +381,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     required String hintText,
     required IconData icon,
     TextEditingController? controller,
+    TextInputType? keyboardType,
   }) {
     return Container(
       height: 60.h,
@@ -386,6 +395,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           Expanded(
             child: TextField(
               controller: controller,
+              keyboardType: keyboardType,
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
                 color: AppColors.authInputText,
@@ -400,7 +410,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             ),
           ),
-          Icon(icon, color: AppColors.primary, size: 12.sp),
+          Icon(icon, color: AppColors.primary, size: 18.sp),
           SizedBox(width: 16.w),
         ],
       ),

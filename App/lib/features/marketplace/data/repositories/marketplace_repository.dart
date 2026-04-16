@@ -163,6 +163,54 @@ class MarketplaceRepository {
     }
   }
 
+  // ─── Product Reviews ───────────────────────────────────────────
+
+  Future<List<ProductReview>> getProductReviews(
+    String productId, {
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _apiClient.get(
+        '/api/v1/marketplace/products/$productId/reviews',
+        queryParameters: {'page': page, 'limit': limit},
+      );
+      if (response.data['success'] == true) {
+        final list = response.data['reviews'] as List<dynamic>;
+        return list
+            .map((e) => ProductReview.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      throw Exception(response.data['error'] ?? 'Failed to load reviews');
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
+    }
+  }
+
+  Future<ProductReview> addProductReview(
+    String productId,
+    CreateProductReviewRequest request,
+  ) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/v1/marketplace/products/$productId/reviews',
+        data: request.toJson(),
+      );
+      if (response.data['success'] == true) {
+        return ProductReview.fromJson(
+          response.data['review'] as Map<String, dynamic>,
+        );
+      }
+      throw Exception(response.data['error'] ?? 'Failed to submit review');
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
+    }
+  }
+
   // ─── Cart ──────────────────────────────────────────────────────
 
   Future<List<CartItem>> getCart() async {

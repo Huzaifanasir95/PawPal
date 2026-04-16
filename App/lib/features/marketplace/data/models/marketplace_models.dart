@@ -96,6 +96,62 @@ class Product {
   String get firstImage => images.isNotEmpty ? images.first : '';
 }
 
+class ProductReview {
+  final String id;
+  final String productId;
+  final String userId;
+  final String? userName;
+  final String? userAvatar;
+  final int rating;
+  final String? comment;
+  final DateTime createdAt;
+
+  const ProductReview({
+    required this.id,
+    required this.productId,
+    required this.userId,
+    this.userName,
+    this.userAvatar,
+    required this.rating,
+    this.comment,
+    required this.createdAt,
+  });
+
+  factory ProductReview.fromJson(Map<String, dynamic> json) {
+    return ProductReview(
+      id: json['id'] as String,
+      productId: json['productId'] as String,
+      userId: json['userId'] as String,
+      userName: json['userName'] as String?,
+      userAvatar: json['userAvatar'] as String?,
+      rating: json['rating'] as int? ?? 0,
+      comment: json['comment'] as String?,
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+    );
+  }
+}
+
+class CreateProductReviewRequest {
+  final int rating;
+  final String? comment;
+  final String? orderItemId;
+
+  const CreateProductReviewRequest({
+    required this.rating,
+    this.comment,
+    this.orderItemId,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'rating': rating,
+    if (comment != null && comment!.trim().isNotEmpty) 'comment': comment,
+    if (orderItemId != null && orderItemId!.trim().isNotEmpty)
+      'orderItemId': orderItemId,
+  };
+}
+
 class CartItem {
   final String id;
   final String userId;

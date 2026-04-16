@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/services/api_client.dart';
@@ -148,11 +147,13 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(_stepTitles[_currentStep]),
-        backgroundColor: AppColors.primary,
+        backgroundColor: theme.colorScheme.primary,
         leading: _currentStep > 0
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
@@ -188,13 +189,15 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
   }
 
   Widget _buildProgressIndicator() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -216,12 +219,15 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                       gradient: isCompleted || isCurrent
                           ? LinearGradient(
                               colors: [
-                                AppColors.primary,
-                                AppColors.primary.withOpacity(0.8),
+                                colorScheme.primary,
+                                colorScheme.primary.withValues(alpha: 0.8),
                               ],
                             )
                           : null,
-                      color: isCompleted || isCurrent ? null : AppColors.neutral300,
+                      color:
+                          isCompleted || isCurrent
+                              ? null
+                              : colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(2.r),
                     ),
                   ),
@@ -438,6 +444,8 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
   }
 
   Widget _buildStepHeader(String title, String subtitle, IconData icon) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -446,8 +454,8 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.primary.withOpacity(0.1),
-                AppColors.primary.withOpacity(0.05),
+                colorScheme.primary.withValues(alpha: 0.12),
+                colorScheme.primary.withValues(alpha: 0.06),
               ],
             ),
             borderRadius: BorderRadius.circular(16.r),
@@ -455,14 +463,14 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
           child: Icon(
             icon,
             size: 48.sp,
-            color: AppColors.primary,
+            color: colorScheme.primary,
           ),
         ),
         SizedBox(height: 20.h),
         Text(
           title,
           style: AppTextStyles.titleLarge.copyWith(
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -470,7 +478,7 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
         Text(
           subtitle,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
+            color: colorScheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -478,6 +486,8 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
   }
 
   Widget _buildNavigationButtons() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     // Check if current step has all required fields filled
     bool isStepComplete = false;
     
@@ -511,10 +521,10 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -529,7 +539,7 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                   onPressed: _previousStep,
                   style: OutlinedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16.h),
-                    side: BorderSide(color: AppColors.primary, width: 2),
+                    side: BorderSide(color: colorScheme.primary, width: 2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
@@ -537,7 +547,7 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                   child: Text(
                     'Previous',
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: colorScheme.primary,
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                     ),
@@ -554,9 +564,9 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                   boxShadow: isStepComplete
                       ? [
                           BoxShadow(
-                            color: Color(0xFF00838F).withOpacity(0.4),
+                            color: colorScheme.primary.withValues(alpha: 0.35),
                             blurRadius: 12,
-                            offset: Offset(0, 4),
+                            offset: const Offset(0, 4),
                           ),
                         ]
                       : [],
@@ -573,10 +583,11 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16.h),
-                    backgroundColor: isStepComplete 
-                        ? Color(0xFF00838F)
-                        : AppColors.neutral400,
-                    disabledBackgroundColor: AppColors.neutral300,
+                    backgroundColor:
+                        isStepComplete
+                            ? colorScheme.primary
+                            : colorScheme.surfaceContainerHighest,
+                    disabledBackgroundColor: colorScheme.surfaceContainerHighest,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
@@ -597,14 +608,24 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                             Text(
                               _currentStep < 4 ? 'Continue' : 'Complete Profile',
                               style: TextStyle(
-                                color: Colors.white,
+                                color:
+                                    isStepComplete
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurfaceVariant,
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                             if (_currentStep < 4) ...[
                               SizedBox(width: 8.w),
-                              Icon(Icons.arrow_forward_rounded, size: 20.sp, color: Colors.white),
+                              Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 20.sp,
+                                color:
+                                    isStepComplete
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurfaceVariant,
+                              ),
                             ],
                           ],
                         ),
@@ -626,6 +647,8 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
     TextInputType? keyboardType,
     int maxLines = 1,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -636,35 +659,41 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
         hintText: hint,
         prefixText: prefixText,
         prefixIcon: icon != null
-            ? Icon(icon, color: AppColors.primary.withOpacity(0.7))
+            ? Icon(icon, color: colorScheme.primary.withValues(alpha: 0.7))
             : null,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: colorScheme.surface,
         contentPadding: EdgeInsets.symmetric(
           horizontal: icon != null ? 12.w : 20.w,
           vertical: 16.h,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.r),
-          borderSide: BorderSide(color: AppColors.border.withOpacity(0.3)),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.3),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.r),
-          borderSide: BorderSide(color: AppColors.border.withOpacity(0.3)),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.3),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.r),
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.r),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderSide: BorderSide(color: colorScheme.error),
         ),
       ),
     );
   }
 
   Widget _buildSpecializationChips() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: _availableSpecializations.map((spec) {
         final isSelected = _selectedSpecializations.contains(spec);
@@ -688,23 +717,27 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
                 decoration: BoxDecoration(
-                  color: isSelected ? Color(0xFF00838F) : Colors.white,
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.surface,
                   borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(
-                    color: isSelected ? Color(0xFF00838F) : AppColors.border.withOpacity(0.3),
+                    color: isSelected
+                        ? colorScheme.primary
+                        : colorScheme.outline.withValues(alpha: 0.3),
                     width: 2,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: Color(0xFF00838F).withOpacity(0.3),
+                            color: colorScheme.primary.withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
                         ]
                       : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -720,7 +753,10 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                         shape: BoxShape.circle,
                         color: isSelected ? Colors.white : Colors.transparent,
                         border: Border.all(
-                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                          color:
+                              isSelected
+                                  ? colorScheme.onPrimary
+                                  : colorScheme.onSurfaceVariant,
                           width: 2,
                         ),
                       ),
@@ -728,7 +764,7 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                           ? Icon(
                               Icons.check_rounded,
                               size: 16.sp,
-                              color: Color(0xFF00838F),
+                              color: colorScheme.primary,
                             )
                           : null,
                     ),
@@ -737,7 +773,10 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                       child: Text(
                         spec,
                         style: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
+                          color:
+                              isSelected
+                                  ? colorScheme.onPrimary
+                                  : colorScheme.onSurface,
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                           fontSize: 16.sp,
                         ),

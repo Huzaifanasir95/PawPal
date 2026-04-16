@@ -276,12 +276,12 @@ class _AdoptionPageState extends State<AdoptionPage> {
                   left: Radius.circular(16.r),
                 ),
               ),
-              child: listing.imageUrls != null && listing.imageUrls!.isNotEmpty
+                child: listing.imageUrls.isNotEmpty
                   ? ClipRRect(
                       borderRadius: BorderRadius.horizontal(
                           left: Radius.circular(16.r)),
                       child: Image.network(
-                        listing.imageUrls!.first,
+                    listing.imageUrls.first,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) =>
                             _petPlaceholder(listing.petType),
@@ -308,10 +308,9 @@ class _AdoptionPageState extends State<AdoptionPage> {
                             ),
                           ),
                         ),
-                        if (listing.adoptionFee != null &&
-                            listing.adoptionFee! > 0)
+                        if (listing.adoptionFee > 0)
                           Text(
-                            '\$${listing.adoptionFee!.toStringAsFixed(0)}',
+                            '\$${listing.adoptionFee.toStringAsFixed(0)}',
                             style: AppTextStyles.onboardingBody.copyWith(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w700,

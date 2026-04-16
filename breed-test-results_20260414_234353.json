@@ -1,0 +1,14 @@
+﻿[
+    {
+        "Passed":  true,
+        "Message":  "Expected rejection of invalid pet type",
+        "Timestamp":  "2026-04-14 23:43:53",
+        "TestName":  "Invalid Pet Type Rejection"
+    },
+    {
+        "Passed":  true,
+        "Message":  "Expected failure for missing image",
+        "Timestamp":  "2026-04-14 23:43:53",
+        "TestName":  "Missing Image File Handling"
+    }
+]

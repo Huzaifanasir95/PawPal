@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
+import '../../core/theme/app_theme_controller.dart';
 
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/community/presentation/bloc/community_bloc.dart';
@@ -143,18 +144,31 @@ class _AuthFlowState extends State<AuthFlow> {
       },
       builder: (context, state) {
         return state.when(
-          initial: () => const AuthNavigator(),
+          initial: () {
+            context.read<AppThemeController>().resetToGuest();
+            return const AuthNavigator();
+          },
           loading:
               () => const AuthNavigator(), // Don't show full-screen loading
           authenticated: (user) {
+            context.read<AppThemeController>().syncUserContext(
+              userId: user.uid,
+              activeRole: user.accountType ?? 'pet_owner',
+            );
             // Use role from auth payload immediately, avoiding an extra profile fetch.
             return RoleBasedHome(
               key: ValueKey('home_${user.uid}_${user.accountType}'),
               initialAccountType: user.accountType,
             );
           },
-          unauthenticated: () => const AuthNavigator(),
-          error: (message) => const AuthNavigator(), // Show auth with error
+          unauthenticated: () {
+            context.read<AppThemeController>().resetToGuest();
+            return const AuthNavigator();
+          },
+          error: (message) {
+            context.read<AppThemeController>().resetToGuest();
+            return const AuthNavigator(); // Show auth with error
+          },
           passwordResetSent: () => const AuthNavigator(),
           accountTypeRequired: (idToken, displayName, photoUrl) {
             // Show auth navigator while navigation happens in listener
@@ -187,11 +201,13 @@ class PawPawlApp extends StatefulWidget {
 class _PawPawlAppState extends State<PawPawlApp> {
   final AuthRepository _authRepository = getIt<AuthRepository>();
   late AuthBloc _authBloc;
+  late AppThemeController _themeController;
 
   @override
   void initState() {
     super.initState();
     _authBloc = AuthBloc(authRepository: _authRepository);
+    _themeController = AppThemeController();
     // Initialize auth check
     _authBloc.add(const AuthEvent.checkAuth());
   }
@@ -200,6 +216,7 @@ class _PawPawlAppState extends State<PawPawlApp> {
   void dispose() {
     _authBloc.close();
     _authRepository.dispose();
+    _themeController.dispose();
     super.dispose();
   }
 
@@ -213,20 +230,24 @@ class _PawPawlAppState extends State<PawPawlApp> {
         BlocProvider(create: (context) => getIt<ChatBloc>()),
         Provider<AuthRepository>.value(value: _authRepository),
         Provider<ImageService>(create: (context) => getIt<ImageService>()),
+        ChangeNotifierProvider<AppThemeController>.value(value: _themeController),
       ],
       child: ScreenUtilInit(
         designSize: const Size(390, 844),
         minTextAdapt: true,
         splitScreenMode: true,
         builder: (context, child) {
-          return MaterialApp(
-            title: 'PawPawl',
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              primarySwatch: Colors.blue,
-              visualDensity: VisualDensity.adaptivePlatformDensity,
-            ),
-            home: AuthFlow(authRepository: _authRepository),
+          return Consumer<AppThemeController>(
+            builder: (context, themeController, _) {
+              return MaterialApp(
+                title: 'PawPawl',
+                debugShowCheckedModeBanner: false,
+                theme: themeController.lightTheme,
+                darkTheme: themeController.darkTheme,
+                themeMode: themeController.themeMode,
+                home: AuthFlow(authRepository: _authRepository),
+              );
+            },
           );
         },
       ),

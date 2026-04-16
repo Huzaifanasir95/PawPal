@@ -237,6 +237,40 @@ type VetReview struct {
 	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
+// VetAppointment represents a scheduled vet consultation appointment
+type VetAppointment struct {
+	ID                  uuid.UUID  `json:"id"`
+	AppointmentNumber   string     `json:"appointmentNumber"`
+	PetOwnerID          uuid.UUID  `json:"petOwnerId"`
+	VetUserID           uuid.UUID  `json:"vetUserId"`
+	PetID               uuid.UUID  `json:"petId"`
+	PetName             *string    `json:"petName,omitempty"`
+	PetType             *string    `json:"petType,omitempty"`
+	Reason              string     `json:"reason"`
+	Symptoms            *string    `json:"symptoms,omitempty"`
+	OwnerNotes          *string    `json:"ownerNotes,omitempty"`
+	AppointmentDatetime time.Time  `json:"appointmentDatetime"`
+	DurationMinutes     int        `json:"durationMinutes"`
+	MeetingType         string     `json:"meetingType"`
+	ClinicAddress       *string    `json:"clinicAddress,omitempty"`
+	MeetingLink         *string    `json:"meetingLink,omitempty"`
+	FeeAmount           float64    `json:"feeAmount"`
+	Currency            string     `json:"currency"`
+	Status              string     `json:"status"`
+	ResponseNote        *string    `json:"responseNote,omitempty"`
+	RespondedAt         *time.Time `json:"respondedAt,omitempty"`
+	CancelledAt         *time.Time `json:"cancelledAt,omitempty"`
+	CompletedAt         *time.Time `json:"completedAt,omitempty"`
+	CreatedAt           time.Time  `json:"createdAt"`
+	UpdatedAt           time.Time  `json:"updatedAt"`
+
+	// Joined fields
+	OwnerName   *string `json:"ownerName,omitempty"`
+	OwnerAvatar *string `json:"ownerAvatar,omitempty"`
+	VetName     *string `json:"vetName,omitempty"`
+	VetAvatar   *string `json:"vetAvatar,omitempty"`
+}
+
 // LostFoundPost represents a lost or found pet alert
 type LostFoundPost struct {
 	ID               uuid.UUID `json:"id"`
@@ -326,6 +360,29 @@ type EventRSVP struct {
 	CreatedAt  time.Time `json:"createdAt"`
 }
 
+// CommunityGroup represents a discussion group in community space.
+type CommunityGroup struct {
+	ID           uuid.UUID `json:"id"`
+	OwnerID      uuid.UUID `json:"ownerId"`
+	Name         string    `json:"name"`
+	Slug         string    `json:"slug"`
+	Description  *string   `json:"description,omitempty"`
+	Icon         *string   `json:"icon,omitempty"`
+	IsPrivate    bool      `json:"isPrivate"`
+	MembersCount int       `json:"membersCount"`
+	PostsCount   int       `json:"postsCount"`
+	IsMember     bool      `json:"isMember"`
+	OwnerName    *string   `json:"ownerName,omitempty"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+}
+
+// TrendingHashtag represents a hashtag trend snapshot.
+type TrendingHashtag struct {
+	Tag        string `json:"tag"`
+	UsageCount int    `json:"usageCount"`
+}
+
 // =====================================================
 // CAREGIVER MODULE MODELS
 // =====================================================
@@ -389,9 +446,10 @@ type CaregiverProfile struct {
 	UpdatedAt             time.Time  `json:"updatedAt"`
 
 	// Joined fields
-	UserName   *string `json:"userName,omitempty"`
-	UserAvatar *string `json:"userAvatar,omitempty"`
-	UserEmail  *string `json:"userEmail,omitempty"`
+	UserName   *string            `json:"userName,omitempty"`
+	UserAvatar *string            `json:"userAvatar,omitempty"`
+	UserEmail  *string            `json:"userEmail,omitempty"`
+	Services   []CaregiverService `json:"services,omitempty"`
 }
 
 // CaregiverService represents a service offered by a caregiver

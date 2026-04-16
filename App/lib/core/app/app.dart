@@ -72,11 +72,14 @@ class _AuthFlowState extends State<AuthFlow> {
     return state.when(
       initial: () => 'guest:initial',
       loading: () => 'guest:loading',
-      authenticated: (user) => 'auth:${user.uid}:${user.accountType ?? 'pet_owner'}',
+      authenticated:
+          (user) => 'auth:${user.uid}:${user.accountType ?? 'pet_owner'}',
       unauthenticated: () => 'guest:unauthenticated',
       error: (message) => 'guest:error:${message.hashCode}',
       passwordResetSent: () => 'guest:password_reset_sent',
-      accountTypeRequired: (idToken, displayName, photoUrl) => 'guest:account_type_required:${idToken.hashCode}',
+      accountTypeRequired:
+          (idToken, displayName, photoUrl) =>
+              'guest:account_type_required:${idToken.hashCode}',
     );
   }
 
@@ -274,7 +277,9 @@ class _PawPawlAppState extends State<PawPawlApp> {
         BlocProvider(create: (context) => getIt<ChatBloc>()),
         Provider<AuthRepository>.value(value: _authRepository),
         Provider<ImageService>(create: (context) => getIt<ImageService>()),
-        ChangeNotifierProvider<AppThemeController>.value(value: _themeController),
+        ChangeNotifierProvider<AppThemeController>.value(
+          value: _themeController,
+        ),
       ],
       child: ScreenUtilInit(
         designSize: const Size(390, 844),

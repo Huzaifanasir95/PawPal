@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../data/models/chat_model.dart';
 import '../bloc/chat_bloc.dart';
@@ -30,6 +31,12 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
+    final accountType = context.select((AuthBloc bloc) {
+      return bloc.state.maybeWhen(
+        authenticated: (user) => user.accountType,
+        orElse: () => null,
+      );
+    });
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -62,20 +69,20 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                     return state.maybeWhen(
                       loading: () {
                         if (_cachedChats.isNotEmpty) {
-                          return _buildChatsList(_cachedChats);
+                          return _buildChatsList(_cachedChats, accountType);
                         }
                         return _buildLoadingState();
                       },
-                      chatsLoaded: (chats) => _buildChatsList(chats),
+                      chatsLoaded: (chats) => _buildChatsList(chats, accountType),
                       error: (message) {
                         if (_cachedChats.isNotEmpty) {
-                          return _buildChatsList(_cachedChats);
+                          return _buildChatsList(_cachedChats, accountType);
                         }
                         return _buildErrorState(message);
                       },
                       orElse: () {
                         if (_cachedChats.isNotEmpty) {
-                          return _buildChatsList(_cachedChats);
+                          return _buildChatsList(_cachedChats, accountType);
                         }
                         return _buildLoadingState();
                       },
@@ -216,7 +223,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
     );
   }
 
-  Widget _buildChatsList(List<Chat> chats) {
+  Widget _buildChatsList(List<Chat> chats, String? accountType) {
     if (chats.isEmpty) {
       return _buildEmptyState();
     }
@@ -232,7 +239,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
         itemBuilder: (context, index) {
           return Padding(
             padding: EdgeInsets.only(bottom: 12.h),
-            child: _ChatTile(chat: chats[index]),
+            child: _ChatTile(chat: chats[index], accountType: accountType),
           );
         },
       ),
@@ -288,14 +295,26 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
 
 class _ChatTile extends StatelessWidget {
   final Chat chat;
+  final String? accountType;
 
-  const _ChatTile({required this.chat});
+  const _ChatTile({required this.chat, required this.accountType});
+
+  int _unreadCountForViewer() {
+    switch (accountType) {
+      case 'vet':
+        return chat.unreadCountVet;
+      case 'pet_owner':
+        return chat.unreadCountOwner;
+      default:
+        return chat.unreadCountOwner + chat.unreadCountVet;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final hasUnread = chat.unreadCountOwner > 0 || chat.unreadCountVet > 0;
-    final unreadCount = chat.unreadCountOwner + chat.unreadCountVet;
+    final unreadCount = _unreadCountForViewer();
+    final hasUnread = unreadCount > 0;
 
     return Dismissible(
       key: Key(chat.id),

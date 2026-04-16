@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemePalette {
@@ -39,8 +40,10 @@ class AppThemeController extends ChangeNotifier {
   ThemeMode get themeMode => _isDarkMode ? ThemeMode.dark : ThemeMode.light;
   String get activeRole => _activeRole;
 
-  ThemeData get lightTheme => _buildTheme(Brightness.light, primaryForRole(_activeRole));
-  ThemeData get darkTheme => _buildTheme(Brightness.dark, primaryForRole(_activeRole));
+  ThemeData get lightTheme =>
+      _buildTheme(Brightness.light, primaryForRole(_activeRole));
+  ThemeData get darkTheme =>
+      _buildTheme(Brightness.dark, primaryForRole(_activeRole));
 
   void syncUserContext({required String userId, required String activeRole}) {
     final normalizedRole = _normalizeRole(activeRole);
@@ -143,11 +146,14 @@ class AppThemeController extends ChangeNotifier {
     final base = ThemeData(
       useMaterial3: true,
       brightness: brightness,
+      fontFamily: GoogleFonts.mulish().fontFamily,
       colorScheme: colorScheme,
     );
 
     return base.copyWith(
       colorScheme: colorScheme,
+      textTheme: GoogleFonts.mulishTextTheme(base.textTheme),
+      primaryTextTheme: GoogleFonts.mulishTextTheme(base.primaryTextTheme),
       scaffoldBackgroundColor: scaffold,
       canvasColor: surface,
       cardColor: raisedSurface,
@@ -159,12 +165,8 @@ class AppThemeController extends ChangeNotifier {
         foregroundColor: onPrimary,
         surfaceTintColor: Colors.transparent,
       ),
-      bottomAppBarTheme: base.bottomAppBarTheme.copyWith(
-        color: raisedSurface,
-      ),
-      dialogTheme: base.dialogTheme.copyWith(
-        backgroundColor: raisedSurface,
-      ),
+      bottomAppBarTheme: base.bottomAppBarTheme.copyWith(color: raisedSurface),
+      dialogTheme: base.dialogTheme.copyWith(backgroundColor: raisedSurface),
       inputDecorationTheme: base.inputDecorationTheme.copyWith(
         filled: true,
         fillColor: raisedSurface,
@@ -213,10 +215,7 @@ class AppThemeController extends ChangeNotifier {
       try {
         final decoded = jsonDecode(rawMap) as Map<String, dynamic>;
         _roleThemeByRole = decoded.map(
-          (key, value) => MapEntry(
-            _normalizeRole(key),
-            value.toString(),
-          ),
+          (key, value) => MapEntry(_normalizeRole(key), value.toString()),
         );
       } catch (_) {
         _roleThemeByRole = <String, String>{};

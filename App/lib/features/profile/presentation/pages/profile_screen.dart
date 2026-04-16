@@ -1209,6 +1209,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildRoleManagementCard() {
     final colorScheme = Theme.of(context).colorScheme;
+    final titleColor = colorScheme.onSurface;
+    final subtitleColor = colorScheme.onSurfaceVariant;
     final activeRole = _activeRole();
     final roles =
         _assignedRoles.isNotEmpty
@@ -1265,7 +1267,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       'Account Roles',
                       style: AppTextStyles.onboardingTitle.copyWith(
                         fontSize: 19.sp,
-                        color: AppColors.textPrimary,
+                        color: titleColor,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1274,7 +1276,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       'Switch roles or add a new one from your account settings.',
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 12.sp,
-                        color: AppColors.textSecondary,
+                        color: subtitleColor,
                       ),
                     ),
                   ],
@@ -1296,7 +1298,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Current Active Role',
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 13.sp,
-              color: AppColors.textSecondary,
+              color: subtitleColor,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1311,7 +1313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _themeRoleLabel(activeRole),
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 13.sp,
-                color: AppColors.textPrimary,
+                color: titleColor,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -1321,7 +1323,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Assigned Roles',
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 13.sp,
-              color: AppColors.textSecondary,
+              color: subtitleColor,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1333,8 +1335,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 roles
                     .map(
                       (role) => ChoiceChip(
-                        label: Text(_themeRoleLabel(role)),
+                        label: Text(
+                          _themeRoleLabel(role),
+                          style: AppTextStyles.onboardingBody.copyWith(
+                            fontSize: 13.sp,
+                            color:
+                                role == activeRole
+                                    ? colorScheme.primary
+                                    : titleColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         selected: role == activeRole,
+                        selectedColor: colorScheme.primary.withValues(alpha: 0.15),
+                        backgroundColor: colorScheme.surfaceContainerHighest,
+                        side: BorderSide(
+                          color: colorScheme.outline.withValues(alpha: 0.35),
+                        ),
                         onSelected:
                             _isRoleUpdating
                                 ? null
@@ -1356,8 +1373,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: const Icon(Icons.add_circle_outline_rounded),
               label: const Text('Add Role'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
-                side: BorderSide(color: AppColors.primary.withOpacity(0.55)),
+                foregroundColor: titleColor,
+                side: BorderSide(color: colorScheme.primary.withValues(alpha: 0.55)),
                 padding: EdgeInsets.symmetric(vertical: 12.h),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.r),
@@ -1372,6 +1389,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildAppearanceCard() {
     final colorScheme = Theme.of(context).colorScheme;
+    final titleColor = colorScheme.onSurface;
+    final subtitleColor = colorScheme.onSurfaceVariant;
     final themeController = context.watch<AppThemeController>();
     final roles =
         _assignedRoles.isNotEmpty
@@ -1432,7 +1451,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       'Appearance',
                       style: AppTextStyles.onboardingTitle.copyWith(
                         fontSize: 19.sp,
-                        color: AppColors.textPrimary,
+                        color: titleColor,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1441,7 +1460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       'Customize dark mode and colors for each role.',
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 12.sp,
-                        color: AppColors.textSecondary,
+                        color: subtitleColor,
                       ),
                     ),
                   ],
@@ -1456,7 +1475,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               'Dark Mode',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 15.sp,
-                color: AppColors.textPrimary,
+                color: titleColor,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1464,7 +1483,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               'Apply a darker look across the app.',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 12.sp,
-                color: AppColors.textSecondary,
+                color: subtitleColor,
               ),
             ),
             value: themeController.isDarkMode,
@@ -1477,7 +1496,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Role to customize',
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 14.sp,
-              color: AppColors.textPrimary,
+              color: titleColor,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1489,8 +1508,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 roles
                     .map(
                       (role) => ChoiceChip(
-                        label: Text(_themeRoleLabel(role)),
+                        label: Text(
+                          _themeRoleLabel(role),
+                          style: AppTextStyles.onboardingBody.copyWith(
+                            fontSize: 13.sp,
+                            color:
+                                selectedRole == role
+                                    ? colorScheme.primary
+                                    : titleColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         selected: selectedRole == role,
+                        selectedColor: colorScheme.primary.withValues(alpha: 0.15),
+                        backgroundColor: colorScheme.surfaceContainerHighest,
+                        side: BorderSide(
+                          color: colorScheme.outline.withValues(alpha: 0.35),
+                        ),
                         onSelected: (_) {
                           setState(() {
                             _selectedThemeRole = role;
@@ -1505,7 +1539,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Color Palette for ${_themeRoleLabel(selectedRole)}',
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 14.sp,
-              color: AppColors.textPrimary,
+              color: titleColor,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1532,13 +1566,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         vertical: 10.h,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(
                           color:
                               isSelected
                                   ? palette.primary
-                                  : const Color(0xFFC7D6DE),
+                                  : colorScheme.outline.withValues(alpha: 0.35),
                           width: isSelected ? 1.8 : 1,
                         ),
                       ),
@@ -1560,7 +1594,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 12.sp,
-                                color: AppColors.textPrimary,
+                                color: titleColor,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

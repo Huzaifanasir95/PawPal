@@ -317,11 +317,14 @@ class _SignInScreenState extends State<SignInScreen> {
     required IconData icon,
     TextEditingController? controller,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       height: 60.h,
       decoration: BoxDecoration(
+        color: colorScheme.surface,
         border: Border.all(
-          color: AppColors.socialBorder,
+          color: colorScheme.primary.withValues(alpha: 0.45),
           width: 2,
         ),
         borderRadius: BorderRadius.circular(12.r),
@@ -334,21 +337,20 @@ class _SignInScreenState extends State<SignInScreen> {
               controller: controller,
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
-                color: AppColors.authInputText,
+                color: colorScheme.onSurface,
               ),
-              decoration: InputDecoration(
+              decoration: InputDecoration.collapsed(
                 hintText: hintText,
                 hintStyle: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 14.sp,
-                  color: AppColors.authInputText,
+                  color: colorScheme.onSurfaceVariant,
                 ),
-                border: InputBorder.none,
               ),
             ),
           ),
           Icon(
             icon,
-            color: AppColors.primary,
+            color: colorScheme.primary,
             size: 12.sp,
           ),
           SizedBox(width: 16.w),

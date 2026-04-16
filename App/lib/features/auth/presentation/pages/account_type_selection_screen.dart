@@ -13,6 +13,9 @@ class AccountTypeSelectionScreen extends StatefulWidget {
   final String? idToken;
   final String? displayName;
   final String? photoUrl;
+  final String? pendingEmail;
+  final String? pendingPassword;
+  final String? pendingName;
 
   const AccountTypeSelectionScreen({
     super.key,
@@ -20,6 +23,9 @@ class AccountTypeSelectionScreen extends StatefulWidget {
     this.idToken,
     this.displayName,
     this.photoUrl,
+    this.pendingEmail,
+    this.pendingPassword,
+    this.pendingName,
   });
 
   @override
@@ -298,6 +304,15 @@ class _AccountTypeSelectionScreenState
             _selectedAccountType!,
             widget.displayName,
             widget.photoUrl,
+          ),
+        );
+      } else if (widget.pendingEmail != null && widget.pendingPassword != null) {
+        authBloc.add(
+          AuthEvent.signUpWithEmail(
+            widget.pendingEmail!,
+            widget.pendingPassword!,
+            widget.pendingName,
+            _selectedAccountType!,
           ),
         );
       } else {

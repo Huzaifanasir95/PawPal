@@ -8,6 +8,7 @@ import '../../../../core/constants/app_images.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/widgets/custom_password_field.dart';
 import '../bloc/auth_bloc.dart';
+import 'account_type_selection_screen.dart';
 import 'sign_in_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -26,7 +27,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   DateTime? _lastButtonPress;
-  String _accountType = 'pet_owner'; // Default to pet owner
 
   @override
   void dispose() {
@@ -172,61 +172,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
 
                 SizedBox(height: 30.h),
-
-                // Account Type Selection
-                Text(
-                  'I am a',
-                  style: AppTextStyles.titleSmall.copyWith(
-                    color: AppColors.authText,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                SizedBox(height: 16.h),
-
-                Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildAccountTypeOption(
-                            'Pet Owner',
-                            'pet_owner',
-                            Icons.pets,
-                          ),
-                        ),
-                        SizedBox(width: 16.w),
-                        Expanded(
-                          child: _buildAccountTypeOption(
-                            'Veterinarian',
-                            'vet',
-                            Icons.medical_services,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildAccountTypeOption(
-                            'Seller',
-                            'seller',
-                            Icons.storefront,
-                          ),
-                        ),
-                        SizedBox(width: 16.w),
-                        Expanded(
-                          child: _buildAccountTypeOption(
-                            'Caregiver',
-                            'caregiver',
-                            Icons.volunteer_activism,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
 
                 SizedBox(height: 40.h),
 
@@ -523,19 +468,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           return;
                         }
 
-                        // Sign up with email and password
+                        // Continue to role selection before account creation.
                         try {
                           final authBloc = context.read<AuthBloc>();
-                          if (!authBloc.isClosed) {
-                            authBloc.add(
-                              AuthEvent.signUpWithEmail(
-                                email,
-                                password,
-                                name,
-                                _accountType,
-                              ),
-                            );
-                          }
+                          if (authBloc.isClosed) return;
+
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => BlocProvider.value(
+                                    value: authBloc,
+                                    child: AccountTypeSelectionScreen(
+                                      pendingEmail: email,
+                                      pendingPassword: password,
+                                      pendingName: name,
+                                    ),
+                                  ),
+                            ),
+                          );
                         } catch (e) {
                           debugPrint('Sign-up error: $e');
                           CustomSnackbar.showError(
@@ -570,49 +520,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildAccountTypeOption(String label, String value, IconData icon) {
-    final isSelected = _accountType == value;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _accountType = value;
-        });
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 12.w),
-        decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? AppColors.primary.withOpacity(0.1)
-                  : AppColors.surface,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.neutral300,
-            width: 2,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 32.sp,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

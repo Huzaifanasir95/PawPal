@@ -19,6 +19,58 @@ class AdoptionDetailPage extends StatefulWidget {
 }
 
 class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
+  bool _hasVerifiedBadge(AdoptionListing listing) {
+    return listing.isBreedVerified ||
+        (listing.verifiedBreed != null && listing.verifiedBreed!.trim().isNotEmpty);
+  }
+
+  Widget _buildImageFromPath(String imagePath, {required AdoptionListing listing}) {
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        errorBuilder: (_, __, ___) => _buildPlaceholder(listing),
+      );
+    }
+
+    if (imagePath.startsWith('data:image/')) {
+      try {
+        final comma = imagePath.indexOf(',');
+        if (comma > 0 && comma < imagePath.length - 1) {
+          final bytes = base64Decode(imagePath.substring(comma + 1));
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            errorBuilder: (_, __, ___) => _buildPlaceholder(listing),
+          );
+        }
+      } catch (_) {
+        return _buildPlaceholder(listing);
+      }
+    }
+
+    final localPath = imagePath.startsWith('file://')
+        ? (Uri.tryParse(imagePath)?.toFilePath() ?? imagePath)
+        : imagePath;
+
+    return FutureBuilder<Uint8List>(
+      future: XFile(localPath).readAsBytes(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Image.memory(
+            snapshot.data!,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            errorBuilder: (_, __, ___) => _buildPlaceholder(listing),
+          );
+        }
+        return _buildPlaceholder(listing);
+      },
+    );
+  }
+
   Widget _buildAvatarFromPath(String? path) {
     if (path == null || path.trim().isEmpty) {
       return Icon(Icons.person, size: 28.sp, color: Colors.white);
@@ -133,11 +185,9 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                     ? PageView.builder(
                         itemCount: listing.imageUrls.length,
                         itemBuilder: (context, index) {
-                          return Image.network(
+                          return _buildImageFromPath(
                             listing.imageUrls[index],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            errorBuilder: (context, error, stackTrace) => _buildPlaceholder(listing),
+                            listing: listing,
                           );
                         },
                       )
@@ -199,7 +249,7 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (listing.isBreedVerified)
+                          if (_hasVerifiedBadge(listing))
                             Padding(
                               padding: EdgeInsets.only(left: 8.w),
                               child: Icon(
@@ -257,7 +307,7 @@ class _AdoptionDetailPageState extends State<AdoptionDetailPage> {
                   ),
                 ),
                 SizedBox(height: 16.h),
-                if (listing.isBreedVerified) ...[
+                if (_hasVerifiedBadge(listing)) ...[
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                     decoration: BoxDecoration(

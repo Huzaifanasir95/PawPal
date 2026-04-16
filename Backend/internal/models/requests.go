@@ -320,6 +320,7 @@ type UpdateLostFoundRequest struct {
 // ─── Adoption Request/Response ──────────────────────────────────
 
 type CreateAdoptionRequest struct {
+	PetID        uuid.UUID `json:"petId" binding:"required"`
 	PetName      string   `json:"petName" binding:"required,min=1,max=100"`
 	PetType      string   `json:"petType" binding:"required"`
 	Breed        *string  `json:"breed,omitempty"`

@@ -77,6 +77,7 @@ class LostFoundPost {
 class AdoptionListing {
   final String id;
   final String userId;
+  final String? petId;
   final String petName;
   final String petType;
   final String? breed;
@@ -107,6 +108,7 @@ class AdoptionListing {
   const AdoptionListing({
     required this.id,
     required this.userId,
+    this.petId,
     required this.petName,
     required this.petType,
     this.breed,
@@ -144,6 +146,7 @@ class AdoptionListing {
     return AdoptionListing(
       id: json['id'] as String,
       userId: json['userId'] as String,
+      petId: json['petId'] as String?,
       petName: json['petName'] as String,
       petType: json['petType'] as String,
       breed: json['breed'] as String?,

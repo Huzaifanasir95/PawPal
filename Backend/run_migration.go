@@ -50,6 +50,7 @@ func main() {
 		{"009 - Fix Chat Last Message Trigger", "internal/database/migrations/009_fix_chat_last_message_trigger.sql"},
 		{"010 - Vet Appointments", "internal/database/migrations/010_vet_appointments.sql"},
 		{"011 - Community Advanced Features", "internal/database/migrations/011_community_advanced_features.sql"},
+		{"012 - Adoption Pet Link and Uniqueness", "internal/database/migrations/012_adoption_pet_link_and_uniqueness.sql"},
 	}
 
 	for _, m := range migrations {

@@ -199,6 +199,7 @@ class CommunityHubRepository {
   }
 
   Future<AdoptionListing> createAdoption({
+    required String petId,
     required String petName,
     required String petType,
     required String description,
@@ -221,6 +222,7 @@ class CommunityHubRepository {
   }) async {
     try {
       final data = <String, dynamic>{
+        'petId': petId,
         'petName': petName,
         'petType': petType,
         'description': description,

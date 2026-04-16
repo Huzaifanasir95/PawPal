@@ -7,8 +7,10 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
+import '../../data/repositories/community_hub_repository.dart';
 import '../../../pets/data/models/pet_model.dart';
 import '../../../pets/data/repositories/pet_repository_api.dart';
+import '../../../pets/presentation/pages/add_pet_screen.dart';
 import '../cubit/adoption_cubit.dart';
 import '../cubit/adoption_state.dart';
 
@@ -21,6 +23,7 @@ class CreateAdoptionPage extends StatefulWidget {
 
 class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
   final _petRepository = PetRepositoryApi();
+  final _communityRepo = CommunityHubRepository.instance;
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
   final _medicalInfoController = TextEditingController();
@@ -33,6 +36,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
   bool _isLoadingPets = true;
   String? _petsError;
   String? _selectedPetId;
+  bool _hasAnyPets = false;
 
   bool _isVaccinated = false;
   bool _isNeutered = false;
@@ -44,6 +48,12 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
     _loadUserPets();
   }
 
+  String _normalizeKey(String value) => value.trim().toLowerCase();
+
+  String _petNameTypeKey(String name, String type) {
+    return '${_normalizeKey(name)}::${_normalizeKey(type)}';
+  }
+
   Future<void> _loadUserPets() async {
     setState(() {
       _isLoadingPets = true;
@@ -53,14 +63,46 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
     try {
       final pets = await _petRepository.getPets();
       final availablePets = pets.where((pet) => !pet.isAdopted).toList();
+      final myListings = await _communityRepo.getMyAdoptionListings();
+
+      final activeListings = myListings.where((listing) {
+        final status = listing.status.trim().toLowerCase();
+        return status == 'available' || status == 'pending';
+      }).toList();
+
+      final listedPetNameTypeKeys = activeListings
+          .where((listing) => listing.petId == null || listing.petId!.isEmpty)
+          .map((listing) => _petNameTypeKey(listing.petName, listing.petType))
+          .toSet();
+
+      final listedPetIds = myListings
+          .where((listing) {
+            final status = listing.status.trim().toLowerCase();
+            return status == 'available' || status == 'pending';
+          })
+          .map((listing) => listing.petId)
+          .whereType<String>()
+          .where((id) => id.isNotEmpty)
+          .toSet();
+
+      final eligiblePets = availablePets
+          .where((pet) {
+            if (listedPetIds.contains(pet.id)) {
+              return false;
+            }
+            final key = _petNameTypeKey(pet.name, pet.type);
+            return !listedPetNameTypeKeys.contains(key);
+          })
+          .toList();
 
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _pets = availablePets;
-        _selectedPetId = availablePets.isNotEmpty ? availablePets.first.id : null;
+        _hasAnyPets = pets.isNotEmpty;
+        _pets = eligiblePets;
+        _selectedPetId = eligiblePets.isNotEmpty ? eligiblePets.first.id : null;
         _isLoadingPets = false;
       });
 
@@ -228,12 +270,30 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
                               ),
                               SizedBox(height: 10.h),
                               Text(
-                                'You have no pets to list for adoption.',
+                                _hasAnyPets
+                                    ? 'All your pets are already listed for adoption.'
+                                    : 'You have no pets to list for adoption.',
                                 textAlign: TextAlign.center,
                                 style: AppTextStyles.onboardingBody.copyWith(
                                   fontSize: 15.sp,
                                   color: AppColors.textSecondary,
                                 ),
+                              ),
+                              SizedBox(height: 12.h),
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const AddPetScreen(),
+                                    ),
+                                  );
+                                  if (mounted) {
+                                    _loadUserPets();
+                                  }
+                                },
+                                icon: const Icon(Icons.add),
+                                label: const Text('Add a pet'),
                               ),
                             ],
                           ),
@@ -499,6 +559,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
     final ageText = '${selectedPet.age} ${selectedPet.ageUnit}';
 
     final success = await context.read<AdoptionCubit>().createListing(
+          petId: selectedPet.id,
           petName: selectedPet.name,
           petType: selectedPet.type,
           description: _descriptionController.text.trim(),

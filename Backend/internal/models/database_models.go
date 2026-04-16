@@ -299,6 +299,7 @@ type LostFoundPost struct {
 type AdoptionListing struct {
 	ID           uuid.UUID `json:"id"`
 	UserID       uuid.UUID `json:"userId"`
+	PetID        *uuid.UUID `json:"petId,omitempty"`
 	PetName      string    `json:"petName"`
 	PetType      string    `json:"petType"`
 	Breed        *string   `json:"breed,omitempty"`

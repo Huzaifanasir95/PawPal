@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -315,6 +316,13 @@ class _AddPetScreenState extends State<AddPetScreen> {
     );
   }
 
+  Future<String> _xFileToDataUrl(XFile file) async {
+    final bytes = await file.readAsBytes();
+    final mime = file.mimeType ?? 'image/jpeg';
+    final encoded = base64Encode(bytes);
+    return 'data:$mime;base64,$encoded';
+  }
+
   void _submitPet() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedImages.isEmpty) {
@@ -337,6 +345,10 @@ class _AddPetScreenState extends State<AddPetScreen> {
       );
 
       try {
+        final imagePayloads = await Future.wait(
+          _selectedImages.map(_xFileToDataUrl),
+        );
+
         // API will handle validation and creation
 
         // Create pet with API
@@ -351,8 +363,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
           weight: double.parse(_weightController.text.trim()),
           weightUnit: _weightUnit,
           imageFile: _selectedImage,
-          imageLocalPath: _selectedImage?.path,
-          imageUrls: _selectedImages.map((file) => file.path).toList(),
+          imageLocalPath: null,
+          imageUrls: imagePayloads,
           isVerified: _isVerified,
           verificationConfidence: _isVerified ? _verificationConfidence : null,
           verifiedBreed: _isVerified ? _breedController.text.trim() : null,

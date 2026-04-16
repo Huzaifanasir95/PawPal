@@ -1,9 +1,7 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/breed_prediction_model.dart';
@@ -38,8 +36,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
   String _weightUnit = 'kg'; // 'kg' or 'lbs'
 
   // Image
-  File? _selectedImage;
-  List<File> _selectedImages = []; // Multiple images
+  XFile? _selectedImage;
+  List<XFile> _selectedImages = []; // Multiple images
   bool _isVerifying = false;
   bool _isVerified = false;
   double? _verificationConfidence;
@@ -99,16 +97,11 @@ class _AddPetScreenState extends State<AddPetScreen> {
       );
 
       if (pickedFile != null) {
-        // Copy the picked file to a temporary directory to ensure it's accessible
-        final tempDir = await getTemporaryDirectory();
-        final fileName = path.basename(pickedFile.path);
-        final tempFile = File('${tempDir.path}/$fileName');
-        await tempFile.writeAsBytes(await pickedFile.readAsBytes());
-
         setState(() {
-          _selectedImages.add(tempFile);
+          _selectedImages.add(pickedFile);
           if (_selectedImage == null) {
-            _selectedImage = tempFile; // Keep the first image as primary for verification
+            _selectedImage =
+                pickedFile; // Keep the first image as primary for verification
           }
           _isVerified = false;
         });
@@ -124,10 +117,46 @@ class _AddPetScreenState extends State<AddPetScreen> {
       if (_selectedImages.isEmpty) {
         _selectedImage = null;
         _isVerified = false;
-      } else if (_selectedImage == null || !_selectedImages.contains(_selectedImage)) {
+      } else if (_selectedImage == null ||
+          !_selectedImages.contains(_selectedImage)) {
         _selectedImage = _selectedImages.first;
       }
     });
+  }
+
+  Widget _buildSelectedImagePreview(XFile image) {
+    return FutureBuilder<Uint8List>(
+      future: image.readAsBytes(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Image.memory(
+            snapshot.data!,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Icon(Icons.pets, color: AppColors.primary, size: 32.sp),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          );
+        }
+
+        return Center(
+          child: Icon(Icons.pets, color: AppColors.primary, size: 32.sp),
+        );
+      },
+    );
   }
 
   Future<void> _verifyBreed() async {
@@ -171,94 +200,94 @@ class _AddPetScreenState extends State<AddPetScreen> {
   void _showBreedVerificationDialog(PredictionResult result) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.verified,
-              color: AppColors.success,
-              size: 24.sp,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.r),
             ),
-            SizedBox(width: 8.w),
-            Text(
-              'Breed Verified!',
-              style: AppTextStyles.onboardingTitle.copyWith(
-                fontSize: 20.sp,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Top Predictions:',
-              style: AppTextStyles.onboardingBody.copyWith(
-                fontSize: 16.sp,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 12.h),
-            ...result.predictions.map((prediction) => Padding(
-                  padding: EdgeInsets.only(bottom: 8.h),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${prediction.rank}. ${prediction.breed}',
-                          style: AppTextStyles.onboardingBody.copyWith(
-                            fontSize: 14.sp,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 4.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getConfidenceColor(prediction.confidence)
-                              .withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Text(
-                          '${(prediction.confidence * 100).toStringAsFixed(1)}%',
-                          style: AppTextStyles.onboardingBody.copyWith(
-                            fontSize: 12.sp,
-                            color: _getConfidenceColor(prediction.confidence),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+            title: Row(
+              children: [
+                Icon(Icons.verified, color: AppColors.success, size: 24.sp),
+                SizedBox(width: 8.w),
+                Text(
+                  'Breed Verified!',
+                  style: AppTextStyles.onboardingTitle.copyWith(
+                    fontSize: 20.sp,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
                   ),
-                )),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'OK',
-              style: AppTextStyles.onboardingBody.copyWith(
-                fontSize: 16.sp,
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
+                ),
+              ],
             ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Top Predictions:',
+                  style: AppTextStyles.onboardingBody.copyWith(
+                    fontSize: 16.sp,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                ...result.predictions.map(
+                  (prediction) => Padding(
+                    padding: EdgeInsets.only(bottom: 8.h),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${prediction.rank}. ${prediction.breed}',
+                            style: AppTextStyles.onboardingBody.copyWith(
+                              fontSize: 14.sp,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 4.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getConfidenceColor(
+                              prediction.confidence,
+                            ).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Text(
+                            '${(prediction.confidence * 100).toStringAsFixed(1)}%',
+                            style: AppTextStyles.onboardingBody.copyWith(
+                              fontSize: 12.sp,
+                              color: _getConfidenceColor(prediction.confidence),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'OK',
+                  style: AppTextStyles.onboardingBody.copyWith(
+                    fontSize: 16.sp,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -270,19 +299,13 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.success,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.success),
     );
   }
 
@@ -297,11 +320,12 @@ class _AddPetScreenState extends State<AddPetScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-          ),
-        ),
+        builder:
+            (context) => Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+            ),
       );
 
       try {
@@ -324,9 +348,10 @@ class _AddPetScreenState extends State<AddPetScreen> {
           isVerified: _isVerified,
           verificationConfidence: _isVerified ? _verificationConfidence : null,
           verifiedBreed: _isVerified ? _breedController.text.trim() : null,
-          bio: _bioController.text.trim().isEmpty
-              ? null
-              : _bioController.text.trim(),
+          bio:
+              _bioController.text.trim().isEmpty
+                  ? null
+                  : _bioController.text.trim(),
         );
 
         // Add health record separately if needed
@@ -335,12 +360,14 @@ class _AddPetScreenState extends State<AddPetScreen> {
             await _petRepository.addHealthRecord(
               petId: petId,
               isVaccinated: _isVaccinated,
-              vaccinationDate: _vaccinationDateController.text.trim().isEmpty
-                  ? null
-                  : _vaccinationDateController.text.trim(),
-              vetName: _vetNameController.text.trim().isEmpty
-                  ? null
-                  : _vetNameController.text.trim(),
+              vaccinationDate:
+                  _vaccinationDateController.text.trim().isEmpty
+                      ? null
+                      : _vaccinationDateController.text.trim(),
+              vetName:
+                  _vetNameController.text.trim().isEmpty
+                      ? null
+                      : _vetNameController.text.trim(),
             );
           } catch (e) {
             // Health record creation failed, but pet was created
@@ -371,11 +398,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF4E9F9A),
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-            size: 24.sp,
-          ),
+          icon: Icon(Icons.arrow_back, color: Colors.white, size: 24.sp),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -392,10 +415,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFDDE8ED),
-              Color(0xFFD2DEE5),
-            ],
+            colors: [Color(0xFFDDE8ED), Color(0xFFD2DEE5)],
           ),
         ),
         child: SingleChildScrollView(
@@ -416,11 +436,12 @@ class _AddPetScreenState extends State<AddPetScreen> {
                         height: 188.h,
                         child: GridView.builder(
                           scrollDirection: Axis.horizontal,
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 1,
-                            mainAxisSpacing: 12.w,
-                            childAspectRatio: 1,
-                          ),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 1,
+                                mainAxisSpacing: 12.w,
+                                childAspectRatio: 1,
+                              ),
                           itemCount: _selectedImages.length + 1,
                           itemBuilder: (context, index) {
                             if (index == _selectedImages.length) {
@@ -453,20 +474,16 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(16.r),
                                     border: Border.all(
-                                      color: isPrimary
-                                          ? AppColors.primary
-                                          : const Color(0xFFCAD8DF),
+                                      color:
+                                          isPrimary
+                                              ? AppColors.primary
+                                              : const Color(0xFFCAD8DF),
                                       width: isPrimary ? 2.4 : 1,
                                     ),
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(14.r),
-                                    child: Image.file(
-                                      image,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                    ),
+                                    child: _buildSelectedImagePreview(image),
                                   ),
                                 ),
                                 if (isPrimary && _isVerified)
@@ -494,7 +511,9 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                     child: Container(
                                       padding: EdgeInsets.all(4.w),
                                       decoration: BoxDecoration(
-                                        color: AppColors.error.withOpacity(0.85),
+                                        color: AppColors.error.withOpacity(
+                                          0.85,
+                                        ),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
@@ -515,16 +534,21 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                         vertical: 4.h,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withOpacity(0.85),
-                                        borderRadius: BorderRadius.circular(8.r),
+                                        color: AppColors.primary.withOpacity(
+                                          0.85,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          8.r,
+                                        ),
                                       ),
                                       child: Text(
                                         'Primary',
-                                        style: AppTextStyles.onboardingBody.copyWith(
-                                          fontSize: 10.sp,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        style: AppTextStyles.onboardingBody
+                                            .copyWith(
+                                              fontSize: 10.sp,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -547,19 +571,20 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                   borderRadius: BorderRadius.circular(12.r),
                                 ),
                               ),
-                              icon: _isVerifying
-                                  ? SizedBox(
-                                      width: 16.w,
-                                      height: 16.h,
-                                      child: const CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                          Colors.white,
+                              icon:
+                                  _isVerifying
+                                      ? SizedBox(
+                                        width: 16.w,
+                                        height: 16.h,
+                                        child: const CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
                                         ),
-                                      ),
-                                    )
-                                  : Icon(Icons.verified_user, size: 18.sp),
+                                      )
+                                      : Icon(Icons.verified_user, size: 18.sp),
                               label: Text(
                                 _isVerifying ? 'Verifying...' : 'Verify Breed',
                                 style: AppTextStyles.onboardingBody.copyWith(
@@ -583,9 +608,13 @@ class _AddPetScreenState extends State<AddPetScreen> {
                     children: [
                       Row(
                         children: [
-                          Expanded(child: _buildTypeCard('Dog', Icons.pets, 'dog')),
+                          Expanded(
+                            child: _buildTypeCard('Dog', Icons.pets, 'dog'),
+                          ),
                           SizedBox(width: 12.w),
-                          Expanded(child: _buildTypeCard('Cat', Icons.pets, 'cat')),
+                          Expanded(
+                            child: _buildTypeCard('Cat', Icons.pets, 'cat'),
+                          ),
                         ],
                       ),
                       SizedBox(height: 18.h),
@@ -605,13 +634,14 @@ class _AddPetScreenState extends State<AddPetScreen> {
                         label: 'Breed',
                         controller: _breedController,
                         hint: 'e.g., Golden Retriever',
-                        suffix: _isVerified
-                            ? Icon(
-                                Icons.verified,
-                                color: const Color(0xFF2E7D32),
-                                size: 20.sp,
-                              )
-                            : null,
+                        suffix:
+                            _isVerified
+                                ? Icon(
+                                  Icons.verified,
+                                  color: const Color(0xFF2E7D32),
+                                  size: 20.sp,
+                                )
+                                : null,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter breed';
@@ -671,12 +701,20 @@ class _AddPetScreenState extends State<AddPetScreen> {
                           Row(
                             children: [
                               Expanded(
-                                  child: _buildGenderCard(
-                                      'Male', Icons.male, 'male')),
+                                child: _buildGenderCard(
+                                  'Male',
+                                  Icons.male,
+                                  'male',
+                                ),
+                              ),
                               SizedBox(width: 12.w),
                               Expanded(
-                                  child: _buildGenderCard(
-                                      'Female', Icons.female, 'female')),
+                                child: _buildGenderCard(
+                                  'Female',
+                                  Icons.female,
+                                  'female',
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -970,10 +1008,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFF1F6F8),
-            Color(0xFFDDE9EE),
-          ],
+          colors: [Color(0xFFF1F6F8), Color(0xFFDDE9EE)],
         ),
         borderRadius: BorderRadius.circular(18.r),
         border: Border.all(color: const Color(0xFFB9CBD4), width: 1),
@@ -1128,18 +1163,19 @@ class _AddPetScreenState extends State<AddPetScreen> {
             value: value,
             isExpanded: true,
             underline: const SizedBox(),
-            items: items.map((String item) {
-              return DropdownMenuItem<String>(
-                value: item,
-                child: Text(
-                  item,
-                  style: AppTextStyles.onboardingBody.copyWith(
-                    fontSize: 16.sp,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              );
-            }).toList(),
+            items:
+                items.map((String item) {
+                  return DropdownMenuItem<String>(
+                    value: item,
+                    child: Text(
+                      item,
+                      style: AppTextStyles.onboardingBody.copyWith(
+                        fontSize: 16.sp,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  );
+                }).toList(),
             onChanged: onChanged,
           ),
         ),
@@ -1232,53 +1268,54 @@ class _AddPetScreenState extends State<AddPetScreen> {
   void _showImageSourceDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        title: Text(
-          'Choose Image Source',
-          style: AppTextStyles.onboardingTitle.copyWith(
-            fontSize: 18.sp,
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            title: Text(
+              'Choose Image Source',
+              style: AppTextStyles.onboardingTitle.copyWith(
+                fontSize: 18.sp,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.camera_alt, color: AppColors.primary),
+                  title: Text(
+                    'Camera',
+                    style: AppTextStyles.onboardingBody.copyWith(
+                      fontSize: 16.sp,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.photo_library, color: AppColors.primary),
+                  title: Text(
+                    'Gallery',
+                    style: AppTextStyles.onboardingBody.copyWith(
+                      fontSize: 16.sp,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.camera_alt, color: AppColors.primary),
-              title: Text(
-                'Camera',
-                style: AppTextStyles.onboardingBody.copyWith(
-                  fontSize: 16.sp,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.photo_library, color: AppColors.primary),
-              title: Text(
-                'Gallery',
-                style: AppTextStyles.onboardingBody.copyWith(
-                  fontSize: 16.sp,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

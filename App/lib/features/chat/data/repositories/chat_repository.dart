@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../core/services/api_client.dart';
@@ -33,9 +35,10 @@ class ChatRepository {
       final response = await _apiClient.get('/api/v1/chats');
 
       if (response.data['success'] == true) {
-        final chats = (response.data['chats'] as List)
-            .map((json) => Chat.fromJson(json))
-            .toList();
+        final chats =
+            (response.data['chats'] as List)
+                .map((json) => Chat.fromJson(json))
+                .toList();
         return chats;
       } else {
         throw Exception(response.data['error'] ?? 'Failed to fetch chats');
@@ -62,22 +65,37 @@ class ChatRepository {
 
   /// Send a message in a chat
   Future<ChatMessage> sendMessage(SendMessageRequest request) async {
-    try {
-      final response = await _apiClient.post(
-        '/api/v1/messages',
-        data: request.toJson(),
-      );
+    DioException? lastDioError;
 
-      if (response.data['success'] == true) {
-        return ChatMessage.fromJson(response.data['data']);
-      } else {
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final response = await _apiClient.post(
+          '/api/v1/messages',
+          data: request.toJson(),
+        );
+
+        if (response.data['success'] == true) {
+          return ChatMessage.fromJson(response.data['data']);
+        }
+
         final error = response.data['error'] ?? 'Failed to send message';
         final details = response.data['details'];
         throw Exception(details != null ? '$error: $details' : error);
+      } on DioException catch (e) {
+        lastDioError = e;
+        final shouldRetry = _isTransientSendError(e) && attempt == 0;
+        if (!shouldRetry) {
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 450));
       }
-    } on DioException catch (e) {
-      throw _handleError(e, 'Failed to send message');
     }
+
+    if (lastDioError != null) {
+      throw _handleError(lastDioError, 'Failed to send message');
+    }
+
+    throw Exception('Failed to send message');
   }
 
   /// Get messages for a chat
@@ -89,16 +107,14 @@ class ChatRepository {
     try {
       final response = await _apiClient.get(
         '/api/v1/messages/$chatId',
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-        },
+        queryParameters: {'page': page, 'limit': limit},
       );
 
       if (response.data['success'] == true) {
-        final messages = (response.data['messages'] as List)
-            .map((json) => ChatMessage.fromJson(json))
-            .toList();
+        final messages =
+            (response.data['messages'] as List)
+                .map((json) => ChatMessage.fromJson(json))
+                .toList();
         return messages;
       } else {
         throw Exception(response.data['error'] ?? 'Failed to fetch messages');
@@ -114,7 +130,9 @@ class ChatRepository {
       final response = await _apiClient.put('/api/v1/messages/$messageId/read');
 
       if (response.data['success'] != true) {
-        throw Exception(response.data['error'] ?? 'Failed to mark message as read');
+        throw Exception(
+          response.data['error'] ?? 'Failed to mark message as read',
+        );
       }
     } on DioException catch (e) {
       throw _handleError(e, 'Failed to mark message as read');
@@ -160,9 +178,23 @@ class ChatRepository {
     }
 
     if (e.response == null) {
-      return Exception('Network error: ${e.message ?? 'Unable to reach server'}');
+      return Exception(
+        'Network error: ${e.message ?? 'Unable to reach server'}',
+      );
     }
 
     return Exception(fallback);
+  }
+
+  bool _isTransientSendError(DioException error) {
+    final statusCode = error.response?.statusCode ?? 0;
+    if (statusCode == 429 || statusCode >= 500) {
+      return true;
+    }
+
+    return error.type == DioExceptionType.connectionError ||
+        error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.sendTimeout;
   }
 }

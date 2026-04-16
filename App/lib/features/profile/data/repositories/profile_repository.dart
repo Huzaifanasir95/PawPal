@@ -33,4 +33,24 @@ class ProfileRepository {
   Future<void> updateAccountType(String accountType) async {
     return await _authRepository.updateAccountType(accountType);
   }
+
+  Future<void> updateEmail({
+    required String newEmail,
+    required String currentPassword,
+  }) async {
+    return _authRepository.updateEmail(
+      newEmail: newEmail,
+      currentPassword: currentPassword,
+    );
+  }
+
+  Future<void> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    return _authRepository.updatePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+  }
 }

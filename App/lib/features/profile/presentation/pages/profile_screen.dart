@@ -183,7 +183,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Active role switched to ${_themeRoleLabel(normalizedRole)}'),
+          content: Text(
+            'Active role switched to ${_themeRoleLabel(normalizedRole)}',
+          ),
           backgroundColor: AppColors.success,
         ),
       );
@@ -208,9 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final normalizedRole = _normalizeRoleKey(role);
     if (_assignedRoles.contains(normalizedRole)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Role already assigned to this account'),
-        ),
+        const SnackBar(content: Text('Role already assigned to this account')),
       );
       return;
     }
@@ -230,7 +230,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_themeRoleLabel(normalizedRole)} role added and activated'),
+          content: Text(
+            '${_themeRoleLabel(normalizedRole)} role added and activated',
+          ),
           backgroundColor: AppColors.success,
         ),
       );
@@ -252,9 +254,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _showAddRoleSheet() async {
-    final availableRoles = _availableRoles
-        .where((role) => !_assignedRoles.contains(role))
-        .toList();
+    final availableRoles =
+        _availableRoles
+            .where((role) => !_assignedRoles.contains(role))
+            .toList();
 
     if (availableRoles.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -634,6 +637,278 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _showUpdateEmailDialog() async {
+    final emailController = TextEditingController(
+      text: _userProfile?.email ?? '',
+    );
+    final passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    var isSubmitting = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Update Email'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'New Email',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                      validator: (value) {
+                        final email = value?.trim() ?? '';
+                        if (email.isEmpty) return 'Enter your new email';
+                        final valid = RegExp(
+                          r'^[\w\-.]+@([\w\-]+\.)+[\w\-]{2,4}$',
+                        ).hasMatch(email);
+                        if (!valid) return 'Enter a valid email address';
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 12.h),
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Current Password',
+                        prefixIcon: Icon(Icons.lock_outline),
+                      ),
+                      validator: (value) {
+                        if ((value ?? '').trim().isEmpty) {
+                          return 'Enter your current password';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed:
+                      isSubmitting
+                          ? null
+                          : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed:
+                      isSubmitting
+                          ? null
+                          : () async {
+                            if (!formKey.currentState!.validate()) return;
+
+                            setDialogState(() => isSubmitting = true);
+                            try {
+                              final profileRepo = ProfileRepository(
+                                context.read<AuthBloc>().authRepository,
+                              );
+
+                              await profileRepo.updateEmail(
+                                newEmail: emailController.text.trim(),
+                                currentPassword: passwordController.text,
+                              );
+
+                              if (!mounted) return;
+                              await _loadUserProfile();
+                              if (!mounted) return;
+
+                              Navigator.of(dialogContext).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Email updated successfully'),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            } catch (e) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    e.toString().replaceAll('Exception: ', ''),
+                                  ),
+                                  backgroundColor: AppColors.error,
+                                ),
+                              );
+                            } finally {
+                              if (dialogContext.mounted) {
+                                setDialogState(() => isSubmitting = false);
+                              }
+                            }
+                          },
+                  child:
+                      isSubmitting
+                          ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Text('Update Email'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    emailController.dispose();
+    passwordController.dispose();
+  }
+
+  Future<void> _showUpdatePasswordDialog() async {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    var isSubmitting = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Update Password'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: currentPasswordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Current Password',
+                        prefixIcon: Icon(Icons.lock_outline),
+                      ),
+                      validator: (value) {
+                        if ((value ?? '').isEmpty)
+                          return 'Enter current password';
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 12.h),
+                    TextFormField(
+                      controller: newPasswordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'New Password',
+                        prefixIcon: Icon(Icons.lock_reset_outlined),
+                      ),
+                      validator: (value) {
+                        final next = value ?? '';
+                        if (next.isEmpty) return 'Enter new password';
+                        if (next.length < 6)
+                          return 'Password must be at least 6 characters';
+                        if (next == currentPasswordController.text) {
+                          return 'New password must be different';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 12.h),
+                    TextFormField(
+                      controller: confirmPasswordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Confirm New Password',
+                        prefixIcon: Icon(Icons.verified_user_outlined),
+                      ),
+                      validator: (value) {
+                        if ((value ?? '').isEmpty)
+                          return 'Confirm your new password';
+                        if (value != newPasswordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed:
+                      isSubmitting
+                          ? null
+                          : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed:
+                      isSubmitting
+                          ? null
+                          : () async {
+                            if (!formKey.currentState!.validate()) return;
+
+                            setDialogState(() => isSubmitting = true);
+                            try {
+                              final profileRepo = ProfileRepository(
+                                context.read<AuthBloc>().authRepository,
+                              );
+
+                              await profileRepo.updatePassword(
+                                currentPassword: currentPasswordController.text,
+                                newPassword: newPasswordController.text,
+                              );
+
+                              if (!mounted) return;
+                              Navigator.of(dialogContext).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Password updated successfully',
+                                  ),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            } catch (e) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    e.toString().replaceAll('Exception: ', ''),
+                                  ),
+                                  backgroundColor: AppColors.error,
+                                ),
+                              );
+                            } finally {
+                              if (dialogContext.mounted) {
+                                setDialogState(() => isSubmitting = false);
+                              }
+                            }
+                          },
+                  child:
+                      isSubmitting
+                          ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Text('Update Password'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    currentPasswordController.dispose();
+    newPasswordController.dispose();
+    confirmPasswordController.dispose();
+  }
+
   bool _isBase64DataUrl(String url) {
     return url.startsWith('data:image/');
   }
@@ -899,7 +1174,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           leading: IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.arrow_back, color: colorScheme.onPrimary, size: 24.sp),
+            icon: Icon(
+              Icons.arrow_back,
+              color: colorScheme.onPrimary,
+              size: 24.sp,
+            ),
           ),
           actions: [
             IconButton(
@@ -913,7 +1192,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             IconButton(
               onPressed: _showLogoutDialog,
-              icon: Icon(Icons.logout, color: colorScheme.onPrimary, size: 24.sp),
+              icon: Icon(
+                Icons.logout,
+                color: colorScheme.onPrimary,
+                size: 24.sp,
+              ),
             ),
           ],
         ),
@@ -1158,6 +1441,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 icon: Icons.email_outlined,
                                 readOnly: true,
                               ),
+                              SizedBox(height: 12.h),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed:
+                                          _isUpdating
+                                              ? null
+                                              : _showUpdateEmailDialog,
+                                      icon: const Icon(Icons.alternate_email),
+                                      label: const Text('Change Email'),
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.w),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed:
+                                          _isUpdating
+                                              ? null
+                                              : _showUpdatePasswordDialog,
+                                      icon: const Icon(
+                                        Icons.lock_reset_outlined,
+                                      ),
+                                      label: const Text('Change Password'),
+                                    ),
+                                  ),
+                                ],
+                              ),
                               SizedBox(height: 20.h),
                               SizedBox(
                                 width: double.infinity,
@@ -1231,7 +1542,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.32), width: 1),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.32),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -1347,7 +1661,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         selected: role == activeRole,
-                        selectedColor: colorScheme.primary.withValues(alpha: 0.15),
+                        selectedColor: colorScheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
                         backgroundColor: colorScheme.surfaceContainerHighest,
                         side: BorderSide(
                           color: colorScheme.outline.withValues(alpha: 0.35),
@@ -1374,7 +1690,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               label: const Text('Add Role'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: titleColor,
-                side: BorderSide(color: colorScheme.primary.withValues(alpha: 0.55)),
+                side: BorderSide(
+                  color: colorScheme.primary.withValues(alpha: 0.55),
+                ),
                 padding: EdgeInsets.symmetric(vertical: 12.h),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.r),
@@ -1415,7 +1733,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.32), width: 1),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.32),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -1520,7 +1841,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         selected: selectedRole == role,
-                        selectedColor: colorScheme.primary.withValues(alpha: 0.15),
+                        selectedColor: colorScheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
                         backgroundColor: colorScheme.surfaceContainerHighest,
                         side: BorderSide(
                           color: colorScheme.outline.withValues(alpha: 0.35),
@@ -1646,7 +1969,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               fontSize: 16.sp,
               color: colorScheme.onSurfaceVariant,
             ),
-            prefixIcon: Icon(icon, color: colorScheme.onSurfaceVariant, size: 20.sp),
+            prefixIcon: Icon(
+              icon,
+              color: colorScheme.onSurfaceVariant,
+              size: 20.sp,
+            ),
             filled: true,
             fillColor:
                 readOnly
@@ -1654,11 +1981,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     : colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14.r),
-              borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.55)),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withOpacity(0.55),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14.r),
-              borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.55)),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withOpacity(0.55),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14.r),

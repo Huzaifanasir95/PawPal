@@ -1,6 +1,6 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/services/api_client.dart';
 import '../models/pet_model.dart';
 import '../models/health_record_model.dart';
@@ -29,7 +29,7 @@ class PetRepositoryApi {
     required String color,
     required double weight,
     required String weightUnit,
-    File? imageFile,
+    XFile? imageFile,
     String? imageLocalPath,
     List<String>? imageUrls,
     bool? isVerified,
@@ -61,7 +61,7 @@ class PetRepositoryApi {
       final response = await _apiClient.post('/api/v1/pets', data: petData);
       // API returns {success: true, message: ..., pet: {...}} - extract ID from pet object
       print('🐾 CREATE PET RESPONSE: ${response.data}');
-      
+
       final pet = response.data['pet'] as Map<String, dynamic>?;
       if (pet != null) {
         final petId = pet['id'] as String?;
@@ -84,8 +84,10 @@ class PetRepositoryApi {
 
       final response = await _apiClient.get('/api/v1/pets');
       final List<dynamic> petsData = response.data['pets'] ?? [];
-      
-      return petsData.map((pet) => PetModel.fromJson(pet as Map<String, dynamic>)).toList();
+
+      return petsData
+          .map((pet) => PetModel.fromJson(pet as Map<String, dynamic>))
+          .toList();
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
@@ -166,8 +168,10 @@ class PetRepositoryApi {
     try {
       final response = await _apiClient.get('/api/v1/pets/verified');
       final List<dynamic> petsData = response.data['pets'] ?? [];
-      
-      return petsData.map((pet) => PetModel.fromJson(pet as Map<String, dynamic>)).toList();
+
+      return petsData
+          .map((pet) => PetModel.fromJson(pet as Map<String, dynamic>))
+          .toList();
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
@@ -176,15 +180,17 @@ class PetRepositoryApi {
   /// Search pets by breed
   Future<List<PetModel>> searchPetsByBreed(String breed, {String? type}) async {
     try {
-      final params = {
-        'breed': breed,
-        if (type != null) 'type': type,
-      };
+      final params = {'breed': breed, if (type != null) 'type': type};
 
-      final response = await _apiClient.get('/api/v1/pets/search', queryParameters: params);
+      final response = await _apiClient.get(
+        '/api/v1/pets/search',
+        queryParameters: params,
+      );
       final List<dynamic> petsData = response.data['pets'] ?? [];
-      
-      return petsData.map((pet) => PetModel.fromJson(pet as Map<String, dynamic>)).toList();
+
+      return petsData
+          .map((pet) => PetModel.fromJson(pet as Map<String, dynamic>))
+          .toList();
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
@@ -234,23 +240,33 @@ class PetRepositoryApi {
       if (healthRecord != null) {
         data = {
           'isVaccinated': healthRecord.isVaccinated,
-          if (healthRecord.vaccinationDate != null) 'vaccinationDate': healthRecord.vaccinationDate,
-          if (healthRecord.vaccinationDetails != null) 'vaccinationDetails': healthRecord.vaccinationDetails,
-          if (healthRecord.medicalConditions != null) 'medicalConditions': healthRecord.medicalConditions,
-          if (healthRecord.allergies != null) 'allergies': healthRecord.allergies,
-          if (healthRecord.medications != null) 'medications': healthRecord.medications,
+          if (healthRecord.vaccinationDate != null)
+            'vaccinationDate': healthRecord.vaccinationDate,
+          if (healthRecord.vaccinationDetails != null)
+            'vaccinationDetails': healthRecord.vaccinationDetails,
+          if (healthRecord.medicalConditions != null)
+            'medicalConditions': healthRecord.medicalConditions,
+          if (healthRecord.allergies != null)
+            'allergies': healthRecord.allergies,
+          if (healthRecord.medications != null)
+            'medications': healthRecord.medications,
           if (healthRecord.vetName != null) 'vetName': healthRecord.vetName,
-          if (healthRecord.vetClinic != null) 'vetClinic': healthRecord.vetClinic,
+          if (healthRecord.vetClinic != null)
+            'vetClinic': healthRecord.vetClinic,
           if (healthRecord.vetPhone != null) 'vetPhone': healthRecord.vetPhone,
-          if (healthRecord.vetAddress != null) 'vetAddress': healthRecord.vetAddress,
-          if (healthRecord.emergencyContactName != null) 'emergencyContactName': healthRecord.emergencyContactName,
-          if (healthRecord.emergencyContactPhone != null) 'emergencyContactPhone': healthRecord.emergencyContactPhone,
+          if (healthRecord.vetAddress != null)
+            'vetAddress': healthRecord.vetAddress,
+          if (healthRecord.emergencyContactName != null)
+            'emergencyContactName': healthRecord.emergencyContactName,
+          if (healthRecord.emergencyContactPhone != null)
+            'emergencyContactPhone': healthRecord.emergencyContactPhone,
         };
       } else {
         data = {
           if (isVaccinated != null) 'isVaccinated': isVaccinated,
           if (vaccinationDate != null) 'vaccinationDate': vaccinationDate,
-          if (vaccinationDetails != null) 'vaccinationDetails': vaccinationDetails,
+          if (vaccinationDetails != null)
+            'vaccinationDetails': vaccinationDetails,
           if (medicalConditions != null) 'medicalConditions': medicalConditions,
           if (allergies != null) 'allergies': allergies,
           if (medications != null) 'medications': medications,
@@ -258,10 +274,13 @@ class PetRepositoryApi {
           if (vetClinic != null) 'vetClinic': vetClinic,
           if (vetPhone != null) 'vetPhone': vetPhone,
           if (vetAddress != null) 'vetAddress': vetAddress,
-          if (emergencyContactName != null) 'emergencyContactName': emergencyContactName,
-          if (emergencyContactPhone != null) 'emergencyContactPhone': emergencyContactPhone,
+          if (emergencyContactName != null)
+            'emergencyContactName': emergencyContactName,
+          if (emergencyContactPhone != null)
+            'emergencyContactPhone': emergencyContactPhone,
           if (insuranceProvider != null) 'insuranceProvider': insuranceProvider,
-          if (insurancePolicyNumber != null) 'insurancePolicyNumber': insurancePolicyNumber,
+          if (insurancePolicyNumber != null)
+            'insurancePolicyNumber': insurancePolicyNumber,
           if (additionalNotes != null) 'additionalNotes': additionalNotes,
         };
       }
@@ -279,9 +298,11 @@ class PetRepositoryApi {
         throw Exception('User not authenticated');
       }
 
-      final response = await _apiClient.get('/api/v1/health-records/pet/$petId');
+      final response = await _apiClient.get(
+        '/api/v1/health-records/pet/$petId',
+      );
       final data = response.data;
-      
+
       if (data == null) return null;
       return HealthRecordModel.fromJson(data as Map<String, dynamic>);
     } on DioException catch (e) {

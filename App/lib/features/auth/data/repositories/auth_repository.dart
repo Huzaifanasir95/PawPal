@@ -379,34 +379,7 @@ class AuthRepository {
         final userData = response.data['data'] ?? response.data['user'];
 
         if (userData != null) {
-          final rawActiveRole =
-              userData['activeRole'] ??
-              userData['accountType'] ??
-              userData['account_type'];
-          final normalizedActiveRole =
-              _normalizeAccountType(rawActiveRole) ?? 'pet_owner';
-          final roles = _parseRoleList(
-            userData['roles'],
-            fallbackRole: normalizedActiveRole,
-          );
-
-          _updateRoleContext(roles: roles, activeRole: normalizedActiveRole);
-
-          return AuthUser(
-            id: userData['uid'] ?? userData['id'],
-            email: userData['email'],
-            displayName: userData['displayName'],
-            accountType: normalizedActiveRole,
-            photoUrl: userData['avatarUrl'],
-            createdAt:
-                userData['createdAt'] != null
-                    ? DateTime.parse(userData['createdAt'])
-                    : null,
-            updatedAt:
-                userData['updatedAt'] != null
-                    ? DateTime.parse(userData['updatedAt'])
-                    : null,
-          );
+          return _parseAndSyncUserProfile(userData, notify: false);
         }
       }
       return null;
@@ -464,43 +437,117 @@ class AuthRepository {
     }
   }
 
+  // Securely update account email by validating current password on backend.
+  Future<void> updateEmail({
+    required String newEmail,
+    required String currentPassword,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/v1/profile/email',
+        data: {
+          'newEmail': _normalizeEmail(newEmail),
+          'currentPassword': currentPassword,
+        },
+      );
+
+      final success = response.data['success'] == true;
+      if (!success) {
+        throw Exception(response.data['message'] ?? 'Failed to update email');
+      }
+
+      final payload = response.data['data'] as Map<String, dynamic>?;
+      if (payload != null) {
+        _parseAndSyncUserProfile(payload);
+        return;
+      }
+
+      final refreshedUser = await getUserProfile();
+      if (refreshedUser != null) {
+        _currentUser = refreshedUser;
+        _authStateController.add(_currentUser);
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  // Securely update account password by validating current password on backend.
+  Future<void> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/v1/profile/password',
+        data: {'currentPassword': currentPassword, 'newPassword': newPassword},
+      );
+
+      if (response.data['success'] != true) {
+        throw Exception(
+          response.data['message'] ?? 'Failed to update password',
+        );
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   // Helper: Parse auth response
   AuthResponse _parseAuthResponse(Map<String, dynamic> data) {
     final user = data['user'];
     final isNewUser = data['isNewUser'] ?? false;
+    final parsedUser = _parseAndSyncUserProfile(user, notify: false);
+
+    return AuthResponse(
+      user: parsedUser,
+      accessToken: data['accessToken'] ?? '',
+      refreshToken: data['refreshToken'] ?? '',
+      isNewUser: isNewUser,
+    );
+  }
+
+  AuthUser _parseAndSyncUserProfile(
+    Map<String, dynamic> userData, {
+    bool notify = true,
+  }) {
     final rawActiveRole =
-        user['activeRole'] ?? user['accountType'] ?? user['account_type'];
+        userData['activeRole'] ??
+        userData['accountType'] ??
+        userData['account_type'];
     final normalizedActiveRole =
         _normalizeAccountType(rawActiveRole) ?? 'pet_owner';
     final roles = _parseRoleList(
-      user['roles'],
+      userData['roles'],
       fallbackRole: normalizedActiveRole,
     );
 
     _updateRoleContext(roles: roles, activeRole: normalizedActiveRole);
 
-    return AuthResponse(
-      user: AuthUser(
-        id: user['uid'] ?? user['id'] ?? '',
-        email: user['email'] ?? '',
-        displayName: user['displayName'],
-        accountType: normalizedActiveRole,
-        photoUrl: user['avatarUrl'],
-        createdAt:
-            user['createdAt'] != null &&
-                    user['createdAt'] != '0001-01-01T00:00:00Z'
-                ? DateTime.parse(user['createdAt'])
-                : null,
-        updatedAt:
-            user['updatedAt'] != null &&
-                    user['updatedAt'] != '0001-01-01T00:00:00Z'
-                ? DateTime.parse(user['updatedAt'])
-                : null,
-      ),
-      accessToken: data['accessToken'] ?? '',
-      refreshToken: data['refreshToken'] ?? '',
-      isNewUser: isNewUser,
+    final parsedUser = AuthUser(
+      id: userData['uid'] ?? userData['id'] ?? '',
+      email: userData['email'] ?? _currentUser?.email ?? '',
+      displayName: userData['displayName'],
+      accountType: normalizedActiveRole,
+      photoUrl: userData['avatarUrl'],
+      createdAt:
+          userData['createdAt'] != null &&
+                  userData['createdAt'] != '0001-01-01T00:00:00Z'
+              ? DateTime.parse(userData['createdAt'])
+              : _currentUser?.createdAt,
+      updatedAt:
+          userData['updatedAt'] != null &&
+                  userData['updatedAt'] != '0001-01-01T00:00:00Z'
+              ? DateTime.parse(userData['updatedAt'])
+              : DateTime.now(),
     );
+
+    if (notify) {
+      _currentUser = parsedUser;
+      _authStateController.add(_currentUser);
+    }
+
+    return parsedUser;
   }
 
   // Helper: Handle successful auth

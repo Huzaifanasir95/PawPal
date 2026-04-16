@@ -60,6 +60,18 @@ type UpdateProfileRequest struct {
 	AvatarURL   *string `json:"avatarUrl,omitempty"`
 }
 
+// UpdateEmailRequest requires current password to safely change email.
+type UpdateEmailRequest struct {
+	NewEmail        string `json:"newEmail" binding:"required,email"`
+	CurrentPassword string `json:"currentPassword" binding:"required"`
+}
+
+// UpdatePasswordRequest requires current password before setting a new password.
+type UpdatePasswordRequest struct {
+	CurrentPassword string `json:"currentPassword" binding:"required"`
+	NewPassword     string `json:"newPassword" binding:"required,min=6"`
+}
+
 // AddRoleRequest represents a request to assign an additional role to a user.
 type AddRoleRequest struct {
 	Role string `json:"role" binding:"required"`

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -21,7 +21,8 @@ class _PetIdentificationScanScreenState
   final ImagePicker _picker = ImagePicker();
   final BreedVerificationService _breedService = BreedVerificationService();
 
-  File? _selectedImage;
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes;
   PredictionResult? _scanResult;
   bool _isScanning = false;
   String _petType = 'dog';
@@ -30,8 +31,11 @@ class _PetIdentificationScanScreenState
     final picked = await _picker.pickImage(source: source, imageQuality: 90);
     if (picked == null) return;
 
+    final imageBytes = await picked.readAsBytes();
+
     setState(() {
-      _selectedImage = File(picked.path);
+      _selectedImage = picked;
+      _selectedImageBytes = imageBytes;
       _scanResult = null;
     });
 
@@ -107,34 +111,38 @@ class _PetIdentificationScanScreenState
                   borderRadius: BorderRadius.circular(18.r),
                   border: Border.all(color: const Color(0xFFCAD8DF)),
                 ),
-                child: _selectedImage == null
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.document_scanner_rounded,
-                            size: 48.sp,
-                            color: AppColors.primary,
-                          ),
-                          SizedBox(height: 8.h),
-                          Text(
-                            'No image selected yet',
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
+                child:
+                    _selectedImage == null
+                        ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.document_scanner_rounded,
+                              size: 48.sp,
+                              color: AppColors.primary,
                             ),
-                          ),
-                        ],
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(17.r),
-                        child: Image.file(
-                          _selectedImage!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
+                            SizedBox(height: 8.h),
+                            Text(
+                              'No image selected yet',
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        )
+                        : ClipRRect(
+                          borderRadius: BorderRadius.circular(17.r),
+                          child:
+                              _selectedImageBytes == null
+                                  ? const SizedBox.shrink()
+                                  : Image.memory(
+                                    _selectedImageBytes!,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                  ),
                         ),
-                      ),
               ),
               SizedBox(height: 14.h),
               Row(
@@ -168,7 +176,9 @@ class _PetIdentificationScanScreenState
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed:
-                          _isScanning ? null : () => _pickAndScan(ImageSource.camera),
+                          _isScanning
+                              ? null
+                              : () => _pickAndScan(ImageSource.camera),
                       icon: const Icon(Icons.camera_alt_rounded),
                       label: const Text('Scan Camera'),
                     ),
@@ -176,9 +186,10 @@ class _PetIdentificationScanScreenState
                   SizedBox(width: 10.w),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _isScanning
-                          ? null
-                          : () => _pickAndScan(ImageSource.gallery),
+                      onPressed:
+                          _isScanning
+                              ? null
+                              : () => _pickAndScan(ImageSource.gallery),
                       icon: const Icon(Icons.photo_library_outlined),
                       label: const Text('From Gallery'),
                     ),
@@ -212,66 +223,69 @@ class _PetIdentificationScanScreenState
                     borderRadius: BorderRadius.circular(16.r),
                     border: Border.all(color: const Color(0xFFCAD8DF)),
                   ),
-                  child: _scanResult!.success
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Top Match: ${_scanResult!.predicted ?? 'Unknown'}',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.w800,
+                  child:
+                      _scanResult!.success
+                          ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Top Match: ${_scanResult!.predicted ?? 'Unknown'}',
+                                style: TextStyle(
+                                  fontSize: 16.sp,
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 4.h),
-                            Text(
-                              'Confidence: ${_percent(_scanResult!.confidence ?? 0)}',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w600,
+                              SizedBox(height: 4.h),
+                              Text(
+                                'Confidence: ${_percent(_scanResult!.confidence ?? 0)}',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 10.h),
-                            ..._scanResult!.predictions.take(5).map((prediction) {
-                              return Padding(
-                                padding: EdgeInsets.only(bottom: 6.h),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        '${prediction.rank}. ${prediction.breed}',
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
-                                          color: AppColors.textPrimary,
-                                          fontWeight: FontWeight.w600,
+                              SizedBox(height: 10.h),
+                              ..._scanResult!.predictions.take(5).map((
+                                prediction,
+                              ) {
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: 6.h),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          '${prediction.rank}. ${prediction.breed}',
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: AppColors.textPrimary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    Text(
-                                      _percent(prediction.confidence),
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.w700,
+                                      Text(
+                                        _percent(prediction.confidence),
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }),
-                          ],
-                        )
-                      : Text(
-                          _scanResult!.error ??
-                              'Unable to identify breed for this image.',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: const Color(0xFFC62828),
-                            fontWeight: FontWeight.w600,
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          )
+                          : Text(
+                            _scanResult!.error ??
+                                'Unable to identify breed for this image.',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: const Color(0xFFC62828),
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
                 ),
               ],
             ],

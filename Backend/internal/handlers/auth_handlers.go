@@ -306,6 +306,102 @@ func (h *AuthHandlers) UpdateProfile(c *gin.Context) {
 	})
 }
 
+// UpdateEmail handles secure email updates by validating current password.
+func (h *AuthHandlers) UpdateEmail(c *gin.Context) {
+	userID := c.MustGet("userID").(string)
+
+	var req models.UpdateEmailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.GenericResponse{
+			Success: false,
+			Message: "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	updatedUser, err := h.authService.UpdateEmailWithPassword(
+		c.Request.Context(),
+		parseUUID(userID),
+		req.NewEmail,
+		req.CurrentPassword,
+	)
+	if err != nil {
+		switch err {
+		case services.ErrInvalidCredentials:
+			c.JSON(http.StatusUnauthorized, models.GenericResponse{Success: false, Message: "Current password is incorrect"})
+			return
+		case services.ErrPasswordLoginUnavailable:
+			c.JSON(http.StatusBadRequest, models.GenericResponse{Success: false, Message: "This account does not have a password yet"})
+			return
+		case services.ErrEmailAlreadyInUse:
+			c.JSON(http.StatusConflict, models.GenericResponse{Success: false, Message: "Email is already in use"})
+			return
+		case services.ErrUserNotFound:
+			c.JSON(http.StatusNotFound, models.GenericResponse{Success: false, Message: "User not found"})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, models.GenericResponse{Success: false, Message: "Failed to update email"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, models.GenericResponse{
+		Success: true,
+		Message: "Email updated successfully",
+		Data:    h.buildUserProfile(c, updatedUser),
+	})
+}
+
+// UpdatePassword handles secure password updates.
+func (h *AuthHandlers) UpdatePassword(c *gin.Context) {
+	userID := c.MustGet("userID").(string)
+
+	var req models.UpdatePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.GenericResponse{
+			Success: false,
+			Message: "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	if strings.TrimSpace(req.NewPassword) == strings.TrimSpace(req.CurrentPassword) {
+		c.JSON(http.StatusBadRequest, models.GenericResponse{
+			Success: false,
+			Message: "New password must be different from current password",
+		})
+		return
+	}
+
+	err := h.authService.UpdatePasswordWithCurrent(
+		c.Request.Context(),
+		parseUUID(userID),
+		req.CurrentPassword,
+		req.NewPassword,
+	)
+	if err != nil {
+		switch err {
+		case services.ErrInvalidCredentials:
+			c.JSON(http.StatusUnauthorized, models.GenericResponse{Success: false, Message: "Current password is incorrect"})
+			return
+		case services.ErrPasswordLoginUnavailable:
+			c.JSON(http.StatusBadRequest, models.GenericResponse{Success: false, Message: "This account does not have a password yet"})
+			return
+		case services.ErrUserNotFound:
+			c.JSON(http.StatusNotFound, models.GenericResponse{Success: false, Message: "User not found"})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, models.GenericResponse{Success: false, Message: "Failed to update password"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, models.GenericResponse{
+		Success: true,
+		Message: "Password updated successfully. Please sign in again on other devices.",
+	})
+}
+
 // SetUserRole sets the user's account type/role.
 func (h *AuthHandlers) SetUserRole(c *gin.Context) {
 	userID, exists := c.Get("userID")

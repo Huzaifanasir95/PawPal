@@ -383,10 +383,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
     TextEditingController? controller,
     TextInputType? keyboardType,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       height: 60.h,
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.socialBorder, width: 2),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.35),
+          width: 2,
+        ),
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Row(
@@ -398,19 +404,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
               keyboardType: keyboardType,
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
-                color: AppColors.authInputText,
+                color: colorScheme.onSurface,
               ),
               decoration: InputDecoration(
+                isCollapsed: true,
                 hintText: hintText,
                 hintStyle: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 14.sp,
-                  color: AppColors.authInputText,
+                  color: colorScheme.onSurfaceVariant,
                 ),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
               ),
             ),
           ),
-          Icon(icon, color: AppColors.primary, size: 18.sp),
+          Icon(icon, color: colorScheme.onSurfaceVariant, size: 18.sp),
           SizedBox(width: 16.w),
         ],
       ),

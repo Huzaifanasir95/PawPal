@@ -169,6 +169,8 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 			// User profile and role
 			protected.GET("/profile", authHandlers.GetProfile)
 			protected.PUT("/profile", authHandlers.UpdateProfile)
+			protected.POST("/profile/email", authHandlers.UpdateEmail)
+			protected.POST("/profile/password", authHandlers.UpdatePassword)
 			protected.POST("/auth/set-role", authHandlers.SetUserRole)
 			protected.GET("/user/roles", authHandlers.GetUserRoles)
 			protected.POST("/user/roles/add", authHandlers.AddUserRole)

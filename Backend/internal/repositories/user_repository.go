@@ -128,11 +128,12 @@ func (r *UserRepositoryPG) GetByEmail(ctx context.Context, email string) (*model
 func (r *UserRepositoryPG) Update(ctx context.Context, user *models.User) error {
 	query := `
 		UPDATE users 
-		SET display_name = $2, account_type = $3, avatar_url = $4, google_id = $5, email_verified = $6, updated_at = $7
+		SET email = $2, display_name = $3, account_type = $4, avatar_url = $5, google_id = $6, email_verified = $7, updated_at = $8
 		WHERE id = $1`
 
 	_, err := r.db.Exec(ctx, query,
 		user.ID,
+		user.Email,
 		user.DisplayName,
 		user.AccountType,
 		user.AvatarURL,

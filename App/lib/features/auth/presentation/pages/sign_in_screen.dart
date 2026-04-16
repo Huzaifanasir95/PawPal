@@ -322,9 +322,9 @@ class _SignInScreenState extends State<SignInScreen> {
     return Container(
       height: 60.h,
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
         border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.45),
+          color: colorScheme.outline.withValues(alpha: 0.35),
           width: 2,
         ),
         borderRadius: BorderRadius.circular(12.r),
@@ -339,18 +339,26 @@ class _SignInScreenState extends State<SignInScreen> {
                 fontSize: 14.sp,
                 color: colorScheme.onSurface,
               ),
-              decoration: InputDecoration.collapsed(
+              decoration: InputDecoration(
+                isCollapsed: true,
                 hintText: hintText,
                 hintStyle: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 14.sp,
                   color: colorScheme.onSurfaceVariant,
                 ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
               ),
             ),
           ),
           Icon(
             icon,
-            color: colorScheme.primary,
+            color: colorScheme.onSurfaceVariant,
             size: 12.sp,
           ),
           SizedBox(width: 16.w),

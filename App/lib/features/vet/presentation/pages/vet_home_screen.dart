@@ -82,7 +82,8 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
   bool _isProfileMissingMessage(String message) {
     final normalized = message.toLowerCase();
     return normalized.contains('profile not found') ||
-        (normalized.contains('vet profile') && normalized.contains('not found')) ||
+        (normalized.contains('vet profile') &&
+            normalized.contains('not found')) ||
         normalized.contains('no vet profile');
   }
 
@@ -91,10 +92,27 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
 
     _hasRedirectedToSetup = true;
     await Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const VetProfileSetupScreen()),
+    );
+  }
+
+  Future<void> _openVetProfileEditor({required int initialStep}) async {
+    if (!mounted) return;
+
+    final didUpdate = await Navigator.push<bool>(
+      context,
       MaterialPageRoute(
-        builder: (context) => const VetProfileSetupScreen(),
+        builder:
+            (context) => VetProfileSetupScreen(
+              isEditing: true,
+              initialStep: initialStep,
+            ),
       ),
     );
+
+    if (didUpdate == true && mounted) {
+      await _refreshDashboard();
+    }
   }
 
   @override
@@ -249,15 +267,12 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
       authenticated: (user) => user.photoUrl,
       orElse: () => null,
     );
-    
+
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withOpacity(0.8),
-          ],
+          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -301,9 +316,10 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: profile.isAvailable
-                    ? Colors.green.withOpacity(0.2)
-                    : Colors.orange.withOpacity(0.2),
+                color:
+                    profile.isAvailable
+                        ? Colors.green.withOpacity(0.2)
+                        : Colors.orange.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(20.r),
                 border: Border.all(
                   color: profile.isAvailable ? Colors.green : Colors.orange,
@@ -425,11 +441,14 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
                 int unreadCount = 0;
                 state.maybeWhen(
                   chatsLoaded: (chats) {
-                    unreadCount = chats.fold(0, (sum, chat) => sum + chat.unreadCountVet);
+                    unreadCount = chats.fold(
+                      0,
+                      (sum, chat) => sum + chat.unreadCountVet,
+                    );
                   },
                   orElse: () {},
                 );
-                
+
                 return _StatCard(
                   icon: Icons.chat,
                   iconColor: Colors.blue,
@@ -446,7 +465,8 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
   }
 
   Widget _buildPendingChats(List<Chat> chats) {
-    final pendingChats = chats.where((chat) => chat.unreadCountVet > 0).toList();
+    final pendingChats =
+        chats.where((chat) => chat.unreadCountVet > 0).toList();
 
     if (pendingChats.isEmpty) {
       return Container(
@@ -460,7 +480,11 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
         child: Center(
           child: Column(
             children: [
-              Icon(Icons.check_circle_outline, size: 48.sp, color: AppColors.success),
+              Icon(
+                Icons.check_circle_outline,
+                size: 48.sp,
+                color: AppColors.success,
+              ),
               SizedBox(height: 12.h),
               Text(
                 'All caught up!',
@@ -557,10 +581,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
             title: 'Edit Profile',
             subtitle: 'Update your information',
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const VetProfileSetupScreen()),
-              );
+              _openVetProfileEditor(initialStep: 0);
             },
           ),
           SizedBox(height: 12.h),
@@ -569,12 +590,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
             title: 'Manage Availability',
             subtitle: 'Update your schedule',
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const VetProfileSetupScreen(),
-                ),
-              );
+              _openVetProfileEditor(initialStep: 4);
             },
           ),
         ],
@@ -669,7 +685,11 @@ class _PendingChatCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 24.r,
                   backgroundColor: AppColors.primary.withOpacity(0.1),
-                  child: Icon(Icons.person, size: 24.sp, color: AppColors.primary),
+                  child: Icon(
+                    Icons.person,
+                    size: 24.sp,
+                    color: AppColors.primary,
+                  ),
                 ),
                 if (chat.unreadCountVet > 0)
                   Positioned(
@@ -719,7 +739,11 @@ class _PendingChatCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16.sp, color: AppColors.textSecondary),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16.sp,
+              color: AppColors.textSecondary,
+            ),
           ],
         ),
       ),
@@ -782,7 +806,11 @@ class _QuickActionButton extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16.sp, color: AppColors.textSecondary),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16.sp,
+              color: AppColors.textSecondary,
+            ),
           ],
         ),
       ),

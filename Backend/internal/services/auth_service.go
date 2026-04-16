@@ -21,12 +21,13 @@ import (
 )
 
 var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidCredentials       = errors.New("invalid credentials")
 	ErrPasswordLoginUnavailable = errors.New("password login unavailable")
-	ErrUserNotFound       = errors.New("user not found")
-	ErrUserAlreadyExists  = errors.New("user already exists")
-	ErrInvalidToken       = errors.New("invalid token")
-	ErrTokenExpired       = errors.New("token expired")
+	ErrUserNotFound             = errors.New("user not found")
+	ErrUserAlreadyExists        = errors.New("user already exists")
+	ErrEmailAlreadyInUse        = errors.New("email already in use")
+	ErrInvalidToken             = errors.New("invalid token")
+	ErrTokenExpired             = errors.New("token expired")
 )
 
 // AuthService handles authentication operations
@@ -323,6 +324,79 @@ func (s *AuthService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 // UpdateUser updates a user's profile
 func (s *AuthService) UpdateUser(ctx context.Context, user *models.User) error {
 	return s.userRepo.Update(ctx, user)
+}
+
+// UpdateEmailWithPassword updates user email after verifying current password.
+func (s *AuthService) UpdateEmailWithPassword(ctx context.Context, userID uuid.UUID, newEmail, currentPassword string) (*models.User, error) {
+	normalizedEmail := strings.ToLower(strings.TrimSpace(newEmail))
+	if normalizedEmail == "" {
+		return nil, ErrInvalidCredentials
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrUserNotFound
+	}
+
+	if strings.TrimSpace(user.PasswordHash) == "" {
+		return nil, ErrPasswordLoginUnavailable
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword)); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	if strings.EqualFold(user.Email, normalizedEmail) {
+		return user, nil
+	}
+
+	existingUser, err := s.userRepo.GetByEmail(ctx, normalizedEmail)
+	if err != nil {
+		return nil, err
+	}
+	if existingUser != nil && existingUser.ID != userID {
+		return nil, ErrEmailAlreadyInUse
+	}
+
+	user.Email = normalizedEmail
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// UpdatePasswordWithCurrent verifies the current password before changing it.
+func (s *AuthService) UpdatePasswordWithCurrent(ctx context.Context, userID uuid.UUID, currentPassword, newPassword string) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return ErrUserNotFound
+	}
+
+	if strings.TrimSpace(user.PasswordHash) == "" {
+		return ErrPasswordLoginUnavailable
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword)); err != nil {
+		return ErrInvalidCredentials
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	if err := s.userRepo.UpdatePassword(ctx, userID, string(hashedPassword)); err != nil {
+		return err
+	}
+
+	return s.userRepo.RevokeAllUserRefreshTokens(ctx, userID)
 }
 
 // SetUserRole sets the user's role (petowner or vet)

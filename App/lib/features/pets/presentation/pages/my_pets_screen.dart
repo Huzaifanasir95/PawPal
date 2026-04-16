@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/pet_model.dart';
@@ -18,14 +19,41 @@ class MyPetsScreen extends StatefulWidget {
 class _MyPetsScreenState extends State<MyPetsScreen> {
   final _petRepository = PetRepositoryApi();
 
+  Widget _buildImageFromPath(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Icon(Icons.pets, color: AppColors.primary, size: 40.sp);
+        },
+      );
+    }
+
+    return FutureBuilder<Uint8List>(
+      future: XFile(path).readAsBytes(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Image.memory(
+            snapshot.data!,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(Icons.pets, color: AppColors.primary, size: 40.sp);
+            },
+          );
+        }
+
+        return Icon(Icons.pets, color: AppColors.primary, size: 40.sp);
+      },
+    );
+  }
+
   void _navigateToAddPet() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddPetScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const AddPetScreen()),
     );
-    
+
     // Refresh is handled by StreamBuilder
     if (result == true) {
       setState(() {});
@@ -39,11 +67,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: AppColors.accent,
-            size: 24.sp,
-          ),
+          icon: Icon(Icons.arrow_back, color: AppColors.accent, size: 24.sp),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -56,11 +80,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.add,
-              color: AppColors.accent,
-              size: 24.sp,
-            ),
+            icon: Icon(Icons.add, color: AppColors.accent, size: 24.sp),
             onPressed: _navigateToAddPet,
           ),
         ],
@@ -126,10 +146,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateToAddPet,
         backgroundColor: AppColors.accent,
-        icon: Icon(
-          Icons.add,
-          color: AppColors.textOnSecondary,
-        ),
+        icon: Icon(Icons.add, color: AppColors.textOnSecondary),
         label: Text(
           'Add Pet',
           style: AppTextStyles.onboardingBody.copyWith(
@@ -174,10 +191,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
             onPressed: _navigateToAddPet,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.accent,
-              padding: EdgeInsets.symmetric(
-                horizontal: 24.w,
-                vertical: 16.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.r),
               ),
@@ -227,26 +241,13 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
                 color: AppColors.surfaceContainer,
                 borderRadius: BorderRadius.circular(12.r),
               ),
-              child: pet.imageLocalPath != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12.r),
-                      child: Image.file(
-                        File(pet.imageLocalPath!),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.pets,
-                            color: AppColors.primary,
-                            size: 40.sp,
-                          );
-                        },
-                      ),
-                    )
-                  : Icon(
-                      Icons.pets,
-                      color: AppColors.primary,
-                      size: 40.sp,
-                    ),
+              child:
+                  pet.imageLocalPath != null
+                      ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12.r),
+                        child: _buildImageFromPath(pet.imageLocalPath!),
+                      )
+                      : Icon(Icons.pets, color: AppColors.primary, size: 40.sp),
             ),
             SizedBox(width: 12.w),
             // Pet Info

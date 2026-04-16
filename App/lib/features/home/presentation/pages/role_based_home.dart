@@ -31,6 +31,14 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     _bootstrapRoles();
   }
 
+  @override
+  void didUpdateWidget(covariant RoleBasedHome oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialAccountType != widget.initialAccountType) {
+      _bootstrapRoles();
+    }
+  }
+
   Future<void> _bootstrapRoles() async {
     final fallbackRole = _normalizeAccountType(widget.initialAccountType);
     final cachedActiveRole = _normalizeAccountType(
@@ -44,13 +52,18 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     );
 
     try {
-      final roles = await _authRepository.getUserRoles(forceRefresh: true);
+      final roles = await _authRepository
+          .getUserRoles(forceRefresh: true)
+          .timeout(const Duration(seconds: 6));
       final normalizedRoles = _normalizeRoleList(
         roles,
         fallbackRole: cachedActiveRole,
       );
       final current = _normalizeAccountType(
-        await _authRepository.getAccountType(),
+        await _authRepository.getAccountType().timeout(
+          const Duration(seconds: 6),
+          onTimeout: () => cachedActiveRole,
+        ),
       );
 
       final activeRole =

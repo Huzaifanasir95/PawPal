@@ -29,6 +29,7 @@ class AuthFlow extends StatefulWidget {
 class _AuthFlowState extends State<AuthFlow> {
   bool _showOnboarding = true;
   bool _isLoading = true;
+  String? _lastThemeSyncKey;
 
   bool _shouldListen(AuthState current) {
     return current.maybeWhen(
@@ -65,6 +66,54 @@ class _AuthFlowState extends State<AuthFlow> {
       },
       orElse: () => false,
     );
+  }
+
+  String _themeSyncKeyFor(AuthState state) {
+    return state.when(
+      initial: () => 'guest:initial',
+      loading: () => 'guest:loading',
+      authenticated: (user) => 'auth:${user.uid}:${user.accountType ?? 'pet_owner'}',
+      unauthenticated: () => 'guest:unauthenticated',
+      error: (message) => 'guest:error:${message.hashCode}',
+      passwordResetSent: () => 'guest:password_reset_sent',
+      accountTypeRequired: (idToken, displayName, photoUrl) => 'guest:account_type_required:${idToken.hashCode}',
+    );
+  }
+
+  void _scheduleThemeSync(AuthState state) {
+    final nextKey = _themeSyncKeyFor(state);
+    if (_lastThemeSyncKey == nextKey) {
+      return;
+    }
+
+    _lastThemeSyncKey = nextKey;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      state.when(
+        initial: () {
+          context.read<AppThemeController>().resetToGuest();
+        },
+        loading: () {},
+        authenticated: (user) {
+          context.read<AppThemeController>().syncUserContext(
+            userId: user.uid,
+            activeRole: user.accountType ?? 'pet_owner',
+          );
+        },
+        unauthenticated: () {
+          context.read<AppThemeController>().resetToGuest();
+        },
+        error: (_) {
+          context.read<AppThemeController>().resetToGuest();
+        },
+        passwordResetSent: () {},
+        accountTypeRequired: (_, __, ___) {
+          context.read<AppThemeController>().resetToGuest();
+        },
+      );
+    });
   }
 
   @override
@@ -143,18 +192,15 @@ class _AuthFlowState extends State<AuthFlow> {
         );
       },
       builder: (context, state) {
+        _scheduleThemeSync(state);
+
         return state.when(
           initial: () {
-            context.read<AppThemeController>().resetToGuest();
             return const AuthNavigator();
           },
           loading:
               () => const AuthNavigator(), // Don't show full-screen loading
           authenticated: (user) {
-            context.read<AppThemeController>().syncUserContext(
-              userId: user.uid,
-              activeRole: user.accountType ?? 'pet_owner',
-            );
             // Use role from auth payload immediately, avoiding an extra profile fetch.
             return RoleBasedHome(
               key: ValueKey('home_${user.uid}_${user.accountType}'),
@@ -162,11 +208,9 @@ class _AuthFlowState extends State<AuthFlow> {
             );
           },
           unauthenticated: () {
-            context.read<AppThemeController>().resetToGuest();
             return const AuthNavigator();
           },
           error: (message) {
-            context.read<AppThemeController>().resetToGuest();
             return const AuthNavigator(); // Show auth with error
           },
           passwordResetSent: () => const AuthNavigator(),

@@ -12,6 +12,7 @@ import (
 
 	"pawpal-backend/internal/models"
 	"pawpal-backend/internal/repositories"
+	"pawpal-backend/internal/utils"
 )
 
 // VetHandlers handles vet-related endpoints
@@ -68,6 +69,7 @@ func (h *VetHandlers) CreateVetProfile(c *gin.Context) {
 		Currency          string   `json:"currency"`
 		Bio               *string  `json:"bio"`
 		ProfilePhotoURL   *string  `json:"profilePhotoUrl"`
+		ProfilePhotoBytes *string  `json:"profilePhotoBytes"`
 		AvailabilityHours *string  `json:"availabilityHours"`
 		IsAvailable       *bool    `json:"isAvailable"`
 	}
@@ -111,8 +113,27 @@ func (h *VetHandlers) CreateVetProfile(c *gin.Context) {
 	req.ZipCode = sanitizeOptionalText(req.ZipCode)
 	req.Bio = sanitizeOptionalText(req.Bio)
 	req.ProfilePhotoURL = sanitizeOptionalText(req.ProfilePhotoURL)
+	req.ProfilePhotoBytes = sanitizeOptionalText(req.ProfilePhotoBytes)
 	req.AvailabilityHours = sanitizeOptionalText(req.AvailabilityHours)
 	req.Specialization = sanitizeStringList(req.Specialization)
+
+	if req.ProfilePhotoURL != nil {
+		resolved, resolveErr := utils.ResolveImageReference(c.Request.Context(), *req.ProfilePhotoURL, "vet-profiles/"+userUUID.String())
+		if resolveErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid profilePhotoUrl. Provide an HTTP URL or valid base64 image payload"})
+			return
+		}
+		req.ProfilePhotoURL = sanitizeOptionalText(&resolved)
+	}
+
+	if req.ProfilePhotoURL == nil && req.ProfilePhotoBytes != nil {
+		resolved, resolveErr := utils.ResolveImageReference(c.Request.Context(), *req.ProfilePhotoBytes, "vet-profiles/"+userUUID.String())
+		if resolveErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid profilePhotoBytes. Provide a valid base64 image payload"})
+			return
+		}
+		req.ProfilePhotoURL = sanitizeOptionalText(&resolved)
+	}
 
 	// Set defaults
 	if req.Currency == "" {
@@ -176,6 +197,11 @@ func (h *VetHandlers) GetVetProfile(c *gin.Context) {
 		return
 	}
 
+	if vetProfile.ProfilePhotoURL != nil {
+		resolved := utils.ResolveImageReferenceBestEffort(c.Request.Context(), *vetProfile.ProfilePhotoURL, "vet-profiles/"+vetProfile.UserID.String())
+		vetProfile.ProfilePhotoURL = sanitizeOptionalText(&resolved)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success":    true,
 		"vetProfile": vetProfile,
@@ -205,6 +231,11 @@ func (h *VetHandlers) GetMyVetProfile(c *gin.Context) {
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to fetch vet profile"})
 		return
+	}
+
+	if vetProfile.ProfilePhotoURL != nil {
+		resolved := utils.ResolveImageReferenceBestEffort(c.Request.Context(), *vetProfile.ProfilePhotoURL, "vet-profiles/"+vetProfile.UserID.String())
+		vetProfile.ProfilePhotoURL = sanitizeOptionalText(&resolved)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -248,6 +279,14 @@ func (h *VetHandlers) ListVets(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to fetch vets", "details": err.Error()})
 		return
+	}
+
+	for i := range vets {
+		if vets[i].ProfilePhotoURL == nil {
+			continue
+		}
+		resolved := utils.ResolveImageReferenceBestEffort(c.Request.Context(), *vets[i].ProfilePhotoURL, "vet-profiles/"+vets[i].UserID.String())
+		vets[i].ProfilePhotoURL = sanitizeOptionalText(&resolved)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

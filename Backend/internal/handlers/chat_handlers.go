@@ -9,6 +9,7 @@ import (
 
 	"pawpal-backend/internal/models"
 	"pawpal-backend/internal/repositories"
+	"pawpal-backend/internal/utils"
 )
 
 // ChatHandlers handles chat-related endpoints
@@ -102,6 +103,13 @@ func (h *ChatHandlers) GetMyChats(c *gin.Context) {
 		return
 	}
 
+	for i := range chats {
+		if chats[i].OtherUserPhoto == "" {
+			continue
+		}
+		chats[i].OtherUserPhoto = utils.ResolveImageReferenceBestEffort(c.Request.Context(), chats[i].OtherUserPhoto, "chat-profiles/"+chats[i].OtherUserName)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"chats":   chats,
@@ -140,6 +148,10 @@ func (h *ChatHandlers) GetChat(c *gin.Context) {
 	if err := h.chatRepo.GetChatByID(c.Request.Context(), chatID, &chat); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Chat not found"})
 		return
+	}
+
+	if chat.OtherUserPhoto != "" {
+		chat.OtherUserPhoto = utils.ResolveImageReferenceBestEffort(c.Request.Context(), chat.OtherUserPhoto, "chat-profiles/"+chat.OtherUserName)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -248,6 +260,13 @@ func (h *ChatHandlers) GetChatMessages(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to fetch messages", "details": err.Error()})
 		return
+	}
+
+	for i := range messages {
+		if messages[i].SenderPhoto == "" {
+			continue
+		}
+		messages[i].SenderPhoto = utils.ResolveImageReferenceBestEffort(c.Request.Context(), messages[i].SenderPhoto, "chat-profiles/"+messages[i].SenderID.String())
 	}
 
 	// Mark messages as read

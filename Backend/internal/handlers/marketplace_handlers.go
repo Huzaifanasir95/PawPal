@@ -13,6 +13,7 @@ import (
 
 	"pawpal-backend/internal/models"
 	"pawpal-backend/internal/repositories"
+	"pawpal-backend/internal/utils"
 )
 
 // MarketplaceHandlers handles marketplace endpoints
@@ -104,6 +105,21 @@ func productWriteErrorResponse(err error) (int, string) {
 	return http.StatusInternalServerError, "Failed to process product request"
 }
 
+func normalizeProductImageFields(c *gin.Context, products []models.Product) {
+	for i := range products {
+		if products[i].SellerAvatar != nil {
+			resolved := utils.ResolveImageReferenceBestEffort(c.Request.Context(), *products[i].SellerAvatar, "users/"+products[i].SellerID.String())
+			if resolved == "" {
+				products[i].SellerAvatar = nil
+			} else {
+				products[i].SellerAvatar = &resolved
+			}
+		}
+
+		products[i].Images = utils.ResolveImageReferencesBestEffort(c.Request.Context(), products[i].Images, "marketplace/products/"+products[i].ID.String())
+	}
+}
+
 // ─── Categories ───────────────────────────────────────────────────────────────
 
 // GetCategories returns all product categories
@@ -141,6 +157,8 @@ func (h *MarketplaceHandlers) GetProducts(c *gin.Context) {
 		products = []models.Product{}
 	}
 
+	normalizeProductImageFields(c, products)
+
 	pages := int(math.Ceil(float64(total) / float64(limit)))
 	c.JSON(http.StatusOK, gin.H{
 		"success":  true,
@@ -171,6 +189,11 @@ func (h *MarketplaceHandlers) GetProduct(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Product not found"})
 		return
 	}
+
+	products := []models.Product{*product}
+	normalizeProductImageFields(c, products)
+	product = &products[0]
+
 	c.JSON(http.StatusOK, gin.H{"success": true, "product": product})
 }
 
@@ -193,6 +216,8 @@ func (h *MarketplaceHandlers) GetMyProducts(c *gin.Context) {
 	if products == nil {
 		products = []models.Product{}
 	}
+
+	normalizeProductImageFields(c, products)
 
 	pages := int(math.Ceil(float64(total) / float64(limit)))
 	c.JSON(http.StatusOK, gin.H{
@@ -277,6 +302,13 @@ func (h *MarketplaceHandlers) CreateProduct(c *gin.Context) {
 		WeightGrams:        req.WeightGrams,
 	}
 
+	normalizedImages, normalizeErr := utils.ResolveImageReferences(c.Request.Context(), product.Images, "marketplace/products/new")
+	if normalizeErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid images payload. Use HTTP URLs or valid base64 image payloads"})
+		return
+	}
+	product.Images = normalizedImages
+
 	if err := h.marketplaceRepo.CreateProduct(c.Request.Context(), product, userID); err != nil {
 		status, message := productWriteErrorResponse(err)
 		c.JSON(status, gin.H{"success": false, "error": message})
@@ -328,6 +360,15 @@ func (h *MarketplaceHandlers) UpdateProduct(c *gin.Context) {
 		req.CategoryID = &normalizedCategoryID
 	}
 
+	if req.Images != nil {
+		normalizedImages, normalizeErr := utils.ResolveImageReferences(c.Request.Context(), req.Images, "marketplace/products/"+productID.String())
+		if normalizeErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid images payload. Use HTTP URLs or valid base64 image payloads"})
+			return
+		}
+		req.Images = normalizedImages
+	}
+
 	product, err := h.marketplaceRepo.UpdateProduct(c.Request.Context(), productID, userID, &req)
 	if err != nil {
 		status, message := productWriteErrorResponse(err)
@@ -338,6 +379,11 @@ func (h *MarketplaceHandlers) UpdateProduct(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Product not found or you don't have permission"})
 		return
 	}
+
+	products := []models.Product{*product}
+	normalizeProductImageFields(c, products)
+	product = &products[0]
+
 	c.JSON(http.StatusOK, gin.H{"success": true, "product": product})
 }
 

@@ -4,11 +4,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/api_client.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../chat/data/repositories/chat_repository.dart';
 import '../../../chat/presentation/pages/chat_conversation_screen.dart';
 import '../../data/models/vet_appointment_model.dart';
 import '../../data/repositories/vet_appointment_repository.dart';
+import '../../data/repositories/vet_repository.dart';
 
 class VetAppointmentsScreen extends StatefulWidget {
   final bool isVetView;
@@ -22,6 +24,7 @@ class VetAppointmentsScreen extends StatefulWidget {
 class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
     with SingleTickerProviderStateMixin {
   late final VetAppointmentRepository _repository;
+  late final VetRepository _vetRepository;
   late final ChatRepository _chatRepository;
   late final TabController _tabController;
 
@@ -35,6 +38,7 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
   void initState() {
     super.initState();
     _repository = VetAppointmentRepository();
+    _vetRepository = VetRepository(ApiClient.instance);
     _chatRepository = getIt<ChatRepository>();
     _tabController = TabController(length: 3, vsync: this);
     _loadAppointments();
@@ -309,6 +313,110 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
     }
   }
 
+  Future<void> _showVetReviewDialog(VetAppointment appointment) async {
+    if (widget.isVetView || appointment.status != 'completed') {
+      return;
+    }
+
+    if (appointment.vetUserId.trim().isEmpty) {
+      CustomSnackbar.showError(
+        context,
+        'Unable to submit review: missing vet reference.',
+      );
+      return;
+    }
+
+    int rating = 5;
+    final commentController = TextEditingController();
+
+    final submit = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: const Text('Rate Veterinarian'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    appointment.vetName ?? 'Veterinarian',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  Wrap(
+                    spacing: 4.w,
+                    children: List.generate(
+                      5,
+                      (index) => IconButton(
+                        onPressed: () {
+                          setDialogState(() => rating = index + 1);
+                        },
+                        icon: Icon(
+                          index < rating
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: Colors.amber,
+                        ),
+                      ),
+                    ),
+                  ),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Review',
+                      hintText: 'Share your experience (optional)',
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (submit != true) return;
+
+    setState(() => _busyAppointmentId = appointment.id);
+    try {
+      await _vetRepository.addVetReview(
+        appointment.vetUserId,
+        rating: rating,
+        comment: commentController.text.trim(),
+      );
+
+      if (mounted) {
+        CustomSnackbar.showSuccess(context, 'Review submitted successfully!');
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busyAppointmentId = null);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -318,7 +426,9 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
       appBar: AppBar(
         title: Text(
           widget.isVetView ? 'Appointment Requests' : 'My Vet Appointments',
-          style: AppTextStyles.titleLarge.copyWith(color: colorScheme.onSurface),
+          style: AppTextStyles.titleLarge.copyWith(
+            color: colorScheme.onSurface,
+          ),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
@@ -470,7 +580,8 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
           SizedBox(height: 12.h),
           if (canChat)
             OutlinedButton.icon(
-              onPressed: isBusy ? null : () => _openAppointmentChat(appointment),
+              onPressed:
+                  isBusy ? null : () => _openAppointmentChat(appointment),
               style: OutlinedButton.styleFrom(
                 foregroundColor: colorScheme.primary,
                 side: BorderSide(color: colorScheme.primary),
@@ -484,7 +595,10 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: isBusy ? null : () => _respondToAppointment(appointment, false),
+                    onPressed:
+                        isBusy
+                            ? null
+                            : () => _respondToAppointment(appointment, false),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
                       side: const BorderSide(color: Colors.red),
@@ -495,7 +609,10 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
                 SizedBox(width: 10.w),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: isBusy ? null : () => _respondToAppointment(appointment, true),
+                    onPressed:
+                        isBusy
+                            ? null
+                            : () => _respondToAppointment(appointment, true),
                     child: const Text('Accept'),
                   ),
                 ),
@@ -505,7 +622,8 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
           if (widget.isVetView && appointment.status == 'confirmed') ...[
             SizedBox(height: 10.h),
             ElevatedButton(
-              onPressed: isBusy ? null : () => _completeAppointment(appointment),
+              onPressed:
+                  isBusy ? null : () => _completeAppointment(appointment),
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 44.h),
               ),
@@ -524,6 +642,20 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
                 minimumSize: Size(double.infinity, 44.h),
               ),
               child: const Text('Cancel Appointment'),
+            ),
+          ],
+          if (!widget.isVetView && appointment.status == 'completed') ...[
+            SizedBox(height: 10.h),
+            ElevatedButton.icon(
+              onPressed:
+                  isBusy ? null : () => _showVetReviewDialog(appointment),
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size(double.infinity, 44.h),
+                backgroundColor: colorScheme.primary,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.star_rate_rounded),
+              label: const Text('Leave Review'),
             ),
           ],
         ],

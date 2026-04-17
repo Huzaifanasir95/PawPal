@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,7 +43,7 @@ func (r *VetRepository) CreateOrUpdate(ctx context.Context, profile *models.VetP
 		profile.ID = uuid.New()
 		profile.CreatedAt = time.Now()
 		profile.UpdatedAt = time.Now()
-		
+
 		// Ensure specialization is not nil
 		if profile.Specialization == nil {
 			profile.Specialization = []string{}
@@ -62,7 +63,7 @@ func (r *VetRepository) CreateOrUpdate(ctx context.Context, profile *models.VetP
 	if profile.Specialization == nil {
 		profile.Specialization = []string{}
 	}
-	
+
 	query := `
 		UPDATE vet_profiles SET
 			full_name = $2, degree = $3, license_number = $4, specialization = $5, experience = $6,
@@ -105,7 +106,7 @@ func (r *VetRepository) GetByUserID(ctx context.Context, userID uuid.UUID, profi
 		&profile.Rating, &profile.TotalReviews, &profile.IsVerified, &profile.IsAvailable,
 		&profile.CreatedAt, &profile.UpdatedAt,
 	)
-	
+
 	profile.Specialization = specialization
 	return err
 }
@@ -313,30 +314,40 @@ func (r *VetRepository) UserHasCompletedAppointmentWithVet(ctx context.Context, 
 func (r *VetRepository) CheckUserIsVet(ctx context.Context, userID uuid.UUID) (bool, error) {
 	var role sql.NullString
 	var accountType sql.NullString
-	
+
 	// Check both user_role and account_type fields for backward compatibility
 	err := r.db.QueryRow(ctx, `
 		SELECT user_role, account_type 
 		FROM users 
 		WHERE id = $1
 	`, userID).Scan(&role, &accountType)
-	
+
 	if err != nil {
 		if err == sql.ErrNoRows || err == pgx.ErrNoRows {
 			return false, nil
 		}
 		return false, err
 	}
-	
+
 	// Check user_role field (for email sign-ups)
-	if role.Valid && role.String == "vet" {
+	if role.Valid && strings.EqualFold(strings.TrimSpace(role.String), "vet") {
 		return true, nil
 	}
-	
+
 	// Check account_type field (for Google Sign-In)
-	if accountType.Valid && accountType.String == "vet" {
+	if accountType.Valid && strings.EqualFold(strings.TrimSpace(accountType.String), "vet") {
 		return true, nil
 	}
-	
-	return false, nil
+
+	// Fallback to profile existence so vets remain bookable even if role fields drift.
+	var hasVetProfile bool
+	if err := r.db.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM vet_profiles WHERE user_id = $1
+		)
+	`, userID).Scan(&hasVetProfile); err != nil {
+		return false, err
+	}
+
+	return hasVetProfile, nil
 }

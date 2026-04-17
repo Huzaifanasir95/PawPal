@@ -91,10 +91,14 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                         setState(() => _cachedChats = chats);
                         _persistCachedChats(chats);
                       },
-                      error: (message) => CustomSnackbar.showError(context, message),
+                      error:
+                          (message) =>
+                              CustomSnackbar.showError(context, message),
                       chatDeleted: (_) {
                         CustomSnackbar.showSuccess(context, 'Chat deleted');
-                        context.read<ChatBloc>().add(const ChatEvent.loadChats());
+                        context.read<ChatBloc>().add(
+                          const ChatEvent.loadChats(),
+                        );
                       },
                       orElse: () {},
                     );
@@ -107,7 +111,8 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                         }
                         return _buildLoadingState();
                       },
-                      chatsLoaded: (chats) => _buildChatsList(chats, accountType),
+                      chatsLoaded:
+                          (chats) => _buildChatsList(chats, accountType),
                       error: (message) {
                         if (_cachedChats.isNotEmpty) {
                           return _buildChatsList(_cachedChats, accountType);
@@ -234,7 +239,9 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
             ),
             SizedBox(height: 24.h),
             GestureDetector(
-              onTap: () => context.read<ChatBloc>().add(const ChatEvent.loadChats()),
+              onTap:
+                  () =>
+                      context.read<ChatBloc>().add(const ChatEvent.loadChats()),
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                 decoration: BoxDecoration(
@@ -337,6 +344,7 @@ class _ChatTile extends StatelessWidget {
     switch (accountType) {
       case 'vet':
       case 'caregiver':
+      case 'seller':
         return chat.unreadCountVet;
       case 'pet_owner':
         return chat.unreadCountOwner;
@@ -361,54 +369,51 @@ class _ChatTile extends StatelessWidget {
         ),
         alignment: Alignment.centerRight,
         padding: EdgeInsets.only(right: 24.w),
-        child: Icon(
-          Icons.delete_rounded,
-          color: Colors.white,
-          size: 24.sp,
-        ),
+        child: Icon(Icons.delete_rounded, color: Colors.white, size: 24.sp),
       ),
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-            title: Text(
-              'Delete Chat',
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            content: Text(
-              'Are you sure you want to delete this conversation?',
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: colorScheme.onSurfaceVariant),
+          builder:
+              (context) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.r),
                 ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(
-                  'Delete',
+                title: Text(
+                  'Delete Chat',
                   style: TextStyle(
-                    color: const Color(0xFFEF4444),
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
                   ),
                 ),
+                content: Text(
+                  'Are you sure you want to delete this conversation?',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(color: colorScheme.onSurfaceVariant),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(
+                      'Delete',
+                      style: TextStyle(
+                        color: const Color(0xFFEF4444),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       },
       onDismissed: (direction) {
@@ -419,11 +424,12 @@ class _ChatTile extends StatelessWidget {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ChatConversationScreen(
-                chatId: chat.id,
-                otherUserName: chat.otherUserName,
-                otherUserPhoto: chat.otherUserPhoto,
-              ),
+              builder:
+                  (context) => ChatConversationScreen(
+                    chatId: chat.id,
+                    otherUserName: chat.otherUserName,
+                    otherUserPhoto: chat.otherUserPhoto,
+                  ),
             ),
           );
           if (context.mounted) {
@@ -435,12 +441,13 @@ class _ChatTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16.r),
-            border: hasUnread
-                ? Border.all(
-                    color: colorScheme.primary.withValues(alpha: 0.3),
-                    width: 1.5,
-                  )
-                : null,
+            border:
+                hasUnread
+                    ? Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.3),
+                      width: 1.5,
+                    )
+                    : null,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.04),
@@ -458,22 +465,24 @@ class _ChatTile extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16.r),
-                  image: chat.otherUserPhoto != null
-                      ? DecorationImage(
-                          image: NetworkImage(chat.otherUserPhoto!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
+                  image:
+                      chat.otherUserPhoto != null
+                          ? DecorationImage(
+                            image: NetworkImage(chat.otherUserPhoto!),
+                            fit: BoxFit.cover,
+                          )
+                          : null,
                 ),
-                child: chat.otherUserPhoto == null
-                    ? Center(
-                        child: Icon(
-                          Icons.person_rounded,
-                          color: colorScheme.primary,
-                          size: 28.sp,
-                        ),
-                      )
-                    : null,
+                child:
+                    chat.otherUserPhoto == null
+                        ? Center(
+                          child: Icon(
+                            Icons.person_rounded,
+                            color: colorScheme.primary,
+                            size: 28.sp,
+                          ),
+                        )
+                        : null,
               ),
               SizedBox(width: 14.w),
               // Content
@@ -488,7 +497,8 @@ class _ChatTile extends StatelessWidget {
                             chat.otherUserName ?? 'Chat',
                             style: TextStyle(
                               fontSize: 16.sp,
-                              fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w600,
+                              fontWeight:
+                                  hasUnread ? FontWeight.w700 : FontWeight.w600,
                               color: colorScheme.onSurface,
                             ),
                             maxLines: 1,
@@ -500,10 +510,12 @@ class _ChatTile extends StatelessWidget {
                             timeago.format(chat.lastMessageAt!),
                             style: TextStyle(
                               fontSize: 12.sp,
-                              color: hasUnread
-                                  ? colorScheme.primary
-                                  : colorScheme.onSurfaceVariant,
-                              fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w400,
+                              color:
+                                  hasUnread
+                                      ? colorScheme.primary
+                                      : colorScheme.onSurfaceVariant,
+                              fontWeight:
+                                  hasUnread ? FontWeight.w600 : FontWeight.w400,
                             ),
                           ),
                       ],
@@ -516,13 +528,20 @@ class _ChatTile extends StatelessWidget {
                             chat.lastMessage ?? 'No messages yet',
                             style: TextStyle(
                               fontSize: 14.sp,
-                              color: chat.lastMessage != null
-                                  ? (hasUnread
-                                      ? colorScheme.onSurface
-                                      : colorScheme.onSurfaceVariant)
-                                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                              fontWeight: hasUnread ? FontWeight.w500 : FontWeight.w400,
-                              fontStyle: chat.lastMessage == null ? FontStyle.italic : FontStyle.normal,
+                              color:
+                                  chat.lastMessage != null
+                                      ? (hasUnread
+                                          ? colorScheme.onSurface
+                                          : colorScheme.onSurfaceVariant)
+                                      : colorScheme.onSurfaceVariant.withValues(
+                                        alpha: 0.6,
+                                      ),
+                              fontWeight:
+                                  hasUnread ? FontWeight.w500 : FontWeight.w400,
+                              fontStyle:
+                                  chat.lastMessage == null
+                                      ? FontStyle.italic
+                                      : FontStyle.normal,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -531,7 +550,10 @@ class _ChatTile extends StatelessWidget {
                         if (hasUnread) ...[
                           SizedBox(width: 12.w),
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 4.h,
+                            ),
                             decoration: BoxDecoration(
                               color: colorScheme.primary,
                               borderRadius: BorderRadius.circular(10.r),

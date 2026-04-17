@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"pawpal-backend/internal/models"
 	"pawpal-backend/internal/repositories"
@@ -157,12 +160,16 @@ func (h *ChatHandlers) StartChat(c *gin.Context) {
 			return
 		}
 
-		var vetProfile models.VetProfile
-		if err := h.vetRepo.GetByUserID(ctx, *req.VetID, &vetProfile); err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Vet not found"})
+		participantID = *req.VetID
+		isProviderParticipant, err := h.isProviderParticipant(ctx, participantID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate chat participant"})
 			return
 		}
-		participantID = *req.VetID
+		if !isProviderParticipant {
+			c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Selected user is not available for chat"})
+			return
+		}
 	}
 
 	if participantID == petOwnerID {
@@ -207,17 +214,13 @@ func (h *ChatHandlers) GetMyChats(c *gin.Context) {
 		return
 	}
 
-	// Check if user is a vet
-	var vetProfile models.VetProfile
-	isVet := h.vetRepo.GetByUserID(c.Request.Context(), userUUID, &vetProfile) == nil
-	if !isVet {
-		caregiverProfile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), userUUID)
-		if err == nil && caregiverProfile != nil {
-			isVet = true
-		}
+	isProviderParticipant, err := h.isProviderParticipant(c.Request.Context(), userUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to resolve chat role", "details": err.Error()})
+		return
 	}
 
-	chats, err := h.chatRepo.GetUserChats(c.Request.Context(), userUUID, isVet)
+	chats, err := h.chatRepo.GetUserChats(c.Request.Context(), userUUID, isProviderParticipant)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to fetch chats", "details": err.Error()})
 		return
@@ -392,16 +395,11 @@ func (h *ChatHandlers) GetChatMessages(c *gin.Context) {
 	// Mark messages as read
 	_ = h.messageRepo.MarkChatMessagesAsRead(c.Request.Context(), chatID, userUUID)
 
-	// Check if user is vet and mark chat as read
-	var vetProfile models.VetProfile
-	isVet := h.vetRepo.GetByUserID(c.Request.Context(), userUUID, &vetProfile) == nil
-	if !isVet {
-		caregiverProfile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), userUUID)
-		if err == nil && caregiverProfile != nil {
-			isVet = true
-		}
+	isProviderParticipant := false
+	if resolved, err := h.isProviderParticipant(c.Request.Context(), userUUID); err == nil {
+		isProviderParticipant = resolved
 	}
-	_ = h.chatRepo.MarkChatAsRead(c.Request.Context(), chatID, isVet)
+	_ = h.chatRepo.MarkChatAsRead(c.Request.Context(), chatID, isProviderParticipant)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":  true,
@@ -430,6 +428,59 @@ func normalizeRequestedChatType(chatType string, bookingID, appointmentID *uuid.
 		return normalized
 	default:
 		return ""
+	}
+}
+
+func (h *ChatHandlers) isProviderParticipant(ctx context.Context, userID uuid.UUID) (bool, error) {
+	roles, err := h.userRepo.GetUserRoles(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	if hasAnyProviderRole(roles) {
+		return true, nil
+	}
+
+	user, err := h.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	if user != nil && hasProviderRole(user.AccountType) {
+		return true, nil
+	}
+
+	var vetProfile models.VetProfile
+	err = h.vetRepo.GetByUserID(ctx, userID, &vetProfile)
+	if err == nil {
+		return true, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return false, err
+	}
+
+	caregiverProfile, err := h.caregiverRepo.GetProfileByUserID(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+
+	return caregiverProfile != nil, nil
+}
+
+func hasAnyProviderRole(roles []string) bool {
+	for _, role := range roles {
+		if hasProviderRole(role) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func hasProviderRole(role string) bool {
+	switch strings.ToLower(strings.TrimSpace(role)) {
+	case "vet", "caregiver", "seller":
+		return true
+	default:
+		return false
 	}
 }
 

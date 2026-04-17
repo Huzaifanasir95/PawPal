@@ -11,6 +11,9 @@ import '../cubit/cart_cubit.dart';
 import '../cubit/cart_state.dart';
 import '../../data/models/marketplace_models.dart';
 import '../../data/repositories/marketplace_repository.dart';
+import '../../../chat/data/models/chat_model.dart';
+import '../../../chat/data/repositories/chat_repository.dart';
+import '../../../chat/presentation/pages/chat_conversation_screen.dart';
 import 'cart_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -24,10 +27,12 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final MarketplaceRepository _repo = MarketplaceRepository.instance;
+  final ChatRepository _chatRepository = ChatRepository(ApiClient.instance);
   int _quantity = 1;
   int _selectedImageIndex = 0;
   bool _isLoadingReviews = false;
   bool _isSubmittingReview = false;
+  bool _isOpeningSellerChat = false;
   String? _reviewsError;
   List<ProductReview> _reviews = const <ProductReview>[];
 
@@ -69,7 +74,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   SizedBox(height: 12.h),
                   Text(
                     state.error ?? 'Product not found',
-                    style: GoogleFonts.mulish(color: colorScheme.onSurfaceVariant),
+                    style: GoogleFonts.mulish(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   SizedBox(height: 16.h),
                   ElevatedButton(
@@ -221,7 +228,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             color: colorScheme.surface,
                             borderRadius: BorderRadius.circular(14.r),
                             border: Border.all(
-                              color: colorScheme.outline.withValues(alpha: 0.28),
+                              color: colorScheme.outline.withValues(
+                                alpha: 0.28,
+                              ),
                             ),
                           ),
                           child: Row(
@@ -283,14 +292,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(16.r),
                               border: Border.all(
-                                color: colorScheme.outline.withValues(alpha: 0.25),
+                                color: colorScheme.outline.withValues(
+                                  alpha: 0.25,
+                                ),
                               ),
                             ),
                             child: Row(
                               children: [
                                 CircleAvatar(
                                   radius: 18.r,
-                                  backgroundColor: colorScheme.primary.withValues(alpha: 0.18),
+                                  backgroundColor: colorScheme.primary
+                                      .withValues(alpha: 0.18),
                                   child: Icon(
                                     Icons.person_outline_rounded,
                                     size: 18.sp,
@@ -298,25 +310,74 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   ),
                                 ),
                                 SizedBox(width: 12.w),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Seller',
-                                      style: GoogleFonts.mulish(
-                                        fontSize: 11.sp,
-                                        color: colorScheme.onSurfaceVariant,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Seller',
+                                        style: GoogleFonts.mulish(
+                                          fontSize: 11.sp,
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                      Text(
+                                        product.sellerName!,
+                                        style: GoogleFonts.mulish(
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                OutlinedButton.icon(
+                                  onPressed:
+                                      _isOpeningSellerChat ||
+                                              ApiClient.instance.userId ==
+                                                  product.sellerId
+                                          ? null
+                                          : () => _startChatWithSeller(product),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: colorScheme.primary,
+                                    side: BorderSide(
+                                      color: colorScheme.primary.withValues(
+                                        alpha: 0.6,
                                       ),
                                     ),
-                                    Text(
-                                      product.sellerName!,
-                                      style: GoogleFonts.mulish(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w700,
-                                        color: colorScheme.onSurface,
-                                      ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10.r),
                                     ),
-                                  ],
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 10.w,
+                                      vertical: 8.h,
+                                    ),
+                                  ),
+                                  icon:
+                                      _isOpeningSellerChat
+                                          ? SizedBox(
+                                            width: 14.w,
+                                            height: 14.h,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: colorScheme.primary,
+                                            ),
+                                          )
+                                          : Icon(
+                                            Icons.chat_bubble_outline_rounded,
+                                            size: 15.sp,
+                                          ),
+                                  label: Text(
+                                    _isOpeningSellerChat
+                                        ? 'Opening...'
+                                        : 'Message',
+                                    style: GoogleFonts.mulish(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -347,7 +408,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final inStock = product.stockQuantity > 0;
     final canAddToCart =
-        ApiClient.instance.userId == null || ApiClient.instance.userId != product.sellerId;
+        ApiClient.instance.userId == null ||
+        ApiClient.instance.userId != product.sellerId;
 
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 20.h),
@@ -490,7 +552,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 Text(
                                   !canAddToCart
                                       ? 'Your Listing'
-                                      : (inStock ? 'Add to Cart' : 'Out of Stock'),
+                                      : (inStock
+                                          ? 'Add to Cart'
+                                          : 'Out of Stock'),
                                   style: GoogleFonts.mulish(
                                     color: colorScheme.onPrimary,
                                     fontWeight: FontWeight.w700,
@@ -509,6 +573,74 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
+  Future<void> _startChatWithSeller(Product product) async {
+    if (_isOpeningSellerChat) {
+      return;
+    }
+
+    final viewerId = ApiClient.instance.userId?.trim();
+    if (viewerId == null || viewerId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please sign in to message sellers.',
+            style: GoogleFonts.mulish(),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (viewerId == product.sellerId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'This is your own listing.',
+            style: GoogleFonts.mulish(),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isOpeningSellerChat = true);
+
+    try {
+      final chat = await _chatRepository.startChat(
+        StartChatRequest(vetId: product.sellerId),
+      );
+
+      if (!mounted) return;
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder:
+              (_) => ChatConversationScreen(
+                chatId: chat.id,
+                otherUserName: product.sellerName ?? 'Seller',
+              ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceAll('Exception: ', ''),
+            style: GoogleFonts.mulish(),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isOpeningSellerChat = false);
+      }
+    }
+  }
+
   Future<void> _loadReviews() async {
     setState(() {
       _isLoadingReviews = true;
@@ -516,7 +648,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     });
 
     try {
-      final reviews = await _repo.getProductReviews(widget.productId, limit: 20);
+      final reviews = await _repo.getProductReviews(
+        widget.productId,
+        limit: 20,
+      );
       if (!mounted) return;
       setState(() {
         _reviews = reviews;
@@ -582,7 +717,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           setDialogState(() => rating = index + 1);
                         },
                         icon: Icon(
-                          index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          index < rating
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
                           color: colorScheme.secondary,
                         ),
                       ),
@@ -601,53 +738,63 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: _isSubmittingReview
-                      ? null
-                      : () => Navigator.of(dialogContext).pop(false),
+                  onPressed:
+                      _isSubmittingReview
+                          ? null
+                          : () => Navigator.of(dialogContext).pop(false),
                   child: Text('Cancel', style: GoogleFonts.mulish()),
                 ),
                 ElevatedButton(
-                  onPressed: _isSubmittingReview
-                      ? null
-                      : () async {
-                          setState(() => _isSubmittingReview = true);
-                          try {
-                            await _repo.addProductReview(
-                              product.id,
-                              CreateProductReviewRequest(
-                                rating: rating,
-                                comment: commentController.text.trim(),
-                              ),
-                            );
-
-                            if (dialogContext.mounted) {
-                              Navigator.of(dialogContext).pop(true);
-                            }
-                          } catch (e) {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  e.toString().replaceAll('Exception: ', ''),
-                                  style: GoogleFonts.mulish(),
+                  onPressed:
+                      _isSubmittingReview
+                          ? null
+                          : () async {
+                            setState(() => _isSubmittingReview = true);
+                            try {
+                              await _repo.addProductReview(
+                                product.id,
+                                CreateProductReviewRequest(
+                                  rating: rating,
+                                  comment: commentController.text.trim(),
                                 ),
-                                backgroundColor: colorScheme.error,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          } finally {
-                            if (mounted) {
-                              setState(() => _isSubmittingReview = false);
+                              );
+
+                              if (dialogContext.mounted) {
+                                Navigator.of(dialogContext).pop(true);
+                              }
+                            } catch (e) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    e.toString().replaceAll('Exception: ', ''),
+                                    style: GoogleFonts.mulish(),
+                                  ),
+                                  backgroundColor: colorScheme.error,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isSubmittingReview = false);
+                              }
                             }
-                          }
-                        },
-                  child: _isSubmittingReview
-                      ? SizedBox(
-                          width: 16.w,
-                          height: 16.h,
-                          child: const CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text('Submit', style: GoogleFonts.mulish(fontWeight: FontWeight.w700)),
+                          },
+                  child:
+                      _isSubmittingReview
+                          ? SizedBox(
+                            width: 16.w,
+                            height: 16.h,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          )
+                          : Text(
+                            'Submit',
+                            style: GoogleFonts.mulish(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                 ),
               ],
             );
@@ -676,7 +823,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget _buildReviewsSection(Product product) {
     final colorScheme = Theme.of(context).colorScheme;
     final currentUserId = ApiClient.instance.userId;
-    final canAttemptReview = currentUserId == null || currentUserId != product.sellerId;
+    final canAttemptReview =
+        currentUserId == null || currentUserId != product.sellerId;
 
     return Container(
       width: double.infinity,
@@ -691,7 +839,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.reviews_outlined, size: 18.sp, color: colorScheme.primary),
+              Icon(
+                Icons.reviews_outlined,
+                size: 18.sp,
+                color: colorScheme.primary,
+              ),
               SizedBox(width: 8.w),
               Text(
                 'Customer Reviews',
@@ -704,11 +856,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               const Spacer(),
               if (canAttemptReview)
                 TextButton.icon(
-                  onPressed: _isSubmittingReview ? null : () => _showReviewDialog(product),
+                  onPressed:
+                      _isSubmittingReview
+                          ? null
+                          : () => _showReviewDialog(product),
                   icon: Icon(Icons.edit_rounded, size: 16.sp),
                   label: Text(
                     'Write Review',
-                    style: GoogleFonts.mulish(fontSize: 12.sp, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.mulish(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
             ],
@@ -747,9 +905,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
             )
           else
-            Column(
-              children: _reviews.map(_buildReviewTile).toList(),
-            ),
+            Column(children: _reviews.map(_buildReviewTile).toList()),
         ],
       ),
     );
@@ -809,7 +965,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             children: List.generate(
               5,
               (index) => Icon(
-                index < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                index < review.rating
+                    ? Icons.star_rounded
+                    : Icons.star_outline_rounded,
                 size: 16.sp,
                 color: colorScheme.secondary,
               ),
@@ -1058,8 +1216,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             style: GoogleFonts.mulish(
               fontSize: 13.sp,
               fontWeight: FontWeight.w700,
-              color:
-                  inStock ? colorScheme.tertiary : colorScheme.error,
+              color: inStock ? colorScheme.tertiary : colorScheme.error,
             ),
           ),
         ],
@@ -1115,8 +1272,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return CachedNetworkImage(
       imageUrl: imageUrl,
       fit: BoxFit.cover,
-      placeholder: (_, __) =>
-          Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+      placeholder:
+          (_, __) => Container(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          ),
       errorWidget: (_, __, ___) => _buildPlaceholder(),
     );
   }

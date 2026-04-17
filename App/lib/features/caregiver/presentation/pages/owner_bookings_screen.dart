@@ -45,7 +45,10 @@ class _OwnerBookingsScreenState extends State<OwnerBookingsScreen>
     try {
       final results = await Future.wait([
         _repository.getMyBookings(role: 'owner', status: 'pending'),
-        _repository.getMyBookings(role: 'owner', status: 'accepted,in_progress'),
+        _repository.getMyBookings(
+          role: 'owner',
+          status: 'accepted,in_progress',
+        ),
         _repository.getMyBookings(
           role: 'owner',
           status: 'completed,cancelled_owner,cancelled_caregiver,declined',
@@ -79,7 +82,9 @@ class _OwnerBookingsScreenState extends State<OwnerBookingsScreen>
       appBar: AppBar(
         title: Text(
           'My Caregiver Bookings',
-          style: AppTextStyles.titleLarge.copyWith(color: colorScheme.onSurface),
+          style: AppTextStyles.titleLarge.copyWith(
+            color: colorScheme.onSurface,
+          ),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
@@ -245,6 +250,42 @@ class _OwnerBookingsScreenState extends State<OwnerBookingsScreen>
                   ),
                 ],
               ),
+              if (booking.status == 'completed') ...[
+                SizedBox(height: 10.h),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder:
+                              (_) => BookingDetailScreen(bookingId: booking.id),
+                        ),
+                      );
+                      if (!mounted) return;
+                      await _loadBookings();
+                    },
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 6.h,
+                      ),
+                    ),
+                    icon: Icon(
+                      Icons.star_outline_rounded,
+                      size: 16.sp,
+                      color: colorScheme.primary,
+                    ),
+                    label: Text(
+                      'Rate Caregiver',
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

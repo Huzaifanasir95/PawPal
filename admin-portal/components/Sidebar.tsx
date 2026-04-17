@@ -15,19 +15,52 @@ import {
   ChevronRight,
   Dog,
   MessageSquare,
+  ShoppingBag,
+  Package,
+  Briefcase,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/users', label: 'Users', icon: Users },
-  { href: '/posts', label: 'Posts', icon: FileText },
-  { href: '/events', label: 'Events', icon: Calendar },
-  { href: '/vets', label: 'Vets', icon: Stethoscope },
-  { href: '/adoptions', label: 'Adoptions', icon: Heart },
-  { href: '/lost-found', label: 'Lost & Found', icon: Search },
-  { href: '/pets', label: 'Pets', icon: Dog },
-  { href: '/chats', label: 'Chats', icon: MessageSquare },
+const navGroups = [
+  {
+    label: 'Overview',
+    items: [
+      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: 'Users & Content',
+    items: [
+      { href: '/users', label: 'Users', icon: Users },
+      { href: '/pets', label: 'Pets', icon: Dog },
+      { href: '/posts', label: 'Posts', icon: FileText },
+      { href: '/chats', label: 'Chats', icon: MessageSquare },
+    ],
+  },
+  {
+    label: 'Services',
+    items: [
+      { href: '/vets', label: 'Vets', icon: Stethoscope },
+      { href: '/appointments', label: 'Vet Appointments', icon: ClipboardList },
+      { href: '/caregivers', label: 'Caregivers', icon: Briefcase },
+      { href: '/bookings', label: 'Bookings', icon: Calendar },
+    ],
+  },
+  {
+    label: 'Marketplace',
+    items: [
+      { href: '/marketplace', label: 'Products & Orders', icon: Package },
+    ],
+  },
+  {
+    label: 'Community Hub',
+    items: [
+      { href: '/adoptions', label: 'Adoptions', icon: Heart },
+      { href: '/lost-found', label: 'Lost & Found', icon: Search },
+      { href: '/events', label: 'Events', icon: ShoppingBag },
+    ],
+  },
 ];
 
 export default function Sidebar() {
@@ -47,33 +80,37 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-white/40">
-          Management
-        </p>
-        <ul className="space-y-0.5">
-          {navItems.map(({ href, label, icon: Icon }) => {
-            const active =
-              pathname === href || (pathname.startsWith(href + '/') && href !== '/');
-            return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
-                    active
-                      ? 'bg-[#B3E0DB]/20 text-[#B3E0DB]'
-                      : 'text-white/70 hover:bg-white/5 hover:text-white'
-                  )}
-                >
-                  <Icon className="h-4 w-4 flex-shrink-0" />
-                  <span className="flex-1">{label}</span>
-                  {active && <ChevronRight className="h-3.5 w-3.5" />}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        {navGroups.map((group) => (
+          <div key={group.label}>
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-white/40">
+              {group.label}
+            </p>
+            <ul className="space-y-0.5">
+              {group.items.map(({ href, label, icon: Icon }) => {
+                const active =
+                  pathname === href || (pathname.startsWith(href + '/') && href !== '/');
+                return (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+                        active
+                          ? 'bg-[#B3E0DB]/20 text-[#B3E0DB]'
+                          : 'text-white/70 hover:bg-white/5 hover:text-white'
+                      )}
+                    >
+                      <Icon className="h-4 w-4 flex-shrink-0" />
+                      <span className="flex-1">{label}</span>
+                      {active && <ChevronRight className="h-3.5 w-3.5" />}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </nav>
 
       {/* Footer */}

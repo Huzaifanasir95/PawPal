@@ -1,0 +1,225 @@
+========================================================================
+  PawPal Backend Integration Test Report
+  Run at  : 2026-04-17T03:50:17.479594+00:00
+  Backend : https://transudatory-fecklessly-karisa.ngrok-free.dev
+  Test ID : b14df621
+========================================================================
+  TOTAL: 153   PASSED: 147   FAILED: 6   PASS RATE: 96.1%
+========================================================================
+
+  [Health]  7/7 passed
+    [+] [200] (549ms)  GET /health → 200 ok -- status=healthy
+    [+] [200] (467ms)  GET /api/v1/model/info → reachable -- status=200
+    [+] [200] (549ms)  GET /api/v1/breeds?pet_type=dog → 200 with list -- total=120
+    [+] [200] (490ms)  GET /api/v1/breeds?pet_type=cat → 200 with list
+    [+] [200] (543ms)  GET /api/v1/breeds?pet_type=fish → 200/400 -- status=200
+    [+] [404] (471ms)  GET /api/v1/unknown-route → 404
+    [+] [200] (468ms)  GET /health response contains timestamp/uptime
+
+  [Auth.SignUp]  6/6 passed
+    [+] [400] (486ms)  POST /auth/signup — empty body → 400
+    [+] [400] (470ms)  POST /auth/signup — invalid email → 400
+    [+] [400] (487ms)  POST /auth/signup — password < 6 chars → 400
+    [+] [400] (472ms)  POST /auth/signup — missing password → 400
+    [+] [201] (2200ms)  POST /auth/signup — valid → 201 + tokens -- user_id=
+    [+] [409] (664ms)  POST /auth/signup — duplicate email → 409
+
+  [Auth.SignIn]  5/5 passed
+    [+] [401] (976ms)  POST /auth/signin — wrong password → 401
+    [+] [401] (654ms)  POST /auth/signin — unknown email → 401
+    [+] [400] (478ms)  POST /auth/signin — missing password → 400
+    [+] [400] (479ms)  POST /auth/signin — empty body → 400
+    [+] [200] (1261ms)  POST /auth/signin — valid credentials → 200 -- tokens updated
+
+  [Auth.Token]  4/4 passed
+    [+] [200] (1393ms)  POST /auth/refresh — valid → 200 + new tokens -- token rotated
+    [+] [401] (643ms)  POST /auth/refresh — fake token → 400/401
+    [+] [400] (476ms)  POST /auth/refresh — empty body → 400
+    [+] [400] (480ms)  POST /auth/refresh — wrong field name → 400
+
+  [Profile]  9/9 passed
+    [+] [401] (458ms)  GET /profile — no auth → 401
+    [+] [401] (480ms)  GET /profile — bad JWT → 401
+    [+] [200] (1227ms)  GET /profile — valid token → 200 -- email=pp_b14df621@pawpal-test.com
+    [+] [200] (1216ms)  PUT /profile — update displayName → 200
+    [+] [401] (464ms)  PUT /profile — no auth → 401
+    [+] [200] (1013ms)  GET /user/roles → 200 -- {'success': True, 'data': {'activeRole': 'pet_owner', 'roles': ['pet_owner'], 'userId': 'be4bfdf7-dfc6-43df-9dc3-7ee13ad3b74b'}}
+    [+] [200] (1577ms)  POST /auth/set-role pet_owner → 200 -- status=200
+    [+] [200] (1034ms)  POST /user/roles/add pet_owner → 200/409 -- status=200
+    [+] [200] (1010ms)  POST /user/roles/switch pet_owner → 200 -- status=200
+
+  [Auth.PasswordReset]  4/4 passed
+    [+] [200] (850ms)  POST /auth/password/reset-request — known email → 200
+    [+] [200] (667ms)  POST /auth/password/reset-request — unknown email → 200/404 -- status=200
+    [+] [400] (666ms)  POST /auth/password/reset — fake token → 400/401/404
+    [+] [400] (453ms)  POST /auth/password/reset — empty body → 400
+
+  [Pets]  15/15 passed
+    [+] [401] (499ms)  GET /pets — no auth → 401
+    [+] [200] (847ms)  GET /pets — auth → 200 list -- count=0
+    [+] [400] (481ms)  POST /pets — missing required fields → 400
+    [+] [400] (475ms)  POST /pets — invalid type=dragon → 400
+    [+] [400] (490ms)  POST /pets — invalid gender=unknown → 400
+    [+] [400] (487ms)  POST /pets — negative age → 400
+    [+] [201] (864ms)  POST /pets — valid dog → 201 -- pet_id=d69f815a-98f0-42f4-88a7-04d3865705c5
+    [+] [201] (675ms)  POST /pets — valid cat → 201
+    [+] [200] (681ms)  GET /pets/:id — existing → 200 -- name=Buddy_b14df621
+    [+] [404] (664ms)  GET /pets/:id — nonexistent UUID → 404
+    [+] [200] (862ms)  PUT /pets/:id — update breed → 200
+    [+] [200] (670ms)  GET /pets/count → 200 -- count=None
+    [+] [200] (665ms)  GET /pets/verified → 200
+    [+] [200] (671ms)  GET /pets/search?breed=Labrador → 200 -- status=200
+    [+] [200] (917ms)  DELETE /pets/:id — own pet → 200
+
+  [HealthRecords]  5/5 passed
+    [+] [401] (480ms)  POST /health-records — no auth → 401
+    [+] [400] (465ms)  POST /health-records — missing petId → 400
+    [+] [201] (1058ms)  POST /health-records — valid → 201/409 -- status=201
+    [+] [200] (671ms)  GET /health-records/pet/:petId → 200/404 -- status=200
+    [+] [404] (677ms)  GET /health-records/pet/:fake-uuid → 404
+
+  [HealthJournals]  5/5 passed
+    [+] [401] (761ms)  POST /health-journals — no auth → 401
+    [+] [400] (789ms)  POST /health-journals — missing petId → 400
+    [+] [201] (1126ms)  POST /health-journals — valid → 201 -- journal_id=fe3f2b91-290c-45f1-8fbd-d7f78346fc10
+    [+] [200] (851ms)  GET /health-journals/pet/:petId → 200 list
+    [+] [200] (906ms)  DELETE /health-journals/:id → 200
+
+  [Posts]  10/10 passed
+    [+] [401] (469ms)  POST /posts — no auth → 401
+    [+] [400] (472ms)  POST /posts — missing content → 400
+    [+] [201] (1060ms)  POST /posts — valid → 201 -- post_id=b8c0b31e-32b3-42e5-aab9-7db1f31dc1a9
+    [+] [200] (652ms)  GET /posts — list all → 200 -- count=7
+    [+] [200] (646ms)  GET /posts/me — my posts → 200
+    [+] [200] (647ms)  GET /posts/:id → 200
+    [+] [200] (1634ms)  POST /posts/:id/like — toggle → 200
+    [+] [200] (673ms)  GET /posts/:id/liked → 200
+    [+] [200] (862ms)  PUT /posts/:id — update content → 200
+    [+] [404] (677ms)  GET /posts/:fake-uuid → 404
+
+  [Comments]  6/6 passed
+    [+] [401] (472ms)  POST /comments — no auth → 401
+    [+] [400] (469ms)  POST /comments — missing postId → 400
+    [+] [201] (1432ms)  POST /comments — valid → 201 -- comment_id=e39cad9f-f240-4db7-a2f8-691b1986090a
+    [+] [200] (668ms)  GET /comments/post/:postId → 200 list -- count=1
+    [+] [200] (1645ms)  POST /comments/:id/like — toggle → 200
+    [+] [200] (1816ms)  DELETE /comments/:id → 200
+
+  [Community.Advanced]  4/7 passed
+    [+] [200] (702ms)  GET /community/trending/posts → 200
+    [+] [200] (672ms)  GET /community/trending/hashtags → 200
+    [+] [200] (686ms)  GET /community/hashtags/dogs/posts → 200/404 -- status=200
+    [X] [500] (658ms)  GET /community/groups → 200 -- Expected (200,), got 500. Body: {'success': False, 'message': 'Failed to fetch groups: ERROR: relation "community_groups" does not exist (SQLSTATE 42P01)'}
+    [X] [500] (686ms)  GET /community/groups/me → 200 -- Expected (200,), got 500. Body: {'success': False, 'message': 'Failed to fetch user groups: ERROR: relation "community_group_members" does not exist (SQLSTATE 42P01)'}
+    [X] [500] (1051ms)  POST /community/groups — valid → 201 -- Expected (201,), got 500. Body: {'success': False, 'message': 'Failed to create group: ERROR: relation "community_groups" does not exist (SQLSTATE 42P01)'}
+    [+] [400] (468ms)  POST /community/groups — name too short → 400
+
+  [Vets]  6/6 passed
+    [+] [200] (845ms)  GET /vets — public list → 200
+    [+] [400] (479ms)  GET /vets/profile/not-a-uuid → 400/404
+    [+] [404] (648ms)  GET /vets/profile/:fake-uuid → 404 -- status=404
+    [+] [200] (863ms)  GET /vets/:fake-uuid/reviews → 200/404
+    [+] [401] (474ms)  GET /vets/profile/me — no auth → 401
+    [+] [404] (672ms)  GET /vets/profile/me — auth → 200/404 -- status=404
+
+  [Marketplace.Public]  5/5 passed
+    [+] [200] (652ms)  GET /marketplace/categories → 200
+    [+] [200] (858ms)  GET /marketplace/products → 200
+    [+] [200] (845ms)  GET /marketplace/products?page=1&limit=3 → 200
+    [+] [404] (669ms)  GET /marketplace/products/:fake-uuid → 404
+    [+] [200] (870ms)  GET /marketplace/products/:fake-uuid/reviews → 200/404 -- status=200
+
+  [Marketplace.Protected]  4/7 passed
+    [+] [401] (474ms)  POST /marketplace/products — no auth → 401
+    [X] [403] (653ms)  POST /marketplace/products — valid → 201/400 -- got 403: {"error":"Seller account required","success":false}
+    [X] [403] (651ms)  GET /marketplace/products/mine → 200 -- Expected (200,), got 403. Body: {'error': 'Seller account required', 'success': False}
+    [+] [200] (664ms)  GET /marketplace/cart → 200
+    [+] [404] (866ms)  POST /marketplace/cart — fake productId → 400/404 -- status=404
+    [+] [200] (1149ms)  GET /marketplace/orders → 200
+    [X] [403] (692ms)  GET /marketplace/seller/orders → 200 -- Expected (200,), got 403. Body: {'error': 'Seller account required', 'success': False}
+
+  [LostFound]  7/7 passed
+    [+] [200] (1034ms)  GET /lost-found — auth → 200/404 -- status=200
+    [+] [401] (531ms)  POST /lost-found — no auth → 401
+    [+] [400] (846ms)  POST /lost-found — invalid type → 400
+    [+] [400] (663ms)  POST /lost-found — missing description → 400
+    [+] [201] (868ms)  POST /lost-found — type=lost → 201 -- id=
+    [+] [201] (840ms)  POST /lost-found — type=found → 201
+    [+] [200] (694ms)  GET /lost-found/me → 200 -- status=200
+
+  [Adoptions]  5/5 passed
+    [+] [500] (854ms)  GET /adoptions — auth → 200/500 (SQL bug noted) -- BACKEND BUG: SQL alias error in GetAdoptionListings → 500
+    [+] [401] (480ms)  GET /adoptions — no auth → 401
+    [+] [500] (867ms)  POST /adoptions — unowned pet → 400/404 -- status=500
+    [+] [201] (1423ms)  POST /adoptions — own pet → 201/409 -- status=201
+    [+] [200] (726ms)  GET /adoptions/me → 200/500 -- status=200
+
+  [Events]  8/8 passed
+    [+] [401] (797ms)  GET /events — no auth → 401
+    [+] [200] (1276ms)  GET /events — auth → 200
+    [+] [400] (678ms)  POST /events — missing title → 400
+    [+] [400] (866ms)  POST /events — missing startDate → 400
+    [+] [201] (868ms)  POST /events — valid → 201 -- event_id=9309b8ac-b968-41f8-bf90-462a6423257c
+    [+] [200] (653ms)  GET /events/:id → 200
+    [+] [200] (1625ms)  POST /events/:id/rsvp → 200/201/409 -- status=200
+    [+] [200] (659ms)  GET /events/:id/rsvps → 200
+
+  [Chats]  6/6 passed
+    [+] [401] (482ms)  GET /chats — no auth → 401
+    [+] [200] (1434ms)  GET /chats — auth → 200 -- {'chats': [], 'success': True}
+    [+] [400] (460ms)  POST /chats — start chat with fake user → 200/404 -- status=400
+    [+] [403] (654ms)  GET /chats/:fake-uuid → 403/404
+    [+] [403] (666ms)  POST /messages — fake chatId → 400/404 -- status=403
+    [+] [403] (660ms)  GET /messages/:fake-chatId → 200/403/404 -- status=403
+
+  [Caregivers]  7/7 passed
+    [+] [200] (693ms)  GET /caregivers/service-types → 200/404 -- status=200
+    [+] [401] (454ms)  GET /caregivers/profile — no auth → 401
+    [+] [404] (671ms)  GET /caregivers/profile — auth → 200/404 -- status=404
+    [+] [200] (3507ms)  GET /caregivers/search → 200/404 -- status=200
+    [+] [404] (678ms)  GET /caregivers/:fake-uuid → 404 -- status=404
+    [+] [404] (656ms)  GET /caregivers/:fake-uuid/reviews → 200/404 -- status=404
+    [+] [201] (1259ms)  POST /caregivers/profile — empty → 400/409 -- status=201
+
+  [Bookings]  5/5 passed
+    [+] [401] (463ms)  GET /bookings — no auth → 401
+    [+] [200] (861ms)  GET /bookings — auth → 200
+    [+] [404] (648ms)  GET /bookings/:fake-uuid → 403/404 -- status=404
+    [+] [400] (477ms)  POST /bookings — missing required fields → 400
+    [+] [404] (681ms)  POST /bookings — fake caregiver → 400/404 -- status=404
+
+  [VetAppointments]  7/7 passed
+    [+] [401] (461ms)  GET /vet-appointments — no auth → 401
+    [+] [200] (854ms)  GET /vet-appointments — auth → 200 -- {'appointments': [], 'pagination': {'limit': 20, 'page': 1, 'total': 0}, 'succes
+    [+] [400] (488ms)  POST /vet-appointments — missing all fields → 400
+    [+] [400] (462ms)  POST /vet-appointments — missing vetUserId → 400
+    [+] [400] (855ms)  POST /vet-appointments — fake vetUserId → 400/404 -- status=400
+    [+] [404] (665ms)  GET /vet-appointments/:fake-uuid → 403/404 -- status=404
+    [+] [400] (477ms)  POST /vet-appointments — invalid meetingType → 400
+
+  [Chatbot]  4/4 passed
+    [+] [400] (477ms)  POST /chatbot/query — empty body → 400
+    [+] [400] (473ms)  POST /chatbot/query — valid query → 200/500/503 -- status=400
+    [+] [400] (461ms)  POST /chatbot/query — empty string → 400/200 -- status=400
+    [+] [400] (461ms)  POST /chatbot/stream — reachable → 200/500 -- status=400
+
+  [Cleanup]  3/3 passed
+    [+] [200] (2006ms)  DELETE /posts/:id — own post → 200
+    [+] [200] (846ms)  DELETE /pets/:id — own pet → 200
+    [+] [200] (680ms)  POST /auth/signout → 200/204
+
+========================================================================
+  Failed Tests Summary:
+========================================================================
+  [X] [Community.Advanced] GET /community/groups → 200
+       Expected (200,), got 500. Body: {'success': False, 'message': 'Failed to fetch groups: ERROR: relation "community_groups" does not exist (SQLSTATE 42P01)'}
+  [X] [Community.Advanced] GET /community/groups/me → 200
+       Expected (200,), got 500. Body: {'success': False, 'message': 'Failed to fetch user groups: ERROR: relation "community_group_members" does not exist (SQLSTATE 42P01)'}
+  [X] [Community.Advanced] POST /community/groups — valid → 201
+       Expected (201,), got 500. Body: {'success': False, 'message': 'Failed to create group: ERROR: relation "community_groups" does not exist (SQLSTATE 42P01)'}
+  [X] [Marketplace.Protected] POST /marketplace/products — valid → 201/400
+       got 403: {"error":"Seller account required","success":false}
+  [X] [Marketplace.Protected] GET /marketplace/products/mine → 200
+       Expected (200,), got 403. Body: {'error': 'Seller account required', 'success': False}
+  [X] [Marketplace.Protected] GET /marketplace/seller/orders → 200
+       Expected (200,), got 403. Body: {'error': 'Seller account required', 'success': False}

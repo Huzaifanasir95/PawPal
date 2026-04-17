@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import {
   Users,
   FileText,
@@ -7,9 +9,11 @@ import {
   Stethoscope,
   Dog,
   MessageSquare,
+  ShoppingBag,
+  Package,
+  Briefcase,
+  ClipboardList,
 } from 'lucide-react';
-
-export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
 import StatCard from '@/components/StatCard';
 import DashboardCharts from './DashboardCharts';
@@ -30,6 +34,11 @@ async function getStats() {
     { count: vets },
     { count: pets },
     { count: chats },
+    { count: bookings },
+    { count: orders },
+    { count: products },
+    { count: caregivers },
+    { count: appointments },
     { data: recentPosts },
     { data: recentUsers },
   ] = await Promise.all([
@@ -41,6 +50,11 @@ async function getStats() {
     supabase.from('vet_profiles').select('*', { count: 'exact', head: true }),
     supabase.from('pets').select('*', { count: 'exact', head: true }),
     supabase.from('chats').select('*', { count: 'exact', head: true }),
+    supabase.from('service_bookings').select('*', { count: 'exact', head: true }),
+    supabase.from('orders').select('*', { count: 'exact', head: true }),
+    supabase.from('products').select('*', { count: 'exact', head: true }),
+    supabase.from('caregiver_profiles').select('*', { count: 'exact', head: true }),
+    supabase.from('vet_appointments').select('*', { count: 'exact', head: true }),
     supabase
       .from('posts')
       .select('id, content, category, created_at')
@@ -80,6 +94,11 @@ async function getStats() {
     vets: vets ?? 0,
     pets: pets ?? 0,
     chats: chats ?? 0,
+    bookings: bookings ?? 0,
+    orders: orders ?? 0,
+    products: products ?? 0,
+    caregivers: caregivers ?? 0,
+    appointments: appointments ?? 0,
     recentPosts: recentPosts ?? [],
     recentUsers: recentUsers ?? [],
     chartData,
@@ -98,60 +117,31 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard
-          title="Total Users"
-          value={stats.users.toLocaleString()}
-          icon={Users}
-          color="teal"
-          trend={5}
-        />
-        <StatCard
-          title="Community Posts"
-          value={stats.posts.toLocaleString()}
-          icon={FileText}
-          color="blue"
-          trend={12}
-        />
-        <StatCard
-          title="Events"
-          value={stats.events.toLocaleString()}
-          icon={Calendar}
-          color="purple"
-        />
-        <StatCard
-          title="Adoption Listings"
-          value={stats.adoptions.toLocaleString()}
-          icon={Heart}
-          color="orange"
-          trend={3}
-        />
-        <StatCard
-          title="Lost & Found"
-          value={stats.lostFound.toLocaleString()}
-          icon={Search}
-          color="red"
-        />
-        <StatCard
-          title="Registered Vets"
-          value={stats.vets.toLocaleString()}
-          icon={Stethoscope}
-          color="green"
-          trend={8}
-        />
-        <StatCard
-          title="Registered Pets"
-          value={stats.pets.toLocaleString()}
-          icon={Dog}
-          color="teal"
-        />
-        <StatCard
-          title="Chat Conversations"
-          value={stats.chats.toLocaleString()}
-          icon={MessageSquare}
-          color="blue"
-        />
+      {/* Users & Community */}
+      <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Users &amp; Community</p>
+      <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Total Users" value={stats.users.toLocaleString()} icon={Users} color="teal" trend={5} />
+        <StatCard title="Registered Pets" value={stats.pets.toLocaleString()} icon={Dog} color="teal" />
+        <StatCard title="Community Posts" value={stats.posts.toLocaleString()} icon={FileText} color="blue" trend={12} />
+        <StatCard title="Chat Conversations" value={stats.chats.toLocaleString()} icon={MessageSquare} color="blue" />
+      </div>
+
+      {/* Services */}
+      <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Services</p>
+      <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Registered Vets" value={stats.vets.toLocaleString()} icon={Stethoscope} color="green" trend={8} />
+        <StatCard title="Vet Appointments" value={stats.appointments.toLocaleString()} icon={ClipboardList} color="green" />
+        <StatCard title="Caregivers" value={stats.caregivers.toLocaleString()} icon={Briefcase} color="purple" />
+        <StatCard title="Care Bookings" value={stats.bookings.toLocaleString()} icon={Calendar} color="purple" />
+      </div>
+
+      {/* Marketplace */}
+      <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Marketplace</p>
+      <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Products Listed" value={stats.products.toLocaleString()} icon={Package} color="orange" />
+        <StatCard title="Orders Placed" value={stats.orders.toLocaleString()} icon={ShoppingBag} color="orange" trend={3} />
+        <StatCard title="Adoption Listings" value={stats.adoptions.toLocaleString()} icon={Heart} color="red" />
+        <StatCard title="Lost &amp; Found" value={stats.lostFound.toLocaleString()} icon={Search} color="red" />
       </div>
 
       {/* Charts + Recent Activity */}

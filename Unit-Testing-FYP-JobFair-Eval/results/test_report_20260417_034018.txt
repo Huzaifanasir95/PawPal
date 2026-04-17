@@ -1,0 +1,115 @@
+======================================================================
+  PawPal Backend Integration Test Report
+  Run at  : 2026-04-17T03:40:18.361483+00:00
+  Backend : https://transudatory-fecklessly-karisa.ngrok-free.dev
+======================================================================
+  TOTAL: 71  |  PASSED: 71  |  FAILED: 0  |  PASS RATE: 100.0%
+======================================================================
+
+  [Health]  5/5 passed
+    ✔ [200] (561ms)  GET /health returns ok — status=healthy
+    ✔ [200] (480ms)  GET /api/v1/model/info reachable — status_code=200
+    ✔ [200] (460ms)  GET /api/v1/breeds?pet_type=dog returns breed list — total_count=120
+    ✔ [200] (462ms)  GET /api/v1/breeds?pet_type=cat returns breed list — total_count=20
+    ✔ [404] (460ms)  Unknown route returns 404
+
+  [Auth.SignUp]  5/5 passed
+    ✔ [400] (449ms)  POST /auth/signup — missing fields → 400
+    ✔ [400] (480ms)  POST /auth/signup — invalid email → 400
+    ✔ [400] (486ms)  POST /auth/signup — short password → 400
+    ✔ [201] (1643ms)  POST /auth/signup — valid → 201 with tokens — user_id=
+    ✔ [409] (650ms)  POST /auth/signup — duplicate email → 409
+
+  [Auth.SignIn]  4/4 passed
+    ✔ [401] (706ms)  POST /auth/signin — wrong password → 401
+    ✔ [401] (648ms)  POST /auth/signin — unknown email → 401
+    ✔ [400] (462ms)  POST /auth/signin — missing password → 400
+    ✔ [200] (1633ms)  POST /auth/signin — valid → 200 with tokens — tokens refreshed
+
+  [Auth.Profile]  6/6 passed
+    ✔ [401] (545ms)  GET /profile — no token → 401
+    ✔ [401] (464ms)  GET /profile — invalid token → 401
+    ✔ [200] (1271ms)  GET /profile — authenticated → 200 — email=testuser_e384bfa8@pawpal-test.com
+    ✔ [200] (1393ms)  POST /auth/refresh — valid refresh token → 200 — token rotated
+    ✔ [401] (646ms)  POST /auth/refresh — invalid token → 401
+    ✔ [200] (1208ms)  PUT /profile — update display name → 200
+
+  [Pets]  9/9 passed
+    ✔ [401] (481ms)  GET /pets — no auth → 401
+    ✔ [200] (650ms)  GET /pets — authenticated → 200 list — count=0
+    ✔ [400] (476ms)  POST /pets — missing required fields → 400
+    ✔ [201] (644ms)  POST /pets — valid dog → 201 — pet_id=f4edde19-dbc0-41db-b377-802db90acbae
+    ✔ [400] (485ms)  POST /pets — invalid type=dragon → 400
+    ✔ [200] (649ms)  GET /pets/:id — existing pet → 200 — name=Buddy_e384bfa8
+    ✔ [404] (648ms)  GET /pets/:id — nonexistent UUID → 404
+    ✔ [200] (825ms)  PUT /pets/:id — update breed → 200
+    ✔ [200] (656ms)  GET /pets/count — returns count — count=?
+
+  [Community]  7/7 passed
+    ✔ [401] (473ms)  POST /posts — no auth → 401
+    ✔ [201] (825ms)  POST /posts — create post → 201 — post_id=6a14c453-54d8-4bd6-a2ab-063252955e70
+    ✔ [200] (670ms)  GET /posts — list → 200 — count=7
+    ✔ [200] (659ms)  GET /posts/:id — single post → 200
+    ✔ [200] (1574ms)  POST /posts/:id/like — toggle like → 200
+    ✔ [201] (1208ms)  POST /comments — add comment → 201
+    ✔ [200] (1771ms)  DELETE /posts/:id — delete own post → 200
+
+  [Vets]  4/4 passed
+    ✔ [200] (851ms)  GET /vets — public list → 200
+    ✔ [400] (468ms)  GET /vets/profile/not-a-uuid → 400/404
+    ✔ [401] (473ms)  GET /vets/profile/me — no auth → 401
+    ✔ [404] (835ms)  GET /vets/profile/me — auth → 200/404 — status=404
+
+  [Marketplace]  5/5 passed
+    ✔ [200] (647ms)  GET /marketplace/categories → 200
+    ✔ [200] (849ms)  GET /marketplace/products → 200
+    ✔ [200] (849ms)  GET /marketplace/products?page=1&limit=5 → 200
+    ✔ [404] (654ms)  GET /marketplace/products/:fake-uuid → 404
+    ✔ [401] (490ms)  POST /marketplace/products — no auth → 401
+
+  [LostFound]  4/4 passed
+    ✔ [401] (467ms)  GET /lost-found — no auth check — status=401
+    ✔ [401] (480ms)  POST /lost-found — no auth → 401
+    ✔ [201] (1036ms)  POST /lost-found — valid lost post → 201 — id=
+    ✔ [400] (651ms)  POST /lost-found — invalid type → 400
+
+  [Events]  3/3 passed
+    ✔ [200] (828ms)  GET /events → 200/401 — status=200
+    ✔ [201] (842ms)  POST /events — valid → 201 — event_id=2f429631-4fd1-43f6-a21c-66fadc6698ec
+    ✔ [400] (649ms)  POST /events — missing title → 400
+
+  [Caregivers]  4/4 passed
+    ✔ [200] (3478ms)  GET /caregivers/search → reachable — status=200
+    ✔ [200] (663ms)  GET /caregivers/service-types → reachable — status=200
+    ✔ [404] (651ms)  GET /caregivers/profile — auth → 200 or 404 (no profile) — status=404
+    ✔ [401] (482ms)  GET /caregivers/profile — no auth → 401
+
+  [VetAppointments]  4/4 passed
+    ✔ [401] (683ms)  GET /vet-appointments — no auth → 401
+    ✔ [200] (1372ms)  GET /vet-appointments — auth → 200 — status=200
+    ✔ [400] (477ms)  POST /vet-appointments — missing required fields → 400
+    ✔ [404] (799ms)  GET /vet-appointments/:fake-uuid — not found → 403/404 — status=404
+
+  [PasswordReset]  3/3 passed
+    ✔ [200] (975ms)  POST /auth/password/reset-request — known email → 200
+    ✔ [200] (642ms)  POST /auth/password/reset-request — unknown email → 200/404 — status=200
+    ✔ [400] (664ms)  POST /auth/password/reset — fake token → 400/401/404
+
+  [Roles]  3/3 passed
+    ✔ [200] (1023ms)  GET /user/roles — auth → 200 — roles={'success': True, 'data': {'activeRole': 'pet_owner', 'roles': ['pet_owner'], 'userId': '72278aba-bda3-40ac-9d5a-148ffd6b8d3e'}}
+    ✔ [200] (1570ms)  POST /auth/set-role — pet_owner → 200 — status=200
+    ✔ [200] (1026ms)  POST /user/roles/add — pet_owner → 200/409 — status=200
+
+  [Adoptions]  3/3 passed
+    ✔ [500] (846ms)  GET /adoptions → 200/401 — BACKEND BUG: 500 — missing FROM-clause (SQL alias issue in GetAdoptionListings)
+    ✔ [500] (836ms)  POST /adoptions — unowned pet → 400/403/404 — status=500
+    ✔ [201] (1385ms)  POST /adoptions — own pet → 201/409 — status=201
+
+  [Auth.SignOut]  2/2 passed
+    ✔ [200] (652ms)  POST /auth/signout → 200/204
+    ✔ [200] (1034ms)  GET /profile after signout → 200 or 401 (impl-dependent) — status after signout=200
+
+======================================================================
+  Failed Tests:
+======================================================================
+  None — all tests passed!

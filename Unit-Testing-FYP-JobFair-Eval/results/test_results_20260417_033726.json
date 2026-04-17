@@ -1,0 +1,676 @@
+{
+  "run_at": "2026-04-17T03:37:26.881621+00:00",
+  "backend_url": "https://transudatory-fecklessly-karisa.ngrok-free.dev",
+  "summary": {
+    "total": 69,
+    "passed": 64,
+    "failed": 5,
+    "pass_rate": "92.8%"
+  },
+  "categories": {
+    "Health": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "GET /health returns ok",
+          "category": "Health",
+          "passed": true,
+          "status_code": 200,
+          "detail": "status=healthy",
+          "duration_ms": 494.5
+        },
+        {
+          "name": "GET /api/v1/model/info reachable",
+          "category": "Health",
+          "passed": true,
+          "status_code": 200,
+          "detail": "status_code=200",
+          "duration_ms": 481.84
+        },
+        {
+          "name": "GET /api/v1/breeds?pet_type=dog returns breed list",
+          "category": "Health",
+          "passed": true,
+          "status_code": 200,
+          "detail": "total_count=120",
+          "duration_ms": 556.79
+        },
+        {
+          "name": "GET /api/v1/breeds?pet_type=cat returns breed list",
+          "category": "Health",
+          "passed": true,
+          "status_code": 200,
+          "detail": "total_count=20",
+          "duration_ms": 472.32
+        },
+        {
+          "name": "Unknown route returns 404",
+          "category": "Health",
+          "passed": true,
+          "status_code": 404,
+          "detail": "",
+          "duration_ms": 484.68
+        }
+      ]
+    },
+    "Auth.SignUp": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "POST /auth/signup \u2014 missing fields \u2192 400",
+          "category": "Auth.SignUp",
+          "passed": true,
+          "status_code": 400,
+          "detail": "",
+          "duration_ms": 492.14
+        },
+        {
+          "name": "POST /auth/signup \u2014 invalid email \u2192 400",
+          "category": "Auth.SignUp",
+          "passed": true,
+          "status_code": 400,
+          "detail": "",
+          "duration_ms": 475.38
+        },
+        {
+          "name": "POST /auth/signup \u2014 short password \u2192 400",
+          "category": "Auth.SignUp",
+          "passed": true,
+          "status_code": 400,
+          "detail": "",
+          "duration_ms": 473.31
+        },
+        {
+          "name": "POST /auth/signup \u2014 valid \u2192 201 with tokens",
+          "category": "Auth.SignUp",
+          "passed": true,
+          "status_code": 201,
+          "detail": "user_id=",
+          "duration_ms": 1773.75
+        },
+        {
+          "name": "POST /auth/signup \u2014 duplicate email \u2192 409",
+          "category": "Auth.SignUp",
+          "passed": true,
+          "status_code": 409,
+          "detail": "",
+          "duration_ms": 670.23
+        }
+      ]
+    },
+    "Auth.SignIn": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "POST /auth/signin \u2014 wrong password \u2192 401",
+          "category": "Auth.SignIn",
+          "passed": true,
+          "status_code": 401,
+          "detail": "",
+          "duration_ms": 714.31
+        },
+        {
+          "name": "POST /auth/signin \u2014 unknown email \u2192 401",
+          "category": "Auth.SignIn",
+          "passed": true,
+          "status_code": 401,
+          "detail": "",
+          "duration_ms": 643.01
+        },
+        {
+          "name": "POST /auth/signin \u2014 missing password \u2192 400",
+          "category": "Auth.SignIn",
+          "passed": true,
+          "status_code": 400,
+          "detail": "",
+          "duration_ms": 473.6
+        },
+        {
+          "name": "POST /auth/signin \u2014 valid \u2192 200 with tokens",
+          "category": "Auth.SignIn",
+          "passed": true,
+          "status_code": 200,
+          "detail": "tokens refreshed",
+          "duration_ms": 1096.56
+        }
+      ]
+    },
+    "Auth.Profile": {
+      "total": 6,
+      "passed": 5,
+      "failed": 1,
+      "tests": [
+        {
+          "name": "GET /profile \u2014 no token \u2192 401",
+          "category": "Auth.Profile",
+          "passed": true,
+          "status_code": 401,
+          "detail": "",
+          "duration_ms": 491.14
+        },
+        {
+          "name": "GET /profile \u2014 invalid token \u2192 401",
+          "category": "Auth.Profile",
+          "passed": true,
+          "status_code": 401,
+          "detail": "",
+          "duration_ms": 469.68
+        },
+        {
+          "name": "GET /profile \u2014 authenticated \u2192 200",
+          "category": "Auth.Profile",
+          "passed": false,
+          "status_code": 200,
+          "detail": "Missing key 'id' in response: ['success', 'data']",
+          "duration_ms": 1201.07
+        },
+        {
+          "name": "POST /auth/refresh \u2014 valid refresh token \u2192 200",
+          "category": "Auth.Profile",
+          "passed": true,
+          "status_code": 200,
+          "detail": "token rotated",
+          "duration_ms": 1457.68
+        },
+        {
+          "name": "POST /auth/refresh \u2014 invalid token \u2192 401",
+          "category": "Auth.Profile",
+          "passed": true,
+          "status_code": 401,
+          "detail": "",
+          "duration_ms": 663.4
+        },
+        {
+          "name": "PUT /profile \u2014 update display name \u2192 200",
+          "category": "Auth.Profile",
+          "passed": true,
+          "status_code": 200,
+          "detail": "",
+          "duration_ms": 1227.83
+        }
+      ]
+    },
+    "Pets": {
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "GET /pets \u2014 no auth \u2192 401",
+          "category": "Pets",
+          "passed": true,
+          "status_code": 401,
+          "detail": "",
+          "duration_ms": 488.04
+        },
+        {
+          "name": "GET /pets \u2014 authenticated \u2192 200 list",
+          "category": "Pets",
+          "passed": true,
+          "status_code": 200,
+          "detail": "count=0",
+          "duration_ms": 662.02
+        },
+        {
+          "name": "POST /pets \u2014 missing required fields \u2192 400",
+          "category": "Pets",
+          "passed": true,
+          "status_code": 400,
+          "detail": "",
+          "duration_ms": 466.88
+        },
+        {
+          "name": "POST /pets \u2014 valid dog \u2192 201",
+          "category": "Pets",
+          "passed": true,
+          "status_code": 201,
+          "detail": "pet_id=1611ba8b-b18e-47f6-b659-56aa8c815b33",
+          "duration_ms": 849.64
+        },
+        {
+          "name": "POST /pets \u2014 invalid type=dragon \u2192 400",
+          "category": "Pets",
+          "passed": true,
+          "status_code": 400,
+          "detail": "",
+          "duration_ms": 485.77
+        },
+        {
+          "name": "GET /pets/:id \u2014 existing pet \u2192 200",
+          "category": "Pets",
+          "passed": true,
+          "status_code": 200,
+          "detail": "name=Buddy_03ff9cd4",
+          "duration_ms": 653.34
+        },
+        {
+          "name": "GET /pets/:id \u2014 nonexistent UUID \u2192 404",
+          "category": "Pets",
+          "passed": true,
+          "status_code": 404,
+          "detail": "",
+          "duration_ms": 658.03
+        },
+        {
+          "name": "PUT /pets/:id \u2014 update breed \u2192 200",
+          "category": "Pets",
+          "passed": true,
+          "status_code": 200,
+          "detail": "",
+          "duration_ms": 841.7
+        },
+        {
+          "name": "GET /pets/count \u2014 returns count",
+          "category": "Pets",
+          "passed": true,
+          "status_code": 200,
+          "detail": "count=?",
+          "duration_ms": 646.72
+        }
+      ]
+    },
+    "Community": {
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "POST /posts \u2014 no auth \u2192 401",
+          "category": "Community",
+          "passed": true,
+          "status_code": 401,
+          "detail": "",
+          "duration_ms": 458.67
+        },
+        {
+          "name": "POST /posts \u2014 create post \u2192 201",
+          "category": "Community",
+          "passed": true,
+          "status_code": 201,
+          "detail": "post_id=4dd46341-45f0-4b35-968d-b9451a119413",
+          "duration_ms": 847.84
+        },
+        {
+          "name": "GET /posts \u2014 list \u2192 200",
+          "category": "Community",
+          "passed": true,
+          "status_code": 200,
+          "detail": "count=7",
+          "duration_ms": 639.67
+        },
+        {
+          "name": "GET /posts/:id \u2014 single post \u2192 200",
+          "category": "Community",
+          "passed": true,
+          "status_code": 200,
+          "detail": "",
+          "duration_ms": 663.15
+        },
+        {
+          "name": "POST /posts/:id/like \u2014 toggle like \u2192 200",
+          "category": "Community",
+          "passed": true,
+          "status_code": 200,
+          "detail": "",
+          "duration_ms": 1611.75
+        },
+        {
+          "name": "POST /comments \u2014 add comment \u2192 201",
+          "category": "Community",
+          "passed": true,
+          "status_code": 201,
+          "detail": "",
+          "duration_ms": 1217.47
+        },
+        {
+          "name": "DELETE /posts/:id \u2014 delete own post \u2192 200",
+          "category": "Community",
+          "passed": true,
+          "status_code": 200,
+          "detail": "",
+          "duration_ms": 1894.28
+        }
+      ]
+    },
+    "Vets": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "GET /vets \u2014 public list \u2192 200",
+          "category": "Vets",
+          "passed": true,
+          "status_code": 200,
+          "detail": "",
+          "duration_ms": 1017.2
+        },
+        {
+          "name": "GET /vets/profile/not-a-uuid \u2192 400/404",
+          "category": "Vets",
+          "passed": true,
+          "status_code": 400,
+          "detail": "",
+          "duration_ms": 480.59
+        },
+        {
+          "name": "GET /vets/profile/me \u2014 no auth \u2192 401",
+          "category": "Vets",
+          "passed": true,
+          "status_code": 401,
+          "detail": "",
+          "duration_ms": 461.05
+        },
+        {
+          "name": "GET /vets/profile/me \u2014 auth \u2192 200/404",
+          "category": "Vets",
+          "passed": true,
+          "status_code": 404,
+          "detail": "status=404",
+          "duration_ms": 956.65
+        }
+      ]
+    },
+    "Marketplace": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "GET /marketplace/categories \u2192 200",
+          "category": "Marketplace",
+          "passed": true,
+          "status_code": 200,
+          "detail": "",
+          "duration_ms": 667.04
+        },
+        {
+          "name": "GET /marketplace/products \u2192 200",
+          "category": "Marketplace",
+          "passed": true,
+          "status_code": 200,
+          "detail": "",
+          "duration_ms": 848.58
+        },
+        {
+          "name": "GET /marketplace/products?page=1&limit=5 \u2192 200",
+          "category": "Marketplace",
+          "passed": true,
+          "status_code": 200,
+          "detail": "",
+          "duration_ms": 818.83
+        },
+        {
+          "name": "GET /marketplace/products/:fake-uuid \u2192 404",
+          "category": "Marketplace",
+          "passed": true,
+          "status_code": 404,
+          "detail": "",
+          "duration_ms": 665.9
+        },
+        {
+          "name": "POST /marketplace/products \u2014 no auth \u2192 401",
+          "category": "Marketplace",
+          "passed": true,
+          "status_code": 401,
+          "detail": "",
+          "duration_ms": 471.55
+        }
+      ]
+    },
+    "LostFound": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "GET /lost-found \u2014 no auth check",
+          "category": "LostFound",
+          "passed": true,
+          "status_code": 401,
+          "detail": "status=401",
+          "duration_ms": 481.79
+        },
+        {
+          "name": "POST /lost-found \u2014 no auth \u2192 401",
+          "category": "LostFound",
+          "passed": true,
+          "status_code": 401,
+          "detail": "",
+          "duration_ms": 472.16
+        },
+        {
+          "name": "POST /lost-found \u2014 valid lost post \u2192 201",
+          "category": "LostFound",
+          "passed": true,
+          "status_code": 201,
+          "detail": "id=",
+          "duration_ms": 1049.95
+        },
+        {
+          "name": "POST /lost-found \u2014 invalid type \u2192 400",
+          "category": "LostFound",
+          "passed": true,
+          "status_code": 400,
+          "detail": "",
+          "duration_ms": 683.54
+        }
+      ]
+    },
+    "Events": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "GET /events \u2192 200/401",
+          "category": "Events",
+          "passed": true,
+          "status_code": 200,
+          "detail": "status=200",
+          "duration_ms": 851.32
+        },
+        {
+          "name": "POST /events \u2014 valid \u2192 201",
+          "category": "Events",
+          "passed": true,
+          "status_code": 201,
+          "detail": "event_id=0368291f-3521-4b93-b0db-45f41ed0e0b7",
+          "duration_ms": 830.0
+        },
+        {
+          "name": "POST /events \u2014 missing title \u2192 400",
+          "category": "Events",
+          "passed": true,
+          "status_code": 400,
+          "detail": "",
+          "duration_ms": 657.91
+        }
+      ]
+    },
+    "Caregivers": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "GET /caregivers/search \u2192 reachable",
+          "category": "Caregivers",
+          "passed": true,
+          "status_code": 200,
+          "detail": "status=200",
+          "duration_ms": 3592.89
+        },
+        {
+          "name": "GET /caregivers/service-types \u2192 reachable",
+          "category": "Caregivers",
+          "passed": true,
+          "status_code": 200,
+          "detail": "status=200",
+          "duration_ms": 663.43
+        },
+        {
+          "name": "GET /caregivers/my/profile \u2192 200 or 404 (no profile)",
+          "category": "Caregivers",
+          "passed": true,
+          "status_code": 404,
+          "detail": "status=404",
+          "duration_ms": 467.81
+        }
+      ]
+    },
+    "VetAppointments": {
+      "total": 3,
+      "passed": 1,
+      "failed": 2,
+      "tests": [
+        {
+          "name": "GET /appointments \u2014 no auth \u2192 401",
+          "category": "VetAppointments",
+          "passed": false,
+          "status_code": 404,
+          "detail": "",
+          "duration_ms": 490.12
+        },
+        {
+          "name": "GET /appointments \u2014 auth \u2192 200/404",
+          "category": "VetAppointments",
+          "passed": true,
+          "status_code": 404,
+          "detail": "status=404",
+          "duration_ms": 466.74
+        },
+        {
+          "name": "POST /appointments \u2014 missing required fields \u2192 400",
+          "category": "VetAppointments",
+          "passed": false,
+          "status_code": 404,
+          "detail": "Expected 400, got 404",
+          "duration_ms": 478.06
+        }
+      ]
+    },
+    "PasswordReset": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "POST /auth/password/reset-request \u2014 known email \u2192 200",
+          "category": "PasswordReset",
+          "passed": true,
+          "status_code": 200,
+          "detail": "",
+          "duration_ms": 1032.34
+        },
+        {
+          "name": "POST /auth/password/reset-request \u2014 unknown email \u2192 200/404",
+          "category": "PasswordReset",
+          "passed": true,
+          "status_code": 200,
+          "detail": "status=200",
+          "duration_ms": 652.83
+        },
+        {
+          "name": "POST /auth/password/reset \u2014 fake token \u2192 400/401/404",
+          "category": "PasswordReset",
+          "passed": true,
+          "status_code": 400,
+          "detail": "",
+          "duration_ms": 652.98
+        }
+      ]
+    },
+    "Roles": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "GET /user/roles \u2014 auth \u2192 200",
+          "category": "Roles",
+          "passed": true,
+          "status_code": 200,
+          "detail": "roles={'success': True, 'data': {'activeRole': 'pet_owner', 'roles': ['pet_owner'], 'userId': '55a56931-9174-4be4-baa4-3aa04b2ddcd4'}}",
+          "duration_ms": 1013.47
+        },
+        {
+          "name": "POST /auth/set-role \u2014 pet_owner \u2192 200",
+          "category": "Roles",
+          "passed": true,
+          "status_code": 200,
+          "detail": "status=200",
+          "duration_ms": 1573.56
+        },
+        {
+          "name": "POST /user/roles/add \u2014 pet_owner \u2192 200/409",
+          "category": "Roles",
+          "passed": true,
+          "status_code": 200,
+          "detail": "status=200",
+          "duration_ms": 1035.5
+        }
+      ]
+    },
+    "Adoptions": {
+      "total": 3,
+      "passed": 1,
+      "failed": 2,
+      "tests": [
+        {
+          "name": "GET /adoptions \u2192 200/401",
+          "category": "Adoptions",
+          "passed": false,
+          "status_code": 500,
+          "detail": "",
+          "duration_ms": 852.93
+        },
+        {
+          "name": "POST /adoptions \u2014 unowned pet \u2192 400/403/404",
+          "category": "Adoptions",
+          "passed": false,
+          "status_code": 500,
+          "detail": "",
+          "duration_ms": 831.8
+        },
+        {
+          "name": "POST /adoptions \u2014 own pet \u2192 201/409",
+          "category": "Adoptions",
+          "passed": true,
+          "status_code": 201,
+          "detail": "status=201",
+          "duration_ms": 1396.16
+        }
+      ]
+    },
+    "Auth.SignOut": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "POST /auth/signout \u2192 200/204",
+          "category": "Auth.SignOut",
+          "passed": true,
+          "status_code": 200,
+          "detail": "",
+          "duration_ms": 640.96
+        },
+        {
+          "name": "GET /profile after signout \u2192 200 or 401 (impl-dependent)",
+          "category": "Auth.SignOut",
+          "passed": true,
+          "status_code": 200,
+          "detail": "status after signout=200",
+          "duration_ms": 1039.04
+        }
+      ]
+    }
+  }
+}

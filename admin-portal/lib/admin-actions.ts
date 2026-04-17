@@ -134,6 +134,109 @@ export async function deletePet(petId: string): Promise<Result> {
   } catch (e) { return { success: false, error: String(e) }; }
 }
 
+// ─── Bookings ────────────────────────────────────────────
+export async function updateBookingStatus(bookingId: string, status: string): Promise<Result> {
+  try {
+    const supabase = getAdminClient();
+    const { error } = await supabase.from('service_bookings').update({ status }).eq('id', bookingId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) { return { success: false, error: String(e) }; }
+}
+
+export async function deleteBooking(bookingId: string): Promise<Result> {
+  try {
+    const supabase = getAdminClient();
+    await supabase.from('booking_payments').delete().eq('booking_id', bookingId);
+    await supabase.from('booking_tracking').delete().eq('booking_id', bookingId);
+    await supabase.from('service_incidents').delete().eq('booking_id', bookingId);
+    const { error } = await supabase.from('service_bookings').delete().eq('id', bookingId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) { return { success: false, error: String(e) }; }
+}
+
+// ─── Marketplace ─────────────────────────────────────────
+export async function updateProductStatus(productId: string, isActive: boolean): Promise<Result> {
+  try {
+    const supabase = getAdminClient();
+    const { error } = await supabase.from('products').update({ is_active: isActive }).eq('id', productId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) { return { success: false, error: String(e) }; }
+}
+
+export async function deleteProduct(productId: string): Promise<Result> {
+  try {
+    const supabase = getAdminClient();
+    await supabase.from('product_reviews').delete().eq('product_id', productId);
+    await supabase.from('cart_items').delete().eq('product_id', productId);
+    const { error } = await supabase.from('products').delete().eq('id', productId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) { return { success: false, error: String(e) }; }
+}
+
+export async function updateOrderStatus(orderId: string, status: string): Promise<Result> {
+  try {
+    const supabase = getAdminClient();
+    const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) { return { success: false, error: String(e) }; }
+}
+
+export async function deleteOrder(orderId: string): Promise<Result> {
+  try {
+    const supabase = getAdminClient();
+    await supabase.from('order_items').delete().eq('order_id', orderId);
+    const { error } = await supabase.from('orders').delete().eq('id', orderId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) { return { success: false, error: String(e) }; }
+}
+
+// ─── Caregivers ──────────────────────────────────────────
+export async function updateCaregiverVerification(caregiverId: string, isVerified: boolean): Promise<Result> {
+  try {
+    const supabase = getAdminClient();
+    const { error } = await supabase
+      .from('caregiver_profiles')
+      .update({ is_verified: isVerified, verification_date: isVerified ? new Date().toISOString() : null })
+      .eq('id', caregiverId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) { return { success: false, error: String(e) }; }
+}
+
+export async function deleteCaregiver(caregiverId: string): Promise<Result> {
+  try {
+    const supabase = getAdminClient();
+    const { error } = await supabase.from('caregiver_profiles').delete().eq('id', caregiverId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) { return { success: false, error: String(e) }; }
+}
+
+// ─── Vet Appointments ────────────────────────────────────
+export async function updateVetAppointmentStatus(appointmentId: string, status: string): Promise<Result> {
+  try {
+    const supabase = getAdminClient();
+    const { error } = await supabase.from('vet_appointments').update({ status }).eq('id', appointmentId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) { return { success: false, error: String(e) }; }
+}
+
+export async function deleteVetAppointment(appointmentId: string): Promise<Result> {
+  try {
+    const supabase = getAdminClient();
+    const { error } = await supabase.from('vet_appointments').delete().eq('id', appointmentId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) { return { success: false, error: String(e) }; }
+}
+
 // ─── Chats ───────────────────────────────────────────────
 export async function deleteChat(chatId: string): Promise<Result> {
   try {

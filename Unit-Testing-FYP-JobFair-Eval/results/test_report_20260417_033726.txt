@@ -1,0 +1,122 @@
+======================================================================
+  PawPal Backend Integration Test Report
+  Run at  : 2026-04-17T03:37:26.881621+00:00
+  Backend : https://transudatory-fecklessly-karisa.ngrok-free.dev
+======================================================================
+  TOTAL: 69  |  PASSED: 64  |  FAILED: 5  |  PASS RATE: 92.8%
+======================================================================
+
+  [Health]  5/5 passed
+    ✔ [200] (495ms)  GET /health returns ok — status=healthy
+    ✔ [200] (482ms)  GET /api/v1/model/info reachable — status_code=200
+    ✔ [200] (557ms)  GET /api/v1/breeds?pet_type=dog returns breed list — total_count=120
+    ✔ [200] (472ms)  GET /api/v1/breeds?pet_type=cat returns breed list — total_count=20
+    ✔ [404] (485ms)  Unknown route returns 404
+
+  [Auth.SignUp]  5/5 passed
+    ✔ [400] (492ms)  POST /auth/signup — missing fields → 400
+    ✔ [400] (475ms)  POST /auth/signup — invalid email → 400
+    ✔ [400] (473ms)  POST /auth/signup — short password → 400
+    ✔ [201] (1774ms)  POST /auth/signup — valid → 201 with tokens — user_id=
+    ✔ [409] (670ms)  POST /auth/signup — duplicate email → 409
+
+  [Auth.SignIn]  4/4 passed
+    ✔ [401] (714ms)  POST /auth/signin — wrong password → 401
+    ✔ [401] (643ms)  POST /auth/signin — unknown email → 401
+    ✔ [400] (474ms)  POST /auth/signin — missing password → 400
+    ✔ [200] (1097ms)  POST /auth/signin — valid → 200 with tokens — tokens refreshed
+
+  [Auth.Profile]  5/6 passed
+    ✔ [401] (491ms)  GET /profile — no token → 401
+    ✔ [401] (470ms)  GET /profile — invalid token → 401
+    ✘ [200] (1201ms)  GET /profile — authenticated → 200 — Missing key 'id' in response: ['success', 'data']
+    ✔ [200] (1458ms)  POST /auth/refresh — valid refresh token → 200 — token rotated
+    ✔ [401] (663ms)  POST /auth/refresh — invalid token → 401
+    ✔ [200] (1228ms)  PUT /profile — update display name → 200
+
+  [Pets]  9/9 passed
+    ✔ [401] (488ms)  GET /pets — no auth → 401
+    ✔ [200] (662ms)  GET /pets — authenticated → 200 list — count=0
+    ✔ [400] (467ms)  POST /pets — missing required fields → 400
+    ✔ [201] (850ms)  POST /pets — valid dog → 201 — pet_id=1611ba8b-b18e-47f6-b659-56aa8c815b33
+    ✔ [400] (486ms)  POST /pets — invalid type=dragon → 400
+    ✔ [200] (653ms)  GET /pets/:id — existing pet → 200 — name=Buddy_03ff9cd4
+    ✔ [404] (658ms)  GET /pets/:id — nonexistent UUID → 404
+    ✔ [200] (842ms)  PUT /pets/:id — update breed → 200
+    ✔ [200] (647ms)  GET /pets/count — returns count — count=?
+
+  [Community]  7/7 passed
+    ✔ [401] (459ms)  POST /posts — no auth → 401
+    ✔ [201] (848ms)  POST /posts — create post → 201 — post_id=4dd46341-45f0-4b35-968d-b9451a119413
+    ✔ [200] (640ms)  GET /posts — list → 200 — count=7
+    ✔ [200] (663ms)  GET /posts/:id — single post → 200
+    ✔ [200] (1612ms)  POST /posts/:id/like — toggle like → 200
+    ✔ [201] (1217ms)  POST /comments — add comment → 201
+    ✔ [200] (1894ms)  DELETE /posts/:id — delete own post → 200
+
+  [Vets]  4/4 passed
+    ✔ [200] (1017ms)  GET /vets — public list → 200
+    ✔ [400] (481ms)  GET /vets/profile/not-a-uuid → 400/404
+    ✔ [401] (461ms)  GET /vets/profile/me — no auth → 401
+    ✔ [404] (957ms)  GET /vets/profile/me — auth → 200/404 — status=404
+
+  [Marketplace]  5/5 passed
+    ✔ [200] (667ms)  GET /marketplace/categories → 200
+    ✔ [200] (849ms)  GET /marketplace/products → 200
+    ✔ [200] (819ms)  GET /marketplace/products?page=1&limit=5 → 200
+    ✔ [404] (666ms)  GET /marketplace/products/:fake-uuid → 404
+    ✔ [401] (472ms)  POST /marketplace/products — no auth → 401
+
+  [LostFound]  4/4 passed
+    ✔ [401] (482ms)  GET /lost-found — no auth check — status=401
+    ✔ [401] (472ms)  POST /lost-found — no auth → 401
+    ✔ [201] (1050ms)  POST /lost-found — valid lost post → 201 — id=
+    ✔ [400] (684ms)  POST /lost-found — invalid type → 400
+
+  [Events]  3/3 passed
+    ✔ [200] (851ms)  GET /events → 200/401 — status=200
+    ✔ [201] (830ms)  POST /events — valid → 201 — event_id=0368291f-3521-4b93-b0db-45f41ed0e0b7
+    ✔ [400] (658ms)  POST /events — missing title → 400
+
+  [Caregivers]  3/3 passed
+    ✔ [200] (3593ms)  GET /caregivers/search → reachable — status=200
+    ✔ [200] (663ms)  GET /caregivers/service-types → reachable — status=200
+    ✔ [404] (468ms)  GET /caregivers/my/profile → 200 or 404 (no profile) — status=404
+
+  [VetAppointments]  1/3 passed
+    ✘ [404] (490ms)  GET /appointments — no auth → 401
+    ✔ [404] (467ms)  GET /appointments — auth → 200/404 — status=404
+    ✘ [404] (478ms)  POST /appointments — missing required fields → 400 — Expected 400, got 404
+
+  [PasswordReset]  3/3 passed
+    ✔ [200] (1032ms)  POST /auth/password/reset-request — known email → 200
+    ✔ [200] (653ms)  POST /auth/password/reset-request — unknown email → 200/404 — status=200
+    ✔ [400] (653ms)  POST /auth/password/reset — fake token → 400/401/404
+
+  [Roles]  3/3 passed
+    ✔ [200] (1013ms)  GET /user/roles — auth → 200 — roles={'success': True, 'data': {'activeRole': 'pet_owner', 'roles': ['pet_owner'], 'userId': '55a56931-9174-4be4-baa4-3aa04b2ddcd4'}}
+    ✔ [200] (1574ms)  POST /auth/set-role — pet_owner → 200 — status=200
+    ✔ [200] (1035ms)  POST /user/roles/add — pet_owner → 200/409 — status=200
+
+  [Adoptions]  1/3 passed
+    ✘ [500] (853ms)  GET /adoptions → 200/401
+    ✘ [500] (832ms)  POST /adoptions — unowned pet → 400/403/404
+    ✔ [201] (1396ms)  POST /adoptions — own pet → 201/409 — status=201
+
+  [Auth.SignOut]  2/2 passed
+    ✔ [200] (641ms)  POST /auth/signout → 200/204
+    ✔ [200] (1039ms)  GET /profile after signout → 200 or 401 (impl-dependent) — status after signout=200
+
+======================================================================
+  Failed Tests:
+======================================================================
+  ✘ [Auth.Profile] GET /profile — authenticated → 200
+      Missing key 'id' in response: ['success', 'data']
+  ✘ [VetAppointments] GET /appointments — no auth → 401
+      
+  ✘ [VetAppointments] POST /appointments — missing required fields → 400
+      Expected 400, got 404
+  ✘ [Adoptions] GET /adoptions → 200/401
+      
+  ✘ [Adoptions] POST /adoptions — unowned pet → 400/403/404
+      

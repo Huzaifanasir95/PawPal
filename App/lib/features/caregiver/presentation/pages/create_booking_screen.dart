@@ -4,6 +4,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../pets/data/models/pet_model.dart';
+import '../../../pets/data/repositories/pet_repository_api.dart';
 import '../../data/repositories/booking_repository.dart';
 import '../../data/models/caregiver_models.dart';
 import '../../data/models/booking_models.dart';
@@ -39,7 +41,9 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
 
   // Step 3: Pet Selection
   List<String> _selectedPetIds = [];
-  List<Map<String, String>> _userPets = []; // Mock data - should come from pet repository
+  final PetRepositoryApi _petRepository = getIt<PetRepositoryApi>();
+  List<PetModel> _userPets = [];
+  bool _isLoadingPets = false;
 
   // Step 4: Additional Details
   String _locationType = 'owner_home';
@@ -52,11 +56,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
   void initState() {
     super.initState();
     _repository = getIt<BookingRepository>();
-    // Mock pets - In real app, load from pet repository
-    _userPets = [
-      {'id': 'pet1', 'name': 'Max', 'type': 'Dog'},
-      {'id': 'pet2', 'name': 'Whiskers', 'type': 'Cat'},
-    ];
+    _loadUserPets();
   }
 
   @override
@@ -68,17 +68,19 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Book ${widget.caregiver.userName ?? "Caregiver"}',
-          style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.titleLarge.copyWith(color: theme.colorScheme.onSurface),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -161,6 +163,8 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
   }
 
   Widget _buildServiceStep() {
+    final services = widget.services.where((service) => service.isAvailable).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -174,7 +178,29 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
         ),
         SizedBox(height: 24.h),
-        ...widget.services.map((service) => _buildServiceCard(service)),
+        if (services.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(20.w),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: AppColors.textSecondary.withOpacity(0.2)),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.schedule_outlined, size: 40.w, color: AppColors.textSecondary),
+                SizedBox(height: 10.h),
+                Text(
+                  'No bookable services available right now.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          )
+        else
+          ...services.map((service) => _buildServiceCard(service)),
       ],
     );
   }
@@ -265,8 +291,54 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         SizedBox(height: 16.h),
         _buildTimeSelectors(),
         SizedBox(height: 16.h),
+        _buildDateTimeValidationHint(),
+        SizedBox(height: 12.h),
         _buildAvailabilityHint(),
       ],
+    );
+  }
+
+  Widget _buildDateTimeValidationHint() {
+    final start = _buildStartDateTime();
+    final end = _buildEndDateTime();
+    final nowCutoff = DateTime.now().add(const Duration(minutes: 5));
+
+    String? message;
+    Color tone = Colors.green;
+    IconData icon = Icons.check_circle;
+
+    if (!end.isAfter(start)) {
+      message = 'End time must be after the start time.';
+      tone = Colors.orange;
+      icon = Icons.warning_amber_rounded;
+    } else if (!start.isAfter(nowCutoff)) {
+      message = 'Start time should be at least 5 minutes in the future.';
+      tone = Colors.orange;
+      icon = Icons.schedule_rounded;
+    } else {
+      message = 'Selected time range is valid.';
+    }
+
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: tone.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: tone, size: 20.w),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: tone.withValues(alpha: 0.92),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -440,7 +512,10 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
         ),
         SizedBox(height: 24.h),
-        ..._userPets.map((pet) => _buildPetCard(pet)),
+        if (_isLoadingPets)
+          const Center(child: CircularProgressIndicator())
+        else
+          ..._userPets.map((pet) => _buildPetCard(pet)),
         if (_userPets.isEmpty)
           Container(
             padding: EdgeInsets.all(24.w),
@@ -453,7 +528,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                 Icon(Icons.pets, size: 48.w, color: AppColors.textSecondary),
                 SizedBox(height: 12.h),
                 Text(
-                  'No pets found',
+                  _isLoadingPets ? 'Loading pets...' : 'No pets found',
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                 ),
                 SizedBox(height: 8.h),
@@ -468,20 +543,22 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     );
   }
 
-  Widget _buildPetCard(Map<String, String> pet) {
-    final isSelected = _selectedPetIds.contains(pet['id']);
+  Widget _buildPetCard(PetModel pet) {
+    final isSelected = _selectedPetIds.contains(pet.id);
+    final petTypeLabel =
+        pet.type.isNotEmpty ? '${pet.type[0].toUpperCase()}${pet.type.substring(1)}' : 'Pet';
     
     return GestureDetector(
       onTap: () {
         setState(() {
           if (isSelected) {
-            _selectedPetIds.remove(pet['id']);
+            _selectedPetIds.remove(pet.id);
           } else {
             if (_selectedService != null && 
                 _selectedPetIds.length < widget.caregiver.maxPetsAtOnce) {
-              _selectedPetIds.add(pet['id']!);
+              _selectedPetIds.add(pet.id);
             } else if (_selectedService == null) {
-              _selectedPetIds.add(pet['id']!);
+              _selectedPetIds.add(pet.id);
             }
           }
         });
@@ -504,11 +581,11 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
               onChanged: (_) {
                 setState(() {
                   if (isSelected) {
-                    _selectedPetIds.remove(pet['id']);
+                    _selectedPetIds.remove(pet.id);
                   } else {
                     if (_selectedService != null && 
                         _selectedPetIds.length < widget.caregiver.maxPetsAtOnce) {
-                      _selectedPetIds.add(pet['id']!);
+                      _selectedPetIds.add(pet.id);
                     }
                   }
                 });
@@ -520,7 +597,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
               radius: 24.r,
               backgroundColor: AppColors.primary.withOpacity(0.1),
               child: Text(
-                pet['type'] == 'Dog' ? '🐕' : '🐈',
+                pet.type.toLowerCase() == 'dog' ? '🐕' : '🐈',
                 style: TextStyle(fontSize: 24.sp),
               ),
             ),
@@ -529,11 +606,11 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  pet['name']!,
+                  pet.name,
                   style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  pet['type']!,
+                  petTypeLabel,
                   style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                 ),
               ],
@@ -837,14 +914,45 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
       case 0:
         return _selectedService != null;
       case 1:
-        return true;
+        return _hasValidDateTimeRange() && _isStartTimeInFuture();
       case 2:
         return _selectedPetIds.isNotEmpty;
       case 3:
-        return _locationType == 'caregiver_home' || _addressController.text.isNotEmpty;
+        return _locationType == 'caregiver_home' ||
+            _addressController.text.trim().isNotEmpty;
       default:
         return false;
     }
+  }
+
+  DateTime _buildStartDateTime() {
+    return DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+  }
+
+  DateTime _buildEndDateTime() {
+    return DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _endTime.hour,
+      _endTime.minute,
+    );
+  }
+
+  bool _hasValidDateTimeRange() {
+    return _buildEndDateTime().isAfter(_buildStartDateTime());
+  }
+
+  bool _isStartTimeInFuture() {
+    return _buildStartDateTime().isAfter(
+      DateTime.now().add(const Duration(minutes: 5)),
+    );
   }
 
   void _handleNext() {
@@ -892,36 +1000,66 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
   }
 
   Future<void> _submitBooking() async {
+    if (_selectedService == null) {
+      CustomSnackbar.showError(context, 'Please select a service first');
+      return;
+    }
+
+    if (_selectedPetIds.isEmpty) {
+      CustomSnackbar.showError(context, 'Please select at least one pet');
+      return;
+    }
+
+    if (_selectedPetIds.length > widget.caregiver.maxPetsAtOnce) {
+      CustomSnackbar.showError(
+        context,
+        'You can select up to ${widget.caregiver.maxPetsAtOnce} pets for this service',
+      );
+      return;
+    }
+
+    if (!_hasValidDateTimeRange()) {
+      CustomSnackbar.showError(
+        context,
+        'End time must be later than start time',
+      );
+      return;
+    }
+
+    if (!_isStartTimeInFuture()) {
+      CustomSnackbar.showError(
+        context,
+        'Please choose a start time at least 5 minutes in the future',
+      );
+      return;
+    }
+
+    final trimmedAddress = _addressController.text.trim();
+    if (_locationType == 'owner_home' && trimmedAddress.isEmpty) {
+      CustomSnackbar.showError(
+        context,
+        'Please enter your service address',
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
 
     try {
-      final startDatetime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _startTime.hour,
-        _startTime.minute,
-      );
-
-      final endDatetime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _endTime.hour,
-        _endTime.minute,
-      );
+      final startDatetime = _buildStartDateTime();
+      final endDatetime = _buildEndDateTime();
+      final trimmedInstructions = _instructionsController.text.trim();
 
       final request = CreateBookingRequest(
         caregiverId: widget.caregiver.id,
         serviceId: _selectedService!.id,
         petIds: _selectedPetIds,
-        startDatetime: startDatetime.toIso8601String(),
-        endDatetime: endDatetime.toIso8601String(),
+        startDatetime: startDatetime.toUtc().toIso8601String(),
+        endDatetime: endDatetime.toUtc().toIso8601String(),
         serviceLocationType: _locationType,
-        serviceAddress: _locationType == 'owner_home' ? _addressController.text : null,
-        specialInstructions: _instructionsController.text.isNotEmpty 
-            ? _instructionsController.text 
-            : null,
+        serviceAddress: _locationType == 'owner_home' ? trimmedAddress : null,
+        specialInstructions:
+            trimmedInstructions.isNotEmpty ? trimmedInstructions : null,
       );
 
       final booking = await _repository.createBooking(request);
@@ -951,6 +1089,26 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
           e.toString().replaceFirst('Exception: ', ''),
         );
       }
+    }
+  }
+
+  Future<void> _loadUserPets() async {
+    setState(() => _isLoadingPets = true);
+
+    try {
+      final pets = await _petRepository.getPets();
+      if (!mounted) return;
+      setState(() {
+        _userPets = pets;
+        _isLoadingPets = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoadingPets = false);
+      CustomSnackbar.showError(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+      );
     }
   }
 }

@@ -102,12 +102,12 @@ type ProductReview struct {
 // ─── Request bodies ───────────────────────────────────────────────────────────
 
 type CreateProductRequest struct {
-	CategoryID         *string  `json:"categoryId"`
+	CategoryID         string   `json:"categoryId" binding:"required"`
 	Name               string   `json:"name" binding:"required"`
 	Description        string   `json:"description" binding:"required"`
 	Price              float64  `json:"price" binding:"required,min=0"`
 	Currency           string   `json:"currency"`
-	StockQuantity      int      `json:"stockQuantity" binding:"min=0"`
+	StockQuantity      int      `json:"stockQuantity" binding:"required,min=0"`
 	Images             []string `json:"images"`
 	BreedCompatibility []string `json:"breedCompatibility"`
 	PetType            string   `json:"petType"`

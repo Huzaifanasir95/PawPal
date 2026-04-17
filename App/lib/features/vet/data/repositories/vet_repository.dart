@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../core/services/api_client.dart';
 import '../models/vet_profile_model.dart';
+import '../models/vet_review_model.dart';
 
 @lazySingleton
 class VetRepository {
@@ -23,11 +24,7 @@ class VetRepository {
         throw Exception(response.data['error'] ?? 'Failed to save vet profile');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to save vet profile';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to save vet profile');
     }
   }
 
@@ -45,11 +42,7 @@ class VetRepository {
       if (e.response?.statusCode == 404) {
         throw Exception('Profile not found');
       }
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to fetch vet profile';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to fetch vet profile');
     }
   }
 
@@ -64,11 +57,7 @@ class VetRepository {
         throw Exception(response.data['error'] ?? 'Failed to fetch vet profile');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to fetch vet profile';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to fetch vet profile');
     }
   }
 
@@ -118,11 +107,79 @@ class VetRepository {
         throw Exception(response.data['error'] ?? 'Failed to fetch vets');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to fetch vets';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to fetch vets');
     }
+  }
+
+  Future<List<VetReview>> getVetReviews(
+    String userId, {
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _apiClient.get(
+        '/api/v1/vets/$userId/reviews',
+        queryParameters: {'page': page, 'limit': limit},
+      );
+
+      if (response.data['success'] == true) {
+        final reviews = (response.data['reviews'] as List<dynamic>? ?? const [])
+            .map((json) => VetReview.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return reviews;
+      }
+
+      throw Exception(response.data['error'] ?? 'Failed to fetch vet reviews');
+    } on DioException catch (e) {
+      throw _handleError(e, 'Failed to fetch vet reviews');
+    }
+  }
+
+  Future<VetReview> addVetReview(
+    String userId, {
+    required int rating,
+    String? comment,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/v1/vets/$userId/reviews',
+        data: {
+          'rating': rating,
+          if (comment != null && comment.trim().isNotEmpty) 'comment': comment.trim(),
+        },
+      );
+
+      if (response.data['success'] == true) {
+        return VetReview.fromJson(response.data['review'] as Map<String, dynamic>);
+      }
+
+      throw Exception(response.data['error'] ?? 'Failed to submit vet review');
+    } on DioException catch (e) {
+      throw _handleError(e, 'Failed to submit vet review');
+    }
+  }
+
+  Exception _handleError(DioException e, String defaultMessage) {
+    final responseData = e.response?.data;
+
+    if (responseData is Map) {
+      final error =
+          responseData['error'] ??
+          responseData['message'] ??
+          responseData['details'];
+      if (error is String && error.trim().isNotEmpty) {
+        return Exception(error.trim());
+      }
+    }
+
+    if (responseData is String && responseData.trim().isNotEmpty) {
+      return Exception(responseData.trim());
+    }
+
+    if (e.response != null) {
+      return Exception(defaultMessage);
+    }
+
+    return Exception('Network error: ${e.message}');
   }
 }

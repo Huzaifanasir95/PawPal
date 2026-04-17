@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../data/repositories/marketplace_repository.dart';
 import '../../data/models/marketplace_models.dart';
 import '../cubit/orders_cubit.dart';
@@ -28,14 +27,17 @@ class _OrdersView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6F2),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: const Color(0xFF191D21), size: 20.sp),
+              color: colorScheme.onSurface, size: 20.sp),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -43,13 +45,13 @@ class _OrdersView extends StatelessWidget {
           style: GoogleFonts.mulish(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF191D21),
+            color: colorScheme.onSurface,
           ),
         ),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh_rounded,
-                color: const Color(0xFF191D21), size: 22.sp),
+                color: colorScheme.onSurface, size: 22.sp),
             onPressed: () => context.read<OrdersCubit>().loadOrders(),
           ),
         ],
@@ -57,8 +59,8 @@ class _OrdersView extends StatelessWidget {
       body: BlocBuilder<OrdersCubit, OrdersState>(
         builder: (context, state) {
           if (state.isLoading) {
-            return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF2C6E69)));
+            return Center(
+                child: CircularProgressIndicator(color: colorScheme.primary));
           }
 
           if (state.error != null && state.orders.isEmpty) {
@@ -69,21 +71,21 @@ class _OrdersView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.error_outline_rounded,
-                        size: 48.sp, color: AppColors.textSecondary),
+                      size: 48.sp, color: colorScheme.onSurfaceVariant),
                     SizedBox(height: 12.h),
                     Text(state.error!,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.mulish(
-                            color: AppColors.textSecondary)),
+                        color: colorScheme.onSurfaceVariant)),
                     SizedBox(height: 16.h),
                     ElevatedButton(
                       onPressed: () =>
                           context.read<OrdersCubit>().loadOrders(),
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary),
+                        backgroundColor: colorScheme.primary),
                       child: Text('Retry',
                           style: GoogleFonts.mulish(
-                              color: const Color(0xFF191D21),
+                          color: colorScheme.onPrimary,
                               fontWeight: FontWeight.w700)),
                     ),
                   ],
@@ -98,14 +100,14 @@ class _OrdersView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.receipt_long_outlined,
-                      size: 72.sp, color: AppColors.primary),
+                      size: 72.sp, color: colorScheme.primary),
                   SizedBox(height: 16.h),
                   Text(
                     'No orders yet',
                     style: GoogleFonts.mulish(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF191D21),
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   SizedBox(height: 8.h),
@@ -113,14 +115,14 @@ class _OrdersView extends StatelessWidget {
                     'Your orders will appear here',
                     style: GoogleFonts.mulish(
                       fontSize: 14.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(height: 24.h),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2C6E69),
+                      backgroundColor: colorScheme.primary,
                       padding: EdgeInsets.symmetric(
                           horizontal: 32.w, vertical: 14.h),
                       shape: RoundedRectangleBorder(
@@ -129,7 +131,7 @@ class _OrdersView extends StatelessWidget {
                     child: Text(
                       'Start Shopping',
                       style: GoogleFonts.mulish(
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w700,
                         fontSize: 15.sp,
                       ),
@@ -150,17 +152,17 @@ class _OrdersView extends StatelessWidget {
                       padding: EdgeInsets.symmetric(
                           horizontal: 12.w, vertical: 7.h),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(20.r),
                         border: Border.all(
-                            color: AppColors.primary.withOpacity(0.25)),
+                            color: colorScheme.outline.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         '${state.orders.length} orders',
                         style: GoogleFonts.mulish(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF2C6E69),
+                          color: colorScheme.primary,
                         ),
                       ),
                     ),
@@ -170,7 +172,7 @@ class _OrdersView extends StatelessWidget {
                       style: GoogleFonts.mulish(
                         fontSize: 11.sp,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -194,6 +196,8 @@ class _OrdersView extends StatelessWidget {
   }
 
   Widget _buildOrderCard(BuildContext context, Order order) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () {
         final cubit = context.read<OrdersCubit>();
@@ -210,12 +214,12 @@ class _OrdersView extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.primary.withOpacity(0.18)),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: colorScheme.shadow.withValues(alpha: 0.07),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -235,7 +239,7 @@ class _OrdersView extends StatelessWidget {
                       style: GoogleFonts.mulish(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF191D21),
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     SizedBox(height: 2.h),
@@ -243,7 +247,7 @@ class _OrdersView extends StatelessWidget {
                       _formatDate(order.createdAt),
                       style: GoogleFonts.mulish(
                         fontSize: 11.sp,
-                        color: AppColors.textSecondary,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -253,7 +257,7 @@ class _OrdersView extends StatelessWidget {
             ),
 
             SizedBox(height: 12.h),
-            Divider(color: const Color(0xFFF0F0F0), height: 1.h),
+            Divider(color: colorScheme.outline.withValues(alpha: 0.25), height: 1.h),
             SizedBox(height: 12.h),
 
             // Items summary
@@ -262,9 +266,9 @@ class _OrdersView extends StatelessWidget {
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F6F2),
+                  color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(10.r),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.14)),
+                  border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
                 ),
                 child: Text(
                   order.items.length == 1
@@ -273,7 +277,7 @@ class _OrdersView extends StatelessWidget {
                   style: GoogleFonts.mulish(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF4B5563),
+                    color: colorScheme.onSurfaceVariant,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -293,7 +297,7 @@ class _OrdersView extends StatelessWidget {
                         '${order.items.length} item${order.items.length == 1 ? '' : 's'}',
                         style: GoogleFonts.mulish(
                           fontSize: 12.sp,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       )
                     else
@@ -301,14 +305,14 @@ class _OrdersView extends StatelessWidget {
                         'Order placed',
                         style: GoogleFonts.mulish(
                           fontSize: 12.sp,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     Text(
                       _paymentLabel(order.paymentMethod),
                       style: GoogleFonts.mulish(
                         fontSize: 12.sp,
-                        color: AppColors.textSecondary,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -321,7 +325,7 @@ class _OrdersView extends StatelessWidget {
                       style: GoogleFonts.mulish(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF2C6E69),
+                        color: colorScheme.primary,
                       ),
                     ),
                     Row(
@@ -331,12 +335,12 @@ class _OrdersView extends StatelessWidget {
                           style: GoogleFonts.mulish(
                             fontSize: 12.sp,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF2C6E69),
+                            color: colorScheme.primary,
                           ),
                         ),
                         SizedBox(width: 2.w),
                         Icon(Icons.arrow_forward_ios_rounded,
-                            size: 10.sp, color: const Color(0xFF2C6E69)),
+                            size: 10.sp, color: colorScheme.primary),
                       ],
                     ),
                   ],

@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/api_config.dart';
 import '../models/breed_prediction_model.dart';
 
@@ -9,27 +9,24 @@ class BreedVerificationService {
   final Dio _dio;
 
   BreedVerificationService({Dio? dio})
-      : _dio = dio ??
-            Dio(
-              BaseOptions(
-                baseUrl: ApiConfig.baseUrl,
-                connectTimeout: ApiConfig.connectTimeout,
-                receiveTimeout: ApiConfig.receiveTimeout,
-                sendTimeout: ApiConfig.sendTimeout,
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              ),
-            ) {
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              baseUrl: ApiConfig.baseUrl,
+              connectTimeout: ApiConfig.connectTimeout,
+              receiveTimeout: ApiConfig.receiveTimeout,
+              sendTimeout: ApiConfig.sendTimeout,
+              headers: {'Content-Type': 'application/json'},
+            ),
+          ) {
     // Add logging interceptor to display all API calls
-    _dio.interceptors.add(
-      LoggingInterceptor(),
-    );
+    _dio.interceptors.add(LoggingInterceptor());
   }
 
   /// Convert image file to base64
-  String _imageToBase64(File imageFile) {
-    Uint8List imageBytes = imageFile.readAsBytesSync();
+  Future<String> _imageToBase64(XFile imageFile) async {
+    Uint8List imageBytes = await imageFile.readAsBytes();
     String base64Image = base64Encode(imageBytes);
     return 'data:image/jpeg;base64,$base64Image';
   }
@@ -70,14 +67,14 @@ class BreedVerificationService {
 
   /// Single image prediction - Supports both dogs and cats
   Future<PredictionResult> predictBreed({
-    required File imageFile,
+    required XFile imageFile,
     String petType = 'dog', // 'dog' or 'cat'
     bool useTTA = true,
     int topK = 5,
   }) async {
     try {
-      String base64Image = _imageToBase64(imageFile);
-      
+      String base64Image = await _imageToBase64(imageFile);
+
       // Validate pet type
       if (!['dog', 'cat'].contains(petType.toLowerCase())) {
         return PredictionResult(
@@ -86,7 +83,9 @@ class BreedVerificationService {
         );
       }
 
-    print("post body : image length: ${base64Image.length}, petType: $petType, useTTA: $useTTA, topK: $topK");
+      print(
+        "post body : image length: ${base64Image.length}, petType: $petType, useTTA: $useTTA, topK: $topK",
+      );
       final response = await _dio.post(
         ApiConfig.predict,
         data: {
@@ -167,7 +166,7 @@ class BreedVerificationService {
 
   /// Batch prediction - Supports both dogs and cats
   Future<PredictionResult> predictBatch({
-    required List<File> imageFiles,
+    required List<XFile> imageFiles,
     String petType = 'dog', // 'dog' or 'cat'
     bool useTTA = false,
     int topK = 3,
@@ -181,8 +180,10 @@ class BreedVerificationService {
         );
       }
 
-      List<String> base64Images =
-          imageFiles.map((file) => _imageToBase64(file)).toList();
+      final base64Images = <String>[];
+      for (final file in imageFiles) {
+        base64Images.add(await _imageToBase64(file));
+      }
 
       final response = await _dio.post(
         ApiConfig.predictBatch,
@@ -246,13 +247,17 @@ class BreedVerificationService {
 class LoggingInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    print('╔════════════════════════════════════════════════════════════════════');
+    print(
+      '╔════════════════════════════════════════════════════════════════════',
+    );
     print('║ 🚀 API REQUEST');
-    print('╠════════════════════════════════════════════════════════════════════');
+    print(
+      '╠════════════════════════════════════════════════════════════════════',
+    );
     print('║ Method: ${options.method}');
     print('║ URL: ${options.baseUrl}${options.path}');
     print('║ Endpoint: ${options.path}');
-    
+
     if (options.queryParameters.isNotEmpty) {
       print('║ Query Parameters:');
       options.queryParameters.forEach((key, value) {
@@ -287,20 +292,30 @@ class LoggingInterceptor extends Interceptor {
       }
     }
 
-    print('║ Timeout: ${options.connectTimeout?.inSeconds}s (connect), '
-        '${options.receiveTimeout?.inSeconds}s (receive), '
-        '${options.sendTimeout?.inSeconds}s (send)');
-    print('╚════════════════════════════════════════════════════════════════════');
+    print(
+      '║ Timeout: ${options.connectTimeout?.inSeconds}s (connect), '
+      '${options.receiveTimeout?.inSeconds}s (receive), '
+      '${options.sendTimeout?.inSeconds}s (send)',
+    );
+    print(
+      '╚════════════════════════════════════════════════════════════════════',
+    );
 
     handler.next(options);
   }
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    print('╔════════════════════════════════════════════════════════════════════');
+    print(
+      '╔════════════════════════════════════════════════════════════════════',
+    );
     print('║ ✅ API RESPONSE');
-    print('╠════════════════════════════════════════════════════════════════════');
-    print('║ Status Code: ${response.statusCode} ${response.statusMessage ?? ''}');
+    print(
+      '╠════════════════════════════════════════════════════════════════════',
+    );
+    print(
+      '║ Status Code: ${response.statusCode} ${response.statusMessage ?? ''}',
+    );
     print('║ URL: ${response.requestOptions.path}');
     print('║ Response Time: ${DateTime.now().millisecondsSinceEpoch}ms');
 
@@ -318,12 +333,14 @@ class LoggingInterceptor extends Interceptor {
     print('║ Response Body:');
     if (response.data is Map) {
       final data = response.data as Map<String, dynamic>;
-      
+
       // Special formatting for breed prediction responses
       if (data.containsKey('success') && data.containsKey('predictions')) {
         print('║   • success: ${data['success']}');
         print('║   • predicted: ${data['predicted']}');
-        print('║   • confidence: ${data['confidence']} (${(data['confidence'] * 100).toStringAsFixed(2)}%)');
+        print(
+          '║   • confidence: ${data['confidence']} (${(data['confidence'] * 100).toStringAsFixed(2)}%)',
+        );
         print('║   • process_time: ${data['process_time']}s');
         print('║   • used_tta: ${data['used_tta']}');
         print('║ Top Predictions:');
@@ -355,15 +372,21 @@ class LoggingInterceptor extends Interceptor {
       print('║   • ${response.data}');
     }
 
-    print('╚════════════════════════════════════════════════════════════════════');
+    print(
+      '╚════════════════════════════════════════════════════════════════════',
+    );
     handler.next(response);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    print('╔════════════════════════════════════════════════════════════════════');
+    print(
+      '╔════════════════════════════════════════════════════════════════════',
+    );
     print('║ ❌ API ERROR');
-    print('╠════════════════════════════════════════════════════════════════════');
+    print(
+      '╠════════════════════════════════════════════════════════════════════',
+    );
     print('║ Type: ${err.type}');
     print('║ URL: ${err.requestOptions.path}');
     print('║ Status Code: ${err.response?.statusCode ?? 'N/A'}');
@@ -381,9 +404,13 @@ class LoggingInterceptor extends Interceptor {
       }
     }
 
-    print('║ Request Path: ${err.requestOptions.baseUrl}${err.requestOptions.path}');
+    print(
+      '║ Request Path: ${err.requestOptions.baseUrl}${err.requestOptions.path}',
+    );
     print('║ Method: ${err.requestOptions.method}');
-    print('╚════════════════════════════════════════════════════════════════════');
+    print(
+      '╚════════════════════════════════════════════════════════════════════',
+    );
 
     handler.next(err);
   }

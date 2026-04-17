@@ -13,20 +13,28 @@ class AccountTypeSelectionScreen extends StatefulWidget {
   final String? idToken;
   final String? displayName;
   final String? photoUrl;
-  
+  final String? pendingEmail;
+  final String? pendingPassword;
+  final String? pendingName;
+
   const AccountTypeSelectionScreen({
     super.key,
     this.onAccountTypeSelected,
     this.idToken,
     this.displayName,
     this.photoUrl,
+    this.pendingEmail,
+    this.pendingPassword,
+    this.pendingName,
   });
 
   @override
-  State<AccountTypeSelectionScreen> createState() => _AccountTypeSelectionScreenState();
+  State<AccountTypeSelectionScreen> createState() =>
+      _AccountTypeSelectionScreenState();
 }
 
-class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen> {
+class _AccountTypeSelectionScreenState
+    extends State<AccountTypeSelectionScreen> {
   String? _selectedAccountType;
 
   @override
@@ -38,7 +46,9 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
           loading: () {},
           authenticated: (user) {
             // Don't handle here - let AuthFlow handle navigation
-            print('🏠 AccountTypeSelection: Authenticated - letting AuthFlow handle it');
+            print(
+              '🏠 AccountTypeSelection: Authenticated - letting AuthFlow handle it',
+            );
           },
           unauthenticated: () {},
           error: (message) {
@@ -65,79 +75,89 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
                       width: 58.w,
                       height: 58.h,
                       errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 58.w,
-                        height: 58.h,
-                        decoration: BoxDecoration(
-                          color: AppColors.accent,
-                          borderRadius: BorderRadius.circular(29.r),
-                        ),
-                        child: Icon(
-                          Icons.pets,
-                          color: AppColors.primary,
-                          size: 30.w,
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 50.h),
-
-              // Title
-              Text(
-                AppStrings.selectAccountType,
-                style: AppTextStyles.onboardingTitle.copyWith(
-                  fontSize: 20.sp,
-                  color: AppColors.authText,
-                  fontWeight: FontWeight.w400,
+                        return Container(
+                          width: 58.w,
+                          height: 58.h,
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            borderRadius: BorderRadius.circular(29.r),
+                          ),
+                          child: Icon(
+                            Icons.pets,
+                            color: AppColors.primary,
+                            size: 30.w,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                textAlign: TextAlign.center,
-              ),
 
-              SizedBox(height: 40.h),
+                SizedBox(height: 50.h),
 
-              // Account Type Options
-              _buildAccountTypeOption(
-                title: AppStrings.petOwner,
-                description: 'Find and adopt your perfect pet companion',
-                icon: Icons.pets,
-                isSelected: _selectedAccountType == 'pet_owner',
-                onTap: () => _selectAccountType('pet_owner'),
-              ),
+                // Title
+                Text(
+                  AppStrings.selectAccountType,
+                  style: AppTextStyles.onboardingTitle.copyWith(
+                    fontSize: 20.sp,
+                    color: AppColors.authText,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
 
-              SizedBox(height: 20.h),
+                SizedBox(height: 40.h),
 
-              _buildAccountTypeOption(
-                title: AppStrings.veterinary,
-                description: 'Provide professional care for pets',
-                icon: Icons.local_hospital,
-                isSelected: _selectedAccountType == 'vet',
-                onTap: () => _selectAccountType('vet'),
-              ),
+                // Account Type Options
+                _buildAccountTypeOption(
+                  title: AppStrings.petOwner,
+                  description: 'Find and adopt your perfect pet companion',
+                  icon: Icons.pets,
+                  isSelected: _selectedAccountType == 'pet_owner',
+                  onTap: () => _selectAccountType('pet_owner'),
+                ),
 
-              SizedBox(height: 20.h),
+                SizedBox(height: 20.h),
 
-              _buildAccountTypeOption(
-                title: AppStrings.caregiver,
-                description: 'Help care for pets in need',
-                icon: Icons.volunteer_activism,
-                isSelected: _selectedAccountType == 'caregiver',
-                onTap: () => _selectAccountType('caregiver'),
-              ),
+                _buildAccountTypeOption(
+                  title: AppStrings.veterinary,
+                  description: 'Provide professional care for pets',
+                  icon: Icons.local_hospital,
+                  isSelected: _selectedAccountType == 'vet',
+                  onTap: () => _selectAccountType('vet'),
+                ),
 
-              SizedBox(height: 60.h),
+                SizedBox(height: 20.h),
 
-              // Continue Button
-              _buildContinueButton(context),
+                _buildAccountTypeOption(
+                  title: AppStrings.seller,
+                  description: 'Sell products in the PawPal marketplace',
+                  icon: Icons.storefront,
+                  isSelected: _selectedAccountType == 'seller',
+                  onTap: () => _selectAccountType('seller'),
+                ),
 
-              SizedBox(height: 30.h),
-            ],
+                SizedBox(height: 20.h),
+
+                _buildAccountTypeOption(
+                  title: AppStrings.caregiver,
+                  description: 'Help care for pets in need',
+                  icon: Icons.volunteer_activism,
+                  isSelected: _selectedAccountType == 'caregiver',
+                  onTap: () => _selectAccountType('caregiver'),
+                ),
+
+                SizedBox(height: 60.h),
+
+                // Continue Button
+                _buildContinueButton(context),
+
+                SizedBox(height: 30.h),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -153,7 +173,10 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
       child: Container(
         padding: EdgeInsets.all(20.w),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
+          color:
+              isSelected
+                  ? AppColors.primary.withOpacity(0.1)
+                  : AppColors.surface,
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.socialBorder,
             width: 2,
@@ -169,11 +192,7 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
                 color: AppColors.accent,
                 borderRadius: BorderRadius.circular(24.r),
               ),
-              child: Icon(
-                icon,
-                color: AppColors.surface,
-                size: 24.sp,
-              ),
+              child: Icon(icon, color: AppColors.surface, size: 24.sp),
             ),
             SizedBox(width: 16.w),
             Expanded(
@@ -200,11 +219,7 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
               ),
             ),
             if (isSelected)
-              Icon(
-                Icons.check_circle,
-                color: AppColors.primary,
-                size: 24.sp,
-              ),
+              Icon(Icons.check_circle, color: AppColors.primary, size: 24.sp),
           ],
         ),
       ),
@@ -223,36 +238,41 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
           width: double.infinity,
           height: 65.h,
           decoration: BoxDecoration(
-            color: _selectedAccountType != null && !isLoading
-                ? AppColors.googleButton
-                : AppColors.googleButton.withOpacity(0.5),
+            color:
+                _selectedAccountType != null && !isLoading
+                    ? AppColors.googleButton
+                    : AppColors.googleButton.withOpacity(0.5),
             borderRadius: BorderRadius.circular(98.r),
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(98.r),
-              onTap: (_selectedAccountType != null && !isLoading)
-                  ? () => _onContinuePressed(context)
-                  : null,
+              onTap:
+                  (_selectedAccountType != null && !isLoading)
+                      ? () => _onContinuePressed(context)
+                      : null,
               child: Center(
-                child: isLoading
-                    ? SizedBox(
-                        width: 24.w,
-                        height: 24.h,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.w,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+                child:
+                    isLoading
+                        ? SizedBox(
+                          width: 24.w,
+                          height: 24.h,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.w,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.accent,
+                            ),
+                          ),
+                        )
+                        : Text(
+                          AppStrings.continueText,
+                          style: AppTextStyles.onboardingTitle.copyWith(
+                            fontSize: 24.sp,
+                            color: AppColors.accent,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      )
-                    : Text(
-                        AppStrings.continueText,
-                        style: AppTextStyles.onboardingTitle.copyWith(
-                          fontSize: 24.sp,
-                          color: AppColors.accent,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
               ),
             ),
           ),
@@ -275,15 +295,26 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
 
     try {
       final authBloc = context.read<AuthBloc>();
-      
+
       // If we have idToken, this is from Google Sign-In - complete the flow
       if (widget.idToken != null) {
-        authBloc.add(AuthEvent.completeGoogleSignIn(
-          widget.idToken!,
-          _selectedAccountType!,
-          widget.displayName,
-          widget.photoUrl,
-        ));
+        authBloc.add(
+          AuthEvent.completeGoogleSignIn(
+            widget.idToken!,
+            _selectedAccountType!,
+            widget.displayName,
+            widget.photoUrl,
+          ),
+        );
+      } else if (widget.pendingEmail != null && widget.pendingPassword != null) {
+        authBloc.add(
+          AuthEvent.signUpWithEmail(
+            widget.pendingEmail!,
+            widget.pendingPassword!,
+            widget.pendingName,
+            _selectedAccountType!,
+          ),
+        );
       } else {
         // Otherwise just update the account type (existing flow)
         authBloc.add(AuthEvent.updateAccountType(_selectedAccountType!));
@@ -291,7 +322,10 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
         CustomSnackbar.showSuccess(context, 'Account type saved successfully!');
       }
     } catch (e) {
-      CustomSnackbar.showError(context, 'Failed to save account type. Please try again.');
+      CustomSnackbar.showError(
+        context,
+        'Failed to save account type. Please try again.',
+      );
     }
   }
 }

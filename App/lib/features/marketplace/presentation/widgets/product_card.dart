@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
 import '../../../../core/constants/app_colors.dart';
 import '../../data/models/marketplace_models.dart';
 
@@ -25,9 +26,7 @@ class ProductCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18.r),
-          border: Border.all(
-            color: AppColors.primary.withOpacity(0.35),
-          ),
+          border: Border.all(color: AppColors.primary.withOpacity(0.35)),
           boxShadow: [
             BoxShadow(
               color: AppColors.primary.withOpacity(0.18),
@@ -44,15 +43,10 @@ class ProductCard extends StatelessWidget {
               borderRadius: BorderRadius.vertical(top: Radius.circular(18.r)),
               child: AspectRatio(
                 aspectRatio: 1.0,
-                child: product.firstImage.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: product.firstImage,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => _buildImagePlaceholder(),
-                        errorWidget: (context, url, error) =>
-                            _buildImagePlaceholder(),
-                      )
-                    : _buildImagePlaceholder(),
+                child:
+                    product.firstImage.isNotEmpty
+                        ? _buildProductImage(product.firstImage)
+                        : _buildImagePlaceholder(),
               ),
             ),
 
@@ -67,7 +61,9 @@ class ProductCard extends StatelessWidget {
                       Container(
                         constraints: BoxConstraints(maxWidth: 96.w),
                         padding: EdgeInsets.symmetric(
-                            horizontal: 7.w, vertical: 3.h),
+                          horizontal: 7.w,
+                          vertical: 3.h,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.googleButton.withOpacity(0.45),
                           borderRadius: BorderRadius.circular(6.r),
@@ -102,8 +98,11 @@ class ProductCard extends StatelessWidget {
 
                     Row(
                       children: [
-                        Icon(Icons.star_rounded,
-                            size: 12.sp, color: const Color(0xFFFFA726)),
+                        Icon(
+                          Icons.star_rounded,
+                          size: 12.sp,
+                          color: const Color(0xFFFFA726),
+                        ),
                         SizedBox(width: 2.w),
                         Text(
                           product.rating.toStringAsFixed(1),
@@ -180,6 +179,30 @@ class ProductCard extends StatelessWidget {
           color: const Color(0xFF9AD9D2),
         ),
       ),
+    );
+  }
+
+  Widget _buildProductImage(String imageUrl) {
+    if (imageUrl.startsWith('data:image/')) {
+      try {
+        final base64Data = imageUrl.split(',').last;
+        final bytes = base64Decode(base64Data);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder:
+              (context, error, stackTrace) => _buildImagePlaceholder(),
+        );
+      } catch (_) {
+        return _buildImagePlaceholder();
+      }
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.cover,
+      placeholder: (context, url) => _buildImagePlaceholder(),
+      errorWidget: (context, url, error) => _buildImagePlaceholder(),
     );
   }
 }

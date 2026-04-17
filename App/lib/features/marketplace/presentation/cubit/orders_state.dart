@@ -1,5 +1,7 @@
 import '../../data/models/marketplace_models.dart';
 
+const Object _unset = Object();
+
 class OrdersState {
   final bool isLoading;
   final bool isLoadingDetail;
@@ -19,15 +21,18 @@ class OrdersState {
     bool? isLoading,
     bool? isLoadingDetail,
     List<Order>? orders,
-    Order? selectedOrder,
-    String? error,
+    Object? selectedOrder = _unset,
+    Object? error = _unset,
   }) {
     return OrdersState(
       isLoading: isLoading ?? this.isLoading,
       isLoadingDetail: isLoadingDetail ?? this.isLoadingDetail,
       orders: orders ?? this.orders,
-      selectedOrder: selectedOrder ?? this.selectedOrder,
-      error: error,
+      selectedOrder:
+          identical(selectedOrder, _unset)
+              ? this.selectedOrder
+              : selectedOrder as Order?,
+      error: identical(error, _unset) ? this.error : error as String?,
     );
   }
 }

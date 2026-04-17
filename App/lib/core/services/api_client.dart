@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 
 class ApiClient {
@@ -33,23 +34,23 @@ class ApiClient {
         if (_accessToken != null) {
           options.headers['Authorization'] = 'Bearer $_accessToken';
         }
-        print('📤 [${options.method}] ${options.path}');
-        if (options.data != null) {
-          print('   Data: ${options.data}');
+        _debugLog('📤 [${options.method}] ${options.path}');
+        if (kDebugMode && options.data is Map<String, dynamic>) {
+          final keys = (options.data as Map<String, dynamic>).keys.join(', ');
+          _debugLog('   Payload keys: $keys');
         }
         return handler.next(options);
       },
       onResponse: (response, handler) {
-        print('✅ [${response.statusCode}] ${response.requestOptions.path}');
-        print('   Response: ${response.data}');
+        _debugLog(
+          '✅ [${response.statusCode}] ${response.requestOptions.path}',
+        );
         return handler.next(response);
       },
       onError: (error, handler) async {
-        print('❌ [${error.response?.statusCode}] ${error.requestOptions.path}');
-        print('   Error: ${error.message}');
-        if (error.response?.data != null) {
-          print('   Error Data: ${error.response?.data}');
-        }
+        _debugLog(
+          '❌ [${error.response?.statusCode}] ${error.requestOptions.path}: ${error.message}',
+        );
         
         // If 401, try to refresh token
         if (error.response?.statusCode == 401 && _refreshToken != null) {
@@ -123,14 +124,18 @@ class ApiClient {
     try {
       final response = await _dio.post(
         '/api/v1/auth/refresh',
-        data: {'refresh_token': _refreshToken},
+        data: {'refreshToken': _refreshToken},
         options: Options(headers: {}), // Don't include auth header
       );
 
       if (response.statusCode == 200) {
         final data = response.data;
-        _accessToken = data['access_token'];
-        _refreshToken = data['refresh_token'];
+        _accessToken = data['accessToken'] ?? data['access_token'];
+        _refreshToken = data['refreshToken'] ?? data['refresh_token'];
+
+        if (_accessToken == null || _refreshToken == null) {
+          return false;
+        }
         
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', _accessToken!);
@@ -159,5 +164,11 @@ class ApiClient {
 
   Future<Response> delete(String path) async {
     return _dio.delete(path);
+  }
+
+  void _debugLog(String message) {
+    if (kDebugMode) {
+      debugPrint(message);
+    }
   }
 }

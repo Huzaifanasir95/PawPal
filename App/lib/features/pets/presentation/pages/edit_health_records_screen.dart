@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/health_record_model.dart';
 import '../../data/repositories/health_repository_api.dart';
@@ -90,13 +89,15 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
   }
 
   Future<void> _saveHealthRecord() async {
+    final colorScheme = Theme.of(context).colorScheme;
+
     // Show loading
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
         ),
       ),
     );
@@ -155,7 +156,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Health records saved successfully!'),
-            backgroundColor: AppColors.success,
+            backgroundColor: colorScheme.tertiary,
           ),
         );
         Navigator.pop(context, true); // Return success
@@ -163,7 +164,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to save health records'),
-            backgroundColor: AppColors.error,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -172,7 +173,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: $e'),
-          backgroundColor: AppColors.error,
+          backgroundColor: colorScheme.error,
         ),
       );
     }
@@ -180,14 +181,17 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: AppColors.accent,
+            color: colorScheme.onSurface,
             size: 24.sp,
           ),
           onPressed: () => Navigator.pop(context),
@@ -196,7 +200,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
           widget.existingRecord == null ? 'Add Health Records' : 'Edit Health Records',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
-            color: AppColors.accent,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -211,7 +215,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
               'Health Information for ${widget.petName}',
               style: AppTextStyles.onboardingTitle.copyWith(
                 fontSize: 18.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -220,7 +224,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
               'Keep track of your pet\'s medical history and important information',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             SizedBox(height: 24.h),
@@ -230,7 +234,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
               'Vaccination',
               style: AppTextStyles.onboardingTitle.copyWith(
                 fontSize: 16.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -240,7 +244,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
                 'Is Vaccinated',
                 style: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 16.sp,
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                 ),
               ),
               value: _isVaccinated,
@@ -249,7 +253,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
                   _isVaccinated = value;
                 });
               },
-              activeColor: AppColors.primary,
+              activeColor: colorScheme.primary,
             ),
 
             if (_isVaccinated) ...[
@@ -305,7 +309,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
               'Veterinarian Information',
               style: AppTextStyles.onboardingTitle.copyWith(
                 fontSize: 16.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -350,7 +354,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
               'Emergency Contact',
               style: AppTextStyles.onboardingTitle.copyWith(
                 fontSize: 16.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -378,7 +382,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
               'Pet Insurance (Optional)',
               style: AppTextStyles.onboardingTitle.copyWith(
                 fontSize: 16.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -417,7 +421,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
               child: ElevatedButton(
                 onPressed: _saveHealthRecord,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent,
+                  backgroundColor: colorScheme.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16.r),
                   ),
@@ -426,7 +430,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
                   'Save Health Records',
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 18.sp,
-                    color: AppColors.textOnSecondary,
+                    color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -447,6 +451,8 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
     TextInputType? keyboardType,
     int maxLines = 1,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -454,7 +460,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
           label,
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 16.sp,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -465,27 +471,31 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
           maxLines: maxLines,
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 16.sp,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: AppTextStyles.onboardingBody.copyWith(
               fontSize: 16.sp,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
             ),
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withValues(alpha: 0.3),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withValues(alpha: 0.3),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
             contentPadding: EdgeInsets.symmetric(
               horizontal: 16.w,

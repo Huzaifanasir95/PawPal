@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 
 import '../../data/repositories/health_repository_api.dart';
@@ -99,13 +98,15 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
 
   Future<void> _submitJournalEntry() async {
     if (_formKey.currentState!.validate()) {
+      final colorScheme = Theme.of(context).colorScheme;
+
       // Show loading
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
           ),
         ),
       );
@@ -141,7 +142,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Health journal entry added successfully!'),
-              backgroundColor: AppColors.success,
+              backgroundColor: colorScheme.tertiary,
             ),
           );
           Navigator.pop(context, true); // Return success
@@ -149,7 +150,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to add health journal entry'),
-              backgroundColor: AppColors.error,
+              backgroundColor: colorScheme.error,
             ),
           );
         }
@@ -159,7 +160,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -168,14 +169,17 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: AppColors.accent,
+            color: colorScheme.onSurface,
             size: 24.sp,
           ),
           onPressed: () => Navigator.pop(context),
@@ -184,7 +188,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
           'Add Health Journal - ${widget.petName}',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 18.sp,
-            color: AppColors.accent,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -201,7 +205,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                 'Date',
                 style: AppTextStyles.onboardingTitle.copyWith(
                   fontSize: 16.sp,
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -211,15 +215,17 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.calendar_today,
-                        color: AppColors.primary,
+                        color: colorScheme.primary,
                         size: 20.sp,
                       ),
                       SizedBox(width: 12.w),
@@ -227,7 +233,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                         '${_selectedDate.month}/${_selectedDate.day}/${_selectedDate.year}',
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 16.sp,
-                          color: AppColors.textPrimary,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -242,7 +248,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                 'Physical Health',
                 style: AppTextStyles.onboardingTitle.copyWith(
                   fontSize: 18.sp,
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -311,7 +317,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                 'Mood & Behavior',
                 style: AppTextStyles.onboardingTitle.copyWith(
                   fontSize: 18.sp,
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -350,7 +356,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                 'Health Observations',
                 style: AppTextStyles.onboardingTitle.copyWith(
                   fontSize: 18.sp,
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -361,7 +367,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                 'Symptoms (Optional)',
                 style: AppTextStyles.onboardingTitle.copyWith(
                   fontSize: 16.sp,
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -374,10 +380,12 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                       decoration: InputDecoration(
                         hintText: 'Enter symptom...',
                         filled: true,
-                        fillColor: AppColors.surface,
+                        fillColor: colorScheme.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppColors.border),
+                          borderSide: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.3),
+                          ),
                         ),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 16.w,
@@ -391,7 +399,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                   ElevatedButton(
                     onPressed: () => _addSymptom(_symptomsController.text),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: colorScheme.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
                       ),
@@ -400,7 +408,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                       'Add',
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 14.sp,
-                        color: AppColors.accent,
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -417,16 +425,16 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                       symptom,
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 12.sp,
-                        color: AppColors.textPrimary,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     deleteIcon: Icon(
                       Icons.close,
                       size: 16.sp,
-                      color: AppColors.error,
+                      color: colorScheme.error,
                     ),
                     onDeleted: () => _removeSymptom(_symptoms.indexOf(symptom)),
-                    backgroundColor: AppColors.surface,
+                    backgroundColor: colorScheme.surface,
                   );
                 }).toList(),
               ),
@@ -438,7 +446,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                 'Medications Taken (Optional)',
                 style: AppTextStyles.onboardingTitle.copyWith(
                   fontSize: 16.sp,
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -451,10 +459,12 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                       decoration: InputDecoration(
                         hintText: 'Enter medication...',
                         filled: true,
-                        fillColor: AppColors.surface,
+                        fillColor: colorScheme.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppColors.border),
+                          borderSide: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.3),
+                          ),
                         ),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 16.w,
@@ -468,7 +478,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                   ElevatedButton(
                     onPressed: () => _addMedication(_medicationsController.text),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: colorScheme.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
                       ),
@@ -477,7 +487,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                       'Add',
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 14.sp,
-                        color: AppColors.accent,
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -494,16 +504,16 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                       medication,
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 12.sp,
-                        color: AppColors.textPrimary,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     deleteIcon: Icon(
                       Icons.close,
                       size: 16.sp,
-                      color: AppColors.error,
+                      color: colorScheme.error,
                     ),
                     onDeleted: () => _removeMedication(_medicationsTaken.indexOf(medication)),
-                    backgroundColor: AppColors.surface,
+                    backgroundColor: colorScheme.surface,
                   );
                 }).toList(),
               ),
@@ -516,7 +526,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                   'Vet Visit Today',
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 16.sp,
-                    color: AppColors.textPrimary,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -526,7 +536,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                     _vetVisit = value;
                   });
                 },
-                activeColor: AppColors.primary,
+                activeColor: colorScheme.primary,
               ),
 
               if (_vetVisit) ...[
@@ -567,7 +577,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                 child: ElevatedButton(
                   onPressed: _submitJournalEntry,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
+                    backgroundColor: colorScheme.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.r),
                     ),
@@ -576,7 +586,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                     'Save Journal Entry',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 18.sp,
-                      color: AppColors.textOnSecondary,
+                      color: colorScheme.onPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -599,6 +609,8 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
     int maxLines = 1,
     Function(String)? onChanged,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -606,7 +618,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
           label,
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 16.sp,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -618,31 +630,35 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
           onChanged: onChanged,
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 16.sp,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: AppTextStyles.onboardingBody.copyWith(
               fontSize: 16.sp,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
             ),
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withValues(alpha: 0.3),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withValues(alpha: 0.3),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.error),
+              borderSide: BorderSide(color: colorScheme.error),
             ),
             contentPadding: EdgeInsets.symmetric(
               horizontal: 16.w,
@@ -660,6 +676,8 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
     required List<String> items,
     required void Function(String?) onChanged,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -667,16 +685,18 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
           label,
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 16.sp,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
         SizedBox(height: 8.h),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.3),
+            ),
           ),
           padding: EdgeInsets.symmetric(horizontal: 12.w),
           child: DropdownButton<String>(
@@ -690,7 +710,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                   item,
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 16.sp,
-                    color: AppColors.textPrimary,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               );

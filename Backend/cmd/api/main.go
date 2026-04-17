@@ -18,7 +18,7 @@ import (
 func main() {
 	// Initialize logger
 	logger := logger.NewLogger()
-	
+
 	// Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -51,19 +51,20 @@ func main() {
 	communityHubRepo := repositories.NewCommunityHubRepository(db)
 	caregiverRepo := repositories.NewCaregiverRepository(db)
 	bookingRepo := repositories.NewBookingRepository(db)
+	vetAppointmentRepo := repositories.NewVetAppointmentRepository(db)
 
 	// Initialize auth service
 	authService := services.NewAuthService(userRepo)
-	
+
 	// Initialize services for ML
 	predictionService, err := services.NewPredictionService(cfg, logger)
 	if err != nil {
 		log.Fatal("Failed to initialize prediction service:", err)
 	}
-	
+
 	chatbotService := services.NewChatbotService(logger)
 	chatbotStreamService := services.NewChatbotStreamService(logger) // For streaming
-	
+
 	// Initialize handlers
 	h := handlers.NewHandlers(predictionService, chatbotService, chatbotStreamService, logger)
 	authHandlers := handlers.NewAuthHandlers(authService)
@@ -71,63 +72,72 @@ func main() {
 	healthHandlers := handlers.NewHealthHandlers(healthRepo, petRepo)
 	communityHandlers := handlers.NewCommunityHandlers(communityRepo, userRepo)
 	vetHandlers := handlers.NewVetHandlers(vetRepo)
-	chatHandlers := handlers.NewChatHandlers(chatRepo, messageRepo, userRepo, vetRepo)
+	chatHandlers := handlers.NewChatHandlers(
+		chatRepo,
+		messageRepo,
+		userRepo,
+		vetRepo,
+		bookingRepo,
+		caregiverRepo,
+		vetAppointmentRepo,
+	)
 	wsHandler := handlers.NewWebSocketHandler(messageRepo, chatRepo)
-	marketplaceHandlers := handlers.NewMarketplaceHandlers(marketplaceRepo)
+	marketplaceHandlers := handlers.NewMarketplaceHandlers(marketplaceRepo, userRepo)
 	communityHubHandlers := handlers.NewCommunityHubHandlers(communityHubRepo, userRepo)
 	caregiverHandlers := handlers.NewCaregiverHandler(caregiverRepo, bookingRepo, userRepo)
 	bookingHandlers := handlers.NewBookingHandler(bookingRepo, caregiverRepo)
-	
+	vetAppointmentHandlers := handlers.NewVetAppointmentHandlers(vetAppointmentRepo, vetRepo)
+
 	// Setup router
-	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, wsHandler, marketplaceHandlers, communityHubHandlers, caregiverHandlers, bookingHandlers, authService, cfg)
-	
+	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, wsHandler, marketplaceHandlers, communityHubHandlers, caregiverHandlers, bookingHandlers, vetAppointmentHandlers, authService, cfg)
+
 	// Start server
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = cfg.Server.Port
 	}
-	
+
 	logger.Info("Starting PawPal Backend API server on port " + port)
 	logger.Info("Models: ConvNeXt V2 - Dog Breed Classifier (120 breeds) & Cat Breed Classifier")
 	logger.Info("Access at: http://localhost:" + port)
-	
+
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
 }
 
-func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, wsHandler *handlers.WebSocketHandler, marketplaceHandlers *handlers.MarketplaceHandlers, communityHubHandlers *handlers.CommunityHubHandlers, caregiverHandlers *handlers.CaregiverHandler, bookingHandlers *handlers.BookingHandler, authService *services.AuthService, cfg *config.Config) *gin.Engine {
+func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, wsHandler *handlers.WebSocketHandler, marketplaceHandlers *handlers.MarketplaceHandlers, communityHubHandlers *handlers.CommunityHubHandlers, caregiverHandlers *handlers.CaregiverHandler, bookingHandlers *handlers.BookingHandler, vetAppointmentHandlers *handlers.VetAppointmentHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
 	// Set Gin mode
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	
+
 	router := gin.New()
-	
+
 	// Global middleware
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(middleware.CORS())
 	router.Use(middleware.RequestLogger())
-	
+
 	// Health check endpoint
 	router.GET("/health", h.HealthCheck)
-	
+
 	// API routes
 	v1 := router.Group("/api/v1")
 	{
 		// Model info
 		v1.GET("/model/info", h.GetModelInfo)
-		
+
 		// Prediction endpoints
 		v1.POST("/predict", h.PredictSingle)
 		v1.POST("/predict/batch", h.PredictBatch)
 		v1.POST("/predict/url", h.PredictFromURL)
-		
+
 		// Chatbot endpoints
 		v1.POST("/chatbot/query", h.ChatbotQuery)
 		v1.POST("/chatbot/stream", h.ChatbotQueryStream) // Streaming endpoint
-		
+
 		// Utility endpoints
 		v1.GET("/breeds", h.GetSupportedBreeds)
 
@@ -145,6 +155,7 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 		{
 			publicVets.GET("", vetHandlers.ListVets)                      // List all vets (public)
 			publicVets.GET("/profile/:userId", vetHandlers.GetVetProfile) // Get vet profile (public)
+			publicVets.GET("/:userId/reviews", vetHandlers.GetVetReviews) // List vet reviews (public)
 		}
 
 		// Authentication endpoints (public)
@@ -166,22 +177,28 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 			// User profile and role
 			protected.GET("/profile", authHandlers.GetProfile)
 			protected.PUT("/profile", authHandlers.UpdateProfile)
+			protected.POST("/profile/email", authHandlers.UpdateEmail)
+			protected.POST("/profile/password", authHandlers.UpdatePassword)
 			protected.POST("/auth/set-role", authHandlers.SetUserRole)
+			protected.GET("/user/roles", authHandlers.GetUserRoles)
+			protected.POST("/user/roles/add", authHandlers.AddUserRole)
+			protected.POST("/user/roles/switch", authHandlers.SwitchActiveRole)
 
 			// Vet Profiles (protected)
 			vets := protected.Group("/vets")
 			{
-				vets.GET("/profile/me", vetHandlers.GetMyVetProfile)      // Get my vet profile
-				vets.POST("/profile", vetHandlers.CreateVetProfile)       // Create/Update vet profile
+				vets.GET("/profile/me", vetHandlers.GetMyVetProfile) // Get my vet profile
+				vets.POST("/profile", vetHandlers.CreateVetProfile)  // Create/Update vet profile
+				vets.POST("/:userId/reviews", vetHandlers.AddVetReview)
 			}
 
 			// Chat & Messaging
 			chats := protected.Group("/chats")
 			{
-				chats.POST("", chatHandlers.StartChat)                    // Start new chat
-				chats.GET("", chatHandlers.GetMyChats)                    // Get my chats
-				chats.GET("/:id", chatHandlers.GetChat)                   // Get specific chat
-				chats.DELETE("/:id", chatHandlers.DeleteChat)             // Delete chat
+				chats.POST("", chatHandlers.StartChat)        // Start new chat
+				chats.GET("", chatHandlers.GetMyChats)        // Get my chats
+				chats.GET("/:id", chatHandlers.GetChat)       // Get specific chat
+				chats.DELETE("/:id", chatHandlers.DeleteChat) // Delete chat
 			}
 
 			messages := protected.Group("/messages")
@@ -248,8 +265,25 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 			{
 				comments.POST("", communityHandlers.CreateComment)
 				comments.GET("/post/:postId", communityHandlers.GetComments)
+				comments.PUT("/:id", communityHandlers.UpdateComment)
 				comments.DELETE("/:id", communityHandlers.DeleteComment)
 				comments.POST("/:id/like", communityHandlers.ToggleCommentLike)
+			}
+
+			// Community - Advanced features (groups, hashtags, trending)
+			communityAdvanced := protected.Group("/community")
+			{
+				communityAdvanced.GET("/trending/posts", communityHandlers.GetTrendingPosts)
+				communityAdvanced.GET("/trending/hashtags", communityHandlers.GetTrendingHashtags)
+				communityAdvanced.GET("/hashtags/:tag/posts", communityHandlers.GetPostsByHashtag)
+
+				communityAdvanced.POST("/groups", communityHandlers.CreateGroup)
+				communityAdvanced.GET("/groups", communityHandlers.ListGroups)
+				communityAdvanced.GET("/groups/me", communityHandlers.GetMyGroups)
+				communityAdvanced.POST("/groups/:id/join", communityHandlers.JoinGroup)
+				communityAdvanced.POST("/groups/:id/leave", communityHandlers.LeaveGroup)
+				communityAdvanced.GET("/groups/:id/posts", communityHandlers.GetGroupPosts)
+				communityAdvanced.POST("/groups/:id/posts", communityHandlers.AddPostToGroup)
 			}
 
 			// Marketplace - protected routes
@@ -322,30 +356,30 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 			{
 				// Service Types (public within auth)
 				caregivers.GET("/service-types", caregiverHandlers.GetServiceTypes)
-				
+
 				// Profile management (for caregivers)
 				caregivers.POST("/profile", caregiverHandlers.CreateProfile)
 				caregivers.GET("/profile", caregiverHandlers.GetProfile)
 				caregivers.PUT("/profile", caregiverHandlers.UpdateProfile)
-				
+
 				// Service management (for caregivers)
 				caregivers.POST("/services", caregiverHandlers.AddService)
 				caregivers.PUT("/services/:id", caregiverHandlers.UpdateService)
 				caregivers.DELETE("/services/:id", caregiverHandlers.DeleteService)
-				
+
 				// Availability management (for caregivers)
 				caregivers.POST("/availability", caregiverHandlers.SetAvailability)
 				caregivers.GET("/availability", caregiverHandlers.GetAvailability)
 				caregivers.POST("/blocked-dates", caregiverHandlers.AddBlockedDate)
 				caregivers.DELETE("/blocked-dates/:date", caregiverHandlers.RemoveBlockedDate)
-				
+
 				// Gallery management (for caregivers)
 				caregivers.POST("/gallery", caregiverHandlers.AddGalleryImage)
 				caregivers.DELETE("/gallery/:id", caregiverHandlers.DeleteGalleryImage)
-				
+
 				// Search caregivers (for pet owners)
 				caregivers.GET("/search", caregiverHandlers.SearchCaregivers)
-				
+
 				// View specific caregiver (public within auth)
 				caregivers.GET("/:id", caregiverHandlers.GetCaregiverByID)
 				caregivers.GET("/:id/reviews", caregiverHandlers.GetReviews)
@@ -358,37 +392,49 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				bookings.POST("", bookingHandlers.CreateBooking)
 				bookings.GET("", bookingHandlers.GetMyBookings)
 				bookings.GET("/:id", bookingHandlers.GetBooking)
-				
+
 				// Booking lifecycle
 				bookings.POST("/:id/respond", bookingHandlers.RespondToBooking)
 				bookings.POST("/:id/cancel", bookingHandlers.CancelBooking)
 				bookings.POST("/:id/start", bookingHandlers.StartService)
-				
+
 				// Tracking during service
 				bookings.POST("/:id/tracking", bookingHandlers.UpdateTracking)
 				bookings.GET("/:id/tracking", bookingHandlers.GetTracking)
-				
+
 				// Service completion
 				bookings.POST("/:id/complete", bookingHandlers.SubmitCompletionReport)
-				
+
 				// Reviews
 				bookings.POST("/:id/review/owner", bookingHandlers.SubmitOwnerReview)
 				bookings.POST("/:id/review/caregiver", bookingHandlers.SubmitCaregiverReview)
-				
+
 				// Incidents
 				bookings.POST("/:id/incidents", bookingHandlers.ReportIncident)
 				bookings.GET("/:id/incidents", bookingHandlers.GetIncidents)
-				
+
 				// Payments
 				bookings.POST("/:id/payments", bookingHandlers.ProcessPayment)
 				bookings.GET("/:id/payments", bookingHandlers.GetPayments)
 			}
+
+			// Dedicated vet appointments (owner <-> vet scheduling)
+			vetAppointments := protected.Group("/vet-appointments")
+			{
+				vetAppointments.POST("", vetAppointmentHandlers.CreateAppointment)
+				vetAppointments.GET("", vetAppointmentHandlers.ListAppointments)
+				vetAppointments.GET("/:id", vetAppointmentHandlers.GetAppointment)
+
+				vetAppointments.POST("/:id/respond", vetAppointmentHandlers.RespondAppointment)
+				vetAppointments.POST("/:id/cancel", vetAppointmentHandlers.CancelAppointment)
+				vetAppointments.POST("/:id/complete", vetAppointmentHandlers.CompleteAppointment)
+			}
 		}
 	}
-	
+
 	// Serve static files for uploads (if needed)
 	router.Static("/uploads", "./assets/uploads")
-	
+
 	// Serve test HTML page
 	router.Static("/web", "./web")
 	router.GET("/test", func(c *gin.Context) {
@@ -400,6 +446,6 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 	router.GET("/test/chatbot_stream", func(c *gin.Context) {
 		c.File("./web/chatbot_stream_test.html")
 	})
-	
+
 	return router
 }

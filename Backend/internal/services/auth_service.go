@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -20,23 +21,25 @@ import (
 )
 
 var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrUserNotFound       = errors.New("user not found")
-	ErrUserAlreadyExists  = errors.New("user already exists")
-	ErrInvalidToken       = errors.New("invalid token")
-	ErrTokenExpired       = errors.New("token expired")
+	ErrInvalidCredentials       = errors.New("invalid credentials")
+	ErrPasswordLoginUnavailable = errors.New("password login unavailable")
+	ErrUserNotFound             = errors.New("user not found")
+	ErrUserAlreadyExists        = errors.New("user already exists")
+	ErrEmailAlreadyInUse        = errors.New("email already in use")
+	ErrInvalidToken             = errors.New("invalid token")
+	ErrTokenExpired             = errors.New("token expired")
 )
 
 // AuthService handles authentication operations
 type AuthService struct {
-	userRepo     *repositories.UserRepository
-	jwtSecret    []byte
-	accessExpiry time.Duration
+	userRepo      repositories.UserRepository
+	jwtSecret     []byte
+	accessExpiry  time.Duration
 	refreshExpiry time.Duration
 }
 
 // NewAuthService creates a new AuthService
-func NewAuthService(userRepo *repositories.UserRepository) *AuthService {
+func NewAuthService(userRepo repositories.UserRepository) *AuthService {
 	secret := os.Getenv("SUPABASE_JWT_SECRET")
 	if secret == "" {
 		secret = os.Getenv("JWT_SECRET")
@@ -63,8 +66,13 @@ type Claims struct {
 
 // SignUp creates a new user
 func (s *AuthService) SignUp(ctx context.Context, req *models.SignUpRequest) (*models.AuthResponse, error) {
+	normalizedEmail := strings.ToLower(strings.TrimSpace(req.Email))
+	if normalizedEmail == "" {
+		return nil, ErrInvalidCredentials
+	}
+
 	// Check if user already exists
-	existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
+	existingUser, err := s.userRepo.GetByEmail(ctx, normalizedEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -78,15 +86,20 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.SignUpRequest) (*m
 		return nil, err
 	}
 
+	accountType := "pet_owner"
+	if req.AccountType != nil {
+		normalized := normalizeAccountType(*req.AccountType)
+		if normalized != "" {
+			accountType = normalized
+		}
+	}
+
 	// Create user
 	user := &models.User{
-		Email:        req.Email,
+		Email:        normalizedEmail,
 		PasswordHash: string(hashedPassword),
 		DisplayName:  req.DisplayName,
-		AccountType:  "pet_owner",
-	}
-	if req.AccountType != nil {
-		user.AccountType = *req.AccountType
+		AccountType:  accountType,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
@@ -105,16 +118,9 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.SignUpRequest) (*m
 	}
 
 	return &models.AuthResponse{
-		Success: true,
-		Message: "User created successfully",
-		User: &models.UserProfile{
-			ID:          user.ID,
-			Email:       user.Email,
-			DisplayName: user.DisplayName,
-			AccountType: &user.AccountType,
-			CreatedAt:   user.CreatedAt,
-			UpdatedAt:   user.UpdatedAt,
-		},
+		Success:      true,
+		Message:      "User created successfully",
+		User:         s.buildUserProfile(ctx, user),
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    int64(s.accessExpiry.Seconds()),
@@ -123,8 +129,13 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.SignUpRequest) (*m
 
 // SignIn authenticates a user
 func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest) (*models.AuthResponse, error) {
+	normalizedEmail := strings.ToLower(strings.TrimSpace(req.Email))
+	if normalizedEmail == "" {
+		return nil, ErrInvalidCredentials
+	}
+
 	// Get user by email
-	user, err := s.userRepo.GetByEmail(ctx, req.Email)
+	user, err := s.userRepo.GetByEmail(ctx, normalizedEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -135,6 +146,10 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest) (*m
 	// Check if user is active
 	if !user.IsActive {
 		return nil, ErrInvalidCredentials
+	}
+
+	if strings.TrimSpace(user.PasswordHash) == "" {
+		return nil, ErrPasswordLoginUnavailable
 	}
 
 	// Verify password
@@ -154,17 +169,9 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest) (*m
 	}
 
 	return &models.AuthResponse{
-		Success: true,
-		Message: "Login successful",
-		User: &models.UserProfile{
-			ID:          user.ID,
-			Email:       user.Email,
-			DisplayName: user.DisplayName,
-			AccountType: &user.AccountType,
-			AvatarURL:   user.AvatarURL,
-			CreatedAt:   user.CreatedAt,
-			UpdatedAt:   user.UpdatedAt,
-		},
+		Success:      true,
+		Message:      "Login successful",
+		User:         s.buildUserProfile(ctx, user),
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    int64(s.accessExpiry.Seconds()),
@@ -208,17 +215,9 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) 
 	}
 
 	return &models.AuthResponse{
-		Success: true,
-		Message: "Token refreshed successfully",
-		User: &models.UserProfile{
-			ID:          user.ID,
-			Email:       user.Email,
-			DisplayName: user.DisplayName,
-			AccountType: &user.AccountType,
-			AvatarURL:   user.AvatarURL,
-			CreatedAt:   user.CreatedAt,
-			UpdatedAt:   user.UpdatedAt,
-		},
+		Success:      true,
+		Message:      "Token refreshed successfully",
+		User:         s.buildUserProfile(ctx, user),
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
 		ExpiresIn:    int64(s.accessExpiry.Seconds()),
@@ -327,9 +326,248 @@ func (s *AuthService) UpdateUser(ctx context.Context, user *models.User) error {
 	return s.userRepo.Update(ctx, user)
 }
 
+// UpdateEmailWithPassword updates user email after verifying current password.
+func (s *AuthService) UpdateEmailWithPassword(ctx context.Context, userID uuid.UUID, newEmail, currentPassword string) (*models.User, error) {
+	normalizedEmail := strings.ToLower(strings.TrimSpace(newEmail))
+	if normalizedEmail == "" {
+		return nil, ErrInvalidCredentials
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrUserNotFound
+	}
+
+	if strings.TrimSpace(user.PasswordHash) == "" {
+		return nil, ErrPasswordLoginUnavailable
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword)); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	if strings.EqualFold(user.Email, normalizedEmail) {
+		return user, nil
+	}
+
+	existingUser, err := s.userRepo.GetByEmail(ctx, normalizedEmail)
+	if err != nil {
+		return nil, err
+	}
+	if existingUser != nil && existingUser.ID != userID {
+		return nil, ErrEmailAlreadyInUse
+	}
+
+	user.Email = normalizedEmail
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// UpdatePasswordWithCurrent verifies the current password before changing it.
+func (s *AuthService) UpdatePasswordWithCurrent(ctx context.Context, userID uuid.UUID, currentPassword, newPassword string) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return ErrUserNotFound
+	}
+
+	if strings.TrimSpace(user.PasswordHash) == "" {
+		return ErrPasswordLoginUnavailable
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword)); err != nil {
+		return ErrInvalidCredentials
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	if err := s.userRepo.UpdatePassword(ctx, userID, string(hashedPassword)); err != nil {
+		return err
+	}
+
+	return s.userRepo.RevokeAllUserRefreshTokens(ctx, userID)
+}
+
 // SetUserRole sets the user's role (petowner or vet)
 func (s *AuthService) SetUserRole(ctx context.Context, userID uuid.UUID, role string) error {
 	return s.userRepo.SetUserRole(ctx, userID, role)
+}
+
+// GetUserRoles returns all assigned roles for the given user.
+func (s *AuthService) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	roles, err := s.userRepo.GetUserRoles(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(roles) == 0 {
+		user, userErr := s.userRepo.GetByID(ctx, userID)
+		if userErr != nil {
+			return nil, userErr
+		}
+
+		if user != nil {
+			if normalized := normalizeAccountType(user.AccountType); normalized != "" {
+				return []string{normalized}, nil
+			}
+		}
+
+		return []string{}, nil
+	}
+
+	user, userErr := s.userRepo.GetByID(ctx, userID)
+	if userErr == nil && user != nil {
+		activeRole := normalizeAccountType(user.AccountType)
+		if activeRole != "" {
+			containsActive := false
+			for _, role := range roles {
+				if normalizeAccountType(role) == activeRole {
+					containsActive = true
+					break
+				}
+			}
+
+			if !containsActive {
+				roles = append(roles, activeRole)
+			}
+		}
+	}
+
+	return roles, nil
+}
+
+// AddUserRole assigns an additional role to the user without switching active role.
+func (s *AuthService) AddUserRole(ctx context.Context, userID uuid.UUID, role string) ([]string, error) {
+	normalized := normalizeAccountType(role)
+	if normalized == "" {
+		return nil, fmt.Errorf("invalid role")
+	}
+
+	if err := s.userRepo.AddUserRole(ctx, userID, normalized); err != nil {
+		if !isMissingUserRolesStorageError(err) {
+			return nil, err
+		}
+
+		if err := s.userRepo.SetUserRole(ctx, userID, normalized); err != nil {
+			return nil, err
+		}
+	}
+
+	roles, err := s.userRepo.GetUserRoles(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(roles) == 0 {
+		roles = []string{normalized}
+	}
+
+	return roles, nil
+}
+
+// SwitchActiveRole validates ownership of a role and switches account_type to that role.
+func (s *AuthService) SwitchActiveRole(ctx context.Context, userID uuid.UUID, role string) ([]string, error) {
+	normalized := normalizeAccountType(role)
+	if normalized == "" {
+		return nil, fmt.Errorf("invalid role")
+	}
+
+	roles, err := s.userRepo.GetUserRoles(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(roles) == 0 {
+		user, userErr := s.userRepo.GetByID(ctx, userID)
+		if userErr != nil {
+			return nil, userErr
+		}
+
+		if user != nil {
+			if normalized := normalizeAccountType(user.AccountType); normalized != "" {
+				roles = []string{normalized}
+			}
+		}
+	}
+
+	if len(roles) == 0 {
+		return nil, fmt.Errorf("no roles assigned to user")
+	}
+
+	hasRole := false
+	for _, assigned := range roles {
+		if normalizeAccountType(assigned) == normalized {
+			hasRole = true
+			break
+		}
+	}
+
+	if !hasRole {
+		return nil, fmt.Errorf("role is not assigned to user")
+	}
+
+	if err := s.userRepo.SetUserRole(ctx, userID, normalized); err != nil {
+		return nil, err
+	}
+
+	return roles, nil
+}
+
+func (s *AuthService) buildUserProfile(ctx context.Context, user *models.User) *models.UserProfile {
+	activeRole := normalizeAccountType(user.AccountType)
+
+	roles, err := s.userRepo.GetUserRoles(ctx, user.ID)
+	if err != nil {
+		roles = []string{}
+	}
+
+	if len(roles) == 0 && activeRole != "" {
+		roles = []string{activeRole}
+	}
+
+	if activeRole != "" {
+		containsActive := false
+		for _, role := range roles {
+			if normalizeAccountType(role) == activeRole {
+				containsActive = true
+				break
+			}
+		}
+
+		if !containsActive {
+			roles = append(roles, activeRole)
+		}
+	}
+
+	var accountType *string
+	var activeRolePtr *string
+	if activeRole != "" {
+		accountType = &activeRole
+		activeRolePtr = &activeRole
+	}
+
+	return &models.UserProfile{
+		ID:          user.ID,
+		Email:       user.Email,
+		DisplayName: user.DisplayName,
+		AccountType: accountType,
+		Roles:       roles,
+		ActiveRole:  activeRolePtr,
+		AvatarURL:   user.AvatarURL,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+	}
 }
 
 // Helper functions
@@ -399,8 +637,13 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 		return nil, fmt.Errorf("invalid Google token: %w", err)
 	}
 
+	normalizedGoogleEmail := strings.ToLower(strings.TrimSpace(tokenInfo.Email))
+	if normalizedGoogleEmail == "" {
+		return nil, fmt.Errorf("google account email is missing")
+	}
+
 	// Check if user exists
-	user, err := s.userRepo.GetByEmail(ctx, tokenInfo.Email)
+	user, err := s.userRepo.GetByEmail(ctx, normalizedGoogleEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +658,7 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 				Message:   "Account type required for new user",
 				IsNewUser: true,
 				User: &models.UserProfile{
-					Email:       tokenInfo.Email,
+					Email:       normalizedGoogleEmail,
 					DisplayName: &tokenInfo.Name,
 					AvatarURL:   &tokenInfo.Picture,
 				},
@@ -423,22 +666,22 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 		}
 
 		// Create new user with Google info and selected account type
-		accountType := *req.AccountType
-		if accountType != "pet_owner" && accountType != "vet" {
-			accountType = "pet_owner" // Default to pet_owner if invalid
+		accountType := normalizeAccountType(*req.AccountType)
+		if accountType == "" {
+			accountType = "pet_owner"
 		}
 
 		user = &models.User{
-			Email:          tokenInfo.Email,
-			DisplayName:    &tokenInfo.Name,
-			AvatarURL:      &tokenInfo.Picture,
-			PasswordHash:   "", // No password for Google users
-			AccountType:    accountType,
-			IsActive:       true,
-			EmailVerified:  tokenInfo.EmailVerified == "true",
-			GoogleID:       &tokenInfo.Sub,
+			Email:         normalizedGoogleEmail,
+			DisplayName:   &tokenInfo.Name,
+			AvatarURL:     &tokenInfo.Picture,
+			PasswordHash:  "", // No password for Google users
+			AccountType:   accountType,
+			IsActive:      true,
+			EmailVerified: tokenInfo.EmailVerified == "true",
+			GoogleID:      &tokenInfo.Sub,
 		}
-		
+
 		if req.DisplayName != nil && *req.DisplayName != "" {
 			user.DisplayName = req.DisplayName
 		}
@@ -465,7 +708,7 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 			user.EmailVerified = true
 			needsUpdate = true
 		}
-		
+
 		if needsUpdate {
 			if err := s.userRepo.Update(ctx, user); err != nil {
 				return nil, err
@@ -485,17 +728,9 @@ func (s *AuthService) SignInWithGoogle(ctx context.Context, req *models.GoogleSi
 	}
 
 	return &models.AuthResponse{
-		Success: true,
-		Message: "Google sign in successful",
-		User: &models.UserProfile{
-			ID:          user.ID,
-			Email:       user.Email,
-			DisplayName: user.DisplayName,
-			AccountType: &user.AccountType,
-			AvatarURL:   user.AvatarURL,
-			CreatedAt:   user.CreatedAt,
-			UpdatedAt:   user.UpdatedAt,
-		},
+		Success:      true,
+		Message:      "Google sign in successful",
+		User:         s.buildUserProfile(ctx, user),
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    int64(s.accessExpiry.Seconds()),
@@ -533,4 +768,36 @@ func (s *AuthService) verifyGoogleIDToken(idToken string) (*GoogleTokenInfo, err
 	// }
 
 	return &tokenInfo, nil
+}
+
+func normalizeAccountType(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "pet_owner", "petowner", "pet-owner", "owner":
+		return "pet_owner"
+	case "vet", "veterinarian", "veterinary":
+		return "vet"
+	case "seller", "vendor", "merchant", "shop_owner", "shopowner":
+		return "seller"
+	case "caregiver", "care_giver", "pet_caregiver":
+		return "caregiver"
+	case "admin":
+		return "admin"
+	default:
+		return ""
+	}
+}
+
+func isMissingUserRolesStorageError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	message := strings.ToLower(err.Error())
+	if !strings.Contains(message, "user_roles") {
+		return false
+	}
+
+	return strings.Contains(message, "relation") ||
+		strings.Contains(message, "table") ||
+		strings.Contains(message, "42p01")
 }

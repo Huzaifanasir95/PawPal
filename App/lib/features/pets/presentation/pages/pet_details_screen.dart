@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'dart:io';
-import '../../../../core/constants/app_colors.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/pet_model.dart';
 import '../../data/models/breed_prediction_model.dart';
@@ -14,10 +16,7 @@ import 'edit_health_records_screen.dart';
 class PetDetailsScreen extends StatefulWidget {
   final PetModel pet;
 
-  const PetDetailsScreen({
-    super.key,
-    required this.pet,
-  });
+  const PetDetailsScreen({super.key, required this.pet});
 
   @override
   State<PetDetailsScreen> createState() => _PetDetailsScreenState();
@@ -28,6 +27,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
   final _breedVerificationService = BreedVerificationService();
   final _petRepository = PetRepositoryApi();
   final _healthRepository = HealthRepositoryApi();
+  final _imageFetchClient = Dio();
   bool _isVerifying = false;
 
   @override
@@ -41,7 +41,9 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
     try {
       // Load health records if not already present
       if (_currentPet.healthRecord == null) {
-        final healthRecord = await _healthRepository.getHealthRecord(_currentPet.id);
+        final healthRecord = await _healthRepository.getHealthRecord(
+          _currentPet.id,
+        );
         if (healthRecord != null) {
           setState(() {
             _currentPet = _currentPet.copyWith(healthRecord: healthRecord);
@@ -69,7 +71,8 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
   }
 
   Future<void> _verifyBreed() async {
-    if (_currentPet.imageLocalPath == null) {
+    final imagePath = _currentPet.imageLocalPath;
+    if (imagePath == null || imagePath.trim().isEmpty) {
       _showSnackBar('No image available for verification', isError: true);
       return;
     }
@@ -77,8 +80,13 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
     setState(() => _isVerifying = true);
 
     try {
+      final verificationImage = await _resolveVerificationImage(imagePath);
+      if (verificationImage == null) {
+        throw Exception('Unable to load image for verification');
+      }
+
       final result = await _breedVerificationService.predictBreed(
-        imageFile: File(_currentPet.imageLocalPath!),
+        imageFile: verificationImage,
         petType: _currentPet.type, // Pass pet type (dog or cat)
         useTTA: true,
         topK: 5,
@@ -109,12 +117,121 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
     }
   }
 
+  Future<XFile?> _resolveVerificationImage(String path) async {
+    if (path.startsWith('data:image/')) {
+      final commaIndex = path.indexOf(',');
+      if (commaIndex == -1 || commaIndex >= path.length - 1) {
+        return null;
+      }
+      final bytes = base64Decode(path.substring(commaIndex + 1));
+      return XFile.fromData(
+        bytes,
+        name: 'pet_image.jpg',
+        mimeType: 'image/jpeg',
+      );
+    }
+
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      final response = await _imageFetchClient.get<List<int>>(
+        path,
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final data = response.data;
+      if (data == null || data.isEmpty) {
+        return null;
+      }
+
+      final contentType = response.headers.value(Headers.contentTypeHeader);
+      return XFile.fromData(
+        Uint8List.fromList(data),
+        name: 'pet_image.jpg',
+        mimeType: contentType ?? 'image/jpeg',
+      );
+    }
+
+    return XFile(path);
+  }
+
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppColors.error : AppColors.success,
+        backgroundColor: isError ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.tertiary,
       ),
+    );
+  }
+
+  Widget _buildImageFromPath(String path, {BoxFit fit = BoxFit.cover}) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(
+        path,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) {
+          return Center(
+            child: Icon(Icons.pets, color: Theme.of(context).colorScheme.primary, size: 80.sp),
+          );
+        },
+      );
+    }
+
+    if (path.startsWith('data:image/')) {
+      try {
+        final bytes = base64Decode(path.split(',').last);
+        return Image.memory(
+          bytes,
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) {
+            return Center(
+              child: Icon(Icons.pets, color: Theme.of(context).colorScheme.primary, size: 80.sp),
+            );
+          },
+        );
+      } catch (_) {
+        return Center(
+          child: Icon(Icons.pets, color: Theme.of(context).colorScheme.primary, size: 80.sp),
+        );
+      }
+    }
+
+    final localPath = path.startsWith('file://')
+        ? (Uri.tryParse(path)?.toFilePath() ?? path)
+        : path;
+
+    return FutureBuilder<Uint8List>(
+      future: XFile(localPath).readAsBytes(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Image.memory(
+            snapshot.data!,
+            fit: fit,
+            errorBuilder: (context, error, stackTrace) {
+              return Center(
+                child: Icon(Icons.pets, color: Theme.of(context).colorScheme.primary, size: 80.sp),
+              );
+            },
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Icon(Icons.pets, color: Theme.of(context).colorScheme.primary, size: 80.sp),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+            ),
+          );
+        }
+
+        return Center(
+          child: Icon(Icons.pets, color: Theme.of(context).colorScheme.primary, size: 80.sp),
+        );
+      },
     );
   }
 
@@ -122,7 +239,9 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
   String _cleanBreedName(String breed) {
     // Remove the leading ID pattern (e.g., "N02108422 " or similar)
     final parts = breed.split(' ');
-    if (parts.isNotEmpty && parts[0].contains(RegExp(r'^[A-Z0-9]+$')) && parts[0].length > 3) {
+    if (parts.isNotEmpty &&
+        parts[0].contains(RegExp(r'^[A-Z0-9]+$')) &&
+        parts[0].length > 3) {
       // Remove the first part if it looks like an ID
       return parts.skip(1).join(' ');
     }
@@ -135,304 +254,335 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-        child: SingleChildScrollView(
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
+      builder:
+          (context) => Dialog(
+            insetPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 24.h,
+            ),
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20.r),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header with gradient
-                Container(
-                  padding: EdgeInsets.all(24.w),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.success.withOpacity(0.2),
-                        AppColors.success.withOpacity(0.05),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20.r),
-                      topRight: Radius.circular(20.r),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.verified, color: AppColors.success, size: 40.sp),
-                      SizedBox(height: 12.h),
-                      Text(
-                        'We Found Your Pet\'s Breed! 🎉',
-                        style: AppTextStyles.onboardingTitle.copyWith(
-                          fontSize: 18.sp,
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+            child: SingleChildScrollView(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(20.r),
                 ),
-
-                // Content
-                Padding(
-                  padding: EdgeInsets.all(24.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Main breed result card
-                      Container(
-                        padding: EdgeInsets.all(20.w),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(16.r),
-                          border: Border.all(
-                            color: AppColors.primary.withOpacity(0.2),
-                            width: 2,
-                          ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header with gradient
+                    Container(
+                      padding: EdgeInsets.all(24.w),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).colorScheme.tertiary.withOpacity(0.2),
+                            Theme.of(context).colorScheme.tertiary.withOpacity(0.05),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20.r),
+                          topRight: Radius.circular(20.r),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.verified,
+                            color: Theme.of(context).colorScheme.tertiary,
+                            size: 40.sp,
+                          ),
+                          SizedBox(height: 12.h),
+                          Text(
+                            'We Found Your Pet\'s Breed! 🎉',
+                            style: AppTextStyles.onboardingTitle.copyWith(
+                              fontSize: 18.sp,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Content
+                    Padding(
+                      padding: EdgeInsets.all(24.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Main breed result card
+                          Container(
+                            padding: EdgeInsets.all(20.w),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(16.r),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                                width: 2,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Your Dog is a',
+                                  style: AppTextStyles.onboardingBody.copyWith(
+                                    fontSize: 13.sp,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                Text(
+                                  cleanedBreed,
+                                  style: AppTextStyles.onboardingTitle.copyWith(
+                                    fontSize: 26.sp,
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 12.h),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16.w,
+                                    vertical: 8.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  child: Text(
+                                    '${confidence.toStringAsFixed(1)}% Confidence',
+                                    style: AppTextStyles.onboardingBody
+                                        .copyWith(
+                                          fontSize: 14.sp,
+                                          color: Theme.of(context).colorScheme.tertiary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          SizedBox(height: 20.h),
+
+                          // Top predictions in horizontal cards
+                          if (result.predictions.isNotEmpty) ...[
                             Text(
-                              'Your Dog is a',
+                              'Other Predictions:',
                               style: AppTextStyles.onboardingBody.copyWith(
-                                fontSize: 13.sp,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 12.sp,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
                                 letterSpacing: 0.5,
                               ),
                             ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              cleanedBreed,
-                              style: AppTextStyles.onboardingTitle.copyWith(
-                                fontSize: 26.sp,
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w800,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
                             SizedBox(height: 12.h),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16.w,
-                                vertical: 8.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.success.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                              child: Text(
-                                '${confidence.toStringAsFixed(1)}% Confidence',
-                                style: AppTextStyles.onboardingBody.copyWith(
-                                  fontSize: 14.sp,
-                                  color: AppColors.success,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              padding: EdgeInsets.only(right: 4.w),
+                              child: Row(
+                                children:
+                                    result.predictions.skip(1).take(4).map((
+                                      pred,
+                                    ) {
+                                      final conf = (pred.confidence * 100)
+                                          .toStringAsFixed(0);
+                                      return Padding(
+                                        padding: EdgeInsets.only(right: 8.w),
+                                        child: Container(
+                                          width: 100.w,
+                                          padding: EdgeInsets.all(12.w),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).colorScheme.surfaceContainer,
+                                            borderRadius: BorderRadius.circular(
+                                              12.r,
+                                            ),
+                                            border: Border.all(
+                                              color: Theme.of(context).colorScheme.outlineVariant,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                _cleanBreedName(pred.breed),
+                                                style: AppTextStyles
+                                                    .onboardingBody
+                                                    .copyWith(
+                                                      fontSize: 11.sp,
+                                                      color:
+                                                          Theme.of(context).colorScheme.onSurface,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                textAlign: TextAlign.center,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              SizedBox(height: 6.h),
+                                              Text(
+                                                '$conf%',
+                                                style: AppTextStyles
+                                                    .onboardingBody
+                                                    .copyWith(
+                                                      fontSize: 12.sp,
+                                                      color: Theme.of(context).colorScheme.primary,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
                               ),
                             ),
                           ],
-                        ),
-                      ),
 
-                      SizedBox(height: 20.h),
+                          SizedBox(height: 20.h),
 
-                      // Top predictions in horizontal cards
-                      if (result.predictions.isNotEmpty) ...[
-                        Text(
-                          'Other Predictions:',
-                          style: AppTextStyles.onboardingBody.copyWith(
-                            fontSize: 12.sp,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        SizedBox(height: 12.h),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          padding: EdgeInsets.only(right: 4.w),
-                          child: Row(
-                            children: result.predictions.skip(1).take(4).map((pred) {
-                              final conf = (pred.confidence * 100).toStringAsFixed(0);
-                              return Padding(
-                                padding: EdgeInsets.only(right: 8.w),
-                                child: Container(
-                                  width: 100.w,
-                                  padding: EdgeInsets.all(12.w),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.neutral200,
-                                    borderRadius: BorderRadius.circular(12.r),
-                                    border: Border.all(
-                                      color: AppColors.neutral300,
-                                      width: 1,
+                          // Processing details
+                          Container(
+                            padding: EdgeInsets.all(12.w),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Column(
+                                  children: [
+                                    Text(
+                                      'Time',
+                                      style: AppTextStyles.onboardingBody
+                                          .copyWith(
+                                            fontSize: 11.sp,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                     ),
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        _cleanBreedName(pred.breed),
-                                        style: AppTextStyles.onboardingBody.copyWith(
-                                          fontSize: 11.sp,
-                                          color: AppColors.textPrimary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      SizedBox(height: 6.h),
-                                      Text(
-                                        '$conf%',
-                                        style: AppTextStyles.onboardingBody.copyWith(
-                                          fontSize: 12.sp,
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    SizedBox(height: 4.h),
+                                    Text(
+                                      '${(result.processTime / 1000).toStringAsFixed(2)}s',
+                                      style: AppTextStyles.onboardingBody
+                                          .copyWith(
+                                            fontSize: 12.sp,
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ],
-
-                      SizedBox(height: 20.h),
-
-                      // Processing details
-                      Container(
-                        padding: EdgeInsets.all(12.w),
-                        decoration: BoxDecoration(
-                          color: AppColors.neutral100,
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Column(
-                              children: [
-                                Text(
-                                  'Time',
-                                  style: AppTextStyles.onboardingBody.copyWith(
-                                    fontSize: 11.sp,
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                Container(
+                                  width: 1.w,
+                                  height: 30.h,
+                                  color: Theme.of(context).colorScheme.outlineVariant,
                                 ),
-                                SizedBox(height: 4.h),
-                                Text(
-                                  '${(result.processTime / 1000).toStringAsFixed(2)}s',
-                                  style: AppTextStyles.onboardingBody.copyWith(
-                                    fontSize: 12.sp,
-                                    color: AppColors.textPrimary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      'Method',
+                                      style: AppTextStyles.onboardingBody
+                                          .copyWith(
+                                            fontSize: 11.sp,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                    ),
+                                    SizedBox(height: 4.h),
+                                    Text(
+                                      result.usedTTA ? 'TTA' : 'Standard',
+                                      style: AppTextStyles.onboardingBody
+                                          .copyWith(
+                                            fontSize: 12.sp,
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                            Container(
-                              width: 1.w,
-                              height: 30.h,
-                              color: AppColors.neutral300,
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  'Method',
-                                  style: AppTextStyles.onboardingBody.copyWith(
-                                    fontSize: 11.sp,
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                SizedBox(height: 4.h),
-                                Text(
-                                  result.usedTTA ? 'TTA' : 'Standard',
-                                  style: AppTextStyles.onboardingBody.copyWith(
-                                    fontSize: 12.sp,
-                                    color: AppColors.textPrimary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
 
-                // Buttons
-                Padding(
-                  padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Update breed button
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _updatePetBreed(cleanedBreed);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.success,
-                          padding: EdgeInsets.symmetric(vertical: 14.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
+                    // Buttons
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Update breed button
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _updatePetBreed(cleanedBreed);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.tertiary,
+                              padding: EdgeInsets.symmetric(vertical: 14.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                            ),
+                            icon: Icon(Icons.check_circle, size: 20.sp),
+                            label: Text(
+                              'Yes, Update Pet Breed',
+                              style: AppTextStyles.onboardingBody.copyWith(
+                                fontSize: 14.sp,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
-                        ),
-                        icon: Icon(Icons.check_circle, size: 20.sp),
-                        label: Text(
-                          'Yes, Update Pet Breed',
-                          style: AppTextStyles.onboardingBody.copyWith(
-                            fontSize: 14.sp,
-                            color: AppColors.textOnSecondary,
-                            fontWeight: FontWeight.w700,
+                          SizedBox(height: 10.h),
+                          // Keep current breed button
+                          OutlinedButton.icon(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Theme.of(context).colorScheme.primary,
+                              side: BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 1.5,
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 14.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                            ),
+                            icon: Icon(Icons.close_rounded, size: 20.sp),
+                            label: Text(
+                              'Keep Current Breed',
+                              style: AppTextStyles.onboardingBody.copyWith(
+                                fontSize: 14.sp,
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                      SizedBox(height: 10.h),
-                      // Keep current breed button
-                      OutlinedButton.icon(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          side: BorderSide(color: AppColors.primary, width: 1.5),
-                          padding: EdgeInsets.symmetric(vertical: 14.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                        ),
-                        icon: Icon(Icons.close_rounded, size: 20.sp),
-                        label: Text(
-                          'Keep Current Breed',
-                          style: AppTextStyles.onboardingBody.copyWith(
-                            fontSize: 14.sp,
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
     );
   }
 
@@ -462,18 +612,18 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.accent, size: 24.sp),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface, size: 24.sp),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Pet Details',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
-            color: AppColors.accent,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -488,47 +638,42 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                 Container(
                   width: double.infinity,
                   height: 340.h,
-                  color: AppColors.surfaceContainer,
-                  child: _currentPet.imageUrls != null && _currentPet.imageUrls!.isNotEmpty
-                      ? PageView.builder(
-                          itemCount: _currentPet.imageUrls!.length,
-                          itemBuilder: (context, index) {
-                            final imagePath = _currentPet.imageUrls![index];
-                            return GestureDetector(
-                              onTap: () => _showImageGallery(context, index),
-                              child: ClipRRect(
-                                child: Image.file(
-                                  File(imagePath),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Center(
-                                    child: Icon(Icons.pets,
-                                        color: AppColors.primary, size: 80.sp),
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  child:
+                      _currentPet.imageUrls != null &&
+                              _currentPet.imageUrls!.isNotEmpty
+                          ? PageView.builder(
+                            itemCount: _currentPet.imageUrls!.length,
+                            itemBuilder: (context, index) {
+                              final imagePath = _currentPet.imageUrls![index];
+                              return GestureDetector(
+                                onTap: () => _showImageGallery(context, index),
+                                child: ClipRRect(
+                                  child: _buildImageFromPath(
+                                    imagePath,
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        )
-                      : _currentPet.imageLocalPath != null
+                              );
+                            },
+                          )
+                          : _currentPet.imageLocalPath != null
                           ? GestureDetector(
-                              onTap: () => _showImageGallery(context, 0),
-                              child: ClipRRect(
-                                child: Image.file(
-                                  File(_currentPet.imageLocalPath!),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Center(
-                                    child: Icon(Icons.pets,
-                                        color: AppColors.primary, size: 80.sp),
-                                  ),
-                                ),
+                            onTap: () => _showImageGallery(context, 0),
+                            child: ClipRRect(
+                              child: _buildImageFromPath(
+                                _currentPet.imageLocalPath!,
+                                fit: BoxFit.cover,
                               ),
-                            )
-                          : Center(
-                              child: Icon(Icons.pets,
-                                  color: AppColors.primary, size: 80.sp),
                             ),
+                          )
+                          : Center(
+                            child: Icon(
+                              Icons.pets,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 80.sp,
+                            ),
+                          ),
                 ),
                 // Image indicator
                 if ((_currentPet.imageUrls?.length ?? 0) > 1)
@@ -546,7 +691,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                           margin: EdgeInsets.symmetric(horizontal: 4.w),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.accent.withOpacity(0.5),
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                           ),
                         ),
                       ),
@@ -557,9 +702,12 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                   top: 20.h,
                   right: 20.w,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 6.h,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppColors.surface.withOpacity(0.8),
+                      color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
                       borderRadius: BorderRadius.circular(20.r),
                     ),
                     child: Row(
@@ -567,7 +715,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                       children: [
                         Icon(
                           Icons.touch_app,
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           size: 16.sp,
                         ),
                         SizedBox(width: 4.w),
@@ -575,7 +723,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                           'Tap to view all',
                           style: AppTextStyles.onboardingBody.copyWith(
                             fontSize: 12.sp,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -595,9 +743,9 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          AppColors.authBackground.withOpacity(0.95),
-                          AppColors.authBackground.withOpacity(0.7),
-                          AppColors.authBackground.withOpacity(0),
+                          Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                          Theme.of(context).colorScheme.surface.withOpacity(0.7),
+                          Theme.of(context).colorScheme.surface.withOpacity(0),
                         ],
                       ),
                     ),
@@ -613,11 +761,11 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                 margin: EdgeInsets.symmetric(horizontal: 16.w),
                 padding: EdgeInsets.all(20.w),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(20.r),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.shadow.withOpacity(0.15),
+                      color: Theme.of(context).colorScheme.shadow.withOpacity(0.15),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -640,7 +788,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                                 style: AppTextStyles.onboardingTitle.copyWith(
                                   fontSize: 28.sp,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.primary,
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
                               SizedBox(height: 6.h),
@@ -650,14 +798,14 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                                   vertical: 4.h,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.12),
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(6.r),
                                 ),
                                 child: Text(
                                   _currentPet.type.toUpperCase(),
                                   style: AppTextStyles.onboardingBody.copyWith(
                                     fontSize: 10.sp,
-                                    color: AppColors.primary,
+                                    color: Theme.of(context).colorScheme.primary,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 1,
                                   ),
@@ -673,12 +821,12 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         //     child: Container(
                         //       padding: EdgeInsets.all(8.w),
                         //       decoration: BoxDecoration(
-                        //         color: AppColors.success.withOpacity(0.12),
+                        //         color: Theme.of(context).colorScheme.tertiary.withOpacity(0.12),
                         //         borderRadius: BorderRadius.circular(8.r),
                         //       ),
                         //       child: Icon(
                         //         Icons.verified,
-                        //         color: AppColors.success,
+                        //         color: Theme.of(context).colorScheme.tertiary,
                         //         size: 20.sp,
                         //       ),
                         //     ),
@@ -700,51 +848,53 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                           icon: Icons.pets,
                           label: 'Breed',
                           value: _currentPet.breed,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         _buildCompactInfoTile(
                           icon: Icons.cake,
                           label: 'Age',
                           value: '${_currentPet.age} ${_currentPet.ageUnit}',
-                          color: AppColors.warning,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                         _buildCompactInfoTile(
                           icon: Icons.wc,
                           label: 'Gender',
                           value: _capitalize(_currentPet.gender),
-                          color: AppColors.info,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                         _buildCompactInfoTile(
                           icon: Icons.palette,
                           label: 'Color',
                           value: _currentPet.color,
-                          color: AppColors.accent,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         _buildCompactInfoTile(
                           icon: Icons.scale,
                           label: 'Weight',
-                          value: '${_currentPet.weight} ${_currentPet.weightUnit}',
-                          color: AppColors.primary,
+                          value:
+                              '${_currentPet.weight} ${_currentPet.weightUnit}',
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         _buildCompactInfoTile(
                           icon: Icons.date_range,
                           label: 'Joined',
                           value: _formatDate(_currentPet.createdAt),
-                          color: AppColors.success,
+                          color: Theme.of(context).colorScheme.tertiary,
                         ),
                       ],
                     ),
 
                     // Bio Section
-                    if (_currentPet.bio != null && _currentPet.bio!.isNotEmpty) ...[
+                    if (_currentPet.bio != null &&
+                        _currentPet.bio!.isNotEmpty) ...[
                       SizedBox(height: 16.h),
                       Container(
                         padding: EdgeInsets.all(14.w),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.08),
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12.r),
                           border: Border.all(
-                            color: AppColors.primary.withOpacity(0.15),
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                             width: 1,
                           ),
                         ),
@@ -753,13 +903,17 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.notes, color: AppColors.primary, size: 18.sp),
+                                Icon(
+                                  Icons.notes,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  size: 18.sp,
+                                ),
                                 SizedBox(width: 8.w),
                                 Text(
                                   'About',
                                   style: AppTextStyles.onboardingBody.copyWith(
                                     fontSize: 12.sp,
-                                    color: AppColors.textPrimary,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -770,7 +924,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                               _currentPet.bio!,
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 13.sp,
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 height: 1.6,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -790,15 +944,15 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                     //     decoration: BoxDecoration(
                     //       gradient: LinearGradient(
                     //         colors: [
-                    //           AppColors.success.withOpacity(0.1),
-                    //           AppColors.success.withOpacity(0.04),
+                    //           Theme.of(context).colorScheme.tertiary.withOpacity(0.1),
+                    //           Theme.of(context).colorScheme.tertiary.withOpacity(0.04),
                     //         ],
                     //         begin: Alignment.topLeft,
                     //         end: Alignment.bottomRight,
                     //       ),
                     //       borderRadius: BorderRadius.circular(12.r),
                     //       border: Border.all(
-                    //         color: AppColors.success.withOpacity(0.2),
+                    //         color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2),
                     //         width: 1,
                     //       ),
                     //     ),
@@ -807,13 +961,13 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                     //       children: [
                     //         Row(
                     //           children: [
-                    //             Icon(Icons.verified_user, color: AppColors.success, size: 18.sp),
+                    //             Icon(Icons.verified_user, color: Theme.of(context).colorScheme.tertiary, size: 18.sp),
                     //             SizedBox(width: 8.w),
                     //             Text(
                     //               'AI Verified',
                     //               style: AppTextStyles.onboardingBody.copyWith(
                     //                 fontSize: 12.sp,
-                    //                 color: AppColors.textPrimary,
+                    //                 color: Theme.of(context).colorScheme.onSurface,
                     //                 fontWeight: FontWeight.w700,
                     //               ),
                     //             ),
@@ -827,7 +981,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                     //             _currentPet.verifiedBreed ?? _currentPet.breed,
                     //             style: AppTextStyles.onboardingBody.copyWith(
                     //               fontSize: 13.sp,
-                    //               color: AppColors.success,
+                    //               color: Theme.of(context).colorScheme.tertiary,
                     //               fontWeight: FontWeight.w700,
                     //             ),
                     //           ),
@@ -835,7 +989,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                     //             '${((_currentPet.verificationConfidence ?? 0) * 100).toStringAsFixed(0)}%',
                     //             style: AppTextStyles.onboardingBody.copyWith(
                     //               fontSize: 13.sp,
-                    //               color: AppColors.success,
+                    //               color: Theme.of(context).colorScheme.tertiary,
                     //               fontWeight: FontWeight.w700,
                     //             ),
                     //           ),
@@ -846,8 +1000,8 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                     //         borderRadius: BorderRadius.circular(6.r),
                     //         child: LinearProgressIndicator(
                     //           value: _currentPet.verificationConfidence ?? 0,
-                    //           backgroundColor: AppColors.neutral300,
-                    //           valueColor: AlwaysStoppedAnimation<Color>(AppColors.success),
+                    //           backgroundColor: Theme.of(context).colorScheme.outlineVariant,
+                    //           valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.tertiary),
                     //           minHeight: 4.h,
                     //         ),
                     //       ),
@@ -865,11 +1019,11 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
               child: Container(
                 padding: EdgeInsets.all(20.w),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(20.r),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.shadow.withOpacity(0.15),
+                      color: Theme.of(context).colorScheme.shadow.withOpacity(0.15),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -885,13 +1039,13 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                           'Health Records',
                           style: AppTextStyles.onboardingTitle.copyWith(
                             fontSize: 20.sp,
-                            color: AppColors.textPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         Icon(
                           Icons.health_and_safety,
-                          color: AppColors.success,
+                          color: Theme.of(context).colorScheme.tertiary,
                           size: 24.sp,
                         ),
                       ],
@@ -903,10 +1057,10 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                       Container(
                         padding: EdgeInsets.all(24.w),
                         decoration: BoxDecoration(
-                          color: AppColors.info.withOpacity(0.08),
+                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(16.r),
                           border: Border.all(
-                            color: AppColors.info.withOpacity(0.2),
+                            color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                             width: 1.5,
                           ),
                         ),
@@ -915,12 +1069,12 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                             Container(
                               padding: EdgeInsets.all(12.w),
                               decoration: BoxDecoration(
-                                color: AppColors.info.withOpacity(0.15),
+                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.15),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.medical_services_outlined,
-                                color: AppColors.info,
+                                color: Theme.of(context).colorScheme.secondary,
                                 size: 32.sp,
                               ),
                             ),
@@ -929,7 +1083,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                               'No health records added yet',
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 16.sp,
-                                color: AppColors.textPrimary,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w700,
                               ),
                               textAlign: TextAlign.center,
@@ -939,7 +1093,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                               'Add your pet\'s medical history and keep track of their health',
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 13.sp,
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 height: 1.4,
                               ),
                               textAlign: TextAlign.center,
@@ -953,15 +1107,15 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                       Container(
                         padding: EdgeInsets.all(16.w),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(14.r),
                           border: Border.all(
-                            color: AppColors.success.withOpacity(0.15),
+                            color: Theme.of(context).colorScheme.tertiary.withOpacity(0.15),
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.success.withOpacity(0.08),
+                              color: Theme.of(context).colorScheme.tertiary.withOpacity(0.08),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -980,30 +1134,39 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                                 icon: Icons.vaccines,
                                 label: 'Vaccinated',
                                 value: 'Yes',
-                                color: AppColors.success,
+                                color: Theme.of(context).colorScheme.tertiary,
                               ),
                             if (_currentPet.healthRecord!.vetName != null)
                               _buildElegantHealthTile(
                                 icon: Icons.local_hospital,
                                 label: 'Vet',
                                 value: _currentPet.healthRecord!.vetName!,
-                                color: AppColors.primary,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
-                            if (_currentPet.healthRecord!.medicalConditions != null &&
-                                _currentPet.healthRecord!.medicalConditions!.isNotEmpty)
+                            if (_currentPet.healthRecord!.medicalConditions !=
+                                    null &&
+                                _currentPet
+                                    .healthRecord!
+                                    .medicalConditions!
+                                    .isNotEmpty)
                               _buildElegantHealthTile(
                                 icon: Icons.warning_rounded,
                                 label: 'Conditions',
-                                value: '${_currentPet.healthRecord!.medicalConditions!.length} recorded',
-                                color: AppColors.warning,
+                                value:
+                                    '${_currentPet.healthRecord!.medicalConditions!.length} recorded',
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                             if (_currentPet.healthRecord!.medications != null &&
-                                _currentPet.healthRecord!.medications!.isNotEmpty)
+                                _currentPet
+                                    .healthRecord!
+                                    .medications!
+                                    .isNotEmpty)
                               _buildElegantHealthTile(
                                 icon: Icons.medication,
                                 label: 'Medications',
-                                value: '${_currentPet.healthRecord!.medications!.length} active',
-                                color: AppColors.info,
+                                value:
+                                    '${_currentPet.healthRecord!.medications!.length} active',
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                           ],
                         ),
@@ -1020,36 +1183,44 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                               final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => EditHealthRecordsScreen(
-                                    petId: _currentPet.id,
-                                    petName: _currentPet.name,
-                                    existingRecord: _currentPet.healthRecord,
-                                  ),
+                                  builder:
+                                      (context) => EditHealthRecordsScreen(
+                                        petId: _currentPet.id,
+                                        petName: _currentPet.name,
+                                        existingRecord:
+                                            _currentPet.healthRecord,
+                                      ),
                                 ),
                               );
 
                               // Refresh pet data if health records were updated
                               if (result == true) {
                                 await _refreshPetData();
-                                _showSnackBar('Health records updated successfully!');
+                                _showSnackBar(
+                                  'Health records updated successfully!',
+                                );
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.info,
+                              backgroundColor: Theme.of(context).colorScheme.secondary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
                             ),
                             icon: Icon(
-                              _currentPet.healthRecord == null ? Icons.add : Icons.edit,
-                              color: AppColors.textOnSecondary,
+                              _currentPet.healthRecord == null
+                                  ? Icons.add
+                                  : Icons.edit,
+                              color: Theme.of(context).colorScheme.onPrimary,
                               size: 20.sp,
                             ),
                             label: Text(
-                              _currentPet.healthRecord == null ? 'Add Health Records' : 'Edit Health Records',
+                              _currentPet.healthRecord == null
+                                  ? 'Add Health Records'
+                                  : 'Edit Health Records',
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 14.sp,
-                                color: AppColors.textOnSecondary,
+                                color: Theme.of(context).colorScheme.onPrimary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1062,29 +1233,30 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => AddHealthJournalScreen(
-                                    petId: _currentPet.id,
-                                    petName: _currentPet.name,
-                                  ),
+                                  builder:
+                                      (context) => AddHealthJournalScreen(
+                                        petId: _currentPet.id,
+                                        petName: _currentPet.name,
+                                      ),
                                 ),
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
+                              backgroundColor: Theme.of(context).colorScheme.primary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
                             ),
                             icon: Icon(
                               Icons.add,
-                              color: AppColors.accent,
+                              color: Theme.of(context).colorScheme.onSurface,
                               size: 20.sp,
                             ),
                             label: Text(
                               'Add Journal',
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 14.sp,
-                                color: AppColors.accent,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1112,18 +1284,18 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         style: AppTextStyles.onboardingTitle.copyWith(
                           fontSize: 20.sp,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       Container(
                         padding: EdgeInsets.all(8.w),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.12),
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.health_and_safety,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           size: 20.sp,
                         ),
                       ),
@@ -1131,7 +1303,9 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                   ),
                   SizedBox(height: 16.h),
                   StreamBuilder<List<dynamic>>(
-                    stream: _healthRepository.getHealthJournalEntries(_currentPet.id),
+                    stream: _healthRepository.getHealthJournalEntries(
+                      _currentPet.id,
+                    ),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return Center(
@@ -1139,7 +1313,9 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                             padding: EdgeInsets.symmetric(vertical: 24.h),
                             child: CircularProgressIndicator(
                               strokeWidth: 3,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).colorScheme.primary,
+                              ),
                             ),
                           ),
                         );
@@ -1151,10 +1327,10 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         return Container(
                           padding: EdgeInsets.all(24.w),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.08),
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(16.r),
                             border: Border.all(
-                              color: AppColors.primary.withOpacity(0.2),
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                               width: 1.5,
                             ),
                           ),
@@ -1163,12 +1339,12 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                               Container(
                                 padding: EdgeInsets.all(12.w),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.15),
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   Icons.history,
-                                  color: AppColors.primary,
+                                  color: Theme.of(context).colorScheme.primary,
                                   size: 28.sp,
                                 ),
                               ),
@@ -1178,7 +1354,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                                 style: AppTextStyles.onboardingBody.copyWith(
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -1187,7 +1363,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                                 'Start tracking your pet\'s daily health and wellness',
                                 style: AppTextStyles.onboardingBody.copyWith(
                                   fontSize: 13.sp,
-                                  color: AppColors.textSecondary,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   height: 1.4,
                                 ),
                                 textAlign: TextAlign.center,
@@ -1203,14 +1379,18 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         itemCount: journals.length,
                         itemBuilder: (context, index) {
                           final journal = journals[index];
-                          final moodColor = _getMoodColor(journal.mood ?? 'happy');
-                          final moodIcon = _getMoodIcon(journal.mood ?? 'happy');
-                          
+                          final moodColor = _getMoodColor(
+                            journal.mood ?? 'happy',
+                          );
+                          final moodIcon = _getMoodIcon(
+                            journal.mood ?? 'happy',
+                          );
+
                           return Container(
                             margin: EdgeInsets.only(bottom: 12.h),
                             padding: EdgeInsets.all(16.w),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(14.r),
                               border: Border.all(
                                 color: moodColor.withOpacity(0.2),
@@ -1228,7 +1408,8 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
                                       child: Row(
@@ -1236,8 +1417,11 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                                           Container(
                                             padding: EdgeInsets.all(8.w),
                                             decoration: BoxDecoration(
-                                              color: moodColor.withOpacity(0.15),
-                                              borderRadius: BorderRadius.circular(10.r),
+                                              color: moodColor.withOpacity(
+                                                0.15,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10.r),
                                             ),
                                             child: Icon(
                                               moodIcon,
@@ -1247,24 +1431,32 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                                           ),
                                           SizedBox(width: 12.w),
                                           Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 '${journal.date.day}/${journal.date.month}/${journal.date.year}',
-                                                style: AppTextStyles.onboardingBody.copyWith(
-                                                  fontSize: 14.sp,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: AppColors.textPrimary,
-                                                ),
+                                                style: AppTextStyles
+                                                    .onboardingBody
+                                                    .copyWith(
+                                                      fontSize: 14.sp,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color:
+                                                          Theme.of(context).colorScheme.onSurface,
+                                                    ),
                                               ),
                                               SizedBox(height: 2.h),
                                               Text(
                                                 journal.mood ?? 'neutral',
-                                                style: AppTextStyles.onboardingBody.copyWith(
-                                                  fontSize: 12.sp,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: moodColor,
-                                                ),
+                                                style: AppTextStyles
+                                                    .onboardingBody
+                                                    .copyWith(
+                                                      fontSize: 12.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: moodColor,
+                                                    ),
                                               ),
                                             ],
                                           ),
@@ -1278,28 +1470,35 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                                           vertical: 6.h,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: AppColors.info.withOpacity(0.12),
-                                          borderRadius: BorderRadius.circular(8.r),
+                                          color: Theme.of(context).colorScheme.secondary.withOpacity(
+                                            0.12,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            8.r,
+                                          ),
                                         ),
                                         child: Text(
                                           '${journal.weight} ${journal.weightUnit ?? 'kg'}',
-                                          style: AppTextStyles.onboardingBody.copyWith(
-                                            fontSize: 11.sp,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.info,
-                                          ),
+                                          style: AppTextStyles.onboardingBody
+                                              .copyWith(
+                                                fontSize: 11.sp,
+                                                fontWeight: FontWeight.w600,
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
                                         ),
                                       ),
                                   ],
                                 ),
                                 SizedBox(height: 8.h),
-                                if (journal.generalNotes != null && journal.generalNotes!.isNotEmpty)
+                                if (journal.generalNotes != null &&
+                                    journal.generalNotes!.isNotEmpty)
                                   Text(
                                     journal.generalNotes!,
-                                    style: AppTextStyles.onboardingBody.copyWith(
-                                      fontSize: 12.sp,
-                                      color: AppColors.textSecondary,
-                                    ),
+                                    style: AppTextStyles.onboardingBody
+                                        .copyWith(
+                                          fontSize: 12.sp,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -1317,8 +1516,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
 
             // Verify Breed Button Section
             Padding(
-              padding:
-                  EdgeInsets.fromLTRB(20.w, 32.h, 20.w, 30.h),
+              padding: EdgeInsets.fromLTRB(20.w, 32.h, 20.w, 30.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -1326,10 +1524,10 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                     Container(
                       padding: EdgeInsets.all(16.w),
                       decoration: BoxDecoration(
-                        color: AppColors.info.withOpacity(0.12),
+                        color: Theme.of(context).colorScheme.secondary.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(
-                          color: AppColors.info.withOpacity(0.3),
+                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
                           width: 1.5,
                         ),
                       ),
@@ -1341,7 +1539,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                             child: CircularProgressIndicator(
                               strokeWidth: 2.5,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.info,
+                                Theme.of(context).colorScheme.secondary,
                               ),
                             ),
                           ),
@@ -1354,7 +1552,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                                   'Analyzing breed...',
                                   style: AppTextStyles.onboardingBody.copyWith(
                                     fontSize: 14.sp,
-                                    color: AppColors.info,
+                                    color: Theme.of(context).colorScheme.secondary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -1363,7 +1561,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                                   'Using AI model (2-5 seconds)',
                                   style: AppTextStyles.onboardingBody.copyWith(
                                     fontSize: 11.sp,
-                                    color: AppColors.textSecondary,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -1379,7 +1577,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         borderRadius: BorderRadius.circular(14.r),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.accent.withOpacity(0.25),
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.25),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -1388,9 +1586,10 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                       child: ElevatedButton.icon(
                         onPressed: _isVerifying ? null : _verifyBreed,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          disabledBackgroundColor:
-                              AppColors.accent.withOpacity(0.5),
+                          backgroundColor: Theme.of(context).colorScheme.onSurface,
+                          disabledBackgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(
+                            0.5,
+                          ),
                           padding: EdgeInsets.symmetric(
                             horizontal: 28.w,
                             vertical: 16.h,
@@ -1403,7 +1602,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                           _currentPet.isVerified == true
                               ? Icons.refresh
                               : Icons.verified_user,
-                          color: AppColors.textOnSecondary,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           size: 22.sp,
                         ),
                         label: Text(
@@ -1412,7 +1611,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                               : 'Verify Breed with AI',
                           style: AppTextStyles.onboardingBody.copyWith(
                             fontSize: 16.sp,
-                            color: AppColors.textOnSecondary,
+                            color: Theme.of(context).colorScheme.onPrimary,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.5,
                           ),
@@ -1437,12 +1636,9 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: color.withOpacity(0.15),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.15), width: 1),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1460,7 +1656,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
             label,
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 10.sp,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -1470,7 +1666,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
             value,
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 12.sp,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w700,
             ),
             textAlign: TextAlign.center,
@@ -1481,6 +1677,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
       ),
     );
   }
+
   String _formatDate(DateTime? date) {
     if (date == null) return 'N/A';
     return '${date.day}/${date.month}/${date.year}';
@@ -1504,7 +1701,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
       case 'calm':
         return Colors.purple;
       default:
-        return AppColors.primary;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 
@@ -1534,12 +1731,9 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1.5,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.08),
@@ -1564,7 +1758,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
             label,
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 10.sp,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -1574,7 +1768,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
             value,
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 12.sp,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w700,
             ),
             textAlign: TextAlign.center,
@@ -1588,91 +1782,86 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
 
   void _showImageGallery(BuildContext context, int initialIndex) {
     final imageUrls = _currentPet.imageUrls ?? [];
-    final hasLocalImage = _currentPet.imageLocalPath != null && imageUrls.isEmpty;
+    final hasLocalImage =
+        _currentPet.imageLocalPath != null && imageUrls.isEmpty;
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: EdgeInsets.zero,
-        backgroundColor: Colors.black,
-        child: Stack(
-          children: [
-            PageView.builder(
-              controller: PageController(initialPage: initialIndex),
-              itemCount: hasLocalImage ? 1 : imageUrls.length,
-              itemBuilder: (context, index) {
-                String? imagePath;
-                if (hasLocalImage) {
-                  imagePath = _currentPet.imageLocalPath;
-                } else {
-                  imagePath = imageUrls[index];
-                }
+      builder:
+          (context) => Dialog(
+            insetPadding: EdgeInsets.zero,
+            backgroundColor: Colors.black,
+            child: Stack(
+              children: [
+                PageView.builder(
+                  controller: PageController(initialPage: initialIndex),
+                  itemCount: hasLocalImage ? 1 : imageUrls.length,
+                  itemBuilder: (context, index) {
+                    String? imagePath;
+                    if (hasLocalImage) {
+                      imagePath = _currentPet.imageLocalPath;
+                    } else {
+                      imagePath = imageUrls[index];
+                    }
 
-                return InteractiveViewer(
-                  minScale: 0.5,
-                  maxScale: 4.0,
-                  child: Center(
-                    child: Image.file(
-                      File(imagePath!),
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Center(
-                        child: Icon(
-                          Icons.pets,
-                          color: Colors.white,
-                          size: 80.sp,
+                    return InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 4.0,
+                      child: Center(
+                        child: _buildImageFromPath(
+                          imagePath!,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                // Close button
+                Positioned(
+                  top: 40.h,
+                  right: 20.w,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24.sp,
+                      ),
+                    ),
+                  ),
+                ),
+                // Image counter
+                if ((hasLocalImage ? 1 : imageUrls.length) > 1)
+                  Positioned(
+                    bottom: 40.h,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        hasLocalImage ? 1 : imageUrls.length,
+                        (index) => Container(
+                          width: 8.w,
+                          height: 8.h,
+                          margin: EdgeInsets.symmetric(horizontal: 4.w),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                );
-              },
+              ],
             ),
-            // Close button
-            Positioned(
-              top: 40.h,
-              right: 20.w,
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: EdgeInsets.all(8.w),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 24.sp,
-                  ),
-                ),
-              ),
-            ),
-            // Image counter
-            if ((hasLocalImage ? 1 : imageUrls.length) > 1)
-              Positioned(
-                bottom: 40.h,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    hasLocalImage ? 1 : imageUrls.length,
-                    (index) => Container(
-                      width: 8.w,
-                      height: 8.h,
-                      margin: EdgeInsets.symmetric(horizontal: 4.w),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.5),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }
+

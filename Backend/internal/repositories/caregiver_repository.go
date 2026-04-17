@@ -567,6 +567,21 @@ func (r *CaregiverRepository) SearchCaregivers(ctx context.Context, req *models.
 		argNum++
 	}
 
+	if req.ServiceType != nil && strings.TrimSpace(*req.ServiceType) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf(`
+			EXISTS (
+				SELECT 1
+				FROM caregiver_services cs
+				JOIN caregiver_service_types cst ON cst.id = cs.service_type_id
+				WHERE cs.caregiver_id = cp.id
+				AND cs.is_available = true
+				AND LOWER(cst.name) = LOWER($%d)
+			)
+		`, argNum))
+		args = append(args, strings.TrimSpace(*req.ServiceType))
+		argNum++
+	}
+
 	if req.PetSize != nil && *req.PetSize != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("$%d = ANY(cp.accepted_pet_sizes)", argNum))
 		args = append(args, *req.PetSize)
@@ -674,6 +689,14 @@ func (r *CaregiverRepository) SearchCaregivers(ctx context.Context, req *models.
 		if err != nil {
 			return nil, 0, err
 		}
+
+		services, serviceErr := r.GetServicesByCaregiver(ctx, p.ID)
+		if serviceErr == nil {
+			p.Services = services
+		} else {
+			p.Services = []models.CaregiverService{}
+		}
+
 		profiles = append(profiles, p)
 	}
 

@@ -8,6 +8,7 @@ import (
 
 	"pawpal-backend/internal/models"
 	"pawpal-backend/internal/repositories"
+	"pawpal-backend/internal/utils"
 )
 
 // PetHandlers handles pet endpoints
@@ -46,11 +47,34 @@ func (h *PetHandlers) CreatePet(c *gin.Context) {
 		Color:      req.Color,
 		Weight:     req.Weight,
 		WeightUnit: req.WeightUnit,
-		ImageURL:   req.ImageURL,
-		ImageLocalPath: req.ImageLocalPath,
-		ImageURLs:  req.ImageURLs,
+		ImageURL:   nil,
+		ImageLocalPath: nil,
+		ImageURLs:  []string{},
 		Bio:        req.Bio,
 		IsAdopted:  false,
+	}
+
+	if req.ImageURL != nil && *req.ImageURL != "" {
+		resolved, err := utils.ResolveImageReference(c.Request.Context(), *req.ImageURL, "pets/"+userID+"/primary")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.PetResponse{Success: false, Message: "Invalid imageUrl: " + err.Error()})
+			return
+		}
+		if resolved != "" {
+			pet.ImageURL = &resolved
+		}
+	}
+
+	if len(req.ImageURLs) > 0 {
+		resolvedList, err := utils.ResolveImageReferences(c.Request.Context(), req.ImageURLs, "pets/"+userID+"/gallery")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.PetResponse{Success: false, Message: "Invalid imageUrls: " + err.Error()})
+			return
+		}
+		pet.ImageURLs = resolvedList
+		if pet.ImageURL == nil && len(resolvedList) > 0 {
+			pet.ImageURL = &resolvedList[0]
+		}
 	}
 
 	if req.IsVerified != nil {
@@ -196,7 +220,16 @@ func (h *PetHandlers) UpdatePet(c *gin.Context) {
 		pet.WeightUnit = *req.WeightUnit
 	}
 	if req.ImageURLs != nil {
-		pet.ImageURLs = req.ImageURLs
+		resolvedList, err := utils.ResolveImageReferences(c.Request.Context(), req.ImageURLs, "pets/"+userID+"/gallery")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.PetResponse{Success: false, Message: "Invalid imageUrls: " + err.Error()})
+			return
+		}
+		pet.ImageURLs = resolvedList
+		if len(resolvedList) > 0 {
+			pet.ImageURL = &resolvedList[0]
+			pet.ImageLocalPath = nil
+		}
 	}
 	if req.Bio != nil {
 		pet.Bio = req.Bio

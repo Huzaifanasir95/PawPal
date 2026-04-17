@@ -4,6 +4,10 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/api_client.dart';
+import '../../../chat/data/models/chat_model.dart';
+import '../../../chat/data/repositories/chat_repository.dart';
+import '../../../chat/presentation/pages/chat_conversation_screen.dart';
 import '../../data/repositories/caregiver_repository.dart';
 import '../../data/models/caregiver_models.dart';
 import '../../data/models/booking_models.dart';
@@ -12,10 +16,7 @@ import 'create_booking_screen.dart';
 class CaregiverDetailScreen extends StatefulWidget {
   final String caregiverId;
 
-  const CaregiverDetailScreen({
-    super.key,
-    required this.caregiverId,
-  });
+  const CaregiverDetailScreen({super.key, required this.caregiverId});
 
   @override
   State<CaregiverDetailScreen> createState() => _CaregiverDetailScreenState();
@@ -32,6 +33,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
   List<CaregiverGalleryItem> _gallery = [];
   List<ServiceReview> _reviews = [];
   bool _isLoading = true;
+  bool _isOpeningChat = false;
 
   @override
   void initState() {
@@ -55,19 +57,23 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
         _repository.getCaregiverReviews(widget.caregiverId),
       ]);
 
-      final caregiverData = results[0] as ({
-        CaregiverProfile profile,
-        List<CaregiverService> services,
-        List<CaregiverAvailability>? availability,
-        List<CaregiverGalleryItem>? gallery,
-        List<CaregiverBlockedDate>? blockedDates,
-      });
-      final reviewsData = results[1] as ({
-        List<ServiceReview> reviews,
-        int total,
-        int page,
-        int limit,
-      });
+      final caregiverData =
+          results[0]
+              as ({
+                CaregiverProfile profile,
+                List<CaregiverService> services,
+                List<CaregiverAvailability>? availability,
+                List<CaregiverGalleryItem>? gallery,
+                List<CaregiverBlockedDate>? blockedDates,
+              });
+      final reviewsData =
+          results[1]
+              as ({
+                List<ServiceReview> reviews,
+                int total,
+                int page,
+                int limit,
+              });
 
       setState(() {
         _caregiver = caregiverData.profile;
@@ -90,46 +96,49 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _caregiver == null
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _caregiver == null
               ? const Center(child: Text('Caregiver not found'))
               : NestedScrollView(
-                  headerSliverBuilder: (context, innerBoxIsScrolled) {
-                    return [
-                      _buildSliverAppBar(),
-                      _buildProfileHeader(),
-                      SliverToBoxAdapter(
-                        child: Container(
-                          color: Colors.white,
-                          child: TabBar(
-                            controller: _tabController,
-                            labelColor: AppColors.primary,
-                            unselectedLabelColor: AppColors.textSecondary,
-                            indicatorColor: AppColors.primary,
-                            tabs: const [
-                              Tab(text: 'About'),
-                              Tab(text: 'Services'),
-                              Tab(text: 'Gallery'),
-                              Tab(text: 'Reviews'),
-                            ],
-                          ),
+                headerSliverBuilder: (context, innerBoxIsScrolled) {
+                  return [
+                    _buildSliverAppBar(),
+                    _buildProfileHeader(),
+                    SliverToBoxAdapter(
+                      child: Container(
+                        color: colorScheme.surface,
+                        child: TabBar(
+                          controller: _tabController,
+                          labelColor: colorScheme.primary,
+                          unselectedLabelColor: colorScheme.onSurfaceVariant,
+                          indicatorColor: colorScheme.primary,
+                          tabs: const [
+                            Tab(text: 'About'),
+                            Tab(text: 'Services'),
+                            Tab(text: 'Gallery'),
+                            Tab(text: 'Reviews'),
+                          ],
                         ),
                       ),
-                    ];
-                  },
-                  body: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildAboutTab(),
-                      _buildServicesTab(),
-                      _buildGalleryTab(),
-                      _buildReviewsTab(),
-                    ],
-                  ),
+                    ),
+                  ];
+                },
+                body: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildAboutTab(),
+                    _buildServicesTab(),
+                    _buildGalleryTab(),
+                    _buildReviewsTab(),
+                  ],
                 ),
+              ),
       bottomNavigationBar: _caregiver != null ? _buildBookButton() : null,
     );
   }
@@ -151,23 +160,21 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
         onPressed: () => Navigator.of(context).pop(),
       ),
       flexibleSpace: FlexibleSpaceBar(
-        background: _caregiver!.userAvatar != null
-            ? Image.network(
-                _caregiver!.userAvatar!,
-                fit: BoxFit.cover,
-              )
-            : Container(
-                color: AppColors.primary.withOpacity(0.3),
-                child: Center(
-                  child: Text(
-                    (_caregiver!.userName ?? 'C')[0].toUpperCase(),
-                    style: AppTextStyles.displayLarge.copyWith(
-                      color: Colors.white,
-                      fontSize: 72.sp,
+        background:
+            _caregiver!.userAvatar != null
+                ? Image.network(_caregiver!.userAvatar!, fit: BoxFit.cover)
+                : Container(
+                  color: AppColors.primary.withOpacity(0.3),
+                  child: Center(
+                    child: Text(
+                      (_caregiver!.userName ?? 'C')[0].toUpperCase(),
+                      style: AppTextStyles.displayLarge.copyWith(
+                        color: Colors.white,
+                        fontSize: 72.sp,
+                      ),
                     ),
                   ),
                 ),
-              ),
       ),
     );
   }
@@ -270,7 +277,9 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                     _buildPetChip('🐕 Dogs', const Color(0xFF2196F3)),
                   if (_caregiver!.acceptedPetTypes.contains('cat'))
                     _buildPetChip('🐈 Cats', const Color(0xFF9C27B0)),
-                  if (_caregiver!.acceptedPetTypes.any((t) => t != 'dog' && t != 'cat'))
+                  if (_caregiver!.acceptedPetTypes.any(
+                    (t) => t != 'dog' && t != 'cat',
+                  ))
                     _buildPetChip('🐾 Other', const Color(0xFF4CAF50)),
                 ],
               ),
@@ -281,7 +290,12 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     );
   }
 
-  Widget _buildStatCard(IconData icon, Color color, String value, String label) {
+  Widget _buildStatCard(
+    IconData icon,
+    Color color,
+    String value,
+    String label,
+  ) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
       decoration: BoxDecoration(
@@ -345,10 +359,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return ListView(
       padding: EdgeInsets.all(16.w),
       children: [
-        _buildSection(
-          'About Me',
-          _caregiver!.bio ?? 'No bio provided.',
-        ),
+        _buildSection('About Me', _caregiver!.bio ?? 'No bio provided.'),
         SizedBox(height: 16.h),
         _buildSection(
           'Experience',
@@ -427,7 +438,9 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
               SizedBox(width: 12.w),
               Text(
                 'Home Environment',
-                style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w700),
+                style: AppTextStyles.titleMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -467,7 +480,12 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     );
   }
 
-  Widget _buildEnvironmentRow(IconData icon, String label, bool value, Color color) {
+  Widget _buildEnvironmentRow(
+    IconData icon,
+    String label,
+    bool value,
+    Color color,
+  ) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Row(
@@ -492,14 +510,16 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
             decoration: BoxDecoration(
-              color: value
-                  ? const Color(0xFF4CAF50).withOpacity(0.1)
-                  : AppColors.textSecondary.withOpacity(0.1),
+              color:
+                  value
+                      ? const Color(0xFF4CAF50).withOpacity(0.1)
+                      : AppColors.textSecondary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12.r),
               border: Border.all(
-                color: value
-                    ? const Color(0xFF4CAF50).withOpacity(0.3)
-                    : AppColors.textSecondary.withOpacity(0.3),
+                color:
+                    value
+                        ? const Color(0xFF4CAF50).withOpacity(0.3)
+                        : AppColors.textSecondary.withOpacity(0.3),
                 width: 1,
               ),
             ),
@@ -509,13 +529,17 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 Icon(
                   value ? Icons.check_circle : Icons.cancel,
                   size: 16.w,
-                  color: value ? const Color(0xFF4CAF50) : AppColors.textSecondary,
+                  color:
+                      value ? const Color(0xFF4CAF50) : AppColors.textSecondary,
                 ),
                 SizedBox(width: 4.w),
                 Text(
                   value ? 'Yes' : 'No',
                   style: AppTextStyles.labelMedium.copyWith(
-                    color: value ? const Color(0xFF4CAF50) : AppColors.textSecondary,
+                    color:
+                        value
+                            ? const Color(0xFF4CAF50)
+                            : AppColors.textSecondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -529,7 +553,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
 
   Widget _buildAvailabilitySection() {
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    
+
     return Container(
       padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
@@ -552,57 +576,68 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
               SizedBox(width: 12.w),
               Text(
                 'Availability',
-                style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w700),
+                style: AppTextStyles.titleMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
           SizedBox(height: 16.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: days.asMap().entries.map((entry) {
-              final dayAvailability = _availability.where(
-                (a) => a.dayOfWeek == entry.key && a.isAvailable,
-              );
-              final isAvailable = dayAvailability.isNotEmpty;
-              
-              return Container(
-                width: 42.w,
-                height: 42.h,
-                decoration: BoxDecoration(
-                  gradient: isAvailable
-                      ? LinearGradient(
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity(0.7),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                  color: isAvailable ? null : AppColors.textSecondary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                  boxShadow: isAvailable
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Center(
-                  child: Text(
-                    entry.value,
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: isAvailable ? Colors.white : AppColors.textSecondary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11.sp,
+            children:
+                days.asMap().entries.map((entry) {
+                  final dayAvailability = _availability.where(
+                    (a) => a.dayOfWeek == entry.key && a.isAvailable,
+                  );
+                  final isAvailable = dayAvailability.isNotEmpty;
+
+                  return Container(
+                    width: 42.w,
+                    height: 42.h,
+                    decoration: BoxDecoration(
+                      gradient:
+                          isAvailable
+                              ? LinearGradient(
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primary.withOpacity(0.7),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                              : null,
+                      color:
+                          isAvailable
+                              ? null
+                              : AppColors.textSecondary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                      boxShadow:
+                          isAvailable
+                              ? [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                              : null,
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
+                    child: Center(
+                      child: Text(
+                        entry.value,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color:
+                              isAvailable
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11.sp,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -670,7 +705,9 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                       AppColors.primary.withOpacity(0.05),
                     ],
                   ),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(16.r),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -696,7 +733,10 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 6.h,
+                      ),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [AppColors.primary, Color(0xFF6A1B9A)],
@@ -754,7 +794,10 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                     if (service.additionalPetRate > 0) ...[
                       SizedBox(height: 8.h),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 8.h,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF4CAF50).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8.r),
@@ -872,10 +915,11 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
             child: Image.network(
               item.imageUrl,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: AppColors.textSecondary.withOpacity(0.1),
-                child: const Icon(Icons.broken_image),
-              ),
+              errorBuilder:
+                  (context, error, stackTrace) => Container(
+                    color: AppColors.textSecondary.withOpacity(0.1),
+                    child: const Icon(Icons.broken_image),
+                  ),
             ),
           ),
         );
@@ -886,45 +930,48 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
   void _showGalleryItem(int initialIndex) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(
-            backgroundColor: Colors.black,
-            leading: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
+        builder:
+            (context) => Scaffold(
+              backgroundColor: Colors.black,
+              appBar: AppBar(
+                backgroundColor: Colors.black,
+                leading: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+              body: PageView.builder(
+                controller: PageController(initialPage: initialIndex),
+                itemCount: _gallery.length,
+                itemBuilder: (context, index) {
+                  final item = _gallery[index];
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: InteractiveViewer(
+                          child: Image.network(
+                            item.imageUrl,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                      if (item.caption != null)
+                        Padding(
+                          padding: EdgeInsets.all(16.w),
+                          child: Text(
+                            item.caption!,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-          body: PageView.builder(
-            controller: PageController(initialPage: initialIndex),
-            itemCount: _gallery.length,
-            itemBuilder: (context, index) {
-              final item = _gallery[index];
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: InteractiveViewer(
-                      child: Image.network(
-                        item.imageUrl,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                  if (item.caption != null)
-                    Padding(
-                      padding: EdgeInsets.all(16.w),
-                      child: Text(
-                        item.caption!,
-                        style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-        ),
       ),
     );
   }
@@ -1048,7 +1095,10 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                     ),
                   ),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 6.h,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.textSecondary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8.r),
@@ -1095,7 +1145,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     if (date == null) return '';
     final now = DateTime.now();
     final diff = now.difference(date);
-    
+
     if (diff.inDays < 1) return 'Today';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
@@ -1103,7 +1153,70 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return '${(diff.inDays / 365).floor()}y ago';
   }
 
+  Future<void> _openCaregiverChat() async {
+    final caregiver = _caregiver;
+    if (caregiver == null || _isOpeningChat) {
+      return;
+    }
+
+    final viewerId = ApiClient.instance.userId?.trim();
+    if (viewerId == null || viewerId.isEmpty) {
+      CustomSnackbar.showInfo(context, 'Please sign in to message caregivers.');
+      return;
+    }
+
+    final participantId = caregiver.userId.trim();
+    if (participantId.isEmpty) {
+      CustomSnackbar.showError(
+        context,
+        'Unable to start chat right now. Missing caregiver account reference.',
+      );
+      return;
+    }
+
+    if (viewerId == participantId) {
+      CustomSnackbar.showInfo(context, 'This is your profile.');
+      return;
+    }
+
+    setState(() => _isOpeningChat = true);
+
+    try {
+      final chatRepository = getIt<ChatRepository>();
+      final chat = await chatRepository.startChat(
+        StartChatRequest(vetId: participantId),
+      );
+
+      if (!mounted) return;
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder:
+              (_) => ChatConversationScreen(
+                chatId: chat.id,
+                otherUserName: caregiver.userName ?? 'Caregiver',
+                otherUserPhoto: caregiver.userAvatar,
+              ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isOpeningChat = false);
+      }
+    }
+  }
+
   Widget _buildBookButton() {
+    final isOwnProfile = ApiClient.instance.userId == _caregiver?.userId;
+    final canMessage = !isOwnProfile;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
@@ -1117,65 +1230,110 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
         ],
       ),
       child: SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.primary,
-                AppColors.primary.withOpacity(0.8),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(14.r),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+        child: Row(
+          children: [
+            if (canMessage) ...[
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _isOpeningChat ? null : _openCaregiverChat,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: BorderSide(color: AppColors.primary.withOpacity(0.6)),
+                    minimumSize: Size(double.infinity, 54.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                  ),
+                  icon:
+                      _isOpeningChat
+                          ? SizedBox(
+                            width: 18.w,
+                            height: 18.h,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          )
+                          : Icon(Icons.chat_bubble_outline_rounded, size: 18.w),
+                  label: Text(
+                    _isOpeningChat ? 'Opening...' : 'Message',
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ),
+              SizedBox(width: 10.w),
             ],
-          ),
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => CreateBookingScreen(
-                    caregiver: _caregiver!,
-                    services: _services,
-                    availability: _availability,
+            Expanded(
+              flex: canMessage ? 2 : 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withOpacity(0.8),
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed:
+                      isOwnProfile
+                          ? null
+                          : () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => CreateBookingScreen(
+                                      caregiver: _caregiver!,
+                                      services: _services,
+                                      availability: _availability,
+                                    ),
+                              ),
+                            );
+                          },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    minimumSize: Size(double.infinity, 54.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        color: Colors.white,
+                        size: 20.w,
+                      ),
+                      SizedBox(width: 12.w),
+                      Text(
+                        isOwnProfile ? 'This Is Your Profile' : 'Book Now',
+                        style: TextStyle(
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              minimumSize: Size(double.infinity, 54.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14.r),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.calendar_today_rounded,
-                  color: Colors.white,
-                  size: 20.w,
-                ),
-                SizedBox(width: 12.w),
-                Text(
-                  'Book Now',
-                  style: TextStyle(
-                    fontSize: 17.sp,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/services/api_client.dart';
@@ -9,16 +8,23 @@ import '../../data/models/vet_profile_model.dart';
 import 'vet_home_screen.dart';
 
 class VetProfileSetupScreen extends StatefulWidget {
-  const VetProfileSetupScreen({super.key});
+  final bool isEditing;
+  final int initialStep;
+
+  const VetProfileSetupScreen({
+    super.key,
+    this.isEditing = false,
+    this.initialStep = 0,
+  });
 
   @override
   State<VetProfileSetupScreen> createState() => _VetProfileSetupScreenState();
 }
 
 class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
-  final _pageController = PageController();
+  late final PageController _pageController;
   int _currentStep = 0;
-  
+
   final _fullNameController = TextEditingController();
   final _degreeController = TextEditingController();
   final _licenseController = TextEditingController();
@@ -55,7 +61,28 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
     'About You',
   ];
 
+  bool _isAvailable = true;
+  bool _isInitializing = false;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final requestedStep = widget.initialStep;
+    if (requestedStep < 0) {
+      _currentStep = 0;
+    } else if (requestedStep > 4) {
+      _currentStep = 4;
+    } else {
+      _currentStep = requestedStep;
+    }
+    _pageController = PageController(initialPage: _currentStep);
+
+    if (widget.isEditing) {
+      _isInitializing = true;
+      _loadExistingProfile();
+    }
+  }
 
   @override
   void dispose() {
@@ -87,6 +114,52 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
     }
   }
 
+  Future<void> _loadExistingProfile() async {
+    try {
+      final profile = await VetRepository(ApiClient.instance).getMyProfile();
+      if (!mounted) return;
+
+      _populateFieldsFromProfile(profile);
+      setState(() {
+        _isInitializing = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isInitializing = false;
+      });
+
+      CustomSnackbar.showError(
+        context,
+        e.toString().replaceAll('Exception: ', ''),
+      );
+      Navigator.of(context).maybePop();
+    }
+  }
+
+  void _populateFieldsFromProfile(VetProfile profile) {
+    _fullNameController.text = profile.fullName;
+    _degreeController.text = profile.degree;
+    _licenseController.text = profile.licenseNumber ?? '';
+    _experienceController.text = profile.experience.toString();
+    _clinicNameController.text = profile.clinicName ?? '';
+    _clinicAddressController.text = profile.clinicAddress ?? '';
+    _cityController.text = profile.city ?? '';
+    _stateController.text = profile.state ?? '';
+    _zipCodeController.text = profile.zipCode ?? '';
+    _phoneController.text = profile.phone;
+    _consultationFeeController.text = profile.consultationFee.toString();
+    _bioController.text = profile.bio ?? '';
+    _availabilityController.text = profile.availabilityHours ?? '';
+
+    _selectedSpecializations
+      ..clear()
+      ..addAll(profile.specialization);
+
+    _isAvailable = profile.isAvailable;
+  }
+
   void _previousStep() {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
@@ -109,23 +182,29 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
           CustomSnackbar.showError(context, 'Please enter your degree');
           return false;
         }
-        if (_experienceController.text.trim().isEmpty || 
+        if (_experienceController.text.trim().isEmpty ||
             int.tryParse(_experienceController.text.trim()) == null) {
-          CustomSnackbar.showError(context, 'Please enter valid years of experience');
+          CustomSnackbar.showError(
+            context,
+            'Please enter valid years of experience',
+          );
           return false;
         }
         return true;
-      
+
       case 1: // Specializations
         if (_selectedSpecializations.isEmpty) {
-          CustomSnackbar.showError(context, 'Please select at least one specialization');
+          CustomSnackbar.showError(
+            context,
+            'Please select at least one specialization',
+          );
           return false;
         }
         return true;
-      
+
       case 2: // Clinic Info - Optional
         return true;
-      
+
       case 3: // Contact & Fees
         if (_phoneController.text.trim().isEmpty) {
           CustomSnackbar.showError(context, 'Please enter your phone number');
@@ -133,14 +212,17 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
         }
         if (_consultationFeeController.text.trim().isEmpty ||
             double.tryParse(_consultationFeeController.text.trim()) == null) {
-          CustomSnackbar.showError(context, 'Please enter valid consultation fee');
+          CustomSnackbar.showError(
+            context,
+            'Please enter valid consultation fee',
+          );
           return false;
         }
         return true;
-      
+
       case 4: // About - Optional
         return true;
-      
+
       default:
         return true;
     }
@@ -148,23 +230,51 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (_isInitializing) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: Text(
+            widget.isEditing ? 'Edit Vet Profile' : _stepTitles[_currentStep],
+          ),
+          backgroundColor: theme.colorScheme.primary,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(_stepTitles[_currentStep]),
-        backgroundColor: AppColors.primary,
-        leading: _currentStep > 0
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _previousStep,
-              )
-            : null,
+        title: Text(
+          widget.isEditing
+              ? (widget.initialStep == 4
+                  ? 'Manage Availability'
+                  : 'Edit Vet Profile')
+              : _stepTitles[_currentStep],
+        ),
+        backgroundColor: theme.colorScheme.primary,
+        leading:
+            widget.isEditing || _currentStep > 0
+                ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    if (widget.isEditing) {
+                      Navigator.of(context).maybePop();
+                      return;
+                    }
+                    _previousStep();
+                  },
+                )
+                : null,
       ),
       body: Column(
         children: [
           // Progress Indicator
           _buildProgressIndicator(),
-          
+
           // Form Content
           Expanded(
             child: PageView(
@@ -179,7 +289,7 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
               ],
             ),
           ),
-          
+
           // Navigation Buttons
           _buildNavigationButtons(),
         ],
@@ -188,13 +298,15 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
   }
 
   Widget _buildProgressIndicator() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -204,7 +316,7 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
         children: List.generate(5, (index) {
           final isCompleted = index < _currentStep;
           final isCurrent = index == _currentStep;
-          
+
           return Expanded(
             child: Row(
               children: [
@@ -213,15 +325,19 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                     duration: const Duration(milliseconds: 300),
                     height: 4.h,
                     decoration: BoxDecoration(
-                      gradient: isCompleted || isCurrent
-                          ? LinearGradient(
-                              colors: [
-                                AppColors.primary,
-                                AppColors.primary.withOpacity(0.8),
-                              ],
-                            )
-                          : null,
-                      color: isCompleted || isCurrent ? null : AppColors.neutral300,
+                      gradient:
+                          isCompleted || isCurrent
+                              ? LinearGradient(
+                                colors: [
+                                  colorScheme.primary,
+                                  colorScheme.primary.withValues(alpha: 0.8),
+                                ],
+                              )
+                              : null,
+                      color:
+                          isCompleted || isCurrent
+                              ? null
+                              : colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(2.r),
                     ),
                   ),
@@ -247,7 +363,7 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
             Icons.person_outline_rounded,
           ),
           SizedBox(height: 32.h),
-          
+
           _buildTextField(
             controller: _fullNameController,
             label: 'Full Name *',
@@ -296,7 +412,7 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
             Icons.medical_services_outlined,
           ),
           SizedBox(height: 32.h),
-          
+
           _buildSpecializationChips(),
         ],
       ),
@@ -404,6 +520,8 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
   }
 
   Widget _buildAboutStep() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(24.w),
       child: Column(
@@ -432,12 +550,54 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
             icon: Icons.access_time_outlined,
             maxLines: 3,
           ),
+          SizedBox(height: 20.h),
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.3),
+              ),
+            ),
+            child: SwitchListTile.adaptive(
+              value: _isAvailable,
+              onChanged: (value) {
+                setState(() {
+                  _isAvailable = value;
+                });
+              },
+              title: Text(
+                'Currently Available',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                _isAvailable
+                    ? 'Pet owners can see you as available'
+                    : 'You will appear as unavailable',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              secondary: Icon(
+                _isAvailable
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.pause_circle_outline_rounded,
+                color:
+                    _isAvailable ? Colors.green : colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildStepHeader(String title, String subtitle, IconData icon) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -446,23 +606,19 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.primary.withOpacity(0.1),
-                AppColors.primary.withOpacity(0.05),
+                colorScheme.primary.withValues(alpha: 0.12),
+                colorScheme.primary.withValues(alpha: 0.06),
               ],
             ),
             borderRadius: BorderRadius.circular(16.r),
           ),
-          child: Icon(
-            icon,
-            size: 48.sp,
-            color: AppColors.primary,
-          ),
+          child: Icon(icon, size: 48.sp, color: colorScheme.primary),
         ),
         SizedBox(height: 20.h),
         Text(
           title,
           style: AppTextStyles.titleLarge.copyWith(
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -470,7 +626,7 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
         Text(
           subtitle,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
+            color: colorScheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -478,43 +634,47 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
   }
 
   Widget _buildNavigationButtons() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     // Check if current step has all required fields filled
     bool isStepComplete = false;
-    
+
     switch (_currentStep) {
       case 0: // Personal Info - Required fields
-        isStepComplete = _fullNameController.text.trim().isNotEmpty &&
+        isStepComplete =
+            _fullNameController.text.trim().isNotEmpty &&
             _degreeController.text.trim().isNotEmpty &&
             _experienceController.text.trim().isNotEmpty &&
             int.tryParse(_experienceController.text.trim()) != null;
         break;
-      
+
       case 1: // Specializations - At least one required
         isStepComplete = _selectedSpecializations.isNotEmpty;
         break;
-      
+
       case 2: // Clinic Info - Optional, always complete
         isStepComplete = true;
         break;
-      
+
       case 3: // Contact & Fees - Required fields
-        isStepComplete = _phoneController.text.trim().isNotEmpty &&
+        isStepComplete =
+            _phoneController.text.trim().isNotEmpty &&
             _consultationFeeController.text.trim().isNotEmpty &&
             double.tryParse(_consultationFeeController.text.trim()) != null;
         break;
-      
+
       case 4: // About - Optional, always complete
         isStepComplete = true;
         break;
     }
-    
+
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -529,7 +689,7 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                   onPressed: _previousStep,
                   style: OutlinedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16.h),
-                    side: BorderSide(color: AppColors.primary, width: 2),
+                    side: BorderSide(color: colorScheme.primary, width: 2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
@@ -537,7 +697,7 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                   child: Text(
                     'Previous',
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: colorScheme.primary,
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                     ),
@@ -551,63 +711,88 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
                 duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12.r),
-                  boxShadow: isStepComplete
-                      ? [
-                          BoxShadow(
-                            color: Color(0xFF00838F).withOpacity(0.4),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
-                          ),
-                        ]
-                      : [],
+                  boxShadow:
+                      isStepComplete
+                          ? [
+                            BoxShadow(
+                              color: colorScheme.primary.withValues(
+                                alpha: 0.35,
+                              ),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                          : [],
                 ),
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : () {
-                    if (_validateCurrentStep()) {
-                      if (_currentStep < 4) {
-                        _nextStep();
-                      } else {
-                        _handleSubmit();
-                      }
-                    }
-                  },
+                  onPressed:
+                      _isLoading || _isInitializing
+                          ? null
+                          : () {
+                            if (_validateCurrentStep()) {
+                              if (_currentStep < 4) {
+                                _nextStep();
+                              } else {
+                                _handleSubmit();
+                              }
+                            }
+                          },
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16.h),
-                    backgroundColor: isStepComplete 
-                        ? Color(0xFF00838F)
-                        : AppColors.neutral400,
-                    disabledBackgroundColor: AppColors.neutral300,
+                    backgroundColor:
+                        isStepComplete
+                            ? colorScheme.primary
+                            : colorScheme.surfaceContainerHighest,
+                    disabledBackgroundColor:
+                        colorScheme.surfaceContainerHighest,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     elevation: isStepComplete ? 4 : 1,
                   ),
-                  child: _isLoading
-                      ? SizedBox(
-                          width: 24.w,
-                          height: 24.h,
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              _currentStep < 4 ? 'Continue' : 'Complete Profile',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w700,
+                  child:
+                      _isLoading
+                          ? SizedBox(
+                            width: 24.w,
+                            height: 24.h,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
                               ),
                             ),
-                            if (_currentStep < 4) ...[
-                              SizedBox(width: 8.w),
-                              Icon(Icons.arrow_forward_rounded, size: 20.sp, color: Colors.white),
+                          )
+                          : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                _currentStep < 4
+                                    ? 'Continue'
+                                    : (widget.isEditing
+                                        ? 'Save Changes'
+                                        : 'Complete Profile'),
+                                style: TextStyle(
+                                  color:
+                                      isStepComplete
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSurfaceVariant,
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              if (_currentStep < 4) ...[
+                                SizedBox(width: 8.w),
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 20.sp,
+                                  color:
+                                      isStepComplete
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSurfaceVariant,
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
+                          ),
                 ),
               ),
             ),
@@ -626,6 +811,8 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
     TextInputType? keyboardType,
     int maxLines = 1,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -635,121 +822,152 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
         labelText: label,
         hintText: hint,
         prefixText: prefixText,
-        prefixIcon: icon != null
-            ? Icon(icon, color: AppColors.primary.withOpacity(0.7))
-            : null,
+        prefixIcon:
+            icon != null
+                ? Icon(icon, color: colorScheme.primary.withValues(alpha: 0.7))
+                : null,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: colorScheme.surface,
         contentPadding: EdgeInsets.symmetric(
           horizontal: icon != null ? 12.w : 20.w,
           vertical: 16.h,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.r),
-          borderSide: BorderSide(color: AppColors.border.withOpacity(0.3)),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.3),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.r),
-          borderSide: BorderSide(color: AppColors.border.withOpacity(0.3)),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.3),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.r),
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.r),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderSide: BorderSide(color: colorScheme.error),
         ),
       ),
     );
   }
 
   Widget _buildSpecializationChips() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
-      children: _availableSpecializations.map((spec) {
-        final isSelected = _selectedSpecializations.contains(spec);
-        return Padding(
-          padding: EdgeInsets.only(bottom: 12.h),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  if (isSelected) {
-                    _selectedSpecializations.remove(spec);
-                  } else {
-                    _selectedSpecializations.add(spec);
-                  }
-                });
-              },
-              borderRadius: BorderRadius.circular(16.r),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-                decoration: BoxDecoration(
-                  color: isSelected ? Color(0xFF00838F) : Colors.white,
+      children:
+          _availableSpecializations.map((spec) {
+            final isSelected = _selectedSpecializations.contains(spec);
+            return Padding(
+              padding: EdgeInsets.only(bottom: 12.h),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        _selectedSpecializations.remove(spec);
+                      } else {
+                        _selectedSpecializations.add(spec);
+                      }
+                    });
+                  },
                   borderRadius: BorderRadius.circular(16.r),
-                  border: Border.all(
-                    color: isSelected ? Color(0xFF00838F) : AppColors.border.withOpacity(0.3),
-                    width: 2,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 16.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          isSelected
+                              ? colorScheme.primary
+                              : colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16.r),
+                      border: Border.all(
+                        color:
+                            isSelected
+                                ? colorScheme.primary
+                                : colorScheme.outline.withValues(alpha: 0.3),
+                        width: 2,
+                      ),
+                      boxShadow:
+                          isSelected
+                              ? [
+                                BoxShadow(
+                                  color: colorScheme.primary.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                              : [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                    ),
+                    child: Row(
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 24.w,
+                          height: 24.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color:
+                                isSelected ? Colors.white : Colors.transparent,
+                            border: Border.all(
+                              color:
+                                  isSelected
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurfaceVariant,
+                              width: 2,
+                            ),
+                          ),
+                          child:
+                              isSelected
+                                  ? Icon(
+                                    Icons.check_rounded,
+                                    size: 16.sp,
+                                    color: colorScheme.primary,
+                                  )
+                                  : null,
+                        ),
+                        SizedBox(width: 16.w),
+                        Expanded(
+                          child: Text(
+                            spec,
+                            style: TextStyle(
+                              color:
+                                  isSelected
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: Color(0xFF00838F).withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                ),
-                child: Row(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 24.w,
-                      height: 24.w,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isSelected ? Colors.white : Colors.transparent,
-                        border: Border.all(
-                          color: isSelected ? Colors.white : AppColors.textSecondary,
-                          width: 2,
-                        ),
-                      ),
-                      child: isSelected
-                          ? Icon(
-                              Icons.check_rounded,
-                              size: 16.sp,
-                              color: Color(0xFF00838F),
-                            )
-                          : null,
-                    ),
-                    SizedBox(width: 16.w),
-                    Expanded(
-                      child: Text(
-                        spec,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                          fontSize: 16.sp,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
-            ),
-          ),
-        );
-      }).toList(),
+            );
+          }).toList(),
     );
   }
 
@@ -761,36 +979,42 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
       _pageController.jumpToPage(0);
       return;
     }
-    
+
     if (_degreeController.text.trim().isEmpty) {
       CustomSnackbar.showError(context, 'Please enter your degree');
       setState(() => _currentStep = 0);
       _pageController.jumpToPage(0);
       return;
     }
-    
-    if (_experienceController.text.trim().isEmpty || 
+
+    if (_experienceController.text.trim().isEmpty ||
         int.tryParse(_experienceController.text.trim()) == null) {
-      CustomSnackbar.showError(context, 'Please enter valid years of experience');
+      CustomSnackbar.showError(
+        context,
+        'Please enter valid years of experience',
+      );
       setState(() => _currentStep = 0);
       _pageController.jumpToPage(0);
       return;
     }
-    
+
     if (_selectedSpecializations.isEmpty) {
-      CustomSnackbar.showError(context, 'Please select at least one specialization');
+      CustomSnackbar.showError(
+        context,
+        'Please select at least one specialization',
+      );
       setState(() => _currentStep = 1);
       _pageController.jumpToPage(1);
       return;
     }
-    
+
     if (_phoneController.text.trim().isEmpty) {
       CustomSnackbar.showError(context, 'Please enter your phone number');
       setState(() => _currentStep = 3);
       _pageController.jumpToPage(3);
       return;
     }
-    
+
     if (_consultationFeeController.text.trim().isEmpty ||
         double.tryParse(_consultationFeeController.text.trim()) == null) {
       CustomSnackbar.showError(context, 'Please enter valid consultation fee');
@@ -803,40 +1027,48 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
 
     try {
       final vetRepo = VetRepository(ApiClient.instance);
-      
+
       final request = VetProfileRequest(
         fullName: _fullNameController.text.trim(),
         degree: _degreeController.text.trim(),
-        licenseNumber: _licenseController.text.trim().isEmpty 
-            ? null 
-            : _licenseController.text.trim(),
+        licenseNumber:
+            _licenseController.text.trim().isEmpty
+                ? null
+                : _licenseController.text.trim(),
         specialization: _selectedSpecializations,
         experience: int.parse(_experienceController.text.trim()),
-        clinicName: _clinicNameController.text.trim().isEmpty 
-            ? null 
-            : _clinicNameController.text.trim(),
-        clinicAddress: _clinicAddressController.text.trim().isEmpty 
-            ? null 
-            : _clinicAddressController.text.trim(),
-        city: _cityController.text.trim().isEmpty 
-            ? null 
-            : _cityController.text.trim(),
-        state: _stateController.text.trim().isEmpty 
-            ? null 
-            : _stateController.text.trim(),
-        zipCode: _zipCodeController.text.trim().isEmpty 
-            ? null 
-            : _zipCodeController.text.trim(),
+        clinicName:
+            _clinicNameController.text.trim().isEmpty
+                ? null
+                : _clinicNameController.text.trim(),
+        clinicAddress:
+            _clinicAddressController.text.trim().isEmpty
+                ? null
+                : _clinicAddressController.text.trim(),
+        city:
+            _cityController.text.trim().isEmpty
+                ? null
+                : _cityController.text.trim(),
+        state:
+            _stateController.text.trim().isEmpty
+                ? null
+                : _stateController.text.trim(),
+        zipCode:
+            _zipCodeController.text.trim().isEmpty
+                ? null
+                : _zipCodeController.text.trim(),
         phone: _phoneController.text.trim(),
         consultationFee: double.parse(_consultationFeeController.text.trim()),
         currency: 'USD',
-        bio: _bioController.text.trim().isEmpty 
-            ? null 
-            : _bioController.text.trim(),
-        availabilityHours: _availabilityController.text.trim().isEmpty 
-            ? null 
-            : _availabilityController.text.trim(),
-        isAvailable: true,
+        bio:
+            _bioController.text.trim().isEmpty
+                ? null
+                : _bioController.text.trim(),
+        availabilityHours:
+            _availabilityController.text.trim().isEmpty
+                ? null
+                : _availabilityController.text.trim(),
+        isAvailable: _isAvailable,
       );
 
       await vetRepo.createOrUpdateProfile(request);
@@ -845,21 +1077,25 @@ class _VetProfileSetupScreenState extends State<VetProfileSetupScreen> {
 
       CustomSnackbar.showSuccess(
         context,
-        'Profile created successfully!',
+        widget.isEditing
+            ? 'Profile updated successfully!'
+            : 'Profile created successfully!',
       );
 
-      // Navigate back to VetHomeScreen (which will now load the profile)
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => const VetHomeScreen(),
-        ),
-        (route) => false,
-      );
+      if (widget.isEditing) {
+        Navigator.of(context).pop(true);
+      } else {
+        // Navigate back to VetHomeScreen (which will now load the profile)
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const VetHomeScreen()),
+          (route) => false,
+        );
+      }
     } catch (e) {
       if (!mounted) return;
-      
+
       setState(() => _isLoading = false);
-      
+
       CustomSnackbar.showError(
         context,
         e.toString().replaceAll('Exception: ', ''),

@@ -46,6 +46,12 @@ func main() {
 		{"005 - Marketplace", "internal/database/migrations/005_marketplace.sql"},
 		{"006 - Community Hub", "internal/database/migrations/006_community_hub.sql"},
 		{"007 - Caregiver System", "internal/database/migrations/007_caregiver_system.sql"},
+		{"008 - User Roles", "internal/database/migrations/008_user_roles.sql"},
+		{"009 - Fix Chat Last Message Trigger", "internal/database/migrations/009_fix_chat_last_message_trigger.sql"},
+		{"010 - Vet Appointments", "internal/database/migrations/010_vet_appointments.sql"},
+		{"011 - Community Advanced Features", "internal/database/migrations/011_community_advanced_features.sql"},
+		{"012 - Adoption Pet Link and Uniqueness", "internal/database/migrations/012_adoption_pet_link_and_uniqueness.sql"},
+		{"013 - Chat Appointment Context", "internal/database/migrations/013_chat_appointment_context.sql"},
 	}
 
 	for _, m := range migrations {

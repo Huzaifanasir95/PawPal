@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../core/services/api_client.dart';
@@ -23,11 +25,50 @@ class ChatRepository {
         throw Exception(response.data['error'] ?? 'Failed to start chat');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to start chat';
-        throw Exception(error);
+      throw _handleError(e, 'Failed to start chat');
+    }
+  }
+
+  /// Start or resume a booking-scoped chat.
+  Future<Chat> startBookingChat({required String bookingId}) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/v1/chats',
+        data: {'bookingId': bookingId, 'chatType': 'active_booking'},
+      );
+
+      if (response.data['success'] == true) {
+        return Chat.fromJson(response.data['chat']);
+      } else {
+        throw Exception(
+          response.data['error'] ?? 'Failed to start booking chat',
+        );
       }
-      throw Exception('Network error: ${e.message}');
+    } on DioException catch (e) {
+      throw _handleError(e, 'Failed to start booking chat');
+    }
+  }
+
+  /// Start or resume an appointment-scoped chat.
+  Future<Chat> startAppointmentChat({required String appointmentId}) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/v1/chats',
+        data: {
+          'appointmentId': appointmentId,
+          'chatType': 'vet_consultation',
+        },
+      );
+
+      if (response.data['success'] == true) {
+        return Chat.fromJson(response.data['chat']);
+      } else {
+        throw Exception(
+          response.data['error'] ?? 'Failed to start appointment chat',
+        );
+      }
+    } on DioException catch (e) {
+      throw _handleError(e, 'Failed to start appointment chat');
     }
   }
 
@@ -37,19 +78,16 @@ class ChatRepository {
       final response = await _apiClient.get('/api/v1/chats');
 
       if (response.data['success'] == true) {
-        final chats = (response.data['chats'] as List)
-            .map((json) => Chat.fromJson(json))
-            .toList();
+        final chats =
+            (response.data['chats'] as List)
+                .map((json) => Chat.fromJson(json))
+                .toList();
         return chats;
       } else {
         throw Exception(response.data['error'] ?? 'Failed to fetch chats');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to fetch chats';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to fetch chats');
     }
   }
 
@@ -64,38 +102,43 @@ class ChatRepository {
         throw Exception(response.data['error'] ?? 'Failed to fetch chat');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to fetch chat';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to fetch chat');
     }
   }
 
   /// Send a message in a chat
   Future<ChatMessage> sendMessage(SendMessageRequest request) async {
-    try {
-      final response = await _apiClient.post(
-        '/api/v1/messages',
-        data: request.toJson(),
-      );
+    DioException? lastDioError;
 
-      if (response.data['success'] == true) {
-        return ChatMessage.fromJson(response.data['data']);
-      } else {
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final response = await _apiClient.post(
+          '/api/v1/messages',
+          data: request.toJson(),
+        );
+
+        if (response.data['success'] == true) {
+          return ChatMessage.fromJson(response.data['data']);
+        }
+
         final error = response.data['error'] ?? 'Failed to send message';
         final details = response.data['details'];
         throw Exception(details != null ? '$error: $details' : error);
+      } on DioException catch (e) {
+        lastDioError = e;
+        final shouldRetry = _isTransientSendError(e) && attempt == 0;
+        if (!shouldRetry) {
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 450));
       }
-    } on DioException catch (e) {
-      if (e.response != null) {
-        final data = e.response!.data;
-        final error = data is Map ? (data['error'] ?? 'Failed to send message') : 'Failed to send message';
-        final details = data is Map ? data['details'] : null;
-        throw Exception(details != null ? '$error: $details' : error);
-      }
-      throw Exception('Network error: ${e.message}');
     }
+
+    if (lastDioError != null) {
+      throw _handleError(lastDioError, 'Failed to send message');
+    }
+
+    throw Exception('Failed to send message');
   }
 
   /// Get messages for a chat
@@ -107,26 +150,20 @@ class ChatRepository {
     try {
       final response = await _apiClient.get(
         '/api/v1/messages/$chatId',
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-        },
+        queryParameters: {'page': page, 'limit': limit},
       );
 
       if (response.data['success'] == true) {
-        final messages = (response.data['messages'] as List)
-            .map((json) => ChatMessage.fromJson(json))
-            .toList();
+        final messages =
+            (response.data['messages'] as List)
+                .map((json) => ChatMessage.fromJson(json))
+                .toList();
         return messages;
       } else {
         throw Exception(response.data['error'] ?? 'Failed to fetch messages');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to fetch messages';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to fetch messages');
     }
   }
 
@@ -136,14 +173,12 @@ class ChatRepository {
       final response = await _apiClient.put('/api/v1/messages/$messageId/read');
 
       if (response.data['success'] != true) {
-        throw Exception(response.data['error'] ?? 'Failed to mark message as read');
+        throw Exception(
+          response.data['error'] ?? 'Failed to mark message as read',
+        );
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to mark message as read';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to mark message as read');
     }
   }
 
@@ -156,11 +191,53 @@ class ChatRepository {
         throw Exception(response.data['error'] ?? 'Failed to delete chat');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        final error = e.response!.data['error'] ?? 'Failed to delete chat';
-        throw Exception(error);
-      }
-      throw Exception('Network error: ${e.message}');
+      throw _handleError(e, 'Failed to delete chat');
     }
+  }
+
+  Exception _handleError(DioException e, String fallback) {
+    final data = e.response?.data;
+
+    if (data is Map) {
+      final error = data['error'] ?? data['message'];
+      final details = data['details'];
+
+      if (error is String && error.trim().isNotEmpty) {
+        if (details is String && details.trim().isNotEmpty) {
+          return Exception('${error.trim()}: ${details.trim()}');
+        }
+        return Exception(error.trim());
+      }
+    }
+
+    if (data is String && data.trim().isNotEmpty) {
+      return Exception(data.trim());
+    }
+
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout) {
+      return Exception('Network timeout. Please try again.');
+    }
+
+    if (e.response == null) {
+      return Exception(
+        'Network error: ${e.message ?? 'Unable to reach server'}',
+      );
+    }
+
+    return Exception(fallback);
+  }
+
+  bool _isTransientSendError(DioException error) {
+    final statusCode = error.response?.statusCode ?? 0;
+    if (statusCode == 429 || statusCode >= 500) {
+      return true;
+    }
+
+    return error.type == DioExceptionType.connectionError ||
+        error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.sendTimeout;
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/navigation/app_navigator.dart';
 import '../../../caregiver/presentation/pages/caregivers_list_screen.dart';
 import '../../../chatbot/presentation/pages/chatbot_screen.dart';
@@ -13,30 +12,46 @@ class AllCategoriesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     final actions = <_CategoryAction>[
       _CategoryAction(
         title: 'Community',
         subtitle: 'Forums and support',
         icon: Icons.groups_rounded,
-        onTap: () => AppNavigator.navigateToCommunityHub(context),
+        onTap: () => AppNavigator.navigateToCommunityHub(
+          context,
+          initialTabIndex: 0,
+        ),
       ),
       _CategoryAction(
         title: 'Lost & Found',
         subtitle: 'Report and discover pets',
         icon: Icons.pets_rounded,
-        onTap: () => AppNavigator.navigateToCommunityHub(context),
+        onTap: () => AppNavigator.navigateToCommunityHub(
+          context,
+          initialTabIndex: 1,
+        ),
       ),
       _CategoryAction(
         title: 'Adoption',
         subtitle: 'Find new companions',
         icon: Icons.volunteer_activism_rounded,
-        onTap: () => AppNavigator.navigateToCommunityHub(context),
+        onTap: () => AppNavigator.navigateToCommunityHub(
+          context,
+          initialTabIndex: 2,
+        ),
       ),
       _CategoryAction(
         title: 'Events',
         subtitle: 'Meetups and activities',
         icon: Icons.event_available_rounded,
-        onTap: () => AppNavigator.navigateToCommunityHub(context),
+        onTap: () => AppNavigator.navigateToCommunityHub(
+          context,
+          initialTabIndex: 3,
+        ),
       ),
       _CategoryAction(
         title: 'AI Chatbot',
@@ -110,12 +125,12 @@ class AllCategoriesPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFD7E2E8),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
-        backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        foregroundColor: colorScheme.onSurface,
         title: Text(
           'All Categories',
           style: TextStyle(
@@ -144,21 +159,30 @@ class AllCategoriesPage extends StatelessWidget {
                 child: Ink(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18.r),
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFFF1F6F8),
-                        Color(0xFFDDE9EE),
-                      ],
+                      colors:
+                          isDark
+                              ? <Color>[
+                                colorScheme.surface,
+                                colorScheme.surfaceContainerHighest,
+                              ]
+                              : const <Color>[
+                                Color(0xFFF1F6F8),
+                                Color(0xFFDDE9EE),
+                              ],
                     ),
                     border: Border.all(
-                      color: const Color(0xFFB9CBD4),
+                      color:
+                          isDark
+                              ? colorScheme.outline.withValues(alpha: 0.26)
+                              : const Color(0xFFB9CBD4),
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.07),
+                        color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.07),
                         blurRadius: 14,
                         offset: const Offset(0, 6),
                       ),
@@ -173,37 +197,37 @@ class AllCategoriesPage extends StatelessWidget {
                           width: 44.w,
                           height: 44.h,
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.14),
+                            color: colorScheme.primary.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(999.r),
                           ),
                           child: Icon(
                             action.icon,
                             size: 22.sp,
-                            color: AppColors.primary,
+                            color: colorScheme.primary,
                           ),
                         ),
-                        SizedBox(height: 12.h),
+                        SizedBox(height: 8.h),
                         Text(
                           action.title,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 15.sp,
-                            color: AppColors.textPrimary,
+                            fontSize: 14.sp,
+                            color: colorScheme.onSurface,
                             fontWeight: FontWeight.w800,
-                            height: 1.15,
+                            height: 1.1,
                           ),
                         ),
-                        SizedBox(height: 4.h),
+                        SizedBox(height: 3.h),
                         Text(
                           action.subtitle,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 11.5.sp,
-                            color: AppColors.textSecondary,
+                            fontSize: 11.sp,
+                            color: colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
-                            height: 1.25,
+                            height: 1.15,
                           ),
                         ),
                         const Spacer(),
@@ -211,7 +235,7 @@ class AllCategoriesPage extends StatelessWidget {
                           alignment: Alignment.bottomRight,
                           child: Icon(
                             Icons.arrow_forward_rounded,
-                            color: AppColors.textSecondary,
+                            color: colorScheme.onSurfaceVariant,
                             size: 18.sp,
                           ),
                         ),

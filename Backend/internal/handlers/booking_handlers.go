@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"pawpal-backend/internal/models"
@@ -15,14 +17,14 @@ import (
 
 // BookingHandler handles booking-related requests
 type BookingHandler struct {
-	repo         *repositories.BookingRepository
+	repo          *repositories.BookingRepository
 	caregiverRepo *repositories.CaregiverRepository
 }
 
 // NewBookingHandler creates a new booking handler
 func NewBookingHandler(repo *repositories.BookingRepository, caregiverRepo *repositories.CaregiverRepository) *BookingHandler {
 	return &BookingHandler{
-		repo:         repo,
+		repo:          repo,
 		caregiverRepo: caregiverRepo,
 	}
 }
@@ -48,20 +50,48 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		return
 	}
 
-	// Parse datetimes
-	startDatetime, err := time.Parse(time.RFC3339, req.StartDatetime)
+	caregiverProfile, err := h.caregiverRepo.GetProfileByID(c.Request.Context(), req.CaregiverID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate caregiver"})
+		return
+	}
+	if caregiverProfile == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Caregiver not found"})
+		return
+	}
+	if caregiverProfile.UserID == uid {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You cannot book your own caregiver profile"})
+		return
+	}
+
+	// Parse datetimes (accept strict RFC3339 plus legacy ISO strings without timezone)
+	startDatetime, err := parseBookingDatetime(req.StartDatetime)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start datetime format"})
 		return
 	}
-	endDatetime, err := time.Parse(time.RFC3339, req.EndDatetime)
+	endDatetime, err := parseBookingDatetime(req.EndDatetime)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end datetime format"})
 		return
 	}
 
-	if endDatetime.Before(startDatetime) {
+	startDatetime = startDatetime.UTC()
+	endDatetime = endDatetime.UTC()
+
+	if !endDatetime.After(startDatetime) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "End time must be after start time"})
+		return
+	}
+
+	if startDatetime.Before(time.Now().UTC().Add(5 * time.Minute)) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Booking start time must be in the future"})
+		return
+	}
+
+	serviceAddress := sanitizeOptionalText(req.ServiceAddress)
+	if req.ServiceLocationType == "owner_home" && serviceAddress == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Service address is required for owner_home bookings"})
 		return
 	}
 
@@ -120,10 +150,10 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		StartDatetime:         startDatetime,
 		EndDatetime:           endDatetime,
 		ServiceLocationType:   req.ServiceLocationType,
-		ServiceAddress:        req.ServiceAddress,
+		ServiceAddress:        serviceAddress,
 		ServiceLatitude:       req.ServiceLatitude,
 		ServiceLongitude:      req.ServiceLongitude,
-		SpecialInstructions:   req.SpecialInstructions,
+		SpecialInstructions:   sanitizeOptionalText(req.SpecialInstructions),
 		EmergencyContactName:  req.EmergencyContactName,
 		EmergencyContactPhone: req.EmergencyContactPhone,
 		BaseAmount:            baseAmount,
@@ -140,6 +170,40 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"booking": booking})
+}
+
+func parseBookingDatetime(raw string) (time.Time, error) {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return time.Time{}, fmt.Errorf("datetime is required")
+	}
+
+	withTimezoneLayouts := []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+	}
+
+	for _, layout := range withTimezoneLayouts {
+		parsed, err := time.Parse(layout, value)
+		if err == nil {
+			return parsed, nil
+		}
+	}
+
+	withoutTimezoneLayouts := []string{
+		"2006-01-02T15:04:05.999999999",
+		"2006-01-02T15:04:05",
+		"2006-01-02T15:04",
+	}
+
+	for _, layout := range withoutTimezoneLayouts {
+		parsed, err := time.ParseInLocation(layout, value, time.Local)
+		if err == nil {
+			return parsed, nil
+		}
+	}
+
+	return time.Time{}, fmt.Errorf("invalid datetime format")
 }
 
 // GetBooking returns a booking by ID
@@ -418,7 +482,18 @@ func (h *BookingHandler) StartService(c *gin.Context) {
 		return
 	}
 
-	if err := h.repo.StartService(c.Request.Context(), bookingID, &req.Latitude, &req.Longitude); err != nil {
+	payments, err := h.repo.GetPaymentsByBooking(c.Request.Context(), bookingID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify booking payments"})
+		return
+	}
+
+	if !hasCompletedServicePayment(payments) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner payment is required before starting service"})
+		return
+	}
+
+	if err := h.repo.StartService(c.Request.Context(), bookingID, req.Latitude, req.Longitude); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start service"})
 		return
 	}
@@ -868,6 +943,27 @@ func (h *BookingHandler) ProcessPayment(c *gin.Context) {
 		return
 	}
 
+	if booking.Status != "accepted" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Payment can only be processed after caregiver acceptance"})
+		return
+	}
+
+	if req.PaymentType == "tip" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Tip payments are not supported in this flow"})
+		return
+	}
+
+	existingPayments, err := h.repo.GetPaymentsByBooking(c.Request.Context(), bookingID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate existing payments"})
+		return
+	}
+
+	if hasCompletedPaymentType(existingPayments, req.PaymentType) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "This payment has already been completed"})
+		return
+	}
+
 	paymentMethod := req.PaymentMethod
 	payment := &models.BookingPayment{
 		BookingID:     bookingID,
@@ -928,4 +1024,35 @@ func (h *BookingHandler) GetPayments(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"payments": payments})
+}
+
+func hasCompletedServicePayment(payments []models.BookingPayment) bool {
+	for _, payment := range payments {
+		if strings.ToLower(strings.TrimSpace(payment.Status)) != "completed" {
+			continue
+		}
+
+		if strings.ToLower(strings.TrimSpace(payment.PaymentType)) == "refund" {
+			continue
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func hasCompletedPaymentType(payments []models.BookingPayment, paymentType string) bool {
+	targetType := strings.ToLower(strings.TrimSpace(paymentType))
+	for _, payment := range payments {
+		if strings.ToLower(strings.TrimSpace(payment.Status)) != "completed" {
+			continue
+		}
+
+		if strings.ToLower(strings.TrimSpace(payment.PaymentType)) == targetType {
+			return true
+		}
+	}
+
+	return false
 }

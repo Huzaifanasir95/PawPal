@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/repositories/community_hub_repository.dart';
-import '../../data/models/community_hub_models.dart';
 import 'adoption_state.dart';
 
 class AdoptionCubit extends Cubit<AdoptionState> {
@@ -39,6 +38,7 @@ class AdoptionCubit extends Cubit<AdoptionState> {
   }
 
   Future<bool> createListing({
+    required String petId,
     required String petName,
     required String petType,
     required String description,
@@ -62,6 +62,7 @@ class AdoptionCubit extends Cubit<AdoptionState> {
     emit(state.copyWith(isCreating: true, error: null));
     try {
       await _repo.createAdoption(
+        petId: petId,
         petName: petName,
         petType: petType,
         description: description,

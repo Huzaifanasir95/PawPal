@@ -6,17 +6,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/navigation/app_navigator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../chatbot/presentation/pages/chatbot_screen.dart';
 import '../../../caregiver/presentation/pages/caregivers_list_screen.dart';
+import '../../../caregiver/presentation/pages/owner_bookings_screen.dart';
 import '../../../home/presentation/pages/all_categories_page.dart';
 import '../../../marketplace/data/repositories/marketplace_repository.dart';
 import '../../../pets/presentation/pages/add_pet_screen.dart';
 import '../../../pets/presentation/pages/pet_identification_scan_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
+import '../../../vet/presentation/pages/vet_appointments_screen.dart';
 
 class PetOwnerDashboard extends StatefulWidget {
   const PetOwnerDashboard({super.key});
@@ -30,18 +31,12 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   int _currentIndex = 0;
   String _userName = '';
   String _pixelTheme = 'classic';
-  final ScrollController _categoryScrollController = ScrollController();
-  Timer? _categoryAutoScrollTimer;
-  bool _isCategoryTouching = false;
 
   @override
   void initState() {
     super.initState();
     _loadData();
     _loadCustomization();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startCategoryAutoScroll();
-    });
   }
 
   Future<void> _loadCustomization() async {
@@ -54,31 +49,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
 
   @override
   void dispose() {
-    _categoryAutoScrollTimer?.cancel();
-    _categoryScrollController.dispose();
     super.dispose();
-  }
-
-  void _startCategoryAutoScroll() {
-    _categoryAutoScrollTimer?.cancel();
-    _categoryAutoScrollTimer = Timer.periodic(const Duration(milliseconds: 28),
-        (_) {
-      if (!mounted ||
-          !_categoryScrollController.hasClients ||
-          _isCategoryTouching) {
-        return;
-      }
-
-      final position = _categoryScrollController.position;
-      final nextOffset = _categoryScrollController.offset + 0.7;
-      final loopPoint = position.maxScrollExtent / 2;
-
-      if (loopPoint > 0 && nextOffset >= loopPoint) {
-        _categoryScrollController.jumpTo(nextOffset - loopPoint);
-      } else {
-        _categoryScrollController.jumpTo(nextOffset);
-      }
-    });
   }
 
   Future<void> _loadData() async {
@@ -99,6 +70,9 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         state.maybeWhen(
@@ -107,16 +81,17 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
         );
 
         return AnnotatedRegion<SystemUiOverlayStyle>(
-          value: const SystemUiOverlayStyle(
+          value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
+            statusBarIconBrightness:
+                isDark ? Brightness.light : Brightness.light,
           ),
           child: Scaffold(
-            backgroundColor: const Color(0xFFECEFF3),
+            backgroundColor: theme.scaffoldBackgroundColor,
             body: SafeArea(
               child: RefreshIndicator(
                 onRefresh: _loadData,
-                color: AppColors.primary,
+                color: theme.colorScheme.primary,
                 child: ListView(
                   padding: EdgeInsets.zero,
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -126,7 +101,6 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                       offset: Offset(0, -28.h),
                       child: _buildContentSheet(),
                     ),
-                    SizedBox(height: 96.h),
                   ],
                 ),
               ),
@@ -142,6 +116,12 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   }
 
   Widget _buildTopHero() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final heroForeground =
+        isDark ? colorScheme.onPrimaryContainer : colorScheme.onPrimary;
+
     return Container(
       height: 300.h,
       padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 36.h),
@@ -149,10 +129,16 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF4E9F9A),
-            const Color(0xFF2F6E72),
-          ],
+          colors:
+              isDark
+                  ? <Color>[
+                    colorScheme.primaryContainer,
+                    colorScheme.surfaceContainerHighest,
+                  ]
+                  : <Color>[
+                    colorScheme.primary,
+                    colorScheme.primary.withValues(alpha: 0.78),
+                  ],
         ),
       ),
       child: Column(
@@ -171,7 +157,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                       style: TextStyle(
                         fontSize: 28.sp,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: heroForeground,
                         letterSpacing: -0.4,
                       ),
                     ),
@@ -183,7 +169,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                         style: TextStyle(
                           fontSize: 14.sp,
                           height: 1.35,
-                          color: Colors.white.withOpacity(0.95),
+                          color: heroForeground.withValues(alpha: 0.92),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -192,25 +178,25 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                     Row(
                       children: [
                         GestureDetector(
-                          onTap: () =>
-                              AppNavigator.navigateToMarketplace(context),
+                          onTap:
+                              () => AppNavigator.navigateToMarketplace(context),
                           child: Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: 14.w,
                               vertical: 9.h,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.18),
+                              color: heroForeground.withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(18.r),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.42),
+                                color: heroForeground.withValues(alpha: 0.35),
                               ),
                             ),
                             child: Text(
                               'Explore App',
                               style: TextStyle(
                                 fontSize: 12.sp,
-                                color: Colors.white,
+                                color: heroForeground,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -218,26 +204,27 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                         ),
                         SizedBox(width: 8.w),
                         GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MyPetsScreen(),
-                            ),
-                          ),
+                          onTap:
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MyPetsScreen(),
+                                ),
+                              ),
                           child: Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: 14.w,
                               vertical: 9.h,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(18.r),
                             ),
                             child: Text(
                               'My Pets',
                               style: TextStyle(
                                 fontSize: 12.sp,
-                                color: AppColors.primary,
+                                color: colorScheme.primary,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -254,9 +241,11 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                 height: 134.h,
                 padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(20.r),
-                  border: Border.all(color: const Color(0xFFDDE2E7)),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.35),
+                  ),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(14.r),
@@ -271,12 +260,39 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   }
 
   Widget _buildContentSheet() {
-    final categories = <_CategoryItem>[
-      _CategoryItem('Community', Icons.groups_rounded, () {
-        AppNavigator.navigateToCommunityHub(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final quickActions = <_CategoryItem>[
+      _CategoryItem('My Pets', Icons.pets_rounded, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MyPetsScreen()),
+        );
       }),
-      _CategoryItem('Lost & Found', Icons.pets_rounded, () {
-        AppNavigator.navigateToCommunityHub(context);
+      _CategoryItem('Marketplace', Icons.storefront_rounded, () {
+        AppNavigator.navigateToMarketplace(context);
+      }),
+      _CategoryItem('Caregivers', Icons.support_agent_rounded, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CaregiversListScreen()),
+        );
+      }),
+      _CategoryItem('My Bookings', Icons.receipt_long_rounded, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const OwnerBookingsScreen()),
+        );
+      }),
+      _CategoryItem('Vet Visits', Icons.event_available_rounded, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const VetAppointmentsScreen(isVetView: false),
+          ),
+        );
       }),
       _CategoryItem('AI Chatbot', Icons.smart_toy_outlined, () {
         Navigator.push(
@@ -284,51 +300,37 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
           MaterialPageRoute(builder: (_) => const ChatbotScreen()),
         );
       }),
-      _CategoryItem('Marketplace', Icons.storefront_rounded, () {
-        AppNavigator.navigateToMarketplace(context);
-      }),
-      _CategoryItem('Pet Caregiver', Icons.support_agent_rounded, () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CaregiversListScreen()),
-        );
-      }),
-      _CategoryItem('Adoption', Icons.volunteer_activism_rounded, () {
+      _CategoryItem('Community', Icons.groups_rounded, () {
         AppNavigator.navigateToCommunityHub(context);
       }),
-      _CategoryItem('Events', Icons.event_available_rounded, () {
-        AppNavigator.navigateToCommunityHub(context);
-      }),
-      _CategoryItem('Diet Plans', Icons.restaurant_menu_rounded, () {
+      _CategoryItem('Breed Scanner', Icons.document_scanner_rounded, () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
-        );
-      }),
-      _CategoryItem('Pet Journals', Icons.edit_note_rounded, () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const MyPetsScreen()),
+          MaterialPageRoute(
+            builder: (_) => const PetIdentificationScanScreen(),
+          ),
         );
       }),
     ];
-    final loopedCategories = [...categories, ...categories];
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFDCE5EB),
-            Color(0xFFD5E0E7),
-          ],
+          colors:
+              isDark
+                  ? <Color>[
+                    colorScheme.surface,
+                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+                  ]
+                  : const <Color>[Color(0xFFDCE5EB), Color(0xFFD5E0E7)],
         ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(22.r)),
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 0),
+        padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 118.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -337,26 +339,27 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
             Row(
               children: [
                 Text(
-                  'Categories',
+                  'Quick Access',
                   style: TextStyle(
                     fontSize: 25.sp,
-                    color: AppColors.textPrimary,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const Spacer(),
                 GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AllCategoriesPage(),
-                    ),
-                  ),
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AllCategoriesPage(),
+                        ),
+                      ),
                   child: Text(
                     'See All',
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -364,31 +367,42 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
               ],
             ),
             SizedBox(height: 14.h),
-            SizedBox(
-              height: 102.h,
-              child: Listener(
-                onPointerDown: (_) => _isCategoryTouching = true,
-                onPointerUp: (_) => _isCategoryTouching = false,
-                onPointerCancel: (_) => _isCategoryTouching = false,
-                child: ListView.separated(
-                  controller: _categoryScrollController,
-                  physics: const BouncingScrollPhysics(),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: loopedCategories.length,
-                  separatorBuilder: (_, __) => SizedBox(width: 12.w),
-                  itemBuilder: (context, index) =>
-                      _buildCategoryChip(
-                        loopedCategories[index % categories.length],
-                      ),
-                ),
+            _buildQuickAccessGrid(quickActions),
+            SizedBox(height: 16.h),
+            Text(
+              'Care & Services',
+              style: TextStyle(
+                fontSize: 24.sp,
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w800,
               ),
+            ),
+            SizedBox(height: 12.h),
+            _buildMostPopularCard(
+              title: 'Explore Marketplace Deals',
+              subtitle: 'Food, toys, and essentials from trusted sellers',
+              icon: Icons.storefront_rounded,
+              onTap: () => AppNavigator.navigateToMarketplace(context),
+            ),
+            SizedBox(height: 10.h),
+            _buildMostPopularCard(
+              title: 'Find Pet Caregivers',
+              subtitle: 'Trusted in-home care, boarding, and walks',
+              icon: Icons.support_agent_rounded,
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const CaregiversListScreen(),
+                    ),
+                  ),
             ),
             SizedBox(height: 14.h),
             Text(
               'Most Popular',
               style: TextStyle(
                 fontSize: 24.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -404,10 +418,11 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
               title: 'Manage Your Pets',
               subtitle: 'Update profiles, records, and reminders',
               icon: Icons.pets_outlined,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MyPetsScreen()),
-              ),
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MyPetsScreen()),
+                  ),
             ),
           ],
         ),
@@ -416,6 +431,10 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   }
 
   Widget _buildPromoCard() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       height: 158.h,
       transform: Matrix4.translationValues(0, -1.5, 0),
@@ -424,15 +443,24 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFFF1F6F8),
-            const Color(0xFFDDE9EE),
-          ],
+          colors:
+              isDark
+                  ? <Color>[
+                    colorScheme.surface,
+                    colorScheme.surfaceContainerHighest,
+                  ]
+                  : const <Color>[Color(0xFFF1F6F8), Color(0xFFDDE9EE)],
         ),
-        border: Border.all(color: const Color(0xFFB9CBD4), width: 1.1),
+        border: Border.all(
+          color:
+              isDark
+                  ? colorScheme.outline.withValues(alpha: 0.26)
+                  : const Color(0xFFB9CBD4),
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.10),
+            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.10),
             blurRadius: 18,
             spreadRadius: 0.5,
             offset: const Offset(0, 8),
@@ -444,13 +472,12 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
           Expanded(
             flex: 5,
             child: ClipRRect(
-              borderRadius:
-                  BorderRadius.horizontal(left: Radius.circular(18.r)),
+              borderRadius: BorderRadius.horizontal(
+                left: Radius.circular(18.r),
+              ),
               child: Container(
-                color: AppColors.primary.withOpacity(0.14),
-                child: Center(
-                  child: const _PromoShopPreviewWidget(),
-                ),
+                color: colorScheme.primary.withValues(alpha: 0.14),
+                child: Center(child: const _PromoShopPreviewWidget()),
               ),
             ),
           ),
@@ -466,7 +493,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                     'PET CARE WEEK',
                     style: TextStyle(
                       fontSize: 11.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.8,
                     ),
@@ -476,7 +503,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                     'Save on food, toys & grooming.',
                     style: TextStyle(
                       fontSize: 15.sp,
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.w800,
                       height: 1.2,
                     ),
@@ -490,14 +517,14 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                         vertical: 7.h,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
+                        color: colorScheme.primary,
                         borderRadius: BorderRadius.circular(14.r),
                       ),
                       child: Text(
                         'Shop Now',
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -512,38 +539,74 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
     );
   }
 
-  Widget _buildCategoryChip(_CategoryItem item) {
-    return GestureDetector(
-      onTap: item.onTap,
-      child: SizedBox(
-        width: 90.w,
-        child: Column(
-          children: [
-            Container(
-              width: 60.w,
-              height: 60.h,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(999.r),
-              ),
-              child: Icon(item.icon, size: 27.sp, color: AppColors.primary),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              item.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 10.5.sp,
-                height: 1.15,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
+  Widget _buildQuickAccessGrid(List<_CategoryItem> items) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: items.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 10.w,
+        mainAxisSpacing: 10.h,
+        childAspectRatio: 0.9,
       ),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return InkWell(
+          borderRadius: BorderRadius.circular(14.r),
+          onTap: item.onTap,
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(14.r),
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.22),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 10.h),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 42.w,
+                  height: 42.h,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(999.r),
+                  ),
+                  child: Icon(
+                    item.icon,
+                    size: 22.sp,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  item.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    height: 1.2,
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -553,13 +616,16 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -567,10 +633,10 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
               width: 48.w,
               height: 48.h,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.12),
+                color: colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14.r),
               ),
-              child: Icon(icon, color: AppColors.primary, size: 24.sp),
+              child: Icon(icon, color: colorScheme.primary, size: 24.sp),
             ),
             SizedBox(width: 12.w),
             Expanded(
@@ -581,7 +647,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                     title,
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -590,15 +656,18 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                size: 22.sp, color: AppColors.textSecondary),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 22.sp,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ],
         ),
       ),
@@ -606,8 +675,10 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   }
 
   Widget _buildBottomBar() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return BottomAppBar(
-      color: Colors.white,
+      color: colorScheme.surface,
       shape: const CircularNotchedRectangle(),
       notchMargin: 8,
       elevation: 8,
@@ -628,6 +699,7 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   }
 
   Widget _buildNavItem(IconData icon, String label, int index) {
+    final colorScheme = Theme.of(context).colorScheme;
     final selected = _currentIndex == index;
     return InkWell(
       onTap: () async {
@@ -653,7 +725,8 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
           Icon(
             icon,
             size: 22.sp,
-            color: selected ? AppColors.primary : AppColors.textSecondary,
+            color:
+                selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
           ),
           SizedBox(height: 2.h),
           Text(
@@ -661,7 +734,8 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
             style: TextStyle(
               fontSize: 11.sp,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              color: selected ? AppColors.primary : AppColors.textSecondary,
+              color:
+                  selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -670,17 +744,22 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
   }
 
   Widget _buildCenterFab() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return FloatingActionButton(
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PetIdentificationScanScreen()),
-      ),
-      backgroundColor: AppColors.primary,
+      onPressed:
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const PetIdentificationScanScreen(),
+            ),
+          ),
+      backgroundColor: colorScheme.primary,
       elevation: 4,
       tooltip: 'Pet Identification',
       child: Icon(
         Icons.document_scanner_rounded,
-        color: Colors.white,
+        color: colorScheme.onPrimary,
         size: 28.sp,
       ),
     );
@@ -697,7 +776,8 @@ class _InteractivePixelCatWidget extends StatefulWidget {
       _InteractivePixelCatWidgetState();
 }
 
-class _InteractivePixelCatWidgetState extends State<_InteractivePixelCatWidget> {
+class _InteractivePixelCatWidgetState
+    extends State<_InteractivePixelCatWidget> {
   int _spriteIndex = 0;
   Timer? _runTimer;
 
@@ -921,10 +1001,15 @@ class _InteractivePixelCatWidgetState extends State<_InteractivePixelCatWidget> 
     super.dispose();
   }
 
-  Color? _pixelColor(String value) {
+  Color? _pixelColor(String value, BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     switch (value) {
       case 'K':
-        return const Color(0xFF121212);
+        return isDark
+            ? colorScheme.onSurface.withValues(alpha: 0.88)
+            : const Color(0xFF121212);
       default:
         return null;
     }
@@ -932,19 +1017,21 @@ class _InteractivePixelCatWidgetState extends State<_InteractivePixelCatWidget> 
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final spriteSet =
         _spritePresets[widget.theme] ?? _spritePresets['classic']!;
     final sprite = spriteSet[_spriteIndex % spriteSet.length];
 
     return Container(
-      color: Colors.white,
+      color: colorScheme.surface,
       child: Center(
         child: AnimatedSlide(
           duration: const Duration(milliseconds: 120),
           curve: Curves.easeOut,
-          offset: _spriteIndex.isEven
-              ? const Offset(-0.03, 0)
-              : const Offset(0.03, 0),
+          offset:
+              _spriteIndex.isEven
+                  ? const Offset(-0.03, 0)
+                  : const Offset(0.03, 0),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 100),
             switchInCurve: Curves.linear,
@@ -952,7 +1039,7 @@ class _InteractivePixelCatWidgetState extends State<_InteractivePixelCatWidget> 
             child: _PixelSprite(
               key: ValueKey<int>(_spriteIndex),
               sprite: sprite,
-              pixelColor: _pixelColor,
+              pixelColor: (value) => _pixelColor(value, context),
             ),
           ),
         ),
@@ -985,11 +1072,12 @@ class _PromoShopPreviewWidgetState extends State<_PromoShopPreviewWidget> {
   Future<void> _loadShopImages() async {
     try {
       final products = await _marketplaceRepository.getProducts(limit: 10);
-      final urls = products
-          .map((product) => product.firstImage)
-          .where((url) => url.trim().isNotEmpty)
-          .toSet()
-          .toList();
+      final urls =
+          products
+              .map((product) => product.firstImage)
+              .where((url) => url.trim().isNotEmpty)
+              .toSet()
+              .toList();
 
       if (!mounted) return;
 
@@ -1025,12 +1113,10 @@ class _PromoShopPreviewWidgetState extends State<_PromoShopPreviewWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (_imageUrls.isEmpty) {
-      return Icon(
-        Icons.pets_rounded,
-        size: 72.sp,
-        color: AppColors.primary,
-      );
+      return Icon(Icons.pets_rounded, size: 72.sp, color: colorScheme.primary);
     }
 
     final imageUrl = _imageUrls[_activeIndex];
@@ -1050,11 +1136,11 @@ class _PromoShopPreviewWidgetState extends State<_PromoShopPreviewWidget> {
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) {
                 return Container(
-                  color: Colors.white.withOpacity(0.6),
+                  color: colorScheme.surfaceContainerHighest,
                   alignment: Alignment.center,
                   child: Icon(
                     Icons.image_not_supported_outlined,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                     size: 30.sp,
                   ),
                 );

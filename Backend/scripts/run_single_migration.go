@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -20,9 +22,14 @@ func main() {
 
 	migrationFile := os.Args[1]
 
-	dbURL := os.Getenv("SupabaseConnectionString")
+	_ = godotenv.Load()
+
+	dbURL := strings.TrimSpace(os.Getenv("SupabaseConnectionString"))
 	if dbURL == "" {
-		log.Fatal("SupabaseConnectionString not set in environment")
+		dbURL = strings.TrimSpace(os.Getenv("SUPABASE_CONNECTION_STRING"))
+	}
+	if dbURL == "" {
+		log.Fatal("SupabaseConnectionString/SUPABASE_CONNECTION_STRING not set in environment")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)

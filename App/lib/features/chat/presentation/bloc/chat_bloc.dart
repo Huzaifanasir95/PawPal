@@ -144,8 +144,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) async {
     emit(const ChatState.loading());
     try {
-      // Assuming backend has delete endpoint, otherwise this will fail
-      // For now, just emit deleted state
+      await _repository.deleteChat(chatId);
       emit(ChatState.chatDeleted(chatId));
       
       // Reload chats list

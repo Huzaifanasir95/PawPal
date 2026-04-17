@@ -21,7 +21,7 @@ type UserRepository interface {
 	GetRefreshToken(ctx context.Context, token string) (*models.RefreshToken, error)
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteUserRefreshTokens(ctx context.Context, userID uuid.UUID) error
-	
+
 	// Legacy methods for backwards compatibility with existing code
 	Create(ctx context.Context, user *models.User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
@@ -34,4 +34,6 @@ type UserRepository interface {
 	GetPasswordResetToken(ctx context.Context, token string) (*models.PasswordResetToken, error)
 	MarkPasswordResetTokenUsed(ctx context.Context, token string) error
 	SetUserRole(ctx context.Context, userID uuid.UUID, role string) error
+	AddUserRole(ctx context.Context, userID uuid.UUID, role string) error
+	GetUserRoles(ctx context.Context, userID uuid.UUID) ([]string, error)
 }

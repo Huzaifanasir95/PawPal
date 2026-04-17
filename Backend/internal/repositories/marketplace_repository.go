@@ -47,6 +47,21 @@ func (r *MarketplaceRepository) GetCategories(ctx context.Context) ([]models.Pro
 	return cats, rows.Err()
 }
 
+// CategoryExists checks whether a category exists.
+func (r *MarketplaceRepository) CategoryExists(ctx context.Context, categoryID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(
+		ctx,
+		`SELECT EXISTS(SELECT 1 FROM product_categories WHERE id = $1)`,
+		categoryID,
+	).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 // ─── Products ─────────────────────────────────────────────────────────────────
 
 // CreateProduct inserts a new product listing
@@ -264,10 +279,11 @@ func (r *MarketplaceRepository) UpdateProduct(ctx context.Context, productID, se
 
 	var catID *uuid.UUID
 	if req.CategoryID != nil && *req.CategoryID != "" {
-		parsed, err := uuid.Parse(*req.CategoryID)
-		if err == nil {
-			catID = &parsed
+		parsed, err := uuid.Parse(strings.TrimSpace(*req.CategoryID))
+		if err != nil {
+			return nil, fmt.Errorf("invalid category_id: %w", err)
 		}
+		catID = &parsed
 	}
 
 	var p models.Product
@@ -600,6 +616,55 @@ func (r *MarketplaceRepository) UpdateOrderStatus(ctx context.Context, orderID u
 	return err
 }
 
+// UpdateSellerOrderStatus updates seller_status for this seller's items and updates order status.
+func (r *MarketplaceRepository) UpdateSellerOrderStatus(ctx context.Context, orderID, sellerID uuid.UUID, status, trackingNumber string) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	tag, err := tx.Exec(ctx,
+		`UPDATE order_items SET seller_status = $3 WHERE order_id = $1 AND seller_id = $2`,
+		orderID, sellerID, status)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+
+	if trackingNumber != "" {
+		_, err = tx.Exec(ctx,
+			`UPDATE orders SET status = $2, tracking_number = $3, updated_at = NOW() WHERE id = $1`,
+			orderID, status, trackingNumber)
+	} else {
+		_, err = tx.Exec(ctx,
+			`UPDATE orders SET status = $2, updated_at = NOW() WHERE id = $1`,
+			orderID, status)
+	}
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+// SellerCanManageOrder checks whether the given seller has at least one item in this order.
+func (r *MarketplaceRepository) SellerCanManageOrder(ctx context.Context, orderID, sellerID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1
+			FROM order_items
+			WHERE order_id = $1 AND seller_id = $2
+		)`, orderID, sellerID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
 // GetSellerOrders returns orders that contain items sold by sellerID
 func (r *MarketplaceRepository) GetSellerOrders(ctx context.Context, sellerID uuid.UUID, page, limit int) ([]models.Order, int, error) {
 	var total int
@@ -638,12 +703,84 @@ func (r *MarketplaceRepository) GetSellerOrders(ctx context.Context, sellerID uu
 		); err != nil {
 			return nil, 0, err
 		}
+
+		itemRows, err := r.db.Query(ctx, `
+			SELECT oi.id, oi.order_id, oi.product_id,
+			       COALESCE(p.name, ''), COALESCE(p.images[1], ''),
+			       oi.seller_id, u.display_name,
+			       oi.quantity, oi.unit_price, oi.total_price, oi.seller_status, oi.created_at
+			FROM order_items oi
+			LEFT JOIN products p ON p.id = oi.product_id
+			LEFT JOIN users u ON u.id = oi.seller_id
+			WHERE oi.order_id = $1 AND oi.seller_id = $2
+			ORDER BY oi.created_at ASC`, o.ID, sellerID)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		for itemRows.Next() {
+			var item models.OrderItem
+			if err := itemRows.Scan(
+				&item.ID, &item.OrderID, &item.ProductID, &item.ProductName, &item.ProductImage,
+				&item.SellerID, &item.SellerName,
+				&item.Quantity, &item.UnitPrice, &item.TotalPrice, &item.SellerStatus, &item.CreatedAt,
+			); err != nil {
+				itemRows.Close()
+				return nil, 0, err
+			}
+			o.Items = append(o.Items, item)
+		}
+		if err := itemRows.Err(); err != nil {
+			itemRows.Close()
+			return nil, 0, err
+		}
+		itemRows.Close()
+
 		orders = append(orders, o)
 	}
 	return orders, total, rows.Err()
 }
 
 // ─── Reviews ─────────────────────────────────────────────────────────────────
+
+// BuyerHasDeliveredPurchase checks if a buyer has a delivered purchase for a product.
+// If orderItemID is provided, the delivered check is scoped to that specific order item.
+func (r *MarketplaceRepository) BuyerHasDeliveredPurchase(ctx context.Context, buyerID, productID uuid.UUID, orderItemID *uuid.UUID) (bool, error) {
+	var exists bool
+
+	if orderItemID != nil {
+		err := r.db.QueryRow(ctx, `
+			SELECT EXISTS(
+				SELECT 1
+				FROM order_items oi
+				JOIN orders o ON o.id = oi.order_id
+				WHERE oi.id = $1
+					AND oi.product_id = $2
+					AND o.buyer_id = $3
+					AND (oi.seller_status = 'delivered' OR o.status = 'delivered')
+			)`, *orderItemID, productID, buyerID).Scan(&exists)
+		if err != nil {
+			return false, err
+		}
+
+		return exists, nil
+	}
+
+	err := r.db.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1
+			FROM order_items oi
+			JOIN orders o ON o.id = oi.order_id
+			WHERE oi.product_id = $1
+				AND o.buyer_id = $2
+				AND (oi.seller_status = 'delivered' OR o.status = 'delivered')
+		)`, productID, buyerID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
 
 // AddReview inserts a review and updates the product's aggregate rating
 func (r *MarketplaceRepository) AddReview(ctx context.Context, review *models.ProductReview) error {

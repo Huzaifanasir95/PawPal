@@ -77,9 +77,12 @@ class LostFoundPost {
 class AdoptionListing {
   final String id;
   final String userId;
+  final String? petId;
   final String petName;
   final String petType;
   final String? breed;
+  final bool isBreedVerified;
+  final String? verifiedBreed;
   final String? age;
   final String? gender;
   final String? size;
@@ -105,9 +108,12 @@ class AdoptionListing {
   const AdoptionListing({
     required this.id,
     required this.userId,
+    this.petId,
     required this.petName,
     required this.petType,
     this.breed,
+    this.isBreedVerified = false,
+    this.verifiedBreed,
     this.age,
     this.gender,
     this.size,
@@ -140,9 +146,12 @@ class AdoptionListing {
     return AdoptionListing(
       id: json['id'] as String,
       userId: json['userId'] as String,
+      petId: json['petId'] as String?,
       petName: json['petName'] as String,
       petType: json['petType'] as String,
       breed: json['breed'] as String?,
+      isBreedVerified: json['isBreedVerified'] as bool? ?? false,
+      verifiedBreed: json['verifiedBreed'] as String?,
       age: json['age'] as String?,
       gender: json['gender'] as String?,
       size: json['size'] as String?,

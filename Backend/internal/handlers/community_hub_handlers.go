@@ -13,10 +13,10 @@ import (
 
 type CommunityHubHandlers struct {
 	repo     *repositories.CommunityHubRepository
-	userRepo *repositories.UserRepository
+	userRepo repositories.UserRepository
 }
 
-func NewCommunityHubHandlers(repo *repositories.CommunityHubRepository, userRepo *repositories.UserRepository) *CommunityHubHandlers {
+func NewCommunityHubHandlers(repo *repositories.CommunityHubRepository, userRepo repositories.UserRepository) *CommunityHubHandlers {
 	return &CommunityHubHandlers{repo: repo, userRepo: userRepo}
 }
 
@@ -169,6 +169,7 @@ func (h *CommunityHubHandlers) CreateAdoption(c *gin.Context) {
 
 	listing := &models.AdoptionListing{
 		UserID:       parseUUID(userID),
+		PetID:        &req.PetID,
 		PetName:      req.PetName,
 		PetType:      req.PetType,
 		Breed:        req.Breed,

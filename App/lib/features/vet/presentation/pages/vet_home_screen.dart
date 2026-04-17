@@ -6,7 +6,9 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/widgets/user_avatar.dart';
 import '../../../../core/navigation/app_navigator.dart';
+import '../../../../core/services/api_client.dart';
 import '../../data/models/vet_profile_model.dart';
+import '../../data/repositories/vet_repository.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../chat/data/models/chat_model.dart';
 import '../bloc/vet_bloc.dart';
@@ -17,6 +19,7 @@ import '../../../chat/presentation/bloc/chat_event.dart';
 import '../../../chat/presentation/bloc/chat_state.dart';
 import '../../../chat/presentation/pages/chat_conversation_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
+import 'vet_appointments_screen.dart';
 import 'vet_profile_setup_screen.dart';
 
 class VetHomeScreen extends StatefulWidget {
@@ -28,32 +31,109 @@ class VetHomeScreen extends StatefulWidget {
 
 class _VetHomeScreenState extends State<VetHomeScreen> {
   int _currentIndex = 0;
+  bool _isCheckingProfile = true;
+  bool _hasRedirectedToSetup = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeDashboard();
+  }
+
+  Future<void> _initializeDashboard() async {
+    await _ensureVetProfileIsReady();
+    if (!mounted || _hasRedirectedToSetup) return;
+
+    setState(() {
+      _isCheckingProfile = false;
+    });
+
+    _refreshDashboard();
+  }
+
+  Future<void> _refreshDashboard() async {
     context.read<VetBloc>().add(const VetEvent.loadMyProfile());
     context.read<ChatBloc>().add(const ChatEvent.loadChats());
   }
 
+  Future<void> _ensureVetProfileIsReady() async {
+    try {
+      final profile = await VetRepository(ApiClient.instance).getMyProfile();
+      if (_isProfileComplete(profile)) {
+        return;
+      }
+
+      await _navigateToProfileSetup();
+    } catch (e) {
+      if (_isProfileMissingMessage(e.toString())) {
+        await _navigateToProfileSetup();
+      }
+    }
+  }
+
+  bool _isProfileComplete(VetProfile profile) {
+    return profile.fullName.trim().isNotEmpty &&
+        profile.degree.trim().isNotEmpty &&
+        profile.experience > 0 &&
+        profile.specialization.isNotEmpty &&
+        profile.phone.trim().isNotEmpty &&
+        profile.consultationFee > 0;
+  }
+
+  bool _isProfileMissingMessage(String message) {
+    final normalized = message.toLowerCase();
+    return normalized.contains('profile not found') ||
+        (normalized.contains('vet profile') &&
+            normalized.contains('not found')) ||
+        normalized.contains('no vet profile');
+  }
+
+  Future<void> _navigateToProfileSetup() async {
+    if (!mounted || _hasRedirectedToSetup) return;
+
+    _hasRedirectedToSetup = true;
+    await Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const VetProfileSetupScreen()),
+    );
+  }
+
+  Future<void> _openVetProfileEditor({required int initialStep}) async {
+    if (!mounted) return;
+
+    final didUpdate = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => VetProfileSetupScreen(
+              isEditing: true,
+              initialStep: initialStep,
+            ),
+      ),
+    );
+
+    if (didUpdate == true && mounted) {
+      await _refreshDashboard();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (_isCheckingProfile) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return BlocListener<VetBloc, VetState>(
       listener: (context, state) {
         state.maybeWhen(
           error: (message) {
-            // If profile not found, navigate to profile setup
-            if (message.toLowerCase().contains('not found') || 
-                message.toLowerCase().contains('no profile')) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => const VetProfileSetupScreen(),
-                  ),
-                );
-              });
+            if (_isProfileMissingMessage(message)) {
+              _navigateToProfileSetup();
             } else {
-              // Show other errors as snackbar
               CustomSnackbar.showError(context, message);
             }
           },
@@ -61,141 +141,125 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
         );
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: const Text('Vet Dashboard'),
-          backgroundColor: AppColors.primary,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {
-                context.read<VetBloc>().add(const VetEvent.loadMyProfile());
-                context.read<ChatBloc>().add(const ChatEvent.loadChats());
-              },
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: RefreshIndicator(
+          onRefresh: _refreshDashboard,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Welcome Header
+                BlocBuilder<VetBloc, VetState>(
+                  builder: (context, state) {
+                    return state.maybeWhen(
+                      profileLoaded: (profile) => _buildWelcomeHeader(profile),
+                      orElse: () => _buildWelcomeHeaderSkeleton(),
+                    );
+                  },
+                ),
+
+                SizedBox(height: 16.h),
+
+                // Stats Cards
+                BlocBuilder<VetBloc, VetState>(
+                  builder: (context, state) {
+                    return state.maybeWhen(
+                      profileLoaded: (profile) => _buildStatsCards(profile),
+                      orElse: () => const SizedBox(),
+                    );
+                  },
+                ),
+
+                SizedBox(height: 24.h),
+
+                // Pending Chats Section
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Text(
+                    'Pending Chats',
+                    style: AppTextStyles.titleLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12.h),
+
+                BlocBuilder<ChatBloc, ChatState>(
+                  builder: (context, state) {
+                    return state.maybeWhen(
+                      chatsLoaded: (chats) => _buildPendingChats(chats),
+                      orElse: () => _buildPendingChatsSkeleton(),
+                    );
+                  },
+                ),
+
+                SizedBox(height: 24.h),
+
+                // Quick Actions
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Text(
+                    'Quick Actions',
+                    style: AppTextStyles.titleLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12.h),
+
+                _buildQuickActions(),
+
+                SizedBox(height: 40.h),
+              ],
+            ),
+          ),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: theme.colorScheme.surface,
+          selectedItemColor: theme.colorScheme.primary,
+          unselectedItemColor: theme.colorScheme.onSurfaceVariant,
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            switch (index) {
+              case 0: // Home/Dashboard
+                setState(() {
+                  _currentIndex = 0;
+                });
+                break;
+              case 1: // Chats
+                AppNavigator.navigateToChats(context);
+                break;
+              case 2: // Profile
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                );
+                break;
+            }
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline),
+              label: 'Chats',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              label: 'Profile',
             ),
           ],
         ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          context.read<VetBloc>().add(const VetEvent.loadMyProfile());
-          context.read<ChatBloc>().add(const ChatEvent.loadChats());
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Header
-              BlocBuilder<VetBloc, VetState>(
-                builder: (context, state) {
-                  return state.maybeWhen(
-                    profileLoaded: (profile) => _buildWelcomeHeader(profile),
-                    orElse: () => _buildWelcomeHeaderSkeleton(),
-                  );
-                },
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Stats Cards
-              BlocBuilder<VetBloc, VetState>(
-                builder: (context, state) {
-                  return state.maybeWhen(
-                    profileLoaded: (profile) => _buildStatsCards(profile),
-                    orElse: () => const SizedBox(),
-                  );
-                },
-              ),
-
-              SizedBox(height: 24.h),
-
-              // Pending Chats Section
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Text(
-                  'Pending Chats',
-                  style: AppTextStyles.titleLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              SizedBox(height: 12.h),
-
-              BlocBuilder<ChatBloc, ChatState>(
-                builder: (context, state) {
-                  return state.maybeWhen(
-                    chatsLoaded: (chats) => _buildPendingChats(chats),
-                    orElse: () => _buildPendingChatsSkeleton(),
-                  );
-                },
-              ),
-
-              SizedBox(height: 24.h),
-
-              // Quick Actions
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Text(
-                  'Quick Actions',
-                  style: AppTextStyles.titleLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              SizedBox(height: 12.h),
-
-              _buildQuickActions(),
-
-              SizedBox(height: 40.h),
-            ],
-          ),
-        ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          switch (index) {
-            case 0: // Home/Dashboard
-              setState(() {
-                _currentIndex = 0;
-              });
-              break;
-            case 1: // Chats
-              AppNavigator.navigateToChats(context);
-              break;
-            case 2: // Profile
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
-              );
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Chats',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
-      ), // End bottomNavigationBar
-    ), // End Scaffold
-    ); // End BlocListener
+    );
   }
 
   Widget _buildWelcomeHeader(VetProfile profile) {
@@ -204,15 +268,12 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
       authenticated: (user) => user.photoUrl,
       orElse: () => null,
     );
-    
+
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withOpacity(0.8),
-          ],
+          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -256,9 +317,10 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: profile.isAvailable
-                    ? Colors.green.withOpacity(0.2)
-                    : Colors.orange.withOpacity(0.2),
+                color:
+                    profile.isAvailable
+                        ? Colors.green.withOpacity(0.2)
+                        : Colors.orange.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(20.r),
                 border: Border.all(
                   color: profile.isAvailable ? Colors.green : Colors.orange,
@@ -380,11 +442,14 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
                 int unreadCount = 0;
                 state.maybeWhen(
                   chatsLoaded: (chats) {
-                    unreadCount = chats.fold(0, (sum, chat) => sum + chat.unreadCountVet);
+                    unreadCount = chats.fold(
+                      0,
+                      (sum, chat) => sum + chat.unreadCountVet,
+                    );
                   },
                   orElse: () {},
                 );
-                
+
                 return _StatCard(
                   icon: Icons.chat,
                   iconColor: Colors.blue,
@@ -401,7 +466,8 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
   }
 
   Widget _buildPendingChats(List<Chat> chats) {
-    final pendingChats = chats.where((chat) => chat.unreadCountVet > 0).toList();
+    final pendingChats =
+        chats.where((chat) => chat.unreadCountVet > 0).toList();
 
     if (pendingChats.isEmpty) {
       return Container(
@@ -415,7 +481,11 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
         child: Center(
           child: Column(
             children: [
-              Icon(Icons.check_circle_outline, size: 48.sp, color: AppColors.success),
+              Icon(
+                Icons.check_circle_outline,
+                size: 48.sp,
+                color: AppColors.success,
+              ),
               SizedBox(height: 12.h),
               Text(
                 'All caught up!',
@@ -512,10 +582,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
             title: 'Edit Profile',
             subtitle: 'Update your information',
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const VetProfileSetupScreen()),
-              );
+              _openVetProfileEditor(initialStep: 0);
             },
           ),
           SizedBox(height: 12.h),
@@ -524,7 +591,21 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
             title: 'Manage Availability',
             subtitle: 'Update your schedule',
             onTap: () {
-              CustomSnackbar.showInfo(context, 'Coming soon!');
+              _openVetProfileEditor(initialStep: 4);
+            },
+          ),
+          SizedBox(height: 12.h),
+          _QuickActionButton(
+            icon: Icons.event_note_outlined,
+            title: 'Manage Appointments',
+            subtitle: 'Respond to requests and complete visits',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const VetAppointmentsScreen(isVetView: true),
+                ),
+              );
             },
           ),
         ],
@@ -619,7 +700,11 @@ class _PendingChatCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 24.r,
                   backgroundColor: AppColors.primary.withOpacity(0.1),
-                  child: Icon(Icons.person, size: 24.sp, color: AppColors.primary),
+                  child: Icon(
+                    Icons.person,
+                    size: 24.sp,
+                    color: AppColors.primary,
+                  ),
                 ),
                 if (chat.unreadCountVet > 0)
                   Positioned(
@@ -669,7 +754,11 @@ class _PendingChatCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16.sp, color: AppColors.textSecondary),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16.sp,
+              color: AppColors.textSecondary,
+            ),
           ],
         ),
       ),
@@ -732,7 +821,11 @@ class _QuickActionButton extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16.sp, color: AppColors.textSecondary),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16.sp,
+              color: AppColors.textSecondary,
+            ),
           ],
         ),
       ),

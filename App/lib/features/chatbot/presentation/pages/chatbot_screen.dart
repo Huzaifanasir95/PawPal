@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../data/repositories/chatbot_repository.dart';
@@ -112,17 +111,21 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final bool canSend = !_isLoading && _messageController.text.trim().isNotEmpty;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFD6E2E8),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF4E9F9A),
+        backgroundColor:
+            isDark ? colorScheme.surfaceContainerHighest : colorScheme.primary,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: Colors.white,
+            color: isDark ? colorScheme.onSurface : colorScheme.onPrimary,
             size: 24.sp,
           ),
           onPressed: () => Navigator.pop(context),
@@ -132,20 +135,26 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: isDark ? colorScheme.onSurface : colorScheme.onPrimary,
           ),
         ),
         centerTitle: true,
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFDDE8ED),
-              Color(0xFFD2DEE5),
-            ],
+            colors:
+                isDark
+                    ? <Color>[
+                      colorScheme.surface,
+                      colorScheme.surfaceContainerHighest,
+                    ]
+                    : <Color>[
+                      colorScheme.surface,
+                      colorScheme.surfaceContainer,
+                    ],
           ),
         ),
         child: SafeArea(
@@ -158,19 +167,27 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFFF1F6F8),
-                        Color(0xFFDDE9EE),
-                      ],
+                      colors:
+                          isDark
+                              ? <Color>[
+                                colorScheme.surfaceContainer,
+                                colorScheme.surfaceContainerHighest,
+                              ]
+                              : <Color>[
+                                colorScheme.surface,
+                                colorScheme.surfaceContainer,
+                              ],
                     ),
                     borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(color: const Color(0xFFB9CBD4)),
+                    border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.35),
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: colorScheme.shadow.withValues(alpha: 0.08),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -182,12 +199,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                         width: 34.w,
                         height: 34.w,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.18),
+                          color: colorScheme.primary.withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.pets_rounded,
-                          color: AppColors.primary,
+                          color: colorScheme.primary,
                           size: 18.sp,
                         ),
                       ),
@@ -200,7 +217,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                               'AI assistant for everyday pet care',
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 12.sp,
-                                color: AppColors.textPrimary,
+                                color: colorScheme.onSurface,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -209,7 +226,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                               'For emergencies, contact a licensed vet immediately.',
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 11.sp,
-                                color: AppColors.textSecondary,
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -246,7 +263,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.primary),
+                              AlwaysStoppedAnimation<Color>(colorScheme.primary),
                         ),
                       ),
                       SizedBox(width: 10.w),
@@ -254,7 +271,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                         'Thinking...',
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 12.sp,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -265,12 +282,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 child: Container(
                   padding: EdgeInsets.all(6.w),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F6F8),
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(28.r),
-                    border: Border.all(color: const Color(0xFFB9CBD4)),
+                    border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.35),
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: colorScheme.shadow.withValues(alpha: 0.08),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -290,7 +309,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                             hintText: 'Ask about pet care...',
                             hintStyle: AppTextStyles.onboardingBody.copyWith(
                               fontSize: 14.sp,
-                              color: AppColors.textSecondary,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                             filled: true,
                             fillColor: Colors.transparent,
@@ -312,15 +331,15 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                         duration: const Duration(milliseconds: 180),
                         decoration: BoxDecoration(
                           color: canSend
-                              ? AppColors.primary
-                              : AppColors.primary.withOpacity(0.35),
+                              ? colorScheme.primary
+                              : colorScheme.primary.withValues(alpha: 0.35),
                           borderRadius: BorderRadius.circular(22.r),
                         ),
                         child: IconButton(
                           tooltip: 'Send message',
                           icon: Icon(
                             Icons.send_rounded,
-                            color: Colors.white,
+                            color: colorScheme.onPrimary,
                             size: 20.sp,
                           ),
                           onPressed: canSend
@@ -340,6 +359,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Widget _buildQuickPromptSection() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -348,7 +369,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 12.sp,
             fontWeight: FontWeight.w700,
-            color: AppColors.textSecondary,
+            color: colorScheme.onSurfaceVariant,
           ),
         ),
         SizedBox(height: 8.h),
@@ -358,13 +379,15 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           children: _quickPrompts
               .map(
                 (prompt) => ActionChip(
-                  backgroundColor: const Color(0xFFF1F6F8),
-                  side: const BorderSide(color: Color(0xFFB9CBD4)),
+                  backgroundColor: colorScheme.surface,
+                  side: BorderSide(
+                    color: colorScheme.outline.withValues(alpha: 0.35),
+                  ),
                   label: Text(
                     prompt,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 12.sp,
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   onPressed: _isLoading ? null : () => _sendMessage(prompt),
@@ -377,6 +400,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Widget _buildMessageBubble(ChatMessage message) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -384,7 +409,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         margin: EdgeInsets.only(bottom: 12.h),
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         decoration: BoxDecoration(
-          color: message.isUser ? const Color(0xFF2F6E72) : const Color(0xFFF1F6F8),
+          color:
+              message.isUser
+                  ? colorScheme.primary
+                  : colorScheme.surface,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(16.r),
             topRight: Radius.circular(16.r),
@@ -394,12 +422,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           border: message.isUser
               ? null
               : Border.all(
-                  color: const Color(0xFFB9CBD4),
+                  color: colorScheme.outline.withValues(alpha: 0.35),
                   width: 1,
                 ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: colorScheme.shadow.withValues(alpha: 0.08),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -415,8 +443,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 11.sp,
                 color: message.isUser
-                    ? AppColors.surface.withOpacity(0.72)
-                    : AppColors.textSecondary,
+                    ? colorScheme.onPrimary.withValues(alpha: 0.72)
+                    : colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -426,9 +454,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Widget _buildFormattedMessageText(String message, {required bool isUser}) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final baseStyle = AppTextStyles.onboardingBody.copyWith(
       fontSize: 14.sp,
-      color: isUser ? AppColors.surface : AppColors.textPrimary,
+      color: isUser ? colorScheme.onPrimary : colorScheme.onSurface,
       height: 1.45,
     );
     final boldStyle = baseStyle.copyWith(fontWeight: FontWeight.w700);

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"sort"
+	"strings"
 	"time"
 
 	"pawpal-backend/internal/database"
@@ -70,6 +72,10 @@ func (r *UserRepositorySupabase) CreateUser(ctx context.Context, user *models.Us
 		*user = users[0]
 	}
 
+	if err := r.AddUserRole(ctx, user.ID, user.AccountType); err != nil && !isMissingUserRolesTable(err) {
+		return err
+	}
+
 	return nil
 }
 
@@ -98,7 +104,7 @@ func (r *UserRepositorySupabase) GetUserByID(ctx context.Context, userID uuid.UU
 
 func (r *UserRepositorySupabase) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := map[string]string{
-		"email":  fmt.Sprintf("eq.%s", url.QueryEscape(email)),
+		"email":  fmt.Sprintf("ilike.%s", url.QueryEscape(email)),
 		"select": "*",
 	}
 
@@ -109,20 +115,20 @@ func (r *UserRepositorySupabase) GetUserByEmail(ctx context.Context, email strin
 
 	// Use a temporary struct that includes password_hash for unmarshaling
 	var rawUsers []struct {
-		ID           uuid.UUID  `json:"id"`
-		Email        string     `json:"email"`
-		PasswordHash string     `json:"password_hash"`
-		DisplayName  *string    `json:"display_name"`
-		AccountType  string     `json:"account_type"`
-		UserRole     string     `json:"user_role"`
-		AvatarURL    *string    `json:"avatar_url"`
-		IsActive     bool       `json:"is_active"`
+		ID            uuid.UUID `json:"id"`
+		Email         string    `json:"email"`
+		PasswordHash  string    `json:"password_hash"`
+		DisplayName   *string   `json:"display_name"`
+		AccountType   string    `json:"account_type"`
+		UserRole      string    `json:"user_role"`
+		AvatarURL     *string   `json:"avatar_url"`
+		IsActive      bool      `json:"is_active"`
 		EmailVerified bool      `json:"email_verified"`
-		GoogleID     *string    `json:"google_id"`
-		CreatedAt    time.Time  `json:"created_at"`
-		UpdatedAt    time.Time  `json:"updated_at"`
+		GoogleID      *string   `json:"google_id"`
+		CreatedAt     time.Time `json:"created_at"`
+		UpdatedAt     time.Time `json:"updated_at"`
 	}
-	
+
 	if err := json.Unmarshal(respData, &rawUsers); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
@@ -369,12 +375,25 @@ func (r *UserRepositorySupabase) MarkPasswordResetTokenUsed(ctx context.Context,
 }
 
 func (r *UserRepositorySupabase) SetUserRole(ctx context.Context, userID uuid.UUID, role string) error {
+	normalizedRole := normalizeAccountRoleSupabase(role)
+	if normalizedRole == "" {
+		return fmt.Errorf("invalid role: %s", role)
+	}
+
 	query := map[string]string{
 		"id": fmt.Sprintf("eq.%s", userID.String()),
 	}
 
 	data := map[string]interface{}{
-		"user_role": role,
+		"account_type": normalizedRole,
+	}
+
+	// user_role can be an enum in older schemas, so only write known legacy-safe values.
+	switch normalizedRole {
+	case "pet_owner", "petowner":
+		data["user_role"] = "petowner"
+	case "vet":
+		data["user_role"] = normalizedRole
 	}
 
 	_, err := r.client.Update(ctx, "users", query, data)
@@ -382,5 +401,142 @@ func (r *UserRepositorySupabase) SetUserRole(ctx context.Context, userID uuid.UU
 		return fmt.Errorf("failed to set user role: %w", err)
 	}
 
+	if err := r.AddUserRole(ctx, userID, normalizedRole); err != nil && !isMissingUserRolesTable(err) {
+		return err
+	}
+
 	return nil
+}
+
+func (r *UserRepositorySupabase) AddUserRole(ctx context.Context, userID uuid.UUID, role string) error {
+	normalizedRole := normalizeAccountRoleSupabase(role)
+	if normalizedRole == "" {
+		return fmt.Errorf("invalid role: %s", role)
+	}
+
+	data := map[string]interface{}{
+		"user_id": userID,
+		"role":    normalizedRole,
+	}
+
+	_, err := r.client.Insert(ctx, "user_roles", data)
+	if err != nil {
+		message := strings.ToLower(err.Error())
+		if strings.Contains(message, "duplicate") || strings.Contains(message, "23505") {
+			return nil
+		}
+		return fmt.Errorf("failed to add user role: %w", err)
+	}
+
+	return nil
+}
+
+func (r *UserRepositorySupabase) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	query := map[string]string{
+		"user_id": fmt.Sprintf("eq.%s", userID.String()),
+		"select":  "role",
+	}
+
+	respData, err := r.client.Select(ctx, "user_roles", query)
+	if err != nil {
+		if isMissingUserRolesTable(err) {
+			return r.getLegacyUserRoles(ctx, userID)
+		}
+		return nil, fmt.Errorf("failed to get user roles: %w", err)
+	}
+
+	var rows []struct {
+		Role string `json:"role"`
+	}
+
+	if err := json.Unmarshal(respData, &rows); err != nil {
+		return nil, fmt.Errorf("failed to parse roles response: %w", err)
+	}
+
+	roles := make([]string, 0, len(rows))
+	for _, row := range rows {
+		normalized := normalizeAccountRoleSupabase(row.Role)
+		if normalized != "" {
+			roles = append(roles, normalized)
+		}
+	}
+
+	roles = uniqueSortedRolesSupabase(roles)
+	if len(roles) > 0 {
+		return roles, nil
+	}
+
+	legacyRoles, err := r.getLegacyUserRoles(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, role := range legacyRoles {
+		_ = r.AddUserRole(ctx, userID, role)
+	}
+
+	return legacyRoles, nil
+}
+
+func (r *UserRepositorySupabase) getLegacyUserRoles(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	user, err := r.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return []string{}, nil
+	}
+
+	normalized := normalizeAccountRoleSupabase(user.AccountType)
+	if normalized == "" {
+		return []string{}, nil
+	}
+
+	return []string{normalized}, nil
+}
+
+func uniqueSortedRolesSupabase(roles []string) []string {
+	seen := make(map[string]struct{}, len(roles))
+	unique := make([]string, 0, len(roles))
+
+	for _, role := range roles {
+		if role == "" {
+			continue
+		}
+		if _, exists := seen[role]; exists {
+			continue
+		}
+		seen[role] = struct{}{}
+		unique = append(unique, role)
+	}
+
+	if len(unique) == 0 {
+		return []string{}
+	}
+
+	sort.Strings(unique)
+	return unique
+}
+
+func normalizeAccountRoleSupabase(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "pet_owner", "petowner", "pet-owner", "owner":
+		return "pet_owner"
+	case "vet", "veterinarian", "veterinary":
+		return "vet"
+	case "seller", "vendor", "merchant", "shop_owner", "shopowner":
+		return "seller"
+	case "caregiver", "care_giver", "pet_caregiver":
+		return "caregiver"
+	case "admin":
+		return "admin"
+	default:
+		return ""
+	}
+}
+
+func isMissingUserRolesTable(err error) bool {
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "relation \"user_roles\"") ||
+		strings.Contains(message, "table user_roles")
 }

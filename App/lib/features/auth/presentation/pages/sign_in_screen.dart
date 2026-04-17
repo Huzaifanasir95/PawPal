@@ -317,11 +317,14 @@ class _SignInScreenState extends State<SignInScreen> {
     required IconData icon,
     TextEditingController? controller,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       height: 60.h,
       decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
         border: Border.all(
-          color: AppColors.socialBorder,
+          color: colorScheme.outline.withValues(alpha: 0.35),
           width: 2,
         ),
         borderRadius: BorderRadius.circular(12.r),
@@ -334,21 +337,28 @@ class _SignInScreenState extends State<SignInScreen> {
               controller: controller,
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
-                color: AppColors.authInputText,
+                color: colorScheme.onSurface,
               ),
               decoration: InputDecoration(
+                isCollapsed: true,
                 hintText: hintText,
                 hintStyle: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 14.sp,
-                  color: AppColors.authInputText,
+                  color: colorScheme.onSurfaceVariant,
                 ),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
               ),
             ),
           ),
           Icon(
             icon,
-            color: AppColors.primary,
+            color: colorScheme.onSurfaceVariant,
             size: 12.sp,
           ),
           SizedBox(width: 16.w),
@@ -389,7 +399,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 }
                 _lastButtonPress = now;
                 
-                final email = _emailController.text.trim();
+                final email = _emailController.text.trim().toLowerCase();
                 final password = _passwordController.text;
                 
                 // Validate fields

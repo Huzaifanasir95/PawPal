@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"pawpal-backend/internal/models"
@@ -16,11 +17,11 @@ import (
 type CaregiverHandler struct {
 	repo        *repositories.CaregiverRepository
 	bookingRepo *repositories.BookingRepository
-	userRepo    *repositories.UserRepository
+	userRepo    repositories.UserRepository
 }
 
 // NewCaregiverHandler creates a new caregiver handler
-func NewCaregiverHandler(repo *repositories.CaregiverRepository, bookingRepo *repositories.BookingRepository, userRepo *repositories.UserRepository) *CaregiverHandler {
+func NewCaregiverHandler(repo *repositories.CaregiverRepository, bookingRepo *repositories.BookingRepository, userRepo repositories.UserRepository) *CaregiverHandler {
 	return &CaregiverHandler{
 		repo:        repo,
 		bookingRepo: bookingRepo,
@@ -53,6 +54,46 @@ func (h *CaregiverHandler) CreateProfile(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	if req.YearsOfExperience < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Years of experience cannot be negative"})
+		return
+	}
+
+	req.Bio = sanitizeOptionalText(req.Bio)
+	req.Headline = sanitizeOptionalText(req.Headline)
+	req.Address = sanitizeOptionalText(req.Address)
+	req.City = sanitizeOptionalText(req.City)
+	req.State = sanitizeOptionalText(req.State)
+	req.PostalCode = sanitizeOptionalText(req.PostalCode)
+	req.OtherPetsDescription = sanitizeOptionalText(req.OtherPetsDescription)
+
+	req.Country = strings.TrimSpace(req.Country)
+	if req.Country == "" {
+		req.Country = "Pakistan"
+	}
+
+	req.AcceptedPetTypes = sanitizeStringList(req.AcceptedPetTypes)
+	if len(req.AcceptedPetTypes) == 0 {
+		req.AcceptedPetTypes = []string{"dog", "cat"}
+	}
+
+	req.AcceptedPetSizes = sanitizeStringList(req.AcceptedPetSizes)
+	if len(req.AcceptedPetSizes) == 0 {
+		req.AcceptedPetSizes = []string{"small", "medium", "large"}
+	}
+
+	req.Certifications = sanitizeStringList(req.Certifications)
+
+	if req.ServiceRadiusKm <= 0 {
+		req.ServiceRadiusKm = 10
+	}
+	if req.MaxPetsAtOnce <= 0 {
+		req.MaxPetsAtOnce = 3
+	}
+	if !req.HasOtherPets {
+		req.OtherPetsDescription = nil
 	}
 
 	uid, err := uuid.Parse(userID.(string))
@@ -350,6 +391,25 @@ func (h *CaregiverHandler) UpdateService(c *gin.Context) {
 		return
 	}
 
+	services, err := h.repo.GetServicesByCaregiver(c.Request.Context(), profile.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate service ownership"})
+		return
+	}
+
+	serviceOwned := false
+	for _, service := range services {
+		if service.ID == serviceID {
+			serviceOwned = true
+			break
+		}
+	}
+
+	if !serviceOwned {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		return
+	}
+
 	if err := h.repo.UpdateService(c.Request.Context(), serviceID, &req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update service"})
 		return
@@ -383,6 +443,25 @@ func (h *CaregiverHandler) DeleteService(c *gin.Context) {
 	// Verify ownership
 	profile, err := h.repo.GetProfileByUserID(c.Request.Context(), uid)
 	if err != nil || profile == nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		return
+	}
+
+	services, err := h.repo.GetServicesByCaregiver(c.Request.Context(), profile.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate service ownership"})
+		return
+	}
+
+	serviceOwned := false
+	for _, service := range services {
+		if service.ID == serviceID {
+			serviceOwned = true
+			break
+		}
+	}
+
+	if !serviceOwned {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
 	}
@@ -566,10 +645,15 @@ func (h *CaregiverHandler) RemoveBlockedDate(c *gin.Context) {
 // GET /api/v1/caregivers/search
 func (h *CaregiverHandler) SearchCaregivers(c *gin.Context) {
 	var req models.SearchCaregiversRequest
+	req.Page = 1
+	req.Limit = 20
 
 	// Parse query parameters
 	if city := c.Query("city"); city != "" {
 		req.City = &city
+	}
+	if serviceType := c.Query("serviceType"); serviceType != "" {
+		req.ServiceType = &serviceType
 	}
 	if petType := c.Query("petType"); petType != "" {
 		req.PetType = &petType
@@ -587,8 +671,12 @@ func (h *CaregiverHandler) SearchCaregivers(c *gin.Context) {
 			req.Longitude = &lngF
 		}
 	}
-	if radius := c.Query("radius"); radius != "" {
-		if r, err := strconv.Atoi(radius); err == nil {
+	radiusParam := c.Query("radius")
+	if radiusParam == "" {
+		radiusParam = c.Query("radiusKm")
+	}
+	if radiusParam != "" {
+		if r, err := strconv.Atoi(radiusParam); err == nil {
 			req.RadiusKm = &r
 		}
 	}

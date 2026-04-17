@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/community_hub_models.dart';
@@ -18,6 +21,55 @@ class AdoptionPage extends StatefulWidget {
 
 class _AdoptionPageState extends State<AdoptionPage> {
   final TextEditingController _searchController = TextEditingController();
+
+  bool _hasVerifiedBadge(AdoptionListing listing) {
+    return listing.isBreedVerified ||
+        (listing.verifiedBreed != null && listing.verifiedBreed!.trim().isNotEmpty);
+  }
+
+  Widget _buildImageFromPath(String imagePath, {required String petType}) {
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _petPlaceholder(petType),
+      );
+    }
+
+    if (imagePath.startsWith('data:image/')) {
+      try {
+        final comma = imagePath.indexOf(',');
+        if (comma > 0 && comma < imagePath.length - 1) {
+          final bytes = base64Decode(imagePath.substring(comma + 1));
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _petPlaceholder(petType),
+          );
+        }
+      } catch (_) {
+        return _petPlaceholder(petType);
+      }
+    }
+
+    final localPath = imagePath.startsWith('file://')
+        ? (Uri.tryParse(imagePath)?.toFilePath() ?? imagePath)
+        : imagePath;
+
+    return FutureBuilder<Uint8List>(
+      future: XFile(localPath).readAsBytes(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Image.memory(
+            snapshot.data!,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _petPlaceholder(petType),
+          );
+        }
+        return _petPlaceholder(petType);
+      },
+    );
+  }
 
   @override
   void dispose() {
@@ -276,15 +328,13 @@ class _AdoptionPageState extends State<AdoptionPage> {
                   left: Radius.circular(16.r),
                 ),
               ),
-              child: listing.imageUrls != null && listing.imageUrls!.isNotEmpty
+                child: listing.imageUrls.isNotEmpty
                   ? ClipRRect(
                       borderRadius: BorderRadius.horizontal(
                           left: Radius.circular(16.r)),
-                      child: Image.network(
-                        listing.imageUrls!.first,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            _petPlaceholder(listing.petType),
+                      child: _buildImageFromPath(
+                        listing.imageUrls.first,
+                        petType: listing.petType,
                       ),
                     )
                   : _petPlaceholder(listing.petType),
@@ -299,19 +349,35 @@ class _AdoptionPageState extends State<AdoptionPage> {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            listing.petName,
-                            style: AppTextStyles.onboardingTitle.copyWith(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  listing.petName,
+                                  style: AppTextStyles.onboardingTitle.copyWith(
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (_hasVerifiedBadge(listing))
+                                Padding(
+                                  padding: EdgeInsets.only(left: 6.w),
+                                  child: Icon(
+                                    Icons.verified_rounded,
+                                    size: 16.sp,
+                                    color: const Color(0xFF0E9F6E),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                        if (listing.adoptionFee != null &&
-                            listing.adoptionFee! > 0)
+                        if (listing.adoptionFee > 0)
                           Text(
-                            '\$${listing.adoptionFee!.toStringAsFixed(0)}',
+                            'PKR ${listing.adoptionFee.toStringAsFixed(0)}',
                             style: AppTextStyles.onboardingBody.copyWith(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w700,
@@ -347,6 +413,8 @@ class _AdoptionPageState extends State<AdoptionPage> {
                       spacing: 6.w,
                       runSpacing: 4.h,
                       children: [
+                        if (_hasVerifiedBadge(listing))
+                          _badge('Breed Verified', const Color(0xFF0E9F6E)),
                         if (listing.isVaccinated == true)
                           _badge('Vaccinated', AppColors.success),
                         if (listing.isNeutered == true)

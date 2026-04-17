@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../../../core/constants/app_colors.dart';
+import 'dart:convert';
 import '../cubit/cart_cubit.dart';
 import '../cubit/cart_state.dart';
 import 'checkout_screen.dart';
@@ -13,14 +13,20 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6F2),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: const Color(0xFF191D21), size: 20.sp),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: colorScheme.onSurface,
+            size: 20.sp,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -28,15 +34,16 @@ class CartScreen extends StatelessWidget {
           style: GoogleFonts.mulish(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF191D21),
+            color: colorScheme.onSurface,
           ),
         ),
       ),
       body: BlocBuilder<CartCubit, CartState>(
         builder: (context, state) {
           if (state.isLoading) {
-            return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF2C6E69)));
+            return Center(
+              child: CircularProgressIndicator(color: colorScheme.primary),
+            );
           }
 
           if (state.items.isEmpty) {
@@ -44,15 +51,18 @@ class CartScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.shopping_cart_outlined,
-                      size: 72.sp, color: AppColors.primary),
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 72.sp,
+                    color: colorScheme.primary,
+                  ),
                   SizedBox(height: 16.h),
                   Text(
                     'Your cart is empty',
                     style: GoogleFonts.mulish(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF191D21),
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   SizedBox(height: 8.h),
@@ -60,23 +70,26 @@ class CartScreen extends StatelessWidget {
                     'Add some products to get started',
                     style: GoogleFonts.mulish(
                       fontSize: 14.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(height: 24.h),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2C6E69),
+                      backgroundColor: colorScheme.primary,
                       padding: EdgeInsets.symmetric(
-                          horizontal: 32.w, vertical: 14.h),
+                        horizontal: 32.w,
+                        vertical: 14.h,
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14.r)),
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
                     ),
                     child: Text(
                       'Browse Products',
                       style: GoogleFonts.mulish(
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w700,
                         fontSize: 15.sp,
                       ),
@@ -94,20 +107,23 @@ class CartScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12.w, vertical: 7.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 7.h,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(20.r),
                         border: Border.all(
-                            color: AppColors.primary.withOpacity(0.25)),
+                          color: colorScheme.outline.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Text(
                         '${state.items.length} items in your cart',
                         style: GoogleFonts.mulish(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF2C6E69),
+                          color: colorScheme.primary,
                         ),
                       ),
                     ),
@@ -117,7 +133,7 @@ class CartScreen extends StatelessWidget {
                       style: GoogleFonts.mulish(
                         fontSize: 11.sp,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -125,8 +141,7 @@ class CartScreen extends StatelessWidget {
               ),
               Expanded(
                 child: ListView.separated(
-                  padding:
-                      EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
+                  padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
                   itemCount: state.items.length,
                   separatorBuilder: (_, __) => SizedBox(height: 12.h),
                   itemBuilder: (context, i) {
@@ -145,15 +160,17 @@ class CartScreen extends StatelessWidget {
 
   Widget _buildCartItem(BuildContext context, item) {
     final product = item.product;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.18)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: colorScheme.shadow.withValues(alpha: 0.07),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -169,20 +186,17 @@ class CartScreen extends StatelessWidget {
                 child: SizedBox(
                   width: 72.w,
                   height: 72.w,
-                  child: product?.firstImage.isNotEmpty == true
-                      ? CachedNetworkImage(
-                          imageUrl: product!.firstImage,
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) =>
-                              Container(color: const Color(0xFFF3EFE8)),
-                          errorWidget: (_, __, ___) =>
-                              Container(color: const Color(0xFFF3EFE8)),
-                        )
-                      : Container(
-                          color: const Color(0xFFF3EFE8),
-                          child: Icon(Icons.shopping_bag_outlined,
-                              size: 28.sp, color: AppColors.primary),
-                        ),
+                  child:
+                      product?.firstImage.isNotEmpty == true
+                          ? _buildProductImage(context, product!.firstImage)
+                          : Container(
+                            color: colorScheme.surfaceContainerHighest,
+                            child: Icon(
+                              Icons.shopping_bag_outlined,
+                              size: 28.sp,
+                              color: colorScheme.primary,
+                            ),
+                          ),
                 ),
               ),
               SizedBox(width: 12.w),
@@ -196,7 +210,7 @@ class CartScreen extends StatelessWidget {
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w800,
                         height: 1.3,
-                        color: const Color(0xFF191D21),
+                        color: colorScheme.onSurface,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -206,9 +220,11 @@ class CartScreen extends StatelessWidget {
                       children: [
                         Container(
                           padding: EdgeInsets.symmetric(
-                              horizontal: 9.w, vertical: 4.h),
+                            horizontal: 9.w,
+                            vertical: 4.h,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.16),
+                            color: colorScheme.primary.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(12.r),
                           ),
                           child: Text(
@@ -216,7 +232,7 @@ class CartScreen extends StatelessWidget {
                             style: GoogleFonts.mulish(
                               fontSize: 11.sp,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF2C6E69),
+                              color: colorScheme.primary,
                             ),
                           ),
                         ),
@@ -226,7 +242,7 @@ class CartScreen extends StatelessWidget {
                           style: GoogleFonts.mulish(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w900,
-                            color: const Color(0xFF191D21),
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -240,11 +256,14 @@ class CartScreen extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.all(6.w),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
+                    color: colorScheme.errorContainer,
                     borderRadius: BorderRadius.circular(9.r),
                   ),
-                  child: Icon(Icons.delete_outline_rounded,
-                      size: 18.sp, color: const Color(0xFFEF4444)),
+                  child: Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18.sp,
+                    color: colorScheme.onErrorContainer,
+                  ),
                 ),
               ),
             ],
@@ -257,14 +276,15 @@ class CartScreen extends StatelessWidget {
                 style: GoogleFonts.mulish(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               SizedBox(width: 10.w),
-              _quantityBtn(Icons.remove_rounded, () {
-                context
-                    .read<CartCubit>()
-                    .updateQuantity(item.id, item.quantity - 1);
+              _quantityBtn(context, Icons.remove_rounded, () {
+                context.read<CartCubit>().updateQuantity(
+                  item.id,
+                  item.quantity - 1,
+                );
               }),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12.w),
@@ -273,14 +293,15 @@ class CartScreen extends StatelessWidget {
                   style: GoogleFonts.mulish(
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF191D21),
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
-              _quantityBtn(Icons.add_rounded, () {
-                context
-                    .read<CartCubit>()
-                    .updateQuantity(item.id, item.quantity + 1);
+              _quantityBtn(context, Icons.add_rounded, () {
+                context.read<CartCubit>().updateQuantity(
+                  item.id,
+                  item.quantity + 1,
+                );
               }),
             ],
           ),
@@ -290,6 +311,7 @@ class CartScreen extends StatelessWidget {
   }
 
   Widget _buildOrderSummary(BuildContext context, CartState state) {
+    final colorScheme = Theme.of(context).colorScheme;
     final subtotal = state.items.fold(0.0, (s, i) => s + i.totalPrice);
     const delivery = 150.0;
     final total = subtotal + delivery;
@@ -297,11 +319,11 @@ class CartScreen extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 20.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: colorScheme.shadow.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -313,25 +335,28 @@ class CartScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.receipt_long_outlined,
-                    size: 18.sp, color: const Color(0xFF2C6E69)),
+                Icon(
+                  Icons.receipt_long_outlined,
+                  size: 18.sp,
+                  color: colorScheme.primary,
+                ),
                 SizedBox(width: 8.w),
                 Text(
                   'Order Summary',
                   style: GoogleFonts.mulish(
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF191D21),
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ],
             ),
             SizedBox(height: 12.h),
-            _summaryRow('Subtotal', 'PKR ${subtotal.toStringAsFixed(0)}'),
+            _summaryRow(context, 'Subtotal', 'PKR ${subtotal.toStringAsFixed(0)}'),
             SizedBox(height: 8.h),
-            _summaryRow('Delivery', 'PKR ${delivery.toStringAsFixed(0)}'),
+            _summaryRow(context, 'Delivery', 'PKR ${delivery.toStringAsFixed(0)}'),
             SizedBox(height: 8.h),
-            Divider(color: const Color(0xFFE0E0E0), height: 1.h),
+            Divider(color: colorScheme.outline.withValues(alpha: 0.35), height: 1.h),
             SizedBox(height: 12.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -341,7 +366,7 @@ class CartScreen extends StatelessWidget {
                   style: GoogleFonts.mulish(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF191D21),
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 Text(
@@ -349,7 +374,7 @@ class CartScreen extends StatelessWidget {
                   style: GoogleFonts.mulish(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF2C6E69),
+                    color: colorScheme.primary,
                   ),
                 ),
               ],
@@ -358,30 +383,35 @@ class CartScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: state.items.isEmpty
-                    ? null
-                    : () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BlocProvider.value(
-                              value: context.read<CartCubit>(),
-                              child: CheckoutScreen(cartItems: state.items),
+                onPressed:
+                    state.items.isEmpty
+                        ? null
+                        : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => BlocProvider.value(
+                                    value: context.read<CartCubit>(),
+                                    child: CheckoutScreen(
+                                      cartItems: state.items,
+                                    ),
+                                  ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2C6E69),
+                  backgroundColor: colorScheme.primary,
                   padding: EdgeInsets.symmetric(vertical: 16.h),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r)),
+                    borderRadius: BorderRadius.circular(14.r),
+                  ),
                   elevation: 0,
                 ),
                 child: Text(
                   'Proceed to Checkout',
                   style: GoogleFonts.mulish(
-                    color: Colors.white,
+                    color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: 15.sp,
                   ),
@@ -394,34 +424,71 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  Widget _summaryRow(String label, String value) {
+  Widget _summaryRow(BuildContext context, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label,
-            style: GoogleFonts.mulish(
-                fontSize: 14.sp, color: AppColors.textSecondary)),
-        Text(value,
-            style: GoogleFonts.mulish(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF191D21))),
+        Text(
+          label,
+          style: GoogleFonts.mulish(
+            fontSize: 14.sp,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.mulish(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _quantityBtn(IconData icon, VoidCallback onTap) {
+  Widget _quantityBtn(BuildContext context, IconData icon, VoidCallback onTap) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 28.w,
         height: 28.w,
         decoration: BoxDecoration(
-          color: const Color(0xFFF3EFE8),
+          color: colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8.r),
         ),
-        child: Icon(icon, size: 14.sp, color: const Color(0xFF191D21)),
+        child: Icon(icon, size: 14.sp, color: colorScheme.onSurface),
       ),
+    );
+  }
+
+  Widget _buildProductImage(BuildContext context, String imageUrl) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (imageUrl.startsWith('data:image/')) {
+      try {
+        final base64Data = imageUrl.split(',').last;
+        final bytes = base64Decode(base64Data);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder:
+              (_, __, ___) => Container(color: colorScheme.surfaceContainerHighest),
+        );
+      } catch (_) {
+        return Container(color: colorScheme.surfaceContainerHighest);
+      }
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.cover,
+      placeholder: (_, __) => Container(color: colorScheme.surfaceContainerHighest),
+      errorWidget: (_, __, ___) => Container(color: colorScheme.surfaceContainerHighest),
     );
   }
 }

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/chat_cache_service.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../data/models/chat_model.dart';
 import '../bloc/chat_bloc.dart';
@@ -19,23 +21,64 @@ class ChatsListScreen extends StatefulWidget {
 }
 
 class _ChatsListScreenState extends State<ChatsListScreen> {
+  final _chatCacheService = ChatCacheService();
   List<Chat> _cachedChats = [];
 
   @override
   void initState() {
     super.initState();
+    _hydrateCachedChats();
     context.read<ChatBloc>().add(const ChatEvent.loadChats());
+  }
+
+  String get _currentUserId {
+    return context.read<AuthBloc>().state.maybeWhen(
+      authenticated: (user) => user.id,
+      orElse: () => '',
+    );
+  }
+
+  Future<void> _hydrateCachedChats() async {
+    final userId = _currentUserId;
+    if (userId.isEmpty) {
+      return;
+    }
+
+    final cached = await _chatCacheService.readChatsList(userId);
+    if (!mounted || cached.isEmpty) {
+      return;
+    }
+
+    setState(() => _cachedChats = cached);
+  }
+
+  Future<void> _persistCachedChats(List<Chat> chats) async {
+    final userId = _currentUserId;
+    if (userId.isEmpty) {
+      return;
+    }
+
+    await _chatCacheService.writeChatsList(userId, chats);
   }
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final accountType = context.select((AuthBloc bloc) {
+      return bloc.state.maybeWhen(
+        authenticated: (user) => user.accountType,
+        orElse: () => null,
+      );
+    });
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness:
+            brightness == Brightness.dark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F7FA),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: Column(
             children: [
@@ -46,11 +89,16 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                     state.maybeWhen(
                       chatsLoaded: (chats) {
                         setState(() => _cachedChats = chats);
+                        _persistCachedChats(chats);
                       },
-                      error: (message) => CustomSnackbar.showError(context, message),
+                      error:
+                          (message) =>
+                              CustomSnackbar.showError(context, message),
                       chatDeleted: (_) {
                         CustomSnackbar.showSuccess(context, 'Chat deleted');
-                        context.read<ChatBloc>().add(const ChatEvent.loadChats());
+                        context.read<ChatBloc>().add(
+                          const ChatEvent.loadChats(),
+                        );
                       },
                       orElse: () {},
                     );
@@ -59,20 +107,21 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                     return state.maybeWhen(
                       loading: () {
                         if (_cachedChats.isNotEmpty) {
-                          return _buildChatsList(_cachedChats);
+                          return _buildChatsList(_cachedChats, accountType);
                         }
                         return _buildLoadingState();
                       },
-                      chatsLoaded: (chats) => _buildChatsList(chats),
+                      chatsLoaded:
+                          (chats) => _buildChatsList(chats, accountType),
                       error: (message) {
                         if (_cachedChats.isNotEmpty) {
-                          return _buildChatsList(_cachedChats);
+                          return _buildChatsList(_cachedChats, accountType);
                         }
                         return _buildErrorState(message);
                       },
                       orElse: () {
                         if (_cachedChats.isNotEmpty) {
-                          return _buildChatsList(_cachedChats);
+                          return _buildChatsList(_cachedChats, accountType);
                         }
                         return _buildLoadingState();
                       },
@@ -88,10 +137,12 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
   }
 
   Widget _buildHeader() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.fromLTRB(8.w, 8.h, 16.w, 16.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -112,7 +163,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
               ),
               child: Icon(
                 Icons.arrow_back_rounded,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 size: 24.sp,
               ),
             ),
@@ -124,7 +175,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
               ),
             ),
           ),
@@ -134,6 +185,8 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
   }
 
   Widget _buildLoadingState() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -144,7 +197,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
             'Loading conversations...',
             style: TextStyle(
               fontSize: 14.sp,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -153,6 +206,8 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
   }
 
   Widget _buildErrorState(String message) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(32.w),
@@ -169,7 +224,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
               'Error loading chats',
               style: TextStyle(
                 fontSize: 18.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -178,17 +233,19 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
               message,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 24.h),
             GestureDetector(
-              onTap: () => context.read<ChatBloc>().add(const ChatEvent.loadChats()),
+              onTap:
+                  () =>
+                      context.read<ChatBloc>().add(const ChatEvent.loadChats()),
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(
@@ -207,13 +264,13 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
     );
   }
 
-  Widget _buildChatsList(List<Chat> chats) {
+  Widget _buildChatsList(List<Chat> chats, String? accountType) {
     if (chats.isEmpty) {
       return _buildEmptyState();
     }
 
     return RefreshIndicator(
-      color: AppColors.primary,
+      color: Theme.of(context).colorScheme.primary,
       onRefresh: () async {
         context.read<ChatBloc>().add(const ChatEvent.loadChats());
       },
@@ -223,7 +280,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
         itemBuilder: (context, index) {
           return Padding(
             padding: EdgeInsets.only(bottom: 12.h),
-            child: _ChatTile(chat: chats[index]),
+            child: _ChatTile(chat: chats[index], accountType: accountType),
           );
         },
       ),
@@ -231,6 +288,8 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
   }
 
   Widget _buildEmptyState() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -239,13 +298,13 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
             width: 80.w,
             height: 80.h,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(24.r),
             ),
             child: Icon(
               Icons.forum_outlined,
               size: 40.sp,
-              color: AppColors.primary,
+              color: colorScheme.primary,
             ),
           ),
           SizedBox(height: 20.h),
@@ -253,7 +312,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
             'No conversations yet',
             style: TextStyle(
               fontSize: 18.sp,
-              color: AppColors.textPrimary,
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -264,7 +323,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
               'Start chatting with vets to get expert advice for your pets',
               style: TextStyle(
                 fontSize: 14.sp,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -277,13 +336,28 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
 
 class _ChatTile extends StatelessWidget {
   final Chat chat;
+  final String? accountType;
 
-  const _ChatTile({required this.chat});
+  const _ChatTile({required this.chat, required this.accountType});
+
+  int _unreadCountForViewer() {
+    switch (accountType) {
+      case 'vet':
+      case 'caregiver':
+      case 'seller':
+        return chat.unreadCountVet;
+      case 'pet_owner':
+        return chat.unreadCountOwner;
+      default:
+        return chat.unreadCountOwner + chat.unreadCountVet;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final hasUnread = chat.unreadCountOwner > 0 || chat.unreadCountVet > 0;
-    final unreadCount = chat.unreadCountOwner + chat.unreadCountVet;
+    final colorScheme = Theme.of(context).colorScheme;
+    final unreadCount = _unreadCountForViewer();
+    final hasUnread = unreadCount > 0;
 
     return Dismissible(
       key: Key(chat.id),
@@ -295,54 +369,51 @@ class _ChatTile extends StatelessWidget {
         ),
         alignment: Alignment.centerRight,
         padding: EdgeInsets.only(right: 24.w),
-        child: Icon(
-          Icons.delete_rounded,
-          color: Colors.white,
-          size: 24.sp,
-        ),
+        child: Icon(Icons.delete_rounded, color: Colors.white, size: 24.sp),
       ),
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-            title: Text(
-              'Delete Chat',
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            content: Text(
-              'Are you sure you want to delete this conversation?',
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: AppColors.textSecondary),
+          builder:
+              (context) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.r),
                 ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(
-                  'Delete',
+                title: Text(
+                  'Delete Chat',
                   style: TextStyle(
-                    color: const Color(0xFFEF4444),
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
                   ),
                 ),
+                content: Text(
+                  'Are you sure you want to delete this conversation?',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(color: colorScheme.onSurfaceVariant),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(
+                      'Delete',
+                      style: TextStyle(
+                        color: const Color(0xFFEF4444),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       },
       onDismissed: (direction) {
@@ -353,11 +424,12 @@ class _ChatTile extends StatelessWidget {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ChatConversationScreen(
-                chatId: chat.id,
-                otherUserName: chat.otherUserName,
-                otherUserPhoto: chat.otherUserPhoto,
-              ),
+              builder:
+                  (context) => ChatConversationScreen(
+                    chatId: chat.id,
+                    otherUserName: chat.otherUserName,
+                    otherUserPhoto: chat.otherUserPhoto,
+                  ),
             ),
           );
           if (context.mounted) {
@@ -367,11 +439,15 @@ class _ChatTile extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16.r),
-            border: hasUnread
-                ? Border.all(color: AppColors.primary.withOpacity(0.3), width: 1.5)
-                : null,
+            border:
+                hasUnread
+                    ? Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.3),
+                      width: 1.5,
+                    )
+                    : null,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.04),
@@ -387,24 +463,26 @@ class _ChatTile extends StatelessWidget {
                 width: 56.w,
                 height: 56.h,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16.r),
-                  image: chat.otherUserPhoto != null
-                      ? DecorationImage(
-                          image: NetworkImage(chat.otherUserPhoto!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
+                  image:
+                      chat.otherUserPhoto != null
+                          ? DecorationImage(
+                            image: NetworkImage(chat.otherUserPhoto!),
+                            fit: BoxFit.cover,
+                          )
+                          : null,
                 ),
-                child: chat.otherUserPhoto == null
-                    ? Center(
-                        child: Icon(
-                          Icons.person_rounded,
-                          color: AppColors.primary,
-                          size: 28.sp,
-                        ),
-                      )
-                    : null,
+                child:
+                    chat.otherUserPhoto == null
+                        ? Center(
+                          child: Icon(
+                            Icons.person_rounded,
+                            color: colorScheme.primary,
+                            size: 28.sp,
+                          ),
+                        )
+                        : null,
               ),
               SizedBox(width: 14.w),
               // Content
@@ -419,8 +497,9 @@ class _ChatTile extends StatelessWidget {
                             chat.otherUserName ?? 'Chat',
                             style: TextStyle(
                               fontSize: 16.sp,
-                              fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              fontWeight:
+                                  hasUnread ? FontWeight.w700 : FontWeight.w600,
+                              color: colorScheme.onSurface,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -431,8 +510,12 @@ class _ChatTile extends StatelessWidget {
                             timeago.format(chat.lastMessageAt!),
                             style: TextStyle(
                               fontSize: 12.sp,
-                              color: hasUnread ? AppColors.primary : AppColors.textSecondary,
-                              fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w400,
+                              color:
+                                  hasUnread
+                                      ? colorScheme.primary
+                                      : colorScheme.onSurfaceVariant,
+                              fontWeight:
+                                  hasUnread ? FontWeight.w600 : FontWeight.w400,
                             ),
                           ),
                       ],
@@ -445,11 +528,20 @@ class _ChatTile extends StatelessWidget {
                             chat.lastMessage ?? 'No messages yet',
                             style: TextStyle(
                               fontSize: 14.sp,
-                              color: chat.lastMessage != null
-                                  ? (hasUnread ? AppColors.textPrimary : AppColors.textSecondary)
-                                  : AppColors.textSecondary.withOpacity(0.6),
-                              fontWeight: hasUnread ? FontWeight.w500 : FontWeight.w400,
-                              fontStyle: chat.lastMessage == null ? FontStyle.italic : FontStyle.normal,
+                              color:
+                                  chat.lastMessage != null
+                                      ? (hasUnread
+                                          ? colorScheme.onSurface
+                                          : colorScheme.onSurfaceVariant)
+                                      : colorScheme.onSurfaceVariant.withValues(
+                                        alpha: 0.6,
+                                      ),
+                              fontWeight:
+                                  hasUnread ? FontWeight.w500 : FontWeight.w400,
+                              fontStyle:
+                                  chat.lastMessage == null
+                                      ? FontStyle.italic
+                                      : FontStyle.normal,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -458,9 +550,12 @@ class _ChatTile extends StatelessWidget {
                         if (hasUnread) ...[
                           SizedBox(width: 12.w),
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 4.h,
+                            ),
                             decoration: BoxDecoration(
-                              color: AppColors.primary,
+                              color: colorScheme.primary,
                               borderRadius: BorderRadius.circular(10.r),
                             ),
                             child: Text(

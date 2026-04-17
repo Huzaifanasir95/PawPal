@@ -649,8 +649,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                // Trigger logout event
-                context.read<AuthBloc>().add(const AuthEvent.signOut());
+                // Trigger logout after the dialog is removed from the tree.
+                Future.microtask(() {
+                  if (!context.mounted) return;
+                  context.read<AuthBloc>().add(const AuthEvent.signOut());
+                });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,

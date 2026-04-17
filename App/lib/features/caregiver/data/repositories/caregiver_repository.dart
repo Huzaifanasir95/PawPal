@@ -17,9 +17,10 @@ class CaregiverRepository {
   Future<List<CaregiverServiceType>> getServiceTypes() async {
     try {
       final response = await _apiClient.get('/api/v1/caregivers/service-types');
-      final types = (response.data['serviceTypes'] as List)
-          .map((json) => CaregiverServiceType.fromJson(json))
-          .toList();
+      final types =
+          (response.data['serviceTypes'] as List)
+              .map((json) => CaregiverServiceType.fromJson(json))
+              .toList();
       return types;
     } on DioException catch (e) {
       throw _handleError(e, 'Failed to fetch service types');
@@ -30,7 +31,9 @@ class CaregiverRepository {
   // CAREGIVER PROFILE
   // ============================================
 
-  Future<CaregiverProfile> createProfile(CreateCaregiverProfileRequest request) async {
+  Future<CaregiverProfile> createProfile(
+    CreateCaregiverProfileRequest request,
+  ) async {
     try {
       final response = await _apiClient.post(
         '/api/v1/caregivers/profile',
@@ -42,24 +45,43 @@ class CaregiverRepository {
     }
   }
 
-  Future<({CaregiverProfile profile, List<CaregiverAvailability>? availability, List<CaregiverGalleryItem>? gallery})> getMyProfile() async {
+  Future<
+    ({
+      CaregiverProfile profile,
+      List<CaregiverAvailability>? availability,
+      List<CaregiverGalleryItem>? gallery,
+    })
+  >
+  getMyProfile() async {
     try {
       final response = await _apiClient.get('/api/v1/caregivers/profile');
-      
-      final profile = CaregiverProfile.fromJson(response.data['profile']);
-      
+
+      final baseProfile = CaregiverProfile.fromJson(response.data['profile']);
+
+      List<CaregiverService> services = const [];
+      if (response.data['services'] != null) {
+        services =
+            (response.data['services'] as List)
+                .map((json) => CaregiverService.fromJson(json))
+                .toList();
+      }
+
+      final profile = baseProfile.copyWith(services: services);
+
       List<CaregiverAvailability>? availability;
       if (response.data['availability'] != null) {
-        availability = (response.data['availability'] as List)
-            .map((json) => CaregiverAvailability.fromJson(json))
-            .toList();
+        availability =
+            (response.data['availability'] as List)
+                .map((json) => CaregiverAvailability.fromJson(json))
+                .toList();
       }
 
       List<CaregiverGalleryItem>? gallery;
       if (response.data['gallery'] != null) {
-        gallery = (response.data['gallery'] as List)
-            .map((json) => CaregiverGalleryItem.fromJson(json))
-            .toList();
+        gallery =
+            (response.data['gallery'] as List)
+                .map((json) => CaregiverGalleryItem.fromJson(json))
+                .toList();
       }
 
       return (profile: profile, availability: availability, gallery: gallery);
@@ -79,35 +101,48 @@ class CaregiverRepository {
     }
   }
 
-  Future<({CaregiverProfile profile, List<CaregiverService> services, List<CaregiverAvailability>? availability, List<CaregiverGalleryItem>? gallery, List<CaregiverBlockedDate>? blockedDates})> getCaregiverById(String caregiverId) async {
+  Future<
+    ({
+      CaregiverProfile profile,
+      List<CaregiverService> services,
+      List<CaregiverAvailability>? availability,
+      List<CaregiverGalleryItem>? gallery,
+      List<CaregiverBlockedDate>? blockedDates,
+    })
+  >
+  getCaregiverById(String caregiverId) async {
     try {
       final response = await _apiClient.get('/api/v1/caregivers/$caregiverId');
-      
+
       final profile = CaregiverProfile.fromJson(response.data['profile']);
-      
-      final services = (response.data['services'] as List? ?? [])
-          .map((json) => CaregiverService.fromJson(json))
-          .toList();
+
+      final services =
+          (response.data['services'] as List? ?? [])
+              .map((json) => CaregiverService.fromJson(json))
+              .toList();
 
       List<CaregiverAvailability>? availability;
       if (response.data['availability'] != null) {
-        availability = (response.data['availability'] as List)
-            .map((json) => CaregiverAvailability.fromJson(json))
-            .toList();
+        availability =
+            (response.data['availability'] as List)
+                .map((json) => CaregiverAvailability.fromJson(json))
+                .toList();
       }
 
       List<CaregiverGalleryItem>? gallery;
       if (response.data['gallery'] != null) {
-        gallery = (response.data['gallery'] as List)
-            .map((json) => CaregiverGalleryItem.fromJson(json))
-            .toList();
+        gallery =
+            (response.data['gallery'] as List)
+                .map((json) => CaregiverGalleryItem.fromJson(json))
+                .toList();
       }
 
       List<CaregiverBlockedDate>? blockedDates;
       if (response.data['blockedDates'] != null) {
-        blockedDates = (response.data['blockedDates'] as List)
-            .map((json) => CaregiverBlockedDate.fromJson(json))
-            .toList();
+        blockedDates =
+            (response.data['blockedDates'] as List)
+                .map((json) => CaregiverBlockedDate.fromJson(json))
+                .toList();
       }
 
       return (
@@ -122,7 +157,8 @@ class CaregiverRepository {
     }
   }
 
-  Future<({List<CaregiverProfile> caregivers, int total, int page, int limit})> searchCaregivers({
+  Future<({List<CaregiverProfile> caregivers, int total, int page, int limit})>
+  searchCaregivers({
     String? city,
     String? serviceType,
     double? latitude,
@@ -134,16 +170,16 @@ class CaregiverRepository {
     int limit = 20,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'limit': limit,
-      };
+      final queryParams = <String, dynamic>{'page': page, 'limit': limit};
 
       if (city != null && city.isNotEmpty) queryParams['city'] = city;
       if (serviceType != null) queryParams['serviceType'] = serviceType;
       if (latitude != null) queryParams['latitude'] = latitude;
       if (longitude != null) queryParams['longitude'] = longitude;
-      if (radiusKm != null) queryParams['radiusKm'] = radiusKm;
+      if (radiusKm != null) {
+        queryParams['radius'] = radiusKm;
+        queryParams['radiusKm'] = radiusKm;
+      }
       if (petType != null) queryParams['petType'] = petType;
       if (minRating != null) queryParams['minRating'] = minRating;
 
@@ -152,9 +188,10 @@ class CaregiverRepository {
         queryParameters: queryParams,
       );
 
-      final caregivers = (response.data['caregivers'] as List? ?? [])
-          .map((json) => CaregiverProfile.fromJson(json))
-          .toList();
+      final caregivers =
+          (response.data['caregivers'] as List? ?? [])
+              .map((json) => CaregiverProfile.fromJson(json))
+              .toList();
 
       return (
         caregivers: caregivers,
@@ -171,7 +208,9 @@ class CaregiverRepository {
   // SERVICES
   // ============================================
 
-  Future<CaregiverService> addService(AddCaregiverServiceRequest request) async {
+  Future<CaregiverService> addService(
+    AddCaregiverServiceRequest request,
+  ) async {
     try {
       final response = await _apiClient.post(
         '/api/v1/caregivers/services',
@@ -183,7 +222,10 @@ class CaregiverRepository {
     }
   }
 
-  Future<void> updateService(String serviceId, Map<String, dynamic> updates) async {
+  Future<void> updateService(
+    String serviceId,
+    Map<String, dynamic> updates,
+  ) async {
     try {
       await _apiClient.put(
         '/api/v1/caregivers/services/$serviceId',
@@ -232,10 +274,7 @@ class CaregiverRepository {
     try {
       await _apiClient.post(
         '/api/v1/caregivers/blocked-dates',
-        data: {
-          'blockedDate': date,
-          if (reason != null) 'reason': reason,
-        },
+        data: {'blockedDate': date, if (reason != null) 'reason': reason},
       );
     } on DioException catch (e) {
       throw _handleError(e, 'Failed to add blocked date');
@@ -254,7 +293,11 @@ class CaregiverRepository {
   // GALLERY
   // ============================================
 
-  Future<CaregiverGalleryItem> addGalleryImage(String imageUrl, String? caption, String imageType) async {
+  Future<CaregiverGalleryItem> addGalleryImage(
+    String imageUrl,
+    String? caption,
+    String imageType,
+  ) async {
     try {
       final response = await _apiClient.post(
         '/api/v1/caregivers/gallery',
@@ -282,7 +325,8 @@ class CaregiverRepository {
   // REVIEWS
   // ============================================
 
-  Future<({List<ServiceReview> reviews, int total, int page, int limit})> getCaregiverReviews(
+  Future<({List<ServiceReview> reviews, int total, int page, int limit})>
+  getCaregiverReviews(
     String caregiverId, {
     int page = 1,
     int limit = 20,
@@ -293,9 +337,10 @@ class CaregiverRepository {
         queryParameters: {'page': page, 'limit': limit},
       );
 
-      final reviews = (response.data['reviews'] as List? ?? [])
-          .map((json) => ServiceReview.fromJson(json))
-          .toList();
+      final reviews =
+          (response.data['reviews'] as List? ?? [])
+              .map((json) => ServiceReview.fromJson(json))
+              .toList();
 
       return (
         reviews: reviews,
@@ -313,10 +358,26 @@ class CaregiverRepository {
   // ============================================
 
   Exception _handleError(DioException e, String defaultMessage) {
-    if (e.response != null) {
-      final error = e.response!.data['error'] ?? e.response!.data['details'] ?? defaultMessage;
-      return Exception(error);
+    final responseData = e.response?.data;
+
+    if (responseData is Map) {
+      final error =
+          responseData['error'] ??
+          responseData['message'] ??
+          responseData['details'];
+      if (error is String && error.trim().isNotEmpty) {
+        return Exception(error.trim());
+      }
     }
+
+    if (responseData is String && responseData.trim().isNotEmpty) {
+      return Exception(responseData.trim());
+    }
+
+    if (e.response != null) {
+      return Exception(defaultMessage);
+    }
+
     return Exception('Network error: ${e.message}');
   }
 }

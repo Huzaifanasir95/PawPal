@@ -21,7 +21,12 @@ mixin _$AuthEvent {
   TResult when<TResult extends Object?>({
     required TResult Function() checkAuth,
     required TResult Function(String email, String password) signInWithEmail,
-    required TResult Function(String email, String password, String? name)
+    required TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
     required TResult Function(
@@ -41,7 +46,12 @@ mixin _$AuthEvent {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? checkAuth,
     TResult? Function(String email, String password)? signInWithEmail,
-    TResult? Function(String email, String password, String? name)?
+    TResult? Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
     TResult? Function(
@@ -61,7 +71,12 @@ mixin _$AuthEvent {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? checkAuth,
     TResult Function(String email, String password)? signInWithEmail,
-    TResult Function(String email, String password, String? name)?
+    TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
     TResult Function(
@@ -185,7 +200,12 @@ class _$CheckAuthImpl implements _CheckAuth {
   TResult when<TResult extends Object?>({
     required TResult Function() checkAuth,
     required TResult Function(String email, String password) signInWithEmail,
-    required TResult Function(String email, String password, String? name)
+    required TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
     required TResult Function(
@@ -209,7 +229,12 @@ class _$CheckAuthImpl implements _CheckAuth {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? checkAuth,
     TResult? Function(String email, String password)? signInWithEmail,
-    TResult? Function(String email, String password, String? name)?
+    TResult? Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
     TResult? Function(
@@ -233,7 +258,12 @@ class _$CheckAuthImpl implements _CheckAuth {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? checkAuth,
     TResult Function(String email, String password)? signInWithEmail,
-    TResult Function(String email, String password, String? name)?
+    TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
     TResult Function(
@@ -399,7 +429,12 @@ class _$SignInWithEmailImpl implements _SignInWithEmail {
   TResult when<TResult extends Object?>({
     required TResult Function() checkAuth,
     required TResult Function(String email, String password) signInWithEmail,
-    required TResult Function(String email, String password, String? name)
+    required TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
     required TResult Function(
@@ -423,7 +458,12 @@ class _$SignInWithEmailImpl implements _SignInWithEmail {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? checkAuth,
     TResult? Function(String email, String password)? signInWithEmail,
-    TResult? Function(String email, String password, String? name)?
+    TResult? Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
     TResult? Function(
@@ -447,7 +487,12 @@ class _$SignInWithEmailImpl implements _SignInWithEmail {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? checkAuth,
     TResult Function(String email, String password)? signInWithEmail,
-    TResult Function(String email, String password, String? name)?
+    TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
     TResult Function(
@@ -547,7 +592,7 @@ abstract class _$$SignUpWithEmailImplCopyWith<$Res> {
     $Res Function(_$SignUpWithEmailImpl) then,
   ) = __$$SignUpWithEmailImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({String email, String password, String? name});
+  $Res call({String email, String password, String? name, String? accountType});
 }
 
 /// @nodoc
@@ -567,6 +612,7 @@ class __$$SignUpWithEmailImplCopyWithImpl<$Res>
     Object? email = null,
     Object? password = null,
     Object? name = freezed,
+    Object? accountType = freezed,
   }) {
     return _then(
       _$SignUpWithEmailImpl(
@@ -582,6 +628,10 @@ class __$$SignUpWithEmailImplCopyWithImpl<$Res>
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
                 as String?,
+        freezed == accountType
+            ? _value.accountType
+            : accountType // ignore: cast_nullable_to_non_nullable
+                as String?,
       ),
     );
   }
@@ -590,7 +640,12 @@ class __$$SignUpWithEmailImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$SignUpWithEmailImpl implements _SignUpWithEmail {
-  const _$SignUpWithEmailImpl(this.email, this.password, this.name);
+  const _$SignUpWithEmailImpl(
+    this.email,
+    this.password,
+    this.name,
+    this.accountType,
+  );
 
   @override
   final String email;
@@ -598,10 +653,12 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
   final String password;
   @override
   final String? name;
+  @override
+  final String? accountType;
 
   @override
   String toString() {
-    return 'AuthEvent.signUpWithEmail(email: $email, password: $password, name: $name)';
+    return 'AuthEvent.signUpWithEmail(email: $email, password: $password, name: $name, accountType: $accountType)';
   }
 
   @override
@@ -612,11 +669,14 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
             (identical(other.email, email) || other.email == email) &&
             (identical(other.password, password) ||
                 other.password == password) &&
-            (identical(other.name, name) || other.name == name));
+            (identical(other.name, name) || other.name == name) &&
+            (identical(other.accountType, accountType) ||
+                other.accountType == accountType));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, email, password, name);
+  int get hashCode =>
+      Object.hash(runtimeType, email, password, name, accountType);
 
   /// Create a copy of AuthEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -634,7 +694,12 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
   TResult when<TResult extends Object?>({
     required TResult Function() checkAuth,
     required TResult Function(String email, String password) signInWithEmail,
-    required TResult Function(String email, String password, String? name)
+    required TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
     required TResult Function(
@@ -650,7 +715,7 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
     required TResult Function(AuthUser user) userChanged,
     required TResult Function() signedOut,
   }) {
-    return signUpWithEmail(email, password, name);
+    return signUpWithEmail(email, password, name, accountType);
   }
 
   @override
@@ -658,7 +723,12 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? checkAuth,
     TResult? Function(String email, String password)? signInWithEmail,
-    TResult? Function(String email, String password, String? name)?
+    TResult? Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
     TResult? Function(
@@ -674,7 +744,7 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
     TResult? Function(AuthUser user)? userChanged,
     TResult? Function()? signedOut,
   }) {
-    return signUpWithEmail?.call(email, password, name);
+    return signUpWithEmail?.call(email, password, name, accountType);
   }
 
   @override
@@ -682,7 +752,12 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? checkAuth,
     TResult Function(String email, String password)? signInWithEmail,
-    TResult Function(String email, String password, String? name)?
+    TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
     TResult Function(
@@ -700,7 +775,7 @@ class _$SignUpWithEmailImpl implements _SignUpWithEmail {
     required TResult orElse(),
   }) {
     if (signUpWithEmail != null) {
-      return signUpWithEmail(email, password, name);
+      return signUpWithEmail(email, password, name, accountType);
     }
     return orElse();
   }
@@ -766,11 +841,13 @@ abstract class _SignUpWithEmail implements AuthEvent {
     final String email,
     final String password,
     final String? name,
+    final String? accountType,
   ) = _$SignUpWithEmailImpl;
 
   String get email;
   String get password;
   String? get name;
+  String? get accountType;
 
   /// Create a copy of AuthEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -824,7 +901,12 @@ class _$SignInWithGoogleImpl implements _SignInWithGoogle {
   TResult when<TResult extends Object?>({
     required TResult Function() checkAuth,
     required TResult Function(String email, String password) signInWithEmail,
-    required TResult Function(String email, String password, String? name)
+    required TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
     required TResult Function(
@@ -848,7 +930,12 @@ class _$SignInWithGoogleImpl implements _SignInWithGoogle {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? checkAuth,
     TResult? Function(String email, String password)? signInWithEmail,
-    TResult? Function(String email, String password, String? name)?
+    TResult? Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
     TResult? Function(
@@ -872,7 +959,12 @@ class _$SignInWithGoogleImpl implements _SignInWithGoogle {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? checkAuth,
     TResult Function(String email, String password)? signInWithEmail,
-    TResult Function(String email, String password, String? name)?
+    TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
     TResult Function(
@@ -1071,7 +1163,12 @@ class _$CompleteGoogleSignInImpl implements _CompleteGoogleSignIn {
   TResult when<TResult extends Object?>({
     required TResult Function() checkAuth,
     required TResult Function(String email, String password) signInWithEmail,
-    required TResult Function(String email, String password, String? name)
+    required TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
     required TResult Function(
@@ -1095,7 +1192,12 @@ class _$CompleteGoogleSignInImpl implements _CompleteGoogleSignIn {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? checkAuth,
     TResult? Function(String email, String password)? signInWithEmail,
-    TResult? Function(String email, String password, String? name)?
+    TResult? Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
     TResult? Function(
@@ -1124,7 +1226,12 @@ class _$CompleteGoogleSignInImpl implements _CompleteGoogleSignIn {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? checkAuth,
     TResult Function(String email, String password)? signInWithEmail,
-    TResult Function(String email, String password, String? name)?
+    TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
     TResult Function(
@@ -1268,7 +1375,12 @@ class _$SignOutImpl implements _SignOut {
   TResult when<TResult extends Object?>({
     required TResult Function() checkAuth,
     required TResult Function(String email, String password) signInWithEmail,
-    required TResult Function(String email, String password, String? name)
+    required TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
     required TResult Function(
@@ -1292,7 +1404,12 @@ class _$SignOutImpl implements _SignOut {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? checkAuth,
     TResult? Function(String email, String password)? signInWithEmail,
-    TResult? Function(String email, String password, String? name)?
+    TResult? Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
     TResult? Function(
@@ -1316,7 +1433,12 @@ class _$SignOutImpl implements _SignOut {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? checkAuth,
     TResult Function(String email, String password)? signInWithEmail,
-    TResult Function(String email, String password, String? name)?
+    TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
     TResult Function(
@@ -1471,7 +1593,12 @@ class _$ResetPasswordImpl implements _ResetPassword {
   TResult when<TResult extends Object?>({
     required TResult Function() checkAuth,
     required TResult Function(String email, String password) signInWithEmail,
-    required TResult Function(String email, String password, String? name)
+    required TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
     required TResult Function(
@@ -1495,7 +1622,12 @@ class _$ResetPasswordImpl implements _ResetPassword {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? checkAuth,
     TResult? Function(String email, String password)? signInWithEmail,
-    TResult? Function(String email, String password, String? name)?
+    TResult? Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
     TResult? Function(
@@ -1519,7 +1651,12 @@ class _$ResetPasswordImpl implements _ResetPassword {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? checkAuth,
     TResult Function(String email, String password)? signInWithEmail,
-    TResult Function(String email, String password, String? name)?
+    TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
     TResult Function(
@@ -1686,7 +1823,12 @@ class _$UpdateAccountTypeImpl implements _UpdateAccountType {
   TResult when<TResult extends Object?>({
     required TResult Function() checkAuth,
     required TResult Function(String email, String password) signInWithEmail,
-    required TResult Function(String email, String password, String? name)
+    required TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
     required TResult Function(
@@ -1710,7 +1852,12 @@ class _$UpdateAccountTypeImpl implements _UpdateAccountType {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? checkAuth,
     TResult? Function(String email, String password)? signInWithEmail,
-    TResult? Function(String email, String password, String? name)?
+    TResult? Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
     TResult? Function(
@@ -1734,7 +1881,12 @@ class _$UpdateAccountTypeImpl implements _UpdateAccountType {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? checkAuth,
     TResult Function(String email, String password)? signInWithEmail,
-    TResult Function(String email, String password, String? name)?
+    TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
     TResult Function(
@@ -1910,7 +2062,12 @@ class _$UserChangedImpl implements _UserChanged {
   TResult when<TResult extends Object?>({
     required TResult Function() checkAuth,
     required TResult Function(String email, String password) signInWithEmail,
-    required TResult Function(String email, String password, String? name)
+    required TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
     required TResult Function(
@@ -1934,7 +2091,12 @@ class _$UserChangedImpl implements _UserChanged {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? checkAuth,
     TResult? Function(String email, String password)? signInWithEmail,
-    TResult? Function(String email, String password, String? name)?
+    TResult? Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
     TResult? Function(
@@ -1958,7 +2120,12 @@ class _$UserChangedImpl implements _UserChanged {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? checkAuth,
     TResult Function(String email, String password)? signInWithEmail,
-    TResult Function(String email, String password, String? name)?
+    TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
     TResult Function(
@@ -2094,7 +2261,12 @@ class _$SignedOutImpl implements _SignedOut {
   TResult when<TResult extends Object?>({
     required TResult Function() checkAuth,
     required TResult Function(String email, String password) signInWithEmail,
-    required TResult Function(String email, String password, String? name)
+    required TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )
     signUpWithEmail,
     required TResult Function() signInWithGoogle,
     required TResult Function(
@@ -2118,7 +2290,12 @@ class _$SignedOutImpl implements _SignedOut {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? checkAuth,
     TResult? Function(String email, String password)? signInWithEmail,
-    TResult? Function(String email, String password, String? name)?
+    TResult? Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult? Function()? signInWithGoogle,
     TResult? Function(
@@ -2142,7 +2319,12 @@ class _$SignedOutImpl implements _SignedOut {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? checkAuth,
     TResult Function(String email, String password)? signInWithEmail,
-    TResult Function(String email, String password, String? name)?
+    TResult Function(
+      String email,
+      String password,
+      String? name,
+      String? accountType,
+    )?
     signUpWithEmail,
     TResult Function()? signInWithGoogle,
     TResult Function(

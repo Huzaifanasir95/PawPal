@@ -1,25 +1,30 @@
 package handlers
 
 import (
+	"errors"
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"pawpal-backend/internal/models"
 	"pawpal-backend/internal/repositories"
+	"pawpal-backend/internal/utils"
 )
 
 // MarketplaceHandlers handles marketplace endpoints
 type MarketplaceHandlers struct {
 	marketplaceRepo *repositories.MarketplaceRepository
+	userRepo        repositories.UserRepository
 }
 
 // NewMarketplaceHandlers creates new MarketplaceHandlers
-func NewMarketplaceHandlers(repo *repositories.MarketplaceRepository) *MarketplaceHandlers {
-	return &MarketplaceHandlers{marketplaceRepo: repo}
+func NewMarketplaceHandlers(repo *repositories.MarketplaceRepository, userRepo repositories.UserRepository) *MarketplaceHandlers {
+	return &MarketplaceHandlers{marketplaceRepo: repo, userRepo: userRepo}
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -48,6 +53,71 @@ func parsePagination(c *gin.Context) (page, limit int) {
 		limit = 20
 	}
 	return
+}
+
+func (h *MarketplaceHandlers) requireSellerAccess(c *gin.Context, userID uuid.UUID) bool {
+	user, err := h.userRepo.GetByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to verify account type"})
+		return false
+	}
+	if user == nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "User not found"})
+		return false
+	}
+
+	accountType := normalizeAccountType(user.AccountType)
+	if accountType != "seller" && accountType != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Seller account required"})
+		return false
+	}
+
+	return true
+}
+
+func productWriteErrorResponse(err error) (int, string) {
+	if err == nil {
+		return http.StatusInternalServerError, "Failed to process product request"
+	}
+
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case "22P02":
+			return http.StatusBadRequest, "Invalid field format"
+		case "23503":
+			if strings.Contains(strings.ToLower(pgErr.ConstraintName), "category") {
+				return http.StatusBadRequest, "Invalid categoryId"
+			}
+			return http.StatusBadRequest, "Referenced resource does not exist"
+		case "23514":
+			return http.StatusBadRequest, "Invalid product data"
+		}
+	}
+
+	lower := strings.ToLower(err.Error())
+	if strings.Contains(lower, "invalid category") ||
+		strings.Contains(lower, "category_id") ||
+		strings.Contains(lower, "categoryid") {
+		return http.StatusBadRequest, "Invalid categoryId"
+	}
+
+	return http.StatusInternalServerError, "Failed to process product request"
+}
+
+func normalizeProductImageFields(c *gin.Context, products []models.Product) {
+	for i := range products {
+		if products[i].SellerAvatar != nil {
+			resolved := utils.ResolveImageReferenceBestEffort(c.Request.Context(), *products[i].SellerAvatar, "users/"+products[i].SellerID.String())
+			if resolved == "" {
+				products[i].SellerAvatar = nil
+			} else {
+				products[i].SellerAvatar = &resolved
+			}
+		}
+
+		products[i].Images = utils.ResolveImageReferencesBestEffort(c.Request.Context(), products[i].Images, "marketplace/products/"+products[i].ID.String())
+	}
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
@@ -87,6 +157,8 @@ func (h *MarketplaceHandlers) GetProducts(c *gin.Context) {
 		products = []models.Product{}
 	}
 
+	normalizeProductImageFields(c, products)
+
 	pages := int(math.Ceil(float64(total) / float64(limit)))
 	c.JSON(http.StatusOK, gin.H{
 		"success":  true,
@@ -117,6 +189,11 @@ func (h *MarketplaceHandlers) GetProduct(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Product not found"})
 		return
 	}
+
+	products := []models.Product{*product}
+	normalizeProductImageFields(c, products)
+	product = &products[0]
+
 	c.JSON(http.StatusOK, gin.H{"success": true, "product": product})
 }
 
@@ -124,6 +201,9 @@ func (h *MarketplaceHandlers) GetProduct(c *gin.Context) {
 func (h *MarketplaceHandlers) GetMyProducts(c *gin.Context) {
 	userID, ok := getAuthUserID(c)
 	if !ok {
+		return
+	}
+	if !h.requireSellerAccess(c, userID) {
 		return
 	}
 	page, limit := parsePagination(c)
@@ -136,6 +216,8 @@ func (h *MarketplaceHandlers) GetMyProducts(c *gin.Context) {
 	if products == nil {
 		products = []models.Product{}
 	}
+
+	normalizeProductImageFields(c, products)
 
 	pages := int(math.Ceil(float64(total) / float64(limit)))
 	c.JSON(http.StatusOK, gin.H{
@@ -156,6 +238,9 @@ func (h *MarketplaceHandlers) CreateProduct(c *gin.Context) {
 	if !ok {
 		return
 	}
+	if !h.requireSellerAccess(c, userID) {
+		return
+	}
 
 	var req models.CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -163,9 +248,51 @@ func (h *MarketplaceHandlers) CreateProduct(c *gin.Context) {
 		return
 	}
 
+	name := strings.TrimSpace(req.Name)
+	description := strings.TrimSpace(req.Description)
+	categoryIDRaw := strings.TrimSpace(req.CategoryID)
+
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "name is required"})
+		return
+	}
+	if description == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "description is required"})
+		return
+	}
+	if req.Price <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "price must be greater than 0"})
+		return
+	}
+	if req.StockQuantity < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "stockQuantity must be 0 or greater"})
+		return
+	}
+	if categoryIDRaw == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "categoryId is required"})
+		return
+	}
+
+	categoryID, err := uuid.Parse(categoryIDRaw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "categoryId must be a valid UUID"})
+		return
+	}
+
+	categoryExists, err := h.marketplaceRepo.CategoryExists(c.Request.Context(), categoryID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate category"})
+		return
+	}
+	if !categoryExists {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid categoryId"})
+		return
+	}
+
 	product := &models.Product{
-		Name:               req.Name,
-		Description:        req.Description,
+		CategoryID:         &categoryID,
+		Name:               name,
+		Description:        description,
 		Price:              req.Price,
 		Currency:           req.Currency,
 		StockQuantity:      req.StockQuantity,
@@ -175,15 +302,16 @@ func (h *MarketplaceHandlers) CreateProduct(c *gin.Context) {
 		WeightGrams:        req.WeightGrams,
 	}
 
-	if req.CategoryID != nil && *req.CategoryID != "" {
-		catID, err := uuid.Parse(*req.CategoryID)
-		if err == nil {
-			product.CategoryID = &catID
-		}
+	normalizedImages, normalizeErr := utils.ResolveImageReferences(c.Request.Context(), product.Images, "marketplace/products/new")
+	if normalizeErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid images payload. Use HTTP URLs or valid base64 image payloads"})
+		return
 	}
+	product.Images = normalizedImages
 
 	if err := h.marketplaceRepo.CreateProduct(c.Request.Context(), product, userID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to create product"})
+		status, message := productWriteErrorResponse(err)
+		c.JSON(status, gin.H{"success": false, "error": message})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"success": true, "product": product})
@@ -193,6 +321,9 @@ func (h *MarketplaceHandlers) CreateProduct(c *gin.Context) {
 func (h *MarketplaceHandlers) UpdateProduct(c *gin.Context) {
 	userID, ok := getAuthUserID(c)
 	if !ok {
+		return
+	}
+	if !h.requireSellerAccess(c, userID) {
 		return
 	}
 
@@ -208,15 +339,51 @@ func (h *MarketplaceHandlers) UpdateProduct(c *gin.Context) {
 		return
 	}
 
+	if req.CategoryID != nil && strings.TrimSpace(*req.CategoryID) != "" {
+		categoryID, err := uuid.Parse(strings.TrimSpace(*req.CategoryID))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "categoryId must be a valid UUID"})
+			return
+		}
+
+		exists, err := h.marketplaceRepo.CategoryExists(c.Request.Context(), categoryID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate category"})
+			return
+		}
+		if !exists {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid categoryId"})
+			return
+		}
+
+		normalizedCategoryID := categoryID.String()
+		req.CategoryID = &normalizedCategoryID
+	}
+
+	if req.Images != nil {
+		normalizedImages, normalizeErr := utils.ResolveImageReferences(c.Request.Context(), req.Images, "marketplace/products/"+productID.String())
+		if normalizeErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid images payload. Use HTTP URLs or valid base64 image payloads"})
+			return
+		}
+		req.Images = normalizedImages
+	}
+
 	product, err := h.marketplaceRepo.UpdateProduct(c.Request.Context(), productID, userID, &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to update product"})
+		status, message := productWriteErrorResponse(err)
+		c.JSON(status, gin.H{"success": false, "error": message})
 		return
 	}
 	if product == nil {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Product not found or you don't have permission"})
 		return
 	}
+
+	products := []models.Product{*product}
+	normalizeProductImageFields(c, products)
+	product = &products[0]
+
 	c.JSON(http.StatusOK, gin.H{"success": true, "product": product})
 }
 
@@ -224,6 +391,9 @@ func (h *MarketplaceHandlers) UpdateProduct(c *gin.Context) {
 func (h *MarketplaceHandlers) DeleteProduct(c *gin.Context) {
 	userID, ok := getAuthUserID(c)
 	if !ok {
+		return
+	}
+	if !h.requireSellerAccess(c, userID) {
 		return
 	}
 
@@ -292,6 +462,20 @@ func (h *MarketplaceHandlers) AddProductReview(c *gin.Context) {
 		return
 	}
 
+	product, err := h.marketplaceRepo.GetProductByID(c.Request.Context(), productID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate product"})
+		return
+	}
+	if product == nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Product not found"})
+		return
+	}
+	if product.SellerID == userID {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You cannot review your own product"})
+		return
+	}
+
 	review := &models.ProductReview{
 		ProductID: productID,
 		UserID:    userID,
@@ -302,12 +486,34 @@ func (h *MarketplaceHandlers) AddProductReview(c *gin.Context) {
 	}
 	if req.OrderItemID != "" {
 		oid, err := uuid.Parse(req.OrderItemID)
-		if err == nil {
-			review.OrderItemID = &oid
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid order item ID"})
+			return
 		}
+		review.OrderItemID = &oid
+	}
+
+	hasDeliveredPurchase, err := h.marketplaceRepo.BuyerHasDeliveredPurchase(
+		c.Request.Context(),
+		userID,
+		productID,
+		review.OrderItemID,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate review eligibility"})
+		return
+	}
+	if !hasDeliveredPurchase {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You can review a product only after it is delivered"})
+		return
 	}
 
 	if err := h.marketplaceRepo.AddReview(c.Request.Context(), review); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			c.JSON(http.StatusConflict, gin.H{"success": false, "error": "You have already reviewed this product"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to add review"})
 		return
 	}
@@ -366,6 +572,10 @@ func (h *MarketplaceHandlers) AddToCart(c *gin.Context) {
 	}
 	if !product.IsActive {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Product is no longer available"})
+		return
+	}
+	if product.SellerID == userID {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You cannot add your own product to cart"})
 		return
 	}
 	if product.StockQuantity < req.Quantity {
@@ -453,6 +663,13 @@ func (h *MarketplaceHandlers) PlaceOrder(c *gin.Context) {
 		return
 	}
 
+	for _, item := range cartItems {
+		if item.Product != nil && item.Product.SellerID == userID {
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You cannot place an order containing your own product listings"})
+			return
+		}
+	}
+
 	// Build order
 	order := &models.Order{
 		BuyerID:         userID,
@@ -529,18 +746,28 @@ func (h *MarketplaceHandlers) GetOrder(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Order not found"})
 		return
 	}
-	// Users can only see their own orders
+	// Buyers can see their own orders; sellers can see orders containing their items.
 	if order.BuyerID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Access denied"})
-		return
+		canManage, err := h.marketplaceRepo.SellerCanManageOrder(c.Request.Context(), orderID, userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to verify order access"})
+			return
+		}
+		if !canManage {
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Access denied"})
+			return
+		}
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "order": order})
 }
 
 // UpdateOrderStatus lets a seller/admin update the order status
 func (h *MarketplaceHandlers) UpdateOrderStatus(c *gin.Context) {
-	_, ok := getAuthUserID(c)
+	userID, ok := getAuthUserID(c)
 	if !ok {
+		return
+	}
+	if !h.requireSellerAccess(c, userID) {
 		return
 	}
 
@@ -550,13 +777,23 @@ func (h *MarketplaceHandlers) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
+	canManage, err := h.marketplaceRepo.SellerCanManageOrder(c.Request.Context(), orderID, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to verify order ownership"})
+		return
+	}
+	if !canManage {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You can only update your own customer orders"})
+		return
+	}
+
 	var req models.UpdateOrderStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 		return
 	}
 
-	if err := h.marketplaceRepo.UpdateOrderStatus(c.Request.Context(), orderID, req.Status, req.TrackingNumber); err != nil {
+	if err := h.marketplaceRepo.UpdateSellerOrderStatus(c.Request.Context(), orderID, userID, req.Status, req.TrackingNumber); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to update order status"})
 		return
 	}
@@ -567,6 +804,9 @@ func (h *MarketplaceHandlers) UpdateOrderStatus(c *gin.Context) {
 func (h *MarketplaceHandlers) GetSellerOrders(c *gin.Context) {
 	userID, ok := getAuthUserID(c)
 	if !ok {
+		return
+	}
+	if !h.requireSellerAccess(c, userID) {
 		return
 	}
 	page, limit := parsePagination(c)

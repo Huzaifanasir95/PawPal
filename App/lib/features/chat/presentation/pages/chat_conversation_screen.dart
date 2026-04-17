@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/chat_cache_service.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/services/websocket_service.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
@@ -33,12 +34,16 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   final _wsService = WebSocketService();
+  final _chatCacheService = ChatCacheService();
   StreamSubscription? _wsMessageSubscription;
   StreamSubscription? _wsConnectionSubscription;
+  Timer? _sendTimeoutTimer;
   bool _isSending = false;
   bool _isLoadingMessages = true;
   Chat? _lastChat;
   List<ChatMessage> _lastMessages = [];
+  String? _pendingTempMessageId;
+  String? _pendingMessageContent;
 
   @override
   void initState() {
@@ -58,8 +63,24 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       );
     }
     
+    _hydrateCachedConversation();
     _connectWebSocket();
     context.read<ChatBloc>().add(ChatEvent.loadChat(widget.chatId));
+  }
+
+  Future<void> _hydrateCachedConversation() async {
+    final cachedThread = await _chatCacheService.readThread(widget.chatId);
+    if (!mounted || cachedThread == null) {
+      return;
+    }
+
+    setState(() {
+      _lastChat = cachedThread.chat;
+      _lastMessages = cachedThread.messages;
+      _isLoadingMessages = false;
+    });
+
+    _scrollToBottom();
   }
 
   void _connectWebSocket() async {
@@ -75,10 +96,31 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       if (type == 'new_message') {
         final messageData = data['message'] as Map<String, dynamic>;
         final newMessage = ChatMessage.fromJson(messageData);
+
+        if (!mounted) return;
         
         setState(() {
-          _lastMessages = [..._lastMessages, newMessage];
+          if (_lastMessages.any((message) => message.id == newMessage.id)) {
+            return;
+          }
+
+          final isMine = newMessage.senderId == _currentUserId;
+          final matchesPending =
+              isMine &&
+              _pendingTempMessageId != null &&
+              _pendingMessageContent != null &&
+              newMessage.content.trim() == _pendingMessageContent!.trim();
+
+          if (matchesPending) {
+            _replacePendingMessage(newMessage);
+            _isSending = false;
+            _sendTimeoutTimer?.cancel();
+          } else {
+            _lastMessages = [..._lastMessages, newMessage];
+          }
         });
+
+        _persistConversationCache();
         
         _scrollToBottom();
       }
@@ -99,6 +141,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   @override
   void dispose() {
+    _sendTimeoutTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     _wsMessageSubscription?.cancel();
@@ -111,16 +154,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final content = _messageController.text.trim();
     if (content.isEmpty || _isSending) return;
 
-    final currentUserId = context.read<AuthBloc>().state.maybeWhen(
-      authenticated: (user) => user.uid,
-      orElse: () => '',
-    );
+    final currentUserId = _currentUserId;
+    if (currentUserId.isEmpty) {
+      CustomSnackbar.showError(context, 'Please sign in before sending messages.');
+      return;
+    }
 
-    setState(() => _isSending = true);
-    _messageController.clear();
-
+    final tempMessageId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final tempMessage = ChatMessage(
-      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      id: tempMessageId,
       chatId: widget.chatId,
       senderId: currentUserId,
       content: content,
@@ -128,34 +170,157 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       createdAt: DateTime.now(),
     );
 
+    _sendTimeoutTimer?.cancel();
+
     setState(() {
+      _isSending = true;
+      _pendingTempMessageId = tempMessageId;
+      _pendingMessageContent = content;
       _lastMessages = [..._lastMessages, tempMessage];
     });
 
-    context.read<ChatBloc>().add(ChatEvent.sendMessage(
-      chatId: widget.chatId,
-      content: content,
-    ));
+    _persistConversationCache();
+
+    _messageController.clear();
+
+    _sendTimeoutTimer = Timer(const Duration(seconds: 15), () {
+      if (!mounted || !_isSending) return;
+      setState(() {
+        _isSending = false;
+        _restoreFailedDraft();
+      });
+      CustomSnackbar.showError(
+        context,
+        'Message is taking longer than expected. Please retry.',
+      );
+    });
+
+    context.read<ChatBloc>().add(
+      ChatEvent.sendMessage(chatId: widget.chatId, content: content),
+    );
 
     _scrollToBottom();
   }
 
+  String get _currentUserId {
+    return context.read<AuthBloc>().state.maybeWhen(
+      authenticated: (user) => user.uid,
+      orElse: () => '',
+    );
+  }
+
+  void _replacePendingMessage(ChatMessage confirmedMessage) {
+    final pendingId = _pendingTempMessageId;
+
+    if (pendingId != null) {
+      final pendingIndex = _lastMessages.indexWhere(
+        (message) => message.id == pendingId,
+      );
+
+      if (pendingIndex >= 0) {
+        final updated = List<ChatMessage>.from(_lastMessages);
+        updated[pendingIndex] = confirmedMessage;
+        _lastMessages = updated;
+      } else if (!_lastMessages.any((message) => message.id == confirmedMessage.id)) {
+        _lastMessages = [..._lastMessages, confirmedMessage];
+      }
+    } else if (!_lastMessages.any((message) => message.id == confirmedMessage.id)) {
+      _lastMessages = [..._lastMessages, confirmedMessage];
+    }
+
+    _pendingTempMessageId = null;
+    _pendingMessageContent = null;
+  }
+
+  Future<void> _persistConversationCache() async {
+    final chat = _lastChat;
+    if (chat == null) {
+      return;
+    }
+
+    await _chatCacheService.writeThread(chat, _lastMessages);
+  }
+
+  void _restoreFailedDraft() {
+    final pendingId = _pendingTempMessageId;
+    if (pendingId == null) return;
+
+    final pendingIndex = _lastMessages.indexWhere(
+      (message) => message.id == pendingId,
+    );
+
+    if (pendingIndex >= 0) {
+      final pendingMessage = _lastMessages[pendingIndex];
+      final updated = List<ChatMessage>.from(_lastMessages)..removeAt(pendingIndex);
+      _lastMessages = updated;
+
+      if (_messageController.text.trim().isEmpty) {
+        _messageController.text = pendingMessage.content;
+        _messageController.selection = TextSelection.fromPosition(
+          TextPosition(offset: _messageController.text.length),
+        );
+      }
+    }
+
+    _pendingTempMessageId = null;
+    _pendingMessageContent = null;
+  }
+
+  List<ChatMessage> _mergeWithPendingMessages(List<ChatMessage> serverMessages) {
+    if (_pendingTempMessageId == null) {
+      return serverMessages;
+    }
+
+    ChatMessage? pendingMessage;
+    for (final message in _lastMessages) {
+      if (message.id == _pendingTempMessageId) {
+        pendingMessage = message;
+        break;
+      }
+    }
+
+    if (pendingMessage == null) {
+      return serverMessages;
+    }
+
+    final resolvedPending = pendingMessage;
+
+    if (serverMessages.any((msg) => msg.id == resolvedPending.id)) {
+      return serverMessages;
+    }
+
+    return [...serverMessages, resolvedPending];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness:
+            brightness == Brightness.dark ? Brightness.light : Brightness.dark,
       ),
       child: BlocConsumer<ChatBloc, ChatState>(
         listener: (context, state) {
           state.maybeWhen(
             error: (message) {
-              setState(() => _isSending = false);
+              _sendTimeoutTimer?.cancel();
+              setState(() {
+                _isSending = false;
+                _restoreFailedDraft();
+              });
               CustomSnackbar.showError(context, message);
             },
-            messageSent: (_) {
-              setState(() => _isSending = false);
+            messageSent: (message) {
+              _sendTimeoutTimer?.cancel();
+              setState(() {
+                _isSending = false;
+                _replacePendingMessage(message);
+              });
+              _persistConversationCache();
+              _scrollToBottom();
             },
             chatLoaded: (chat, messages, hasMore, currentPage) {
               setState(() {
@@ -172,18 +337,20 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 } else {
                   _lastChat = chat;
                 }
-                _lastMessages = messages;
+                _lastMessages = _mergeWithPendingMessages(messages);
                 _isSending = false;
                 _isLoadingMessages = false;
               });
+              _persistConversationCache();
               _scrollToBottom();
             },
             orElse: () {},
           );
         },
         builder: (context, state) {
+          final theme = Theme.of(context);
           return Scaffold(
-            backgroundColor: const Color(0xFFF5F7FA),
+            backgroundColor: theme.scaffoldBackgroundColor,
             body: SafeArea(
               child: Column(
                 children: [
@@ -200,10 +367,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   Widget _buildHeader() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       padding: EdgeInsets.fromLTRB(8.w, 8.h, 16.w, 12.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -224,7 +394,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               ),
               child: Icon(
                 Icons.arrow_back_rounded,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 size: 24.sp,
               ),
             ),
@@ -234,7 +404,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             width: 48.w,
             height: 48.h,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14.r),
               image: (_lastChat?.otherUserPhoto ?? widget.otherUserPhoto) != null
                   ? DecorationImage(
@@ -247,7 +417,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 ? Center(
                     child: Icon(
                       Icons.person_rounded,
-                      color: AppColors.primary,
+                      color: colorScheme.primary,
                       size: 26.sp,
                     ),
                   )
@@ -262,7 +432,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   _lastChat?.otherUserName ?? widget.otherUserName ?? 'Chat',
                   style: TextStyle(
                     fontSize: 17.sp,
-                    color: AppColors.textPrimary,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
@@ -273,7 +443,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   'Tap for info',
                   style: TextStyle(
                     fontSize: 12.sp,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -285,7 +455,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             },
             child: Icon(
               Icons.more_vert_rounded,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
               size: 24.sp,
             ),
           ),
@@ -306,7 +476,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               'Loading messages...',
               style: TextStyle(
                 fontSize: 14.sp,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -326,6 +496,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   Widget _buildErrorState(String message) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(32.w),
@@ -342,7 +514,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               'Error loading chat',
               style: TextStyle(
                 fontSize: 18.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -351,7 +523,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               message,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -361,7 +533,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(
@@ -381,6 +553,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   Widget _buildMessagesList() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (_lastMessages.isEmpty) {
       return Center(
         child: Column(
@@ -390,13 +564,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               width: 80.w,
               height: 80.h,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(24.r),
               ),
               child: Icon(
                 Icons.chat_bubble_outline_rounded,
                 size: 40.sp,
-                color: AppColors.primary,
+                color: colorScheme.primary,
               ),
             ),
             SizedBox(height: 20.h),
@@ -404,7 +578,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               'No messages yet',
               style: TextStyle(
                 fontSize: 18.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -413,7 +587,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               'Start the conversation',
               style: TextStyle(
                 fontSize: 14.sp,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -439,10 +613,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   Widget _buildMessageInput() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -456,7 +632,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F7FA),
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(24.r),
               ),
               child: TextField(
@@ -467,12 +643,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 textCapitalization: TextCapitalization.sentences,
                 style: TextStyle(
                   fontSize: 15.sp,
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Type a message...',
                   hintStyle: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 15.sp,
                   ),
                   border: InputBorder.none,
@@ -493,7 +669,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               width: 48.w,
               height: 48.h,
               decoration: BoxDecoration(
-                color: _isSending ? AppColors.textSecondary : AppColors.primary,
+                color: _isSending
+                    ? colorScheme.onSurfaceVariant
+                    : colorScheme.primary,
                 borderRadius: BorderRadius.circular(14.r),
               ),
               child: Center(
@@ -531,6 +709,7 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final currentUserId = context.read<AuthBloc>().state.maybeWhen(
       authenticated: (user) => user.uid,
       orElse: () => '',
@@ -551,7 +730,7 @@ class _MessageBubble extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                   decoration: BoxDecoration(
-                    color: isSentByMe ? AppColors.primary : Colors.white,
+                    color: isSentByMe ? colorScheme.primary : colorScheme.surface,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20.r),
                       topRight: Radius.circular(20.r),
@@ -570,7 +749,10 @@ class _MessageBubble extends StatelessWidget {
                     message.content,
                     style: TextStyle(
                       fontSize: 15.sp,
-                      color: isSentByMe ? Colors.white : AppColors.textPrimary,
+                      color:
+                          isSentByMe
+                              ? colorScheme.onPrimary
+                              : colorScheme.onSurface,
                       height: 1.4,
                     ),
                   ),
@@ -586,7 +768,7 @@ class _MessageBubble extends StatelessWidget {
                           timeago.format(message.createdAt),
                           style: TextStyle(
                             fontSize: 11.sp,
-                            color: AppColors.textSecondary,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                         if (isSentByMe) ...[
@@ -595,8 +777,8 @@ class _MessageBubble extends StatelessWidget {
                             message.isRead ? Icons.done_all_rounded : Icons.done_rounded,
                             size: 14.sp,
                             color: message.isRead
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant,
                           ),
                         ],
                       ],

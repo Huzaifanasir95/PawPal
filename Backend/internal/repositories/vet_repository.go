@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,7 +43,7 @@ func (r *VetRepository) CreateOrUpdate(ctx context.Context, profile *models.VetP
 		profile.ID = uuid.New()
 		profile.CreatedAt = time.Now()
 		profile.UpdatedAt = time.Now()
-		
+
 		// Ensure specialization is not nil
 		if profile.Specialization == nil {
 			profile.Specialization = []string{}
@@ -62,7 +63,7 @@ func (r *VetRepository) CreateOrUpdate(ctx context.Context, profile *models.VetP
 	if profile.Specialization == nil {
 		profile.Specialization = []string{}
 	}
-	
+
 	query := `
 		UPDATE vet_profiles SET
 			full_name = $2, degree = $3, license_number = $4, specialization = $5, experience = $6,
@@ -105,7 +106,7 @@ func (r *VetRepository) GetByUserID(ctx context.Context, userID uuid.UUID, profi
 		&profile.Rating, &profile.TotalReviews, &profile.IsVerified, &profile.IsAvailable,
 		&profile.CreatedAt, &profile.UpdatedAt,
 	)
-	
+
 	profile.Specialization = specialization
 	return err
 }
@@ -203,34 +204,150 @@ func (r *VetRepository) List(ctx context.Context, filters map[string]interface{}
 	return vets, total, nil
 }
 
+// GetReviews returns paginated reviews for a vet user.
+func (r *VetRepository) GetReviews(ctx context.Context, vetUserID uuid.UUID, page, limit int) ([]models.VetReview, int, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	var total int
+	err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM vet_reviews
+		WHERE vet_id = $1
+	`, vetUserID).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	rows, err := r.db.Query(ctx, `
+		SELECT
+			vr.id,
+			vr.vet_id,
+			vr.user_id,
+			u.display_name,
+			u.avatar_url,
+			vr.rating,
+			vr.comment,
+			vr.created_at,
+			vr.updated_at
+		FROM vet_reviews vr
+		JOIN users u ON u.id = vr.user_id
+		WHERE vr.vet_id = $1
+		ORDER BY vr.created_at DESC
+		LIMIT $2 OFFSET $3
+	`, vetUserID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	reviews := make([]models.VetReview, 0)
+	for rows.Next() {
+		var review models.VetReview
+		err := rows.Scan(
+			&review.ID,
+			&review.VetID,
+			&review.UserID,
+			&review.UserName,
+			&review.UserAvatar,
+			&review.Rating,
+			&review.Comment,
+			&review.CreatedAt,
+			&review.UpdatedAt,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		reviews = append(reviews, review)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	return reviews, total, nil
+}
+
+// AddReview creates a review for a vet user.
+func (r *VetRepository) AddReview(ctx context.Context, review *models.VetReview) error {
+	review.ID = uuid.New()
+
+	return r.db.QueryRow(ctx, `
+		INSERT INTO vet_reviews (
+			id,
+			vet_id,
+			user_id,
+			rating,
+			comment,
+			created_at,
+			updated_at
+		) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+		RETURNING created_at, updated_at
+	`, review.ID, review.VetID, review.UserID, review.Rating, review.Comment).Scan(&review.CreatedAt, &review.UpdatedAt)
+}
+
+// UserHasCompletedAppointmentWithVet checks if an owner has at least one completed appointment with the vet.
+func (r *VetRepository) UserHasCompletedAppointmentWithVet(ctx context.Context, ownerID, vetUserID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1
+			FROM vet_appointments
+			WHERE pet_owner_id = $1
+				AND vet_user_id = $2
+				AND status = 'completed'
+		)
+	`, ownerID, vetUserID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 // CheckUserIsVet checks if a user has vet role
 func (r *VetRepository) CheckUserIsVet(ctx context.Context, userID uuid.UUID) (bool, error) {
 	var role sql.NullString
 	var accountType sql.NullString
-	
+
 	// Check both user_role and account_type fields for backward compatibility
 	err := r.db.QueryRow(ctx, `
 		SELECT user_role, account_type 
 		FROM users 
 		WHERE id = $1
 	`, userID).Scan(&role, &accountType)
-	
+
 	if err != nil {
 		if err == sql.ErrNoRows || err == pgx.ErrNoRows {
 			return false, nil
 		}
 		return false, err
 	}
-	
+
 	// Check user_role field (for email sign-ups)
-	if role.Valid && role.String == "vet" {
+	if role.Valid && strings.EqualFold(strings.TrimSpace(role.String), "vet") {
 		return true, nil
 	}
-	
+
 	// Check account_type field (for Google Sign-In)
-	if accountType.Valid && accountType.String == "vet" {
+	if accountType.Valid && strings.EqualFold(strings.TrimSpace(accountType.String), "vet") {
 		return true, nil
 	}
-	
-	return false, nil
+
+	// Fallback to profile existence so vets remain bookable even if role fields drift.
+	var hasVetProfile bool
+	if err := r.db.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM vet_profiles WHERE user_id = $1
+		)
+	`, userID).Scan(&hasVetProfile); err != nil {
+		return false, err
+	}
+
+	return hasVetProfile, nil
 }

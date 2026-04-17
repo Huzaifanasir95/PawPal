@@ -3,25 +3,28 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/api_client.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/navigation/app_navigator.dart';
 import '../../data/models/vet_profile_model.dart';
+import '../../data/models/vet_review_model.dart';
+import '../../data/models/vet_appointment_model.dart';
+import '../../data/repositories/vet_appointment_repository.dart';
+import '../../data/repositories/vet_repository.dart';
 import '../bloc/vet_bloc.dart';
 import '../bloc/vet_event.dart';
 import '../bloc/vet_state.dart';
 import '../../../chat/presentation/bloc/chat_bloc.dart';
 import '../../../chat/presentation/bloc/chat_event.dart';
 import '../../../chat/presentation/bloc/chat_state.dart';
+import '../../../pets/data/models/pet_model.dart';
+import '../../../pets/data/repositories/pet_repository_api.dart';
 
 class VetDetailScreen extends StatefulWidget {
   final String vetId;
   final String? profilePhotoUrl;
 
-  const VetDetailScreen({
-    super.key,
-    required this.vetId,
-    this.profilePhotoUrl,
-  });
+  const VetDetailScreen({super.key, required this.vetId, this.profilePhotoUrl});
 
   @override
   State<VetDetailScreen> createState() => _VetDetailScreenState();
@@ -29,9 +32,15 @@ class VetDetailScreen extends StatefulWidget {
 
 class _VetDetailScreenState extends State<VetDetailScreen>
     with SingleTickerProviderStateMixin {
+  final VetRepository _vetRepository = VetRepository(ApiClient.instance);
   bool _isStartingChat = false;
+  bool _isBookingAppointment = false;
+  bool _isLoadingReviews = false;
+  bool _isSubmittingReview = false;
   bool _animateIn = false;
   bool _isChatPressed = false;
+  String? _reviewsError;
+  List<VetReview> _reviews = const <VetReview>[];
   AnimationController? _pulseController;
   Animation<double> _pulseScale = const AlwaysStoppedAnimation<double>(1.0);
 
@@ -47,6 +56,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
     );
 
     context.read<VetBloc>().add(VetEvent.loadVetProfile(widget.vetId));
+    _loadReviews();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         setState(() => _animateIn = true);
@@ -77,7 +87,8 @@ class _VetDetailScreenState extends State<VetDetailScreen>
             BlocListener<VetBloc, VetState>(
               listener: (context, state) {
                 state.maybeWhen(
-                  error: (message) => CustomSnackbar.showError(context, message),
+                  error:
+                      (message) => CustomSnackbar.showError(context, message),
                   orElse: () {},
                 );
               },
@@ -90,7 +101,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
                       setState(() => _isStartingChat = false);
                       String? vetName;
                       String? vetPhoto = widget.profilePhotoUrl;
-                      
+
                       context.read<VetBloc>().state.maybeWhen(
                         profileLoaded: (vet) {
                           vetName = vet.fullName;
@@ -123,7 +134,9 @@ class _VetDetailScreenState extends State<VetDetailScreen>
                 initial: () => _buildLoading(),
                 loading: () => _buildLoading(),
                 profileLoaded: (vet) => _buildContent(vet),
-                vetsListLoaded: (_, __, ___, ____, _____, ______, _______, ________) => const SizedBox(),
+                vetsListLoaded:
+                    (_, __, ___, ____, _____, ______, _______, ________) =>
+                        const SizedBox(),
                 profileSaved: (_) => const SizedBox(),
                 error: (message) => _buildError(message),
               );
@@ -177,9 +190,15 @@ class _VetDetailScreenState extends State<VetDetailScreen>
                     ),
                     SizedBox(height: 24.h),
                     GestureDetector(
-                      onTap: () => context.read<VetBloc>().add(VetEvent.loadVetProfile(widget.vetId)),
+                      onTap:
+                          () => context.read<VetBloc>().add(
+                            VetEvent.loadVetProfile(widget.vetId),
+                          ),
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24.w,
+                          vertical: 12.h,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.darkTeal,
                           borderRadius: BorderRadius.circular(12.r),
@@ -239,7 +258,10 @@ class _VetDetailScreenState extends State<VetDetailScreen>
                 padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
                 child: Column(
                   children: [
-                    _buildEntranceSection(index: 0, child: _buildProfileSection(vet)),
+                    _buildEntranceSection(
+                      index: 0,
+                      child: _buildProfileSection(vet),
+                    ),
                     _buildEntranceSection(index: 1, child: _buildInfoCard(vet)),
                     SizedBox(height: 14.h),
                     if (vet.specialization.isNotEmpty) ...[
@@ -249,15 +271,27 @@ class _VetDetailScreenState extends State<VetDetailScreen>
                       ),
                       SizedBox(height: 14.h),
                     ],
-                    if (vet.clinicName != null || vet.clinicAddress != null) ...[
-                      _buildEntranceSection(index: 3, child: _buildClinicCard(vet)),
+                    if (vet.clinicName != null ||
+                        vet.clinicAddress != null) ...[
+                      _buildEntranceSection(
+                        index: 3,
+                        child: _buildClinicCard(vet),
+                      ),
                       SizedBox(height: 14.h),
                     ],
                     _buildEntranceSection(index: 4, child: _buildFeeCard(vet)),
                     if (vet.bio != null) ...[
                       SizedBox(height: 14.h),
-                      _buildEntranceSection(index: 5, child: _buildAboutCard(vet)),
+                      _buildEntranceSection(
+                        index: 5,
+                        child: _buildAboutCard(vet),
+                      ),
                     ],
+                    SizedBox(height: 14.h),
+                    _buildEntranceSection(
+                      index: 6,
+                      child: _buildReviewsCard(vet),
+                    ),
                     SizedBox(height: 8.h),
                   ],
                 ),
@@ -267,7 +301,17 @@ class _VetDetailScreenState extends State<VetDetailScreen>
               top: false,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 14.h),
-                child: _buildEntranceSection(index: 6, child: _buildChatButton()),
+                child: _buildEntranceSection(
+                  index: 7,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildBookAppointmentButton(vet),
+                      SizedBox(height: 10.h),
+                      _buildChatButton(),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -368,26 +412,27 @@ class _VetDetailScreenState extends State<VetDetailScreen>
             decoration: BoxDecoration(
               color: AppColors.googleButton.withOpacity(0.28),
               borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(
-                color: AppColors.socialBorder,
-                width: 2,
-              ),
-              image: (widget.profilePhotoUrl ?? vet.profilePhotoUrl) != null
-                  ? DecorationImage(
-                      image: NetworkImage(widget.profilePhotoUrl ?? vet.profilePhotoUrl!),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
+              border: Border.all(color: AppColors.socialBorder, width: 2),
+              image:
+                  (widget.profilePhotoUrl ?? vet.profilePhotoUrl) != null
+                      ? DecorationImage(
+                        image: NetworkImage(
+                          widget.profilePhotoUrl ?? vet.profilePhotoUrl!,
+                        ),
+                        fit: BoxFit.cover,
+                      )
+                      : null,
             ),
-            child: (widget.profilePhotoUrl ?? vet.profilePhotoUrl) == null
-                ? Center(
-                    child: Icon(
-                      Icons.person_rounded,
-                      color: AppColors.darkTeal,
-                      size: 48.sp,
-                    ),
-                  )
-                : null,
+            child:
+                (widget.profilePhotoUrl ?? vet.profilePhotoUrl) == null
+                    ? Center(
+                      child: Icon(
+                        Icons.person_rounded,
+                        color: AppColors.darkTeal,
+                        size: 48.sp,
+                      ),
+                    )
+                    : null,
           ),
           SizedBox(height: 14.h),
           Text(
@@ -548,10 +593,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
           SizedBox(height: 2.h),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -585,16 +627,20 @@ class _VetDetailScreenState extends State<VetDetailScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle(icon: Icons.workspace_premium_rounded, title: 'Specializations'),
+          _buildSectionTitle(
+            icon: Icons.workspace_premium_rounded,
+            title: 'Specializations',
+          ),
           SizedBox(height: 16.h),
           Wrap(
             spacing: 8.w,
             runSpacing: 8.h,
-            children: vet.specialization
-                .asMap()
-                .entries
-                .map((entry) => _buildAnimatedChip(entry.value, entry.key))
-                .toList(),
+            children:
+                vet.specialization
+                    .asMap()
+                    .entries
+                    .map((entry) => _buildAnimatedChip(entry.value, entry.key))
+                    .toList(),
           ),
         ],
       ),
@@ -652,7 +698,10 @@ class _VetDetailScreenState extends State<VetDetailScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle(icon: Icons.local_hospital_rounded, title: 'Clinic Information'),
+          _buildSectionTitle(
+            icon: Icons.local_hospital_rounded,
+            title: 'Clinic Information',
+          ),
           SizedBox(height: 16.h),
           if (vet.clinicName != null)
             _buildClinicRow(
@@ -674,10 +723,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
             ),
           ],
           SizedBox(height: 12.h),
-          _buildClinicRow(
-            icon: Icons.phone_rounded,
-            value: vet.phone,
-          ),
+          _buildClinicRow(icon: Icons.phone_rounded, value: vet.phone),
         ],
       ),
     );
@@ -691,10 +737,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
           ),
         ),
       ],
@@ -723,7 +766,10 @@ class _VetDetailScreenState extends State<VetDetailScreen>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionTitle(icon: Icons.payments_rounded, title: 'Consultation Fee'),
+              _buildSectionTitle(
+                icon: Icons.payments_rounded,
+                title: 'Consultation Fee',
+              ),
               SizedBox(height: 2.h),
               Text(
                 'Per session',
@@ -781,17 +827,712 @@ class _VetDetailScreenState extends State<VetDetailScreen>
     );
   }
 
+  Future<void> _loadReviews() async {
+    setState(() {
+      _isLoadingReviews = true;
+      _reviewsError = null;
+    });
+
+    try {
+      final reviews = await _vetRepository.getVetReviews(widget.vetId, limit: 20);
+      if (!mounted) return;
+      setState(() {
+        _reviews = reviews;
+        _isLoadingReviews = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _reviewsError = e.toString().replaceFirst('Exception: ', '');
+        _isLoadingReviews = false;
+      });
+    }
+  }
+
+  Future<void> _showVetReviewDialog(VetProfile vet) async {
+    final currentUserId = ApiClient.instance.userId;
+    if (currentUserId != null && currentUserId == vet.userId) {
+      CustomSnackbar.showError(context, 'You cannot review your own vet profile.');
+      return;
+    }
+
+    int rating = 5;
+    final commentController = TextEditingController();
+
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: const Text('Rate This Vet'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Reviews are allowed only after a completed appointment.',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  Row(
+                    children: List.generate(
+                      5,
+                      (index) => IconButton(
+                        onPressed: () => setDialogState(() => rating = index + 1),
+                        icon: Icon(
+                          index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: const Color(0xFFFBBF24),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Write your review (optional)',
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: _isSubmittingReview
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: _isSubmittingReview
+                      ? null
+                      : () async {
+                          setState(() => _isSubmittingReview = true);
+                          try {
+                            await _vetRepository.addVetReview(
+                              vet.userId,
+                              rating: rating,
+                              comment: commentController.text.trim(),
+                            );
+
+                            if (dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop(true);
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              CustomSnackbar.showError(
+                                context,
+                                e.toString().replaceFirst('Exception: ', ''),
+                              );
+                            }
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isSubmittingReview = false);
+                            }
+                          }
+                        },
+                  child: _isSubmittingReview
+                      ? SizedBox(
+                          width: 16.w,
+                          height: 16.h,
+                          child: const CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    commentController.dispose();
+
+    if (submitted == true) {
+      if (mounted) {
+        CustomSnackbar.showSuccess(context, 'Review submitted successfully!');
+      }
+      await _loadReviews();
+      if (mounted) {
+        context.read<VetBloc>().add(VetEvent.loadVetProfile(widget.vetId));
+      }
+    }
+  }
+
+  Widget _buildReviewsCard(VetProfile vet) {
+    final canReview = ApiClient.instance.userId == null || ApiClient.instance.userId != vet.userId;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.socialBorder.withOpacity(0.7)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _buildSectionTitle(icon: Icons.reviews_rounded, title: 'Patient Reviews'),
+              const Spacer(),
+              if (canReview)
+                TextButton.icon(
+                  onPressed: _isSubmittingReview ? null : () => _showVetReviewDialog(vet),
+                  icon: Icon(Icons.edit_rounded, size: 16.sp),
+                  label: Text(
+                    'Rate',
+                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
+                  ),
+                ),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          if (_isLoadingReviews)
+            const Center(child: CircularProgressIndicator(strokeWidth: 2))
+          else if (_reviewsError != null)
+            Text(
+              _reviewsError!,
+              style: TextStyle(color: const Color(0xFFEF4444), fontSize: 12.sp),
+            )
+          else if (_reviews.isEmpty)
+            Text(
+              'No reviews yet. Completed appointments can leave the first review.',
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+            )
+          else
+            Column(
+              children: _reviews.take(5).map(_buildSingleReview).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSingleReview(VetReview review) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 10.h),
+      padding: EdgeInsets.all(10.w),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 12.r,
+                backgroundColor: AppColors.primary.withOpacity(0.25),
+                child: Text(
+                  (review.userName ?? 'P').isNotEmpty
+                      ? (review.userName ?? 'P')[0].toUpperCase()
+                      : 'P',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  review.userName ?? 'Pet owner',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              Text(
+                _formatReviewDate(review.createdAt),
+                style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          SizedBox(height: 6.h),
+          Row(
+            children: List.generate(
+              5,
+              (index) => Icon(
+                index < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                size: 16.sp,
+                color: const Color(0xFFFBBF24),
+              ),
+            ),
+          ),
+          if (review.comment != null && review.comment!.trim().isNotEmpty) ...[
+            SizedBox(height: 6.h),
+            Text(
+              review.comment!,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatReviewDate(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays < 1) return 'Today';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
+    if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
+    return '${(diff.inDays / 365).floor()}y ago';
+  }
+
+  Widget _buildBookAppointmentButton(VetProfile vet) {
+    return GestureDetector(
+      onTap:
+          _isBookingAppointment ? null : () => _showBookAppointmentSheet(vet),
+      child: AnimatedOpacity(
+        opacity: _isBookingAppointment ? 0.7 : 1,
+        duration: const Duration(milliseconds: 180),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: 14.h),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColors.darkTeal.withOpacity(0.55)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.calendar_month_rounded,
+                color: AppColors.darkTeal,
+                size: 20.sp,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                _isBookingAppointment ? 'Preparing...' : 'Book Appointment',
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  color: AppColors.darkTeal,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showBookAppointmentSheet(VetProfile vet) async {
+    if (_isBookingAppointment) return;
+
+    if (vet.userId.trim().isEmpty) {
+      CustomSnackbar.showError(
+        context,
+        'Unable to book this vet right now. Missing vet account reference.',
+      );
+      return;
+    }
+
+    setState(() => _isBookingAppointment = true);
+
+    final petRepository = PetRepositoryApi();
+    final appointmentRepository = VetAppointmentRepository();
+
+    List<PetModel> pets;
+    try {
+      pets = await petRepository.getPets();
+    } catch (e) {
+      if (mounted) {
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+      if (mounted) {
+        setState(() => _isBookingAppointment = false);
+      }
+      return;
+    }
+
+    if (pets.isEmpty) {
+      if (mounted) {
+        CustomSnackbar.showInfo(
+          context,
+          'Add a pet profile before booking a vet appointment.',
+        );
+        setState(() => _isBookingAppointment = false);
+      }
+      return;
+    }
+
+    final reasonController = TextEditingController();
+    final symptomsController = TextEditingController();
+    final notesController = TextEditingController();
+
+    String selectedPetId =
+        pets
+            .firstWhere(
+              (pet) => pet.id.trim().isNotEmpty,
+              orElse: () => pets.first,
+            )
+            .id;
+    String meetingType = 'in_person';
+    int duration = 30;
+    DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
+    TimeOfDay selectedTime = const TimeOfDay(hour: 10, minute: 0);
+    bool isSubmitting = false;
+
+    final created = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
+
+            Future<void> pickDate() async {
+              final now = DateTime.now();
+              final picked = await showDatePicker(
+                context: sheetContext,
+                firstDate: now,
+                lastDate: now.add(const Duration(days: 180)),
+                initialDate: selectedDate,
+              );
+              if (picked != null) {
+                setSheetState(() => selectedDate = picked);
+              }
+            }
+
+            Future<void> pickTime() async {
+              final picked = await showTimePicker(
+                context: sheetContext,
+                initialTime: selectedTime,
+              );
+              if (picked != null) {
+                setSheetState(() => selectedTime = picked);
+              }
+            }
+
+            Future<void> submit() async {
+              final reason = reasonController.text.trim();
+              if (reason.isEmpty) {
+                CustomSnackbar.showError(
+                  context,
+                  'Please provide appointment reason',
+                );
+                return;
+              }
+
+              if (reason.length < 3) {
+                CustomSnackbar.showError(
+                  context,
+                  'Reason should be at least 3 characters',
+                );
+                return;
+              }
+
+              if (selectedPetId.trim().isEmpty) {
+                CustomSnackbar.showError(
+                  context,
+                  'Please select a valid pet profile',
+                );
+                return;
+              }
+
+              final appointmentDateTime = DateTime(
+                selectedDate.year,
+                selectedDate.month,
+                selectedDate.day,
+                selectedTime.hour,
+                selectedTime.minute,
+              );
+
+              if (appointmentDateTime.isBefore(
+                DateTime.now().add(const Duration(minutes: 5)),
+              )) {
+                CustomSnackbar.showError(
+                  context,
+                  'Please choose a future appointment time',
+                );
+                return;
+              }
+
+              setSheetState(() => isSubmitting = true);
+
+              try {
+                final normalizedMeetingType =
+                    meetingType == 'video' ||
+                            meetingType == 'chat' ||
+                            meetingType == 'in_person'
+                        ? meetingType
+                        : 'in_person';
+                final normalizedDuration =
+                    <int>{15, 30, 45, 60}.contains(duration)
+                        ? duration
+                        : 30;
+
+                await appointmentRepository.createAppointment(
+                  CreateVetAppointmentRequest(
+                    vetUserId: vet.userId,
+                    petId: selectedPetId.trim(),
+                    appointmentDatetime: appointmentDateTime,
+                    durationMinutes: normalizedDuration,
+                    meetingType: normalizedMeetingType,
+                    reason: reason,
+                    symptoms: symptomsController.text.trim(),
+                    ownerNotes: notesController.text.trim(),
+                    clinicAddress:
+                        normalizedMeetingType == 'in_person'
+                            ? (vet.clinicAddress?.trim().isNotEmpty == true
+                                ? vet.clinicAddress!.trim()
+                                : null)
+                            : null,
+                  ),
+                );
+
+                if (sheetContext.mounted) {
+                  Navigator.of(sheetContext).pop(true);
+                }
+              } catch (e) {
+                if (sheetContext.mounted) {
+                  setSheetState(() => isSubmitting = false);
+                }
+                if (mounted) {
+                  CustomSnackbar.showError(
+                    context,
+                    e.toString().replaceFirst('Exception: ', ''),
+                  );
+                }
+              }
+            }
+
+            return Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+              ),
+              padding: EdgeInsets.fromLTRB(
+                18.w,
+                12.h,
+                18.w,
+                18.h + bottomInset,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 42.w,
+                        height: 4.h,
+                        decoration: BoxDecoration(
+                          color: AppColors.textSecondary.withOpacity(0.35),
+                          borderRadius: BorderRadius.circular(999.r),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 14.h),
+                    Text(
+                      'Book Appointment',
+                      style: TextStyle(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 14.h),
+                    DropdownButtonFormField<String>(
+                      value: selectedPetId,
+                      decoration: const InputDecoration(
+                        labelText: 'Select Pet',
+                      ),
+                      items:
+                          pets
+                              .map(
+                                (pet) => DropdownMenuItem<String>(
+                                  value: pet.id,
+                                  child: Text('${pet.name} (${pet.type})'),
+                                ),
+                              )
+                              .toList(),
+                      onChanged:
+                          isSubmitting
+                              ? null
+                              : (value) {
+                                if (value != null) {
+                                  setSheetState(() => selectedPetId = value);
+                                }
+                              },
+                    ),
+                    SizedBox(height: 12.h),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: isSubmitting ? null : pickDate,
+                            icon: const Icon(Icons.calendar_today_outlined),
+                            label: Text(
+                              '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: isSubmitting ? null : pickTime,
+                            icon: const Icon(Icons.access_time_outlined),
+                            label: Text(selectedTime.format(sheetContext)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12.h),
+                    DropdownButtonFormField<String>(
+                      value: meetingType,
+                      decoration: const InputDecoration(
+                        labelText: 'Meeting Type',
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'in_person',
+                          child: Text('In-person'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'video',
+                          child: Text('Video Call'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'chat',
+                          child: Text('Chat Consultation'),
+                        ),
+                      ],
+                      onChanged:
+                          isSubmitting
+                              ? null
+                              : (value) {
+                                if (value != null) {
+                                  setSheetState(() => meetingType = value);
+                                }
+                              },
+                    ),
+                    SizedBox(height: 12.h),
+                    DropdownButtonFormField<int>(
+                      value: duration,
+                      decoration: const InputDecoration(labelText: 'Duration'),
+                      items: const [
+                        DropdownMenuItem(value: 15, child: Text('15 minutes')),
+                        DropdownMenuItem(value: 30, child: Text('30 minutes')),
+                        DropdownMenuItem(value: 45, child: Text('45 minutes')),
+                        DropdownMenuItem(value: 60, child: Text('60 minutes')),
+                      ],
+                      onChanged:
+                          isSubmitting
+                              ? null
+                              : (value) {
+                                if (value != null) {
+                                  setSheetState(() => duration = value);
+                                }
+                              },
+                    ),
+                    SizedBox(height: 12.h),
+                    TextField(
+                      controller: reasonController,
+                      enabled: !isSubmitting,
+                      decoration: const InputDecoration(
+                        labelText: 'Reason',
+                        hintText: 'Describe the main concern',
+                      ),
+                      maxLines: 2,
+                    ),
+                    SizedBox(height: 10.h),
+                    TextField(
+                      controller: symptomsController,
+                      enabled: !isSubmitting,
+                      decoration: const InputDecoration(
+                        labelText: 'Symptoms (optional)',
+                      ),
+                      maxLines: 2,
+                    ),
+                    SizedBox(height: 10.h),
+                    TextField(
+                      controller: notesController,
+                      enabled: !isSubmitting,
+                      decoration: const InputDecoration(
+                        labelText: 'Additional Notes (optional)',
+                      ),
+                      maxLines: 2,
+                    ),
+                    SizedBox(height: 16.h),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isSubmitting ? null : submit,
+                        child:
+                            isSubmitting
+                                ? SizedBox(
+                                  width: 18.w,
+                                  height: 18.h,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Text('Confirm Appointment'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    reasonController.dispose();
+    symptomsController.dispose();
+    notesController.dispose();
+
+    if (mounted) {
+      setState(() => _isBookingAppointment = false);
+      if (created == true) {
+        CustomSnackbar.showSuccess(
+          context,
+          'Appointment request sent to ${vet.fullName}.',
+        );
+      }
+    }
+  }
+
   Widget _buildChatButton() {
     return GestureDetector(
-      onTapDown: _isStartingChat
-          ? null
-          : (_) => setState(() => _isChatPressed = true),
-      onTapUp: _isStartingChat
-          ? null
-          : (_) => setState(() => _isChatPressed = false),
-      onTapCancel: _isStartingChat
-          ? null
-          : () => setState(() => _isChatPressed = false),
+      onTapDown:
+          _isStartingChat ? null : (_) => setState(() => _isChatPressed = true),
+      onTapUp:
+          _isStartingChat
+              ? null
+              : (_) => setState(() => _isChatPressed = false),
+      onTapCancel:
+          _isStartingChat ? null : () => setState(() => _isChatPressed = false),
       onTap: _isStartingChat ? null : () => _startChatWithVet(context),
       child: AnimatedBuilder(
         animation: _pulseScale,
@@ -811,14 +1552,17 @@ class _VetDetailScreenState extends State<VetDetailScreen>
             padding: EdgeInsets.symmetric(vertical: 16.h),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: _isStartingChat
-                    ? [AppColors.textSecondary, AppColors.textSecondary]
-                    : [AppColors.darkTeal, AppColors.authTitle],
+                colors:
+                    _isStartingChat
+                        ? [AppColors.textSecondary, AppColors.textSecondary]
+                        : [AppColors.darkTeal, AppColors.authTitle],
               ),
               borderRadius: BorderRadius.circular(16.r),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.darkTeal.withOpacity(_isChatPressed ? 0.15 : 0.25),
+                  color: AppColors.darkTeal.withOpacity(
+                    _isChatPressed ? 0.15 : 0.25,
+                  ),
                   blurRadius: _isChatPressed ? 8 : 16,
                   offset: Offset(0, _isChatPressed ? 3 : 6),
                 ),
@@ -833,11 +1577,17 @@ class _VetDetailScreenState extends State<VetDetailScreen>
                     height: 20.h,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.surface),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.surface,
+                      ),
                     ),
                   )
                 else
-                  Icon(Icons.chat_bubble_rounded, color: AppColors.surface, size: 22.sp),
+                  Icon(
+                    Icons.chat_bubble_rounded,
+                    color: AppColors.surface,
+                    size: 22.sp,
+                  ),
                 SizedBox(width: 10.w),
                 Text(
                   _isStartingChat ? 'Starting Chat...' : 'Start Chat',

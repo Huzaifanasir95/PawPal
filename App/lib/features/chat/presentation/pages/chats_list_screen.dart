@@ -336,6 +336,7 @@ class _ChatTile extends StatelessWidget {
   int _unreadCountForViewer() {
     switch (accountType) {
       case 'vet':
+      case 'caregiver':
         return chat.unreadCountVet;
       case 'pet_owner':
         return chat.unreadCountOwner;

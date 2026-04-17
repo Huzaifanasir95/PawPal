@@ -255,7 +255,7 @@ class AuthRepository {
         final active =
             _normalizeAccountType(payload['activeRole']) ??
             _normalizeAccountType(_currentUser?.accountType) ??
-            (roles.isNotEmpty ? roles.first : 'pet_owner');
+            (roles.isNotEmpty ? roles.first : null);
 
         _updateRoleContext(roles: roles, activeRole: active);
         _syncCurrentUserAccountType(active);
@@ -515,20 +515,26 @@ class AuthRepository {
         userData['activeRole'] ??
         userData['accountType'] ??
         userData['account_type'];
-    final normalizedActiveRole =
-        _normalizeAccountType(rawActiveRole) ?? 'pet_owner';
+    final normalizedActiveRole = _normalizeAccountType(rawActiveRole);
     final roles = _parseRoleList(
       userData['roles'],
-      fallbackRole: normalizedActiveRole,
+      fallbackRole:
+          normalizedActiveRole ??
+          _normalizeAccountType(_currentUser?.accountType),
     );
+    final resolvedActiveRole =
+        normalizedActiveRole ??
+        (roles.isNotEmpty
+            ? roles.first
+            : _normalizeAccountType(_currentUser?.accountType));
 
-    _updateRoleContext(roles: roles, activeRole: normalizedActiveRole);
+    _updateRoleContext(roles: roles, activeRole: resolvedActiveRole);
 
     final parsedUser = AuthUser(
       id: userData['uid'] ?? userData['id'] ?? '',
       email: userData['email'] ?? _currentUser?.email ?? '',
       displayName: userData['displayName'],
-      accountType: normalizedActiveRole,
+      accountType: resolvedActiveRole,
       photoUrl: userData['avatarUrl'],
       createdAt:
           userData['createdAt'] != null &&
@@ -558,17 +564,19 @@ class AuthRepository {
       authResponse.refreshToken,
     );
 
+    final resolvedRoles = _parseRoleList(
+      _assignedRoles,
+      fallbackRole: authResponse.user.accountType,
+    );
     final resolvedActiveRole =
         _activeRole ??
         _normalizeAccountType(authResponse.user.accountType) ??
-        'pet_owner';
-    final resolvedRoles = _parseRoleList(
-      _assignedRoles,
-      fallbackRole: resolvedActiveRole,
-    );
+        (resolvedRoles.isNotEmpty ? resolvedRoles.first : null);
     _updateRoleContext(roles: resolvedRoles, activeRole: resolvedActiveRole);
 
-    _currentUser = authResponse.user.copyWith(accountType: resolvedActiveRole);
+    _currentUser = authResponse.user.copyWith(
+      accountType: resolvedActiveRole ?? authResponse.user.accountType,
+    );
     _debugLog('📢 Broadcasting auth state: ${_currentUser!.email}');
     _authStateController.add(_currentUser);
     _debugLog('✅ Auth state broadcasted');
@@ -651,8 +659,10 @@ class AuthRepository {
     }
 
     if (roles.isEmpty) {
-      final fallback = _normalizeAccountType(fallbackRole) ?? 'pet_owner';
-      roles.add(fallback);
+      final fallback = _normalizeAccountType(fallbackRole);
+      if (fallback != null && fallback.isNotEmpty) {
+        roles.add(fallback);
+      }
     }
 
     final deduped = <String>[];
@@ -666,15 +676,14 @@ class AuthRepository {
 
   void _updateRoleContext({
     required List<String> roles,
-    required String activeRole,
+    String? activeRole,
   }) {
-    final normalizedActive = _normalizeAccountType(activeRole) ?? 'pet_owner';
-    final normalizedRoles = _parseRoleList(
-      roles,
-      fallbackRole: normalizedActive,
-    );
+    final normalizedRoles = _parseRoleList(roles, fallbackRole: activeRole);
+    final normalizedActive =
+        _normalizeAccountType(activeRole) ??
+        (normalizedRoles.isNotEmpty ? normalizedRoles.first : null);
 
-    if (!normalizedRoles.contains(normalizedActive)) {
+    if (normalizedActive != null && !normalizedRoles.contains(normalizedActive)) {
       normalizedRoles.add(normalizedActive);
     }
 
@@ -682,11 +691,15 @@ class AuthRepository {
     _activeRole = normalizedActive;
   }
 
-  void _syncCurrentUserAccountType(String activeRole) {
+  void _syncCurrentUserAccountType(String? activeRole) {
     if (_currentUser == null) return;
 
-    final normalizedActive = _normalizeAccountType(activeRole) ?? 'pet_owner';
-    if ((_currentUser!.accountType ?? 'pet_owner') == normalizedActive) {
+    final normalizedActive = _normalizeAccountType(activeRole);
+    if (normalizedActive == null || normalizedActive.isEmpty) {
+      return;
+    }
+
+    if (_currentUser!.accountType == normalizedActive) {
       return;
     }
 

@@ -6,6 +6,8 @@ import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../data/repositories/booking_repository.dart';
 import '../../data/models/booking_models.dart';
+import '../../../chat/data/repositories/chat_repository.dart';
+import '../../../chat/presentation/pages/chat_conversation_screen.dart';
 
 class BookingDetailScreen extends StatefulWidget {
   final String bookingId;
@@ -26,7 +28,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   ServiceBooking? _booking;
   CompletionReport? _completionReport;
   List<BookingTracking> _tracking = [];
+  List<BookingPayment> _payments = [];
   bool _isLoading = true;
+  bool _isProcessingPayment = false;
+  bool _isOpeningChat = false;
 
   @override
   void initState() {
@@ -45,6 +50,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         _booking = details.booking;
         _completionReport = details.completionReport;
         _tracking = tracking;
+        _payments = details.payments ?? const [];
         _isLoading = false;
       });
     } catch (e) {
@@ -276,6 +282,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   }
 
   Widget _buildPricingCard() {
+    final hasCompletedPayment = _hasCompletedPayment;
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -292,10 +300,64 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Payment Summary',
-            style: AppTextStyles.titleMedium.copyWith(
-              color: AppColors.textPrimary,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Invoice Summary',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                decoration: BoxDecoration(
+                  color:
+                      hasCompletedPayment
+                          ? Colors.green.withOpacity(0.14)
+                          : Colors.orange.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(999.r),
+                ),
+                child: Text(
+                  hasCompletedPayment ? 'PAID' : 'UNPAID',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color:
+                        hasCompletedPayment
+                            ? Colors.green.shade700
+                            : Colors.orange.shade700,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: AppColors.background.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Invoice #${_booking!.bookingNumber}',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Issued on ${_formatDate(_booking!.requestedAt ?? _booking!.createdAt ?? _booking!.startDatetime)}',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
           ),
           SizedBox(height: 16.h),
@@ -327,6 +389,47 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
               ),
             ],
           ),
+          if (_payments.isNotEmpty) ...[
+            SizedBox(height: 14.h),
+            Text(
+              'Transactions',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            ..._payments.take(3).map((payment) {
+              final isCompleted = payment.status.toLowerCase() == 'completed';
+              return Padding(
+                padding: EdgeInsets.only(bottom: 6.h),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${payment.paymentType.toUpperCase()} • ${payment.paymentMethod ?? 'method'}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '${payment.currency} ${payment.amount.toStringAsFixed(0)}',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color:
+                            isCompleted
+                                ? Colors.green.shade700
+                                : AppColors.textSecondary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
         ],
       ),
     );
@@ -504,6 +607,53 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
     return Column(
       children: [
+        if (_canOpenChat) ...[
+          OutlinedButton.icon(
+            onPressed: _isOpeningChat ? null : _openBookingChat,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: BorderSide(color: AppColors.primary),
+              padding: EdgeInsets.symmetric(vertical: 14.h),
+              minimumSize: Size(double.infinity, 48.h),
+            ),
+            icon:
+                _isOpeningChat
+                    ? SizedBox(
+                      width: 18.w,
+                      height: 18.w,
+                      child: const CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Icon(Icons.chat_bubble_outline),
+            label: Text(_isOpeningChat ? 'Opening Chat...' : 'Message'),
+          ),
+          SizedBox(height: 12.h),
+        ],
+        if (_canOwnerProcessPayment) ...[
+          ElevatedButton.icon(
+            onPressed: _isProcessingPayment ? null : _showPaymentDialog,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 16.h),
+              minimumSize: Size(double.infinity, 48.h),
+            ),
+            icon:
+                _isProcessingPayment
+                    ? SizedBox(
+                      width: 18.w,
+                      height: 18.w,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : const Icon(Icons.payment),
+            label: Text(
+              _isProcessingPayment ? 'Processing Payment...' : 'Pay Now (Demo)',
+            ),
+          ),
+          SizedBox(height: 12.h),
+        ],
         if (status == 'pending' && widget.isCaregiver) ...[
           Row(
             children: [
@@ -532,15 +682,32 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             ],
           ),
         ] else if (status == 'accepted' && widget.isCaregiver) ...[
-          ElevatedButton(
-            onPressed: _startService,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              padding: EdgeInsets.symmetric(vertical: 16.h),
-              minimumSize: Size(double.infinity, 48.h),
+          if (_hasCompletedPayment)
+            ElevatedButton(
+              onPressed: _startService,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: EdgeInsets.symmetric(vertical: 16.h),
+                minimumSize: Size(double.infinity, 48.h),
+              ),
+              child: const Text('Start Service'),
+            )
+          else
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Text(
+                'Waiting for owner payment before service can start.',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Colors.orange.shade800,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-            child: const Text('Start Service'),
-          ),
         ] else if (status == 'in_progress' && widget.isCaregiver) ...[
           ElevatedButton(
             onPressed: _showCompleteDialog,
@@ -577,6 +744,28 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         ],
       ],
     );
+  }
+
+  bool get _hasCompletedPayment {
+    return _payments.any(
+      (payment) =>
+          payment.status.toLowerCase() == 'completed' &&
+          payment.paymentType.toLowerCase() != 'refund',
+    );
+  }
+
+  bool get _canOwnerProcessPayment {
+    return !widget.isCaregiver &&
+        _booking != null &&
+        _booking!.status == 'accepted' &&
+        !_hasCompletedPayment;
+  }
+
+  bool get _canOpenChat {
+    if (_booking == null) return false;
+
+    const nonChatStatuses = {'declined', 'cancelled_owner', 'cancelled_caregiver'};
+    return !nonChatStatuses.contains(_booking!.status);
   }
 
   Color _getStatusColor(String status) {
@@ -634,6 +823,147 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
   String _formatTime(DateTime start, DateTime end) {
     return '${start.hour}:${start.minute.toString().padLeft(2, '0')} - ${end.hour}:${end.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _openBookingChat() async {
+    if (_booking == null || _isOpeningChat) return;
+
+    setState(() => _isOpeningChat = true);
+    try {
+      final chatRepository = getIt<ChatRepository>();
+      final chat = await chatRepository.startBookingChat(
+        bookingId: widget.bookingId,
+      );
+
+      if (!mounted) return;
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder:
+              (_) => ChatConversationScreen(
+                chatId: chat.id,
+                otherUserName:
+                    widget.isCaregiver
+                        ? (_booking!.ownerName ?? 'Pet Owner')
+                        : (_booking!.caregiverName ?? 'Caregiver'),
+              ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isOpeningChat = false);
+      }
+    }
+  }
+
+  Future<void> _showPaymentDialog() async {
+    if (_booking == null || _isProcessingPayment) return;
+
+    var selectedMethod = 'card';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => AlertDialog(
+                  title: const Text('Complete Payment (Demo)'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Total payable: ${_booking!.currency} ${_booking!.totalAmount.toStringAsFixed(0)}',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 14.h),
+                      DropdownButtonFormField<String>(
+                        value: selectedMethod,
+                        items: const [
+                          DropdownMenuItem(value: 'card', child: Text('Card')),
+                          DropdownMenuItem(
+                            value: 'jazzcash',
+                            child: Text('JazzCash'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'easypaisa',
+                            child: Text('EasyPaisa'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'bank_transfer',
+                            child: Text('Bank Transfer'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setDialogState(() => selectedMethod = value);
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Payment Method',
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Pay'),
+                    ),
+                  ],
+                ),
+          ),
+    );
+
+    if (confirmed == true) {
+      await _processPayment(selectedMethod);
+    }
+  }
+
+  Future<void> _processPayment(String method) async {
+    if (_booking == null || _isProcessingPayment) return;
+
+    setState(() => _isProcessingPayment = true);
+    try {
+      await _repository.processPayment(
+        widget.bookingId,
+        ProcessPaymentRequest(
+          amount: _booking!.totalAmount,
+          paymentType: 'final',
+          paymentMethod: method,
+        ),
+      );
+
+      if (mounted) {
+        CustomSnackbar.showSuccess(
+          context,
+          'Payment completed. Your caregiver can now start the service.',
+        );
+      }
+      await _loadData();
+    } catch (e) {
+      if (mounted) {
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingPayment = false);
+      }
+    }
   }
 
   Future<void> _respondToBooking(bool accept) async {

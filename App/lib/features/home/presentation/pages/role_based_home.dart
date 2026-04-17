@@ -41,11 +41,12 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
 
   Future<void> _bootstrapRoles() async {
     final fallbackRole = _normalizeAccountType(widget.initialAccountType);
-    final cachedActiveRole = _normalizeAccountType(
-      _authRepository.activeRole ??
-          _authRepository.currentUser?.accountType ??
-          fallbackRole,
+    final preferredFallback = fallbackRole.isNotEmpty ? fallbackRole : null;
+    final cachedActiveCandidate = _normalizeAccountType(
+      _authRepository.activeRole ?? _authRepository.currentUser?.accountType,
     );
+    final cachedActiveRole =
+        cachedActiveCandidate.isNotEmpty ? cachedActiveCandidate : null;
     final cachedRoles = _normalizeRoleList(
       _authRepository.assignedRoles,
       fallbackRole: cachedActiveRole,
@@ -57,37 +58,53 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
           .timeout(const Duration(seconds: 6));
       final normalizedRoles = _normalizeRoleList(
         roles,
-        fallbackRole: cachedActiveRole,
+        fallbackRole: cachedActiveRole ?? preferredFallback,
       );
-      final current = _normalizeAccountType(
+      final currentCandidate = _normalizeAccountType(
         await _authRepository.getAccountType().timeout(
           const Duration(seconds: 6),
           onTimeout: () => cachedActiveRole,
         ),
       );
+      final current = currentCandidate.isNotEmpty ? currentCandidate : null;
 
       final activeRole =
-          normalizedRoles.contains(current)
+          (current != null && normalizedRoles.contains(current))
               ? current
-              : (normalizedRoles.contains(fallbackRole)
-                  ? fallbackRole
-                  : cachedActiveRole);
+              : (preferredFallback != null &&
+                  normalizedRoles.contains(preferredFallback)
+              ? preferredFallback
+              : (cachedActiveRole != null &&
+                      normalizedRoles.contains(cachedActiveRole)
+                  ? cachedActiveRole
+                  : (normalizedRoles.isNotEmpty
+                      ? normalizedRoles.first
+                      : (current ??
+                          preferredFallback ??
+                          cachedActiveRole ??
+                          'pet_owner'))));
+
+      final roleOrder =
+          normalizedRoles.isNotEmpty ? normalizedRoles : <String>[activeRole];
 
       if (!mounted) return;
       setState(() {
-        _roles = normalizedRoles;
+        _roles = roleOrder;
         _activeRole = activeRole;
         _isLoading = false;
       });
       _syncThemeRole(activeRole);
     } catch (e) {
+      final fallbackActive =
+          cachedActiveRole ??
+          (cachedRoles.isNotEmpty ? cachedRoles.first : 'pet_owner');
       if (!mounted) return;
       setState(() {
-        _roles = cachedRoles;
-        _activeRole = cachedActiveRole;
+        _roles = cachedRoles.isNotEmpty ? cachedRoles : <String>[fallbackActive];
+        _activeRole = fallbackActive;
         _isLoading = false;
       });
-      _syncThemeRole(cachedActiveRole);
+      _syncThemeRole(fallbackActive);
     }
   }
 
@@ -122,24 +139,27 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
       case 'admin':
         return 'admin';
       default:
-        return 'pet_owner';
+        return '';
     }
   }
 
   List<String> _normalizeRoleList(
     List<String> roles, {
-    required String fallbackRole,
+    String? fallbackRole,
   }) {
     final normalized = <String>[];
     for (final role in roles) {
       final value = _normalizeAccountType(role);
-      if (!normalized.contains(value)) {
+      if (value.isNotEmpty && !normalized.contains(value)) {
         normalized.add(value);
       }
     }
 
     if (normalized.isEmpty) {
-      normalized.add(_normalizeAccountType(fallbackRole));
+      final fallbackValue = _normalizeAccountType(fallbackRole);
+      if (fallbackValue.isNotEmpty) {
+        normalized.add(fallbackValue);
+      }
     }
 
     return normalized;

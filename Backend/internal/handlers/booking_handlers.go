@@ -482,6 +482,17 @@ func (h *BookingHandler) StartService(c *gin.Context) {
 		return
 	}
 
+	payments, err := h.repo.GetPaymentsByBooking(c.Request.Context(), bookingID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify booking payments"})
+		return
+	}
+
+	if !hasCompletedServicePayment(payments) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner payment is required before starting service"})
+		return
+	}
+
 	if err := h.repo.StartService(c.Request.Context(), bookingID, req.Latitude, req.Longitude); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start service"})
 		return
@@ -932,6 +943,27 @@ func (h *BookingHandler) ProcessPayment(c *gin.Context) {
 		return
 	}
 
+	if booking.Status != "accepted" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Payment can only be processed after caregiver acceptance"})
+		return
+	}
+
+	if req.PaymentType == "tip" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Tip payments are not supported in this flow"})
+		return
+	}
+
+	existingPayments, err := h.repo.GetPaymentsByBooking(c.Request.Context(), bookingID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate existing payments"})
+		return
+	}
+
+	if hasCompletedPaymentType(existingPayments, req.PaymentType) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "This payment has already been completed"})
+		return
+	}
+
 	paymentMethod := req.PaymentMethod
 	payment := &models.BookingPayment{
 		BookingID:     bookingID,
@@ -992,4 +1024,35 @@ func (h *BookingHandler) GetPayments(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"payments": payments})
+}
+
+func hasCompletedServicePayment(payments []models.BookingPayment) bool {
+	for _, payment := range payments {
+		if strings.ToLower(strings.TrimSpace(payment.Status)) != "completed" {
+			continue
+		}
+
+		if strings.ToLower(strings.TrimSpace(payment.PaymentType)) == "refund" {
+			continue
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func hasCompletedPaymentType(payments []models.BookingPayment, paymentType string) bool {
+	targetType := strings.ToLower(strings.TrimSpace(paymentType))
+	for _, payment := range payments {
+		if strings.ToLower(strings.TrimSpace(payment.Status)) != "completed" {
+			continue
+		}
+
+		if strings.ToLower(strings.TrimSpace(payment.PaymentType)) == targetType {
+			return true
+		}
+	}
+
+	return false
 }

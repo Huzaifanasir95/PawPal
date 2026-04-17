@@ -10,12 +10,14 @@ import '../../../../core/navigation/app_navigator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../chatbot/presentation/pages/chatbot_screen.dart';
 import '../../../caregiver/presentation/pages/caregivers_list_screen.dart';
+import '../../../caregiver/presentation/pages/owner_bookings_screen.dart';
 import '../../../home/presentation/pages/all_categories_page.dart';
 import '../../../marketplace/data/repositories/marketplace_repository.dart';
 import '../../../pets/presentation/pages/add_pet_screen.dart';
 import '../../../pets/presentation/pages/pet_identification_scan_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
+import '../../../vet/presentation/pages/vet_appointments_screen.dart';
 
 class PetOwnerDashboard extends StatefulWidget {
   const PetOwnerDashboard({super.key});
@@ -276,6 +278,20 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const CaregiversListScreen()),
+        );
+      }),
+      _CategoryItem('My Bookings', Icons.receipt_long_rounded, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const OwnerBookingsScreen()),
+        );
+      }),
+      _CategoryItem('Vet Visits', Icons.event_available_rounded, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const VetAppointmentsScreen(isVetView: false),
+          ),
         );
       }),
       _CategoryItem('AI Chatbot', Icons.smart_toy_outlined, () {

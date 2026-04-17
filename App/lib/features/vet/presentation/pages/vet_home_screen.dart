@@ -19,6 +19,7 @@ import '../../../chat/presentation/bloc/chat_event.dart';
 import '../../../chat/presentation/bloc/chat_state.dart';
 import '../../../chat/presentation/pages/chat_conversation_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
+import 'vet_appointments_screen.dart';
 import 'vet_profile_setup_screen.dart';
 
 class VetHomeScreen extends StatefulWidget {
@@ -591,6 +592,20 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
             subtitle: 'Update your schedule',
             onTap: () {
               _openVetProfileEditor(initialStep: 4);
+            },
+          ),
+          SizedBox(height: 12.h),
+          _QuickActionButton(
+            icon: Icons.event_note_outlined,
+            title: 'Manage Appointments',
+            subtitle: 'Respond to requests and complete visits',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const VetAppointmentsScreen(isVetView: true),
+                ),
+              );
             },
           ),
         ],

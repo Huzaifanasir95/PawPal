@@ -51,6 +51,7 @@ func main() {
 		{"010 - Vet Appointments", "internal/database/migrations/010_vet_appointments.sql"},
 		{"011 - Community Advanced Features", "internal/database/migrations/011_community_advanced_features.sql"},
 		{"012 - Adoption Pet Link and Uniqueness", "internal/database/migrations/012_adoption_pet_link_and_uniqueness.sql"},
+		{"013 - Chat Appointment Context", "internal/database/migrations/013_chat_appointment_context.sql"},
 	}
 
 	for _, m := range migrations {

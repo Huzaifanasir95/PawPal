@@ -484,12 +484,12 @@ func (r *UserRepositorySupabase) getLegacyUserRoles(ctx context.Context, userID 
 		return nil, err
 	}
 	if user == nil {
-		return []string{"pet_owner"}, nil
+		return []string{}, nil
 	}
 
 	normalized := normalizeAccountRoleSupabase(user.AccountType)
 	if normalized == "" {
-		normalized = "pet_owner"
+		return []string{}, nil
 	}
 
 	return []string{normalized}, nil
@@ -511,7 +511,7 @@ func uniqueSortedRolesSupabase(roles []string) []string {
 	}
 
 	if len(unique) == 0 {
-		return []string{"pet_owner"}
+		return []string{}
 	}
 
 	sort.Strings(unique)

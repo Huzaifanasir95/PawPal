@@ -423,7 +423,7 @@ func (s *AuthService) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]str
 			}
 		}
 
-		return []string{"pet_owner"}, nil
+		return []string{}, nil
 	}
 
 	user, userErr := s.userRepo.GetByID(ctx, userID)
@@ -489,7 +489,20 @@ func (s *AuthService) SwitchActiveRole(ctx context.Context, userID uuid.UUID, ro
 	}
 
 	if len(roles) == 0 {
-		roles = []string{"pet_owner"}
+		user, userErr := s.userRepo.GetByID(ctx, userID)
+		if userErr != nil {
+			return nil, userErr
+		}
+
+		if user != nil {
+			if normalized := normalizeAccountType(user.AccountType); normalized != "" {
+				roles = []string{normalized}
+			}
+		}
+	}
+
+	if len(roles) == 0 {
+		return nil, fmt.Errorf("no roles assigned to user")
 	}
 
 	hasRole := false
@@ -513,34 +526,44 @@ func (s *AuthService) SwitchActiveRole(ctx context.Context, userID uuid.UUID, ro
 
 func (s *AuthService) buildUserProfile(ctx context.Context, user *models.User) *models.UserProfile {
 	activeRole := normalizeAccountType(user.AccountType)
-	if activeRole == "" {
-		activeRole = "pet_owner"
-	}
 
 	roles, err := s.userRepo.GetUserRoles(ctx, user.ID)
-	if err != nil || len(roles) == 0 {
+	if err != nil {
+		roles = []string{}
+	}
+
+	if len(roles) == 0 && activeRole != "" {
 		roles = []string{activeRole}
 	}
 
-	containsActive := false
-	for _, role := range roles {
-		if normalizeAccountType(role) == activeRole {
-			containsActive = true
-			break
+	if activeRole != "" {
+		containsActive := false
+		for _, role := range roles {
+			if normalizeAccountType(role) == activeRole {
+				containsActive = true
+				break
+			}
+		}
+
+		if !containsActive {
+			roles = append(roles, activeRole)
 		}
 	}
 
-	if !containsActive {
-		roles = append(roles, activeRole)
+	var accountType *string
+	var activeRolePtr *string
+	if activeRole != "" {
+		accountType = &activeRole
+		activeRolePtr = &activeRole
 	}
 
 	return &models.UserProfile{
 		ID:          user.ID,
 		Email:       user.Email,
 		DisplayName: user.DisplayName,
-		AccountType: &activeRole,
+		AccountType: accountType,
 		Roles:       roles,
-		ActiveRole:  &activeRole,
+		ActiveRole:  activeRolePtr,
 		AvatarURL:   user.AvatarURL,
 		CreatedAt:   user.CreatedAt,
 		UpdatedAt:   user.UpdatedAt,

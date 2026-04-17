@@ -29,6 +29,49 @@ class ChatRepository {
     }
   }
 
+  /// Start or resume a booking-scoped chat.
+  Future<Chat> startBookingChat({required String bookingId}) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/v1/chats',
+        data: {'bookingId': bookingId, 'chatType': 'active_booking'},
+      );
+
+      if (response.data['success'] == true) {
+        return Chat.fromJson(response.data['chat']);
+      } else {
+        throw Exception(
+          response.data['error'] ?? 'Failed to start booking chat',
+        );
+      }
+    } on DioException catch (e) {
+      throw _handleError(e, 'Failed to start booking chat');
+    }
+  }
+
+  /// Start or resume an appointment-scoped chat.
+  Future<Chat> startAppointmentChat({required String appointmentId}) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/v1/chats',
+        data: {
+          'appointmentId': appointmentId,
+          'chatType': 'vet_consultation',
+        },
+      );
+
+      if (response.data['success'] == true) {
+        return Chat.fromJson(response.data['chat']);
+      } else {
+        throw Exception(
+          response.data['error'] ?? 'Failed to start appointment chat',
+        );
+      }
+    } on DioException catch (e) {
+      throw _handleError(e, 'Failed to start appointment chat');
+    }
+  }
+
   /// Get all my chats
   Future<List<Chat>> getMyChats() async {
     try {

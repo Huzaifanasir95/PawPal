@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -14,19 +15,33 @@ import (
 
 // ChatHandlers handles chat-related endpoints
 type ChatHandlers struct {
-	chatRepo    *repositories.ChatRepository
-	messageRepo *repositories.MessageRepository
-	userRepo    repositories.UserRepository
-	vetRepo     *repositories.VetRepository
+	chatRepo           *repositories.ChatRepository
+	messageRepo        *repositories.MessageRepository
+	userRepo           repositories.UserRepository
+	vetRepo            *repositories.VetRepository
+	bookingRepo        *repositories.BookingRepository
+	caregiverRepo      *repositories.CaregiverRepository
+	vetAppointmentRepo *repositories.VetAppointmentRepository
 }
 
 // NewChatHandlers creates new ChatHandlers
-func NewChatHandlers(chatRepo *repositories.ChatRepository, messageRepo *repositories.MessageRepository, userRepo repositories.UserRepository, vetRepo *repositories.VetRepository) *ChatHandlers {
+func NewChatHandlers(
+	chatRepo *repositories.ChatRepository,
+	messageRepo *repositories.MessageRepository,
+	userRepo repositories.UserRepository,
+	vetRepo *repositories.VetRepository,
+	bookingRepo *repositories.BookingRepository,
+	caregiverRepo *repositories.CaregiverRepository,
+	vetAppointmentRepo *repositories.VetAppointmentRepository,
+) *ChatHandlers {
 	return &ChatHandlers{
-		chatRepo:    chatRepo,
-		messageRepo: messageRepo,
-		userRepo:    userRepo,
-		vetRepo:     vetRepo,
+		chatRepo:           chatRepo,
+		messageRepo:        messageRepo,
+		userRepo:           userRepo,
+		vetRepo:            vetRepo,
+		bookingRepo:        bookingRepo,
+		caregiverRepo:      caregiverRepo,
+		vetAppointmentRepo: vetAppointmentRepo,
 	}
 }
 
@@ -45,8 +60,11 @@ func (h *ChatHandlers) StartChat(c *gin.Context) {
 	}
 
 	var req struct {
-		VetID *uuid.UUID `json:"vetId" binding:"required"`
-		PetID *uuid.UUID `json:"petId"`
+		VetID         *uuid.UUID `json:"vetId"`
+		PetID         *uuid.UUID `json:"petId"`
+		BookingID     *uuid.UUID `json:"bookingId"`
+		AppointmentID *uuid.UUID `json:"appointmentId"`
+		ChatType      string     `json:"chatType"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -54,23 +72,119 @@ func (h *ChatHandlers) StartChat(c *gin.Context) {
 		return
 	}
 
-	// Verify the vet exists
-	var vetProfile models.VetProfile
-	if err := h.vetRepo.GetByUserID(c.Request.Context(), *req.VetID, &vetProfile); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Vet not found"})
+	if req.VetID == nil && req.BookingID == nil && req.AppointmentID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Provide vetId, bookingId, or appointmentId to start a chat"})
+		return
+	}
+
+	if req.BookingID != nil && req.AppointmentID != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Provide either bookingId or appointmentId, not both"})
+		return
+	}
+
+	chatType := normalizeRequestedChatType(req.ChatType, req.BookingID, req.AppointmentID)
+	if chatType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid chatType"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	petOwnerID := userUUID
+	participantID := uuid.Nil
+	petID := req.PetID
+
+	if req.BookingID != nil {
+		booking, err := h.bookingRepo.GetBookingByID(ctx, *req.BookingID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate booking"})
+			return
+		}
+		if booking == nil {
+			c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Booking not found"})
+			return
+		}
+
+		caregiverProfile, err := h.caregiverRepo.GetProfileByID(ctx, booking.CaregiverID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to resolve caregiver profile"})
+			return
+		}
+		if caregiverProfile == nil {
+			c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Caregiver profile not found"})
+			return
+		}
+
+		isOwner := booking.PetOwnerID == userUUID
+		isCaregiver := caregiverProfile.UserID == userUUID
+		if !isOwner && !isCaregiver {
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Access denied for booking chat"})
+			return
+		}
+
+		petOwnerID = booking.PetOwnerID
+		participantID = caregiverProfile.UserID
+		if petID == nil && len(booking.PetIDs) > 0 {
+			petID = &booking.PetIDs[0]
+		}
+	}
+
+	if req.AppointmentID != nil {
+		appointment, err := h.vetAppointmentRepo.GetByID(ctx, *req.AppointmentID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate appointment"})
+			return
+		}
+		if appointment == nil {
+			c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Appointment not found"})
+			return
+		}
+
+		if appointment.PetOwnerID != userUUID && appointment.VetUserID != userUUID {
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Access denied for appointment chat"})
+			return
+		}
+
+		petOwnerID = appointment.PetOwnerID
+		participantID = appointment.VetUserID
+		if petID == nil {
+			petID = &appointment.PetID
+		}
+	}
+
+	if participantID == uuid.Nil {
+		if req.VetID == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "vetId is required"})
+			return
+		}
+
+		var vetProfile models.VetProfile
+		if err := h.vetRepo.GetByUserID(ctx, *req.VetID, &vetProfile); err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Vet not found"})
+			return
+		}
+		participantID = *req.VetID
+	}
+
+	if participantID == petOwnerID {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid chat participants"})
 		return
 	}
 
 	chat := models.Chat{
-		PetOwnerID: userUUID,
-		VetID:      *req.VetID,
-		PetID:      req.PetID,
+		PetOwnerID:    petOwnerID,
+		VetID:         participantID,
+		PetID:         petID,
+		BookingID:     req.BookingID,
+		AppointmentID: req.AppointmentID,
+		ChatType:      chatType,
 	}
 
-	if err := h.chatRepo.CreateChat(c.Request.Context(), &chat); err != nil {
+	if err := h.chatRepo.CreateChat(ctx, &chat); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to create chat", "details": err.Error()})
 		return
 	}
+
+	_ = h.chatRepo.GetChatByID(ctx, chat.ID, userUUID, &chat)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
@@ -96,6 +210,12 @@ func (h *ChatHandlers) GetMyChats(c *gin.Context) {
 	// Check if user is a vet
 	var vetProfile models.VetProfile
 	isVet := h.vetRepo.GetByUserID(c.Request.Context(), userUUID, &vetProfile) == nil
+	if !isVet {
+		caregiverProfile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), userUUID)
+		if err == nil && caregiverProfile != nil {
+			isVet = true
+		}
+	}
 
 	chats, err := h.chatRepo.GetUserChats(c.Request.Context(), userUUID, isVet)
 	if err != nil {
@@ -145,7 +265,7 @@ func (h *ChatHandlers) GetChat(c *gin.Context) {
 	}
 
 	var chat models.Chat
-	if err := h.chatRepo.GetChatByID(c.Request.Context(), chatID, &chat); err != nil {
+	if err := h.chatRepo.GetChatByID(c.Request.Context(), chatID, userUUID, &chat); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Chat not found"})
 		return
 	}
@@ -275,6 +395,12 @@ func (h *ChatHandlers) GetChatMessages(c *gin.Context) {
 	// Check if user is vet and mark chat as read
 	var vetProfile models.VetProfile
 	isVet := h.vetRepo.GetByUserID(c.Request.Context(), userUUID, &vetProfile) == nil
+	if !isVet {
+		caregiverProfile, err := h.caregiverRepo.GetProfileByUserID(c.Request.Context(), userUUID)
+		if err == nil && caregiverProfile != nil {
+			isVet = true
+		}
+	}
 	_ = h.chatRepo.MarkChatAsRead(c.Request.Context(), chatID, isVet)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -285,6 +411,26 @@ func (h *ChatHandlers) GetChatMessages(c *gin.Context) {
 			"limit": limit,
 		},
 	})
+}
+
+func normalizeRequestedChatType(chatType string, bookingID, appointmentID *uuid.UUID) string {
+	normalized := strings.ToLower(strings.TrimSpace(chatType))
+	if normalized == "" {
+		if bookingID != nil {
+			return "active_booking"
+		}
+		if appointmentID != nil {
+			return "vet_consultation"
+		}
+		return "general"
+	}
+
+	switch normalized {
+	case "general", "vet_consultation", "booking_inquiry", "active_booking":
+		return normalized
+	default:
+		return ""
+	}
 }
 
 // MarkMessageAsRead marks a specific message as read

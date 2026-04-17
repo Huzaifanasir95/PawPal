@@ -201,6 +201,9 @@ type Chat struct {
 	PetOwnerID       uuid.UUID  `json:"petOwnerId"`
 	VetID            uuid.UUID  `json:"vetId"`
 	PetID            *uuid.UUID `json:"petId,omitempty"`
+	BookingID        *uuid.UUID `json:"bookingId,omitempty"`
+	AppointmentID    *uuid.UUID `json:"appointmentId,omitempty"`
+	ChatType         string     `json:"chatType,omitempty"`
 	PetName          string     `json:"petName,omitempty"`
 	LastMessage      *string    `json:"lastMessage,omitempty"`
 	LastMessageAt    *time.Time `json:"lastMessageAt,omitempty"`

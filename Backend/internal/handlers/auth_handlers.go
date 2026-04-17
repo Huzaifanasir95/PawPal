@@ -500,30 +500,33 @@ func (h *AuthHandlers) GetUserRoles(c *gin.Context) {
 		if len(roles) > 0 {
 			activeRole = normalizeAccountType(roles[0])
 		}
-		if activeRole == "" {
-			activeRole = "pet_owner"
+	}
+
+	if activeRole != "" {
+		containsActive := false
+		for _, role := range roles {
+			if normalizeAccountType(role) == activeRole {
+				containsActive = true
+				break
+			}
+		}
+
+		if !containsActive {
+			roles = append(roles, activeRole)
 		}
 	}
 
-	containsActive := false
-	for _, role := range roles {
-		if normalizeAccountType(role) == activeRole {
-			containsActive = true
-			break
-		}
+	data := gin.H{
+		"userId": user.ID,
+		"roles":  roles,
 	}
-
-	if !containsActive {
-		roles = append(roles, activeRole)
+	if activeRole != "" {
+		data["activeRole"] = activeRole
 	}
 
 	c.JSON(http.StatusOK, models.GenericResponse{
 		Success: true,
-		Data: gin.H{
-			"userId":     user.ID,
-			"roles":      roles,
-			"activeRole": activeRole,
-		},
+		Data:    data,
 	})
 }
 
@@ -559,10 +562,14 @@ func (h *AuthHandlers) AddUserRole(c *gin.Context) {
 	}
 
 	user, _ := h.authService.GetUserByID(c.Request.Context(), userID)
-	activeRole := "pet_owner"
+	activeRole := normalizedRole
 	if user != nil {
 		if normalized := normalizeAccountType(user.AccountType); normalized != "" {
 			activeRole = normalized
+		} else if len(roles) > 0 {
+			if normalizedFromRoles := normalizeAccountType(roles[0]); normalizedFromRoles != "" {
+				activeRole = normalizedFromRoles
+			}
 		}
 	}
 
@@ -600,7 +607,8 @@ func (h *AuthHandlers) SwitchActiveRole(c *gin.Context) {
 
 	roles, err := h.authService.SwitchActiveRole(c.Request.Context(), userID, normalizedRole)
 	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "not assigned") {
+		lowerErr := strings.ToLower(err.Error())
+		if strings.Contains(lowerErr, "not assigned") || strings.Contains(lowerErr, "no roles assigned") {
 			c.JSON(http.StatusForbidden, models.GenericResponse{
 				Success: false,
 				Message: "Role is not assigned to this user",
@@ -627,34 +635,44 @@ func (h *AuthHandlers) SwitchActiveRole(c *gin.Context) {
 
 func (h *AuthHandlers) buildUserProfile(c *gin.Context, user *models.User) *models.UserProfile {
 	activeRole := normalizeAccountType(user.AccountType)
-	if activeRole == "" {
-		activeRole = "pet_owner"
-	}
 
 	roles, err := h.authService.GetUserRoles(c.Request.Context(), user.ID)
-	if err != nil || len(roles) == 0 {
+	if err != nil {
+		roles = []string{}
+	}
+
+	if len(roles) == 0 && activeRole != "" {
 		roles = []string{activeRole}
 	}
 
-	containsActive := false
-	for _, role := range roles {
-		if normalizeAccountType(role) == activeRole {
-			containsActive = true
-			break
+	if activeRole != "" {
+		containsActive := false
+		for _, role := range roles {
+			if normalizeAccountType(role) == activeRole {
+				containsActive = true
+				break
+			}
+		}
+
+		if !containsActive {
+			roles = append(roles, activeRole)
 		}
 	}
 
-	if !containsActive {
-		roles = append(roles, activeRole)
+	var accountType *string
+	var activeRolePtr *string
+	if activeRole != "" {
+		accountType = &activeRole
+		activeRolePtr = &activeRole
 	}
 
 	return &models.UserProfile{
 		ID:          user.ID,
 		Email:       user.Email,
 		DisplayName: user.DisplayName,
-		AccountType: &activeRole,
+		AccountType: accountType,
 		Roles:       roles,
-		ActiveRole:  &activeRole,
+		ActiveRole:  activeRolePtr,
 		AvatarURL:   user.AvatarURL,
 		CreatedAt:   user.CreatedAt,
 		UpdatedAt:   user.UpdatedAt,

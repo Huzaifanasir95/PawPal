@@ -72,7 +72,15 @@ func main() {
 	healthHandlers := handlers.NewHealthHandlers(healthRepo, petRepo)
 	communityHandlers := handlers.NewCommunityHandlers(communityRepo, userRepo)
 	vetHandlers := handlers.NewVetHandlers(vetRepo)
-	chatHandlers := handlers.NewChatHandlers(chatRepo, messageRepo, userRepo, vetRepo)
+	chatHandlers := handlers.NewChatHandlers(
+		chatRepo,
+		messageRepo,
+		userRepo,
+		vetRepo,
+		bookingRepo,
+		caregiverRepo,
+		vetAppointmentRepo,
+	)
 	wsHandler := handlers.NewWebSocketHandler(messageRepo, chatRepo)
 	marketplaceHandlers := handlers.NewMarketplaceHandlers(marketplaceRepo, userRepo)
 	communityHubHandlers := handlers.NewCommunityHubHandlers(communityHubRepo, userRepo)

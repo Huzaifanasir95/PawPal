@@ -108,6 +108,85 @@ class VetAppointmentRepository {
     }
   }
 
+  Future<VetAppointment> getAppointment(String appointmentId) async {
+    try {
+      final response = await _apiClient.get('/api/v1/vet-appointments/$appointmentId');
+      final payload = response.data;
+      if (payload is! Map<String, dynamic>) {
+        throw Exception('Unexpected server response while loading appointment');
+      }
+
+      if (payload['success'] != true) {
+        throw Exception(payload['error'] ?? 'Failed to load appointment');
+      }
+
+      final appointmentJson = payload['appointment'];
+      if (appointmentJson is! Map) {
+        throw Exception('Appointment payload is incomplete');
+      }
+
+      return VetAppointment.fromJson(
+        Map<String, dynamic>.from(appointmentJson as Map),
+      );
+    } on DioException catch (e) {
+      throw _handleError(e, 'Failed to load appointment');
+    }
+  }
+
+  Future<void> respondAppointment(
+    String appointmentId, {
+    required bool accept,
+    String? responseNote,
+    DateTime? appointmentDatetime,
+    String? meetingLink,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'accept': accept,
+        if (responseNote != null && responseNote.trim().isNotEmpty)
+          'responseNote': responseNote.trim(),
+        if (appointmentDatetime != null)
+          'appointmentDatetime': appointmentDatetime.toUtc().toIso8601String(),
+        if (meetingLink != null && meetingLink.trim().isNotEmpty)
+          'meetingLink': meetingLink.trim(),
+      };
+
+      final response = await _apiClient.post(
+        '/api/v1/vet-appointments/$appointmentId/respond',
+        data: payload,
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['success'] != true) {
+        throw Exception(data['error'] ?? 'Failed to respond to appointment');
+      }
+    } on DioException catch (e) {
+      throw _handleError(e, 'Failed to respond to appointment');
+    }
+  }
+
+  Future<void> completeAppointment(
+    String appointmentId, {
+    String? responseNote,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/v1/vet-appointments/$appointmentId/complete',
+        data: {
+          if (responseNote != null && responseNote.trim().isNotEmpty)
+            'responseNote': responseNote.trim(),
+        },
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['success'] != true) {
+        throw Exception(data['error'] ?? 'Failed to complete appointment');
+      }
+    } on DioException catch (e) {
+      throw _handleError(e, 'Failed to complete appointment');
+    }
+  }
+
   Future<void> cancelAppointment(String appointmentId, String reason) async {
     try {
       await _apiClient.post(

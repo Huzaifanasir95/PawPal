@@ -793,8 +793,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         prefixIcon: Icon(Icons.lock_outline),
                       ),
                       validator: (value) {
-                        if ((value ?? '').isEmpty)
+                        if ((value ?? '').isEmpty) {
                           return 'Enter current password';
+                        }
                         return null;
                       },
                     ),
@@ -809,8 +810,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       validator: (value) {
                         final next = value ?? '';
                         if (next.isEmpty) return 'Enter new password';
-                        if (next.length < 6)
+                        if (next.length < 6) {
                           return 'Password must be at least 6 characters';
+                        }
                         if (next == currentPasswordController.text) {
                           return 'New password must be different';
                         }
@@ -826,8 +828,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         prefixIcon: Icon(Icons.verified_user_outlined),
                       ),
                       validator: (value) {
-                        if ((value ?? '').isEmpty)
+                        if ((value ?? '').isEmpty) {
                           return 'Confirm your new password';
+                        }
                         if (value != newPasswordController.text) {
                           return 'Passwords do not match';
                         }

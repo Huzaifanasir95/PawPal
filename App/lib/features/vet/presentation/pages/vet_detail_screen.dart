@@ -1398,7 +1398,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
                     ),
                     SizedBox(height: 14.h),
                     DropdownButtonFormField<String>(
-                      value: selectedPetId,
+                      initialValue: selectedPetId,
                       decoration: const InputDecoration(
                         labelText: 'Select Pet',
                       ),
@@ -1444,7 +1444,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
                     ),
                     SizedBox(height: 12.h),
                     DropdownButtonFormField<String>(
-                      value: meetingType,
+                      initialValue: meetingType,
                       decoration: const InputDecoration(
                         labelText: 'Meeting Type',
                       ),
@@ -1473,7 +1473,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
                     ),
                     SizedBox(height: 12.h),
                     DropdownButtonFormField<int>(
-                      value: duration,
+                      initialValue: duration,
                       decoration: const InputDecoration(labelText: 'Duration'),
                       items: const [
                         DropdownMenuItem(value: 15, child: Text('15 minutes')),

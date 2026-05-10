@@ -262,7 +262,7 @@ class _CaregiverAvailabilityScreenState extends State<CaregiverAvailabilityScree
                 );
               });
             },
-            activeColor: Theme.of(context).colorScheme.primary,
+            activeThumbColor: Theme.of(context).colorScheme.primary,
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.red),

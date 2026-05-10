@@ -24,7 +24,7 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: width ?? AppDimensions.onboardingButtonWidth,
       height: height ?? AppDimensions.buttonHeight,
       child: Stack(

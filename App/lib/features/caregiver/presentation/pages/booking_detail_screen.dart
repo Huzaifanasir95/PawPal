@@ -885,7 +885,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       ),
                       SizedBox(height: 14.h),
                       DropdownButtonFormField<String>(
-                        value: selectedMethod,
+                        initialValue: selectedMethod,
                         items: const [
                           DropdownMenuItem(value: 'card', child: Text('Card')),
                           DropdownMenuItem(

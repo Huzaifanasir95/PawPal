@@ -39,7 +39,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
   TimeOfDay _endTime = const TimeOfDay(hour: 10, minute: 0);
 
   // Step 3: Pet Selection
-  List<String> _selectedPetIds = [];
+  final List<String> _selectedPetIds = [];
   final PetRepositoryApi _petRepository = getIt<PetRepositoryApi>();
   List<PetModel> _userPets = [];
   bool _isLoadingPets = false;

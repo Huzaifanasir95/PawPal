@@ -169,7 +169,7 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
                 Switch(
                   value: service.isAvailable,
                   onChanged: (value) => _toggleServiceAvailability(service.id, value),
-                  activeColor: Theme.of(context).colorScheme.primary,
+                  activeThumbColor: Theme.of(context).colorScheme.primary,
                 ),
               ],
             ),
@@ -303,7 +303,7 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
                 ),
                 SizedBox(height: 16.h),
                 DropdownButtonFormField<String>(
-                  value: rateType,
+                  initialValue: rateType,
                   decoration: const InputDecoration(labelText: 'Rate Type'),
                   items: const [
                     DropdownMenuItem(value: 'hourly', child: Text('Per Hour')),

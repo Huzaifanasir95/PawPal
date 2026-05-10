@@ -95,9 +95,8 @@ class _OnboardingViewState extends State<OnboardingView> {
                     );
                   },
                 ),
-              Positioned(child: Image.asset(AppImages.primaryLogo),
-              top: 60.h,
-              left: 20.w,
+              Positioned(top: 60.h,
+              left: 20.w,child: Image.asset(AppImages.primaryLogo),
               ),
               // Skip Button positioned according to Figma
               Positioned(

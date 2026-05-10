@@ -152,7 +152,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                     Switch(
                       value: _isPetFriendly,
                       onChanged: (v) => setState(() => _isPetFriendly = v),
-                      activeColor: Colors.green,
+                      activeThumbColor: Colors.green,
                     ),
                   ],
                 ),

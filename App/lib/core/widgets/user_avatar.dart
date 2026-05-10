@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../constants/app_colors.dart';
 
 /// Reusable user avatar widget that displays profile picture or fallback icon
 class UserAvatar extends StatelessWidget {

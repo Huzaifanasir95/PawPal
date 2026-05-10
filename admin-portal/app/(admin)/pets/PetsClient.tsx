@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, type ReactNode } from 'react';
 import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import Badge from '@/components/Badge';
-import { Search, Eye, Trash2, X, ShieldCheck, AlertTriangle, User, PawPrint, Camera, Ruler, Weight, Palette, VenusAndMars, Shield, Heart, Edit } from 'lucide-react';
+import { Search, Eye, Trash2, X, ShieldCheck, AlertTriangle, User, PawPrint, Camera, Ruler, Weight, Palette, Shield, Heart, Edit } from 'lucide-react';
 import { timeAgo, formatDateTime } from '@/lib/utils';
 import { deletePet } from '@/lib/admin-actions';
 
@@ -99,15 +99,6 @@ const deleteItemVariants = {
   hidden: { opacity: 0, y: 8 },
   show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
 };
-
-function InfoItem({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
-      <div className="mt-1 text-sm font-medium text-gray-800 break-words">{value}</div>
-    </div>
-  );
-}
 
 function PetInfoItem({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
   return (

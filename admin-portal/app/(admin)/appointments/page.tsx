@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { createClient } from '@supabase/supabase-js';
-import AppointmentsClient from './AppointmentsClient';
+import AppointmentsClient, { type Appointment } from './AppointmentsClient';
 
 async function getAppointments() {
   const supabase = createClient(
@@ -51,7 +51,7 @@ export default async function AppointmentsPage() {
           {appointments.length} total appointments
         </p>
       </div>
-      <AppointmentsClient appointments={appointments as any} />
+      <AppointmentsClient appointments={appointments as unknown as Appointment[]} />
     </div>
   );
 }

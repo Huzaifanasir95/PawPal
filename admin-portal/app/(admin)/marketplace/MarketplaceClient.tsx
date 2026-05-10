@@ -6,7 +6,7 @@ import Badge from '@/components/Badge';
 import { timeAgo, formatDateTime } from '@/lib/utils';
 import { updateProductStatus, deleteProduct, updateOrderStatus, deleteOrder } from '@/lib/admin-actions';
 
-interface Product {
+export interface Product {
   id: string;
   name: string;
   description: string;
@@ -25,7 +25,7 @@ interface Product {
   category: { name: string } | null;
 }
 
-interface OrderItem {
+export interface OrderItem {
   id: string;
   quantity: number;
   unit_price: number;
@@ -35,7 +35,7 @@ interface OrderItem {
   seller: { display_name: string | null; email: string | null } | null;
 }
 
-interface Order {
+export interface Order {
   id: string;
   status: string;
   total_amount: number;

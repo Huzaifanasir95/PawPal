@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { createClient } from '@supabase/supabase-js';
-import MarketplaceClient from './MarketplaceClient';
+import MarketplaceClient, { type Product, type Order } from './MarketplaceClient';
 
 async function getData() {
   const supabase = createClient(
@@ -79,7 +79,10 @@ export default async function MarketplacePage() {
           {data.products.length} products · {data.orders.length} orders
         </p>
       </div>
-      <MarketplaceClient products={data.products as any} orders={data.orders as any} />
+      <MarketplaceClient
+        products={data.products as unknown as Product[]}
+        orders={data.orders as unknown as Order[]}
+      />
     </div>
   );
 }

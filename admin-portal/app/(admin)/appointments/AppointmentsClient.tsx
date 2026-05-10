@@ -6,7 +6,7 @@ import Badge from '@/components/Badge';
 import { formatDateTime, timeAgo } from '@/lib/utils';
 import { updateVetAppointmentStatus, deleteVetAppointment } from '@/lib/admin-actions';
 
-interface Appointment {
+export interface Appointment {
   id: string;
   appointment_number: string;
   reason: string;

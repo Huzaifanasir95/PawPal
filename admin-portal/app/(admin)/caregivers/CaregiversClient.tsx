@@ -3,10 +3,10 @@
 import { useState, useMemo, useTransition } from 'react';
 import { Search, Eye, Trash2, X, CheckCircle, XCircle, Star, Shield } from 'lucide-react';
 import Badge from '@/components/Badge';
-import { formatDateTime, timeAgo } from '@/lib/utils';
+import { formatDateTime } from '@/lib/utils';
 import { updateCaregiverVerification, deleteCaregiver } from '@/lib/admin-actions';
 
-interface Caregiver {
+export interface Caregiver {
   id: string;
   bio: string | null;
   headline: string | null;
@@ -91,7 +91,7 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
         setCaregivers((prev) => prev.map((c) => c.id === id ? { ...c, is_verified: !current } : c));
         if (selected?.id === id) setSelected((prev) => prev ? { ...prev, is_verified: !current } : null);
       } else {
-        alert('Failed: ' + (res as any).error);
+        alert('Failed: ' + res.error);
       }
     });
   }
@@ -104,7 +104,7 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
         setDeleteTarget(null);
         if (selected?.id === id) setSelected(null);
       } else {
-        alert('Failed: ' + (res as any).error);
+        alert('Failed: ' + res.error);
       }
     });
   }
@@ -235,7 +235,9 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
             <div className="space-y-6 p-6">
               {/* Headline + Bio */}
               {selected.headline && (
-                <p className="font-medium text-gray-700 italic">"{selected.headline}"</p>
+                <p className="font-medium text-gray-700 italic">
+                  &ldquo;{selected.headline}&rdquo;
+                </p>
               )}
               {selected.bio && (
                 <div>
@@ -321,7 +323,9 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
           <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <h3 className="text-lg font-bold text-gray-900">Delete Caregiver?</h3>
             <p className="mt-2 text-sm text-gray-500">
-              Permanently delete <strong>{deleteTarget.owner?.display_name || deleteTarget.owner?.email}</strong>'s caregiver profile? This cannot be undone.
+              Permanently delete{' '}
+              <strong>{deleteTarget.owner?.display_name || deleteTarget.owner?.email}</strong>
+              &apos;s caregiver profile? This cannot be undone.
             </p>
             <div className="mt-5 flex gap-3">
               <button onClick={() => setDeleteTarget(null)} disabled={isPending} className="flex-1 rounded-xl border border-gray-200 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Cancel</button>

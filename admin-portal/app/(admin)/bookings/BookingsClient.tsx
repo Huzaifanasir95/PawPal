@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useMemo, useTransition } from 'react';
-import { Search, Eye, Trash2, X, DollarSign, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Eye, Trash2, X, DollarSign } from 'lucide-react';
 import Badge from '@/components/Badge';
 import { timeAgo, formatDateTime } from '@/lib/utils';
 import { updateBookingStatus, deleteBooking } from '@/lib/admin-actions';
 
-interface Payment {
+export interface Payment {
   id: string;
   booking_id: string;
   amount: number;
@@ -17,7 +17,7 @@ interface Payment {
   created_at: string;
 }
 
-interface Booking {
+export interface Booking {
   id: string;
   booking_number: string;
   status: string;

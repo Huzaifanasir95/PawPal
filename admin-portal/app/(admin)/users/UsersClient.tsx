@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo, useTransition } from 'react';
-import { Search, Trash2, Eye, X } from 'lucide-react';
+import { useState, useMemo, useTransition, type ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { Search, Trash2, Eye, X, UserRound } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { deleteUser } from '@/lib/admin-actions';
 
@@ -18,6 +19,11 @@ interface User {
   created_at: string;
   updated_at: string | null;
 }
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0 },
+};
 
 export default function UsersClient({ users: initialUsers }: { users: User[] }) {
   const [users, setUsers] = useState(initialUsers);
@@ -72,7 +78,13 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
   return (
     <>
       {/* Filters */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <motion.div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        initial="hidden"
+        animate="show"
+        variants={fadeUp}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      >
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -90,7 +102,7 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
               onClick={() => setRoleFilter(btn.key)}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                 roleFilter === btn.key
-                  ? 'bg-[#2C6E69] text-white'
+                  ? 'bg-[#0B1629] text-white'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -98,21 +110,27 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
             </button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <motion.div
+        className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+        initial="hidden"
+        animate="show"
+        variants={fadeUp}
+        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/60">
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">User</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Role</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Pets</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Posts</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Joined</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</th>
+              <tr className="border-b border-gray-100 bg-[#0B1629]">
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white">User</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white">Role</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-widest text-white">Pets</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-widest text-white">Posts</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white">Joined</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-widest text-white">Status</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-widest text-white">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -121,21 +139,18 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
                   <td colSpan={7} className="py-16 text-center text-sm text-gray-400">No users found</td>
                 </tr>
               ) : (
-                filtered.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                filtered.map((u, i) => (
+                  <motion.tr
+                    key={u.id}
+                    className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25, ease: 'easeOut', delay: i * 0.04 }}
+                  >
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {u.avatar_url ? (
-                          <img src={u.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
-                        ) : (
-                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#B3E0DB] text-[#2C6E69] text-xs font-bold uppercase">
-                            {(u.display_name || u.email || '?')[0]}
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-medium text-gray-800">{u.display_name || '—'}</p>
-                          <p className="text-xs text-gray-400">{u.email || '—'}</p>
-                        </div>
+                      <div>
+                        <p className="font-medium text-gray-800">{u.display_name || '—'}</p>
+                        <p className="text-xs text-gray-400">{u.email || '—'}</p>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -169,62 +184,130 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
                         </button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Detail Drawer */}
+      {/* Detail Modal */}
       {selectedUser && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/20" onClick={() => setSelectedUser(null)} />
-          <div className="relative w-full max-w-md bg-white shadow-xl overflow-y-auto">
-            <div className="sticky top-0 flex items-center justify-between border-b bg-white px-6 py-4">
-              <h2 className="text-lg font-semibold text-gray-800">User Details</h2>
-              <button onClick={() => setSelectedUser(null)} className="rounded-lg p-1.5 hover:bg-gray-100 transition-colors">
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
-            </div>
-            <div className="p-6 space-y-6">
-              {/* Avatar + Name */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
+            onClick={() => setSelectedUser(null)}
+          />
+          <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5">
               <div className="flex items-center gap-4">
                 {selectedUser.avatar_url ? (
-                  <img src={selectedUser.avatar_url} alt="" className="h-16 w-16 rounded-full object-cover" />
+                  <img
+                    src={selectedUser.avatar_url}
+                    alt=""
+                    className="h-14 w-14 rounded-2xl object-cover"
+                  />
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#B3E0DB] text-[#2C6E69] text-xl font-bold uppercase">
-                    {(selectedUser.display_name || selectedUser.email || '?')[0]}
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
+                    <UserRound className="h-6 w-6" />
                   </div>
                 )}
                 <div>
-                  <p className="text-lg font-semibold text-gray-800">{selectedUser.display_name || '—'}</p>
+                  <p className="text-lg font-semibold text-gray-900">{selectedUser.display_name || '—'}</p>
                   <p className="text-sm text-gray-500">{selectedUser.email || '—'}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className="rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-600">
+                      {selectedUser.account_type || 'user'}
+                    </span>
+                    <span className="rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-600">
+                      {selectedUser.user_role || 'user'}
+                    </span>
+                    <span
+                      className={`rounded-full px-2.5 py-1 font-semibold ${
+                        selectedUser.is_active === false
+                          ? 'bg-red-50 text-red-600'
+                          : 'bg-emerald-50 text-emerald-600'
+                      }`}
+                    >
+                      {selectedUser.is_active === false ? 'Inactive' : 'Active'}
+                    </span>
+                  </div>
                 </div>
               </div>
-
-              {/* Info Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <InfoItem label="Account Type" value={selectedUser.account_type || 'user'} />
-                <InfoItem label="Role" value={selectedUser.user_role || 'user'} />
-                <InfoItem label="Status" value={selectedUser.is_active === false ? 'Inactive' : 'Active'} />
-                <InfoItem label="Joined" value={formatDateTime(selectedUser.created_at)} />
-                <InfoItem label="Pets" value={String(selectedUser.pets_count)} />
-                <InfoItem label="Posts" value={String(selectedUser.posts_count)} />
-              </div>
-
-              <div className="text-xs text-gray-400 break-all">
-                <span className="font-medium text-gray-500">ID:</span> {selectedUser.id}
-              </div>
-
-              {/* Delete Button */}
               <button
-                onClick={() => { setSelectedUser(null); setDeleteTarget(selectedUser); }}
-                className="w-full rounded-xl border border-red-200 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                onClick={() => setSelectedUser(null)}
+                className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Close"
               >
-                Delete User
+                <X className="h-5 w-5" />
               </button>
+            </div>
+
+            <div className="max-h-[70vh] overflow-y-auto p-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+                    Account
+                  </h3>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <InfoItem label="Account Type" value={selectedUser.account_type || 'user'} />
+                    <InfoItem label="Role" value={selectedUser.user_role || 'user'} />
+                    <InfoItem
+                      label="Status"
+                      value={selectedUser.is_active === false ? 'Inactive' : 'Active'}
+                    />
+                    <InfoItem label="Joined" value={formatDateTime(selectedUser.created_at)} />
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+                    Engagement
+                  </h3>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <InfoItem label="Pets" value={String(selectedUser.pets_count)} />
+                    <InfoItem label="Posts" value={String(selectedUser.posts_count)} />
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 sm:col-span-2">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+                    Identifiers
+                  </h3>
+                  <div className="mt-3">
+                    <p className="text-xs font-medium text-gray-400">User ID</p>
+                    <p className="mt-1 text-sm font-medium text-gray-700 break-all">
+                      {selectedUser.id}
+                    </p>
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-white/80 px-6 py-4">
+              <button
+                onClick={() => setSelectedUser(null)}
+                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                Close
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled
+                  title="Edit coming soon"
+                  className="rounded-xl border border-[#0B1629]/20 bg-[#0B1629]/10 px-4 py-2 text-sm font-semibold text-[#0B1629] opacity-60"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => { setSelectedUser(null); setDeleteTarget(selectedUser); }}
+                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -262,11 +345,11 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
   );
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+function InfoItem({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</p>
-      <p className="mt-0.5 text-sm text-gray-700">{value}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
+      <div className="mt-1 text-sm font-medium text-gray-800">{value}</div>
     </div>
   );
 }

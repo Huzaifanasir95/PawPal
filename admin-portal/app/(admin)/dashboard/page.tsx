@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic';
 
 import { createClient } from '@supabase/supabase-js';
 import StatCard from '@/components/StatCard';
-import DashboardCharts from './DashboardCharts';
 
 async function getStats() {
   const supabase = createClient(
@@ -25,8 +24,6 @@ async function getStats() {
     { count: products },
     { count: caregivers },
     { count: appointments },
-    { data: recentPosts },
-    { data: recentUsers },
   ] = await Promise.all([
     supabase.from('users').select('*', { count: 'exact', head: true }),
     supabase.from('posts').select('*', { count: 'exact', head: true }),
@@ -41,26 +38,7 @@ async function getStats() {
     supabase.from('products').select('*', { count: 'exact', head: true }),
     supabase.from('caregiver_profiles').select('*', { count: 'exact', head: true }),
     supabase.from('vet_appointments').select('*', { count: 'exact', head: true }),
-    supabase.from('posts').select('id, content, category, created_at').order('created_at', { ascending: false }).limit(5),
-    supabase.from('users').select('id, display_name, email, created_at').order('created_at', { ascending: false }).limit(5),
   ]);
-
-  const { data: postsByDay } = await supabase
-    .from('posts')
-    .select('created_at')
-    .gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString());
-
-  const dayCounts: Record<string, number> = {};
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000);
-    const key = d.toLocaleDateString('en-US', { weekday: 'short' });
-    dayCounts[key] = 0;
-  }
-  (postsByDay || []).forEach((p) => {
-    const key = new Date(p.created_at).toLocaleDateString('en-US', { weekday: 'short' });
-    if (key in dayCounts) dayCounts[key]++;
-  });
-  const chartData = Object.entries(dayCounts).map(([day, count]) => ({ day, count }));
 
   return {
     users: users ?? 0, posts: posts ?? 0, events: events ?? 0,
@@ -68,30 +46,23 @@ async function getStats() {
     pets: pets ?? 0, chats: chats ?? 0, bookings: bookings ?? 0,
     orders: orders ?? 0, products: products ?? 0, caregivers: caregivers ?? 0,
     appointments: appointments ?? 0,
-    recentPosts: recentPosts ?? [], recentUsers: recentUsers ?? [], chartData,
   };
 }
 
 export default async function DashboardPage() {
   const stats = await getStats();
   const now = new Date();
-  const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="min-h-screen bg-gray-50/60 p-8">
+    <div className="min-h-screen bg-gray-50/60 px-8 pt-4 pb-8">
 
       {/* ── Header ── */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-400">{greeting} 👋</p>
           <h1 className="mt-0.5 text-2xl font-black text-gray-900 tracking-tight">Dashboard</h1>
           <p className="mt-1 text-sm text-gray-500">
             {now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
-        </div>
-        <div className="hidden sm:flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-semibold text-gray-600">Live Data</span>
         </div>
       </div>
 
@@ -109,7 +80,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Services ── */}
-      <div className="mb-2 mt-7">
+      <div className="mb-2 mt-6">
         <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-gray-400">
           Services
         </p>
@@ -122,7 +93,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Marketplace ── */}
-      <div className="mb-2 mt-7">
+      <div className="mb-2 mt-6">
         <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-gray-400">
           Marketplace &amp; Community Hub
         </p>
@@ -134,14 +105,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Charts ── */}
-      <div className="mt-8">
-        <DashboardCharts
-          chartData={stats.chartData}
-          recentPosts={stats.recentPosts}
-          recentUsers={stats.recentUsers}
-        />
-      </div>
     </div>
   );
 }

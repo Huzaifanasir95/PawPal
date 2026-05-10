@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useTransition, useEffect } from 'react';
+import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import Badge from '@/components/Badge';
-import { Search, Eye, Trash2, X, ShieldCheck } from 'lucide-react';
+import { Search, Eye, Trash2, X, ShieldCheck, UserRound, AlertTriangle } from 'lucide-react';
 import { timeAgo, formatDateTime } from '@/lib/utils';
 import { deletePet } from '@/lib/admin-actions';
 

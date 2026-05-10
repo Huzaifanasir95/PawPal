@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/community_hub_models.dart';
 import '../cubit/events_cubit.dart';
@@ -36,7 +35,7 @@ class EventsPage extends StatelessWidget {
         return Scaffold(
           backgroundColor: Colors.transparent,
           floatingActionButton: FloatingActionButton(
-            backgroundColor: AppColors.primary,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             heroTag: 'events_fab',
             onPressed: () async {
               final created = await Navigator.push<bool>(
@@ -52,7 +51,7 @@ class EventsPage extends StatelessWidget {
                 context.read<EventsCubit>().loadEvents(eventType: state.filterType);
               }
             },
-            child: Icon(Icons.add, color: AppColors.accent, size: 28.sp),
+            child: Icon(Icons.add, color: Theme.of(context).colorScheme.secondary, size: 28.sp),
           ),
           body: Column(
             children: [
@@ -75,17 +74,17 @@ class EventsPage extends StatelessWidget {
                       child: Container(
                         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
                         decoration: BoxDecoration(
-                          color: isActive ? AppColors.accent : AppColors.surface,
+                          color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(20.r),
                           border: Border.all(
-                            color: isActive ? AppColors.accent : AppColors.border,
+                            color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.outline,
                           ),
                         ),
                         child: Text(
                           label,
                           style: AppTextStyles.onboardingBody.copyWith(
                             fontSize: 13.sp,
-                            color: isActive ? Colors.white : AppColors.textPrimary,
+                            color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurface,
                             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                           ),
                         ),
@@ -105,7 +104,7 @@ class EventsPage extends StatelessWidget {
                               'No events found',
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 15.sp,
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               ),
                             ),
                           )
@@ -171,6 +170,8 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormatter = DateFormat('EEE, MMM d · h:mm a');
+    final colorScheme = Theme.of(context).colorScheme;
+    final statusColor = _statusColor(event.status, colorScheme);
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -183,11 +184,11 @@ class _EventCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: colorScheme.shadow.withValues(alpha: 0.08),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -253,7 +254,7 @@ class _EventCard extends StatelessWidget {
                     event.title,
                     style: AppTextStyles.onboardingTitle.copyWith(
                       fontSize: 16.sp,
-                      color: AppColors.accent,
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                     maxLines: 2,
@@ -264,14 +265,14 @@ class _EventCard extends StatelessWidget {
                   // Date
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 14.sp, color: AppColors.textSecondary),
+                      Icon(Icons.calendar_today, size: 14.sp, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                       SizedBox(width: 6.w),
                       Expanded(
                         child: Text(
                           dateFormatter.format(event.startDate),
                           style: AppTextStyles.onboardingBody.copyWith(
                             fontSize: 13.sp,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ),
@@ -283,14 +284,14 @@ class _EventCard extends StatelessWidget {
                   if (event.location != null && event.location!.isNotEmpty)
                     Row(
                       children: [
-                        Icon(Icons.location_on, size: 14.sp, color: AppColors.textSecondary),
+                        Icon(Icons.location_on, size: 14.sp, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                         SizedBox(width: 6.w),
                         Expanded(
                           child: Text(
                             event.location!,
                             style: AppTextStyles.onboardingBody.copyWith(
                               fontSize: 13.sp,
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -304,7 +305,7 @@ class _EventCard extends StatelessWidget {
                     event.description,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 13.sp,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -314,13 +315,13 @@ class _EventCard extends StatelessWidget {
                   // Footer: attendees & capacity
                   Row(
                     children: [
-                      Icon(Icons.people, size: 16.sp, color: AppColors.darkTeal),
+                      Icon(Icons.people, size: 16.sp, color: Theme.of(context).colorScheme.primary),
                       SizedBox(width: 4.w),
                       Text(
                         '${event.rsvpCount} attending',
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 12.sp,
-                          color: AppColors.darkTeal,
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -329,7 +330,7 @@ class _EventCard extends StatelessWidget {
                           ' / ${event.maxAttendees}',
                           style: AppTextStyles.onboardingBody.copyWith(
                             fontSize: 12.sp,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ],
@@ -337,22 +338,14 @@ class _EventCard extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                         decoration: BoxDecoration(
-                          color: event.status == 'upcoming'
-                              ? AppColors.success.withOpacity(0.1)
-                              : event.status == 'ongoing'
-                                  ? Colors.blue.withOpacity(0.1)
-                                  : AppColors.textSecondary.withOpacity(0.1),
+                          color: statusColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: Text(
                           event.status.toUpperCase(),
                           style: AppTextStyles.onboardingBody.copyWith(
                             fontSize: 10.sp,
-                            color: event.status == 'upcoming'
-                                ? AppColors.success
-                                : event.status == 'ongoing'
-                                    ? Colors.blue
-                                    : AppColors.textSecondary,
+                            color: statusColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -367,4 +360,19 @@ class _EventCard extends StatelessWidget {
       ),
     );
   }
+
+  Color _statusColor(String status, ColorScheme colorScheme) {
+    switch (status) {
+      case 'upcoming':
+        return colorScheme.tertiary;
+      case 'ongoing':
+        return colorScheme.secondary;
+      case 'completed':
+        return colorScheme.onSurfaceVariant;
+      default:
+        return colorScheme.onSurfaceVariant;
+    }
+  }
 }
+
+

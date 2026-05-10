@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/utils/responsive_utils.dart';
@@ -25,7 +24,7 @@ class OnboardingButton extends StatelessWidget {
         width: ResponsiveUtils.screenWidth(context) * 0.859, // 335px / 390px
         height: AppDimensions.buttonHeight.h,
         decoration: BoxDecoration(
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
           borderRadius: BorderRadius.circular(AppDimensions.buttonRadius.r),
         ),
         child: Stack(
@@ -37,7 +36,7 @@ class OnboardingButton extends StatelessWidget {
               child: Text(
                 text,
                 style: AppTextStyles.nextButton.copyWith(
-                  color: AppColors.textOnPrimary,
+                  color: Theme.of(context).colorScheme.onPrimary,
                   fontSize: 24.sp,
                 ),
               ),
@@ -50,14 +49,14 @@ class OnboardingButton extends StatelessWidget {
                   width: AppDimensions.buttonIconSize.w,
                   height: AppDimensions.buttonIconSize.h,
                   decoration: BoxDecoration(
-                    color: AppColors.accent,
+                    color: Theme.of(context).colorScheme.secondary,
                     borderRadius: BorderRadius.circular(AppDimensions.buttonIconRadius.r),
                   ),
                   child: Transform.rotate(
                     angle: -0.27, // -15.5 degrees in radians
                     child: Icon(
                       Icons.pets,
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       size: 24.w,
                     ),
                   ),
@@ -69,3 +68,4 @@ class OnboardingButton extends StatelessWidget {
     );
   }
 }
+

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import 'new_password_page.dart';
 
@@ -163,7 +162,7 @@ class _VerifyResetCodePageState extends State<VerifyResetCodePage> {
                       'Enter 6-digit code',
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     SizedBox(height: 16.h),
@@ -188,7 +187,7 @@ class _VerifyResetCodePageState extends State<VerifyResetCodePage> {
                               style: TextStyle(
                                 fontSize: 22.sp,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                               decoration: InputDecoration(
                                 counterText: '',
@@ -201,12 +200,12 @@ class _VerifyResetCodePageState extends State<VerifyResetCodePage> {
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14.r),
                                   borderSide: BorderSide(
-                                      color: AppColors.border, width: 1.5),
+                                      color: Theme.of(context).colorScheme.outline, width: 1.5),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14.r),
                                   borderSide: BorderSide(
-                                      color: AppColors.darkTeal, width: 2.5),
+                                      color: Theme.of(context).colorScheme.primary, width: 2.5),
                                 ),
                               ),
                               onChanged: (value) =>
@@ -223,22 +222,22 @@ class _VerifyResetCodePageState extends State<VerifyResetCodePage> {
                         padding: EdgeInsets.symmetric(
                             horizontal: 14.w, vertical: 10.h),
                         decoration: BoxDecoration(
-                          color: AppColors.darkTeal.withOpacity(0.08),
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12.r),
                           border: Border.all(
-                              color: AppColors.darkTeal.withOpacity(0.2)),
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.2)),
                         ),
                         child: Row(
                           children: [
                             Icon(Icons.info_outline,
-                                size: 16.sp, color: AppColors.darkTeal),
+                                size: 16.sp, color: Theme.of(context).colorScheme.primary),
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
                                 'Dev mode — your token: ${widget.resetToken}',
                                 style: TextStyle(
                                   fontSize: 11.sp,
-                                  color: AppColors.darkTeal,
+                                  color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -253,9 +252,9 @@ class _VerifyResetCodePageState extends State<VerifyResetCodePage> {
                       child: ElevatedButton(
                         onPressed: _isComplete ? _proceed : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.darkTeal,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           disabledBackgroundColor:
-                              AppColors.darkTeal.withOpacity(0.35),
+                              Theme.of(context).colorScheme.primary.withOpacity(0.35),
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -280,7 +279,7 @@ class _VerifyResetCodePageState extends State<VerifyResetCodePage> {
                           'Resend Code',
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: AppColors.darkTeal,
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -296,3 +295,5 @@ class _VerifyResetCodePageState extends State<VerifyResetCodePage> {
     );
   }
 }
+
+

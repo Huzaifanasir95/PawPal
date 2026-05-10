@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
@@ -88,17 +87,17 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F6F2),
         appBar: AppBar(
-          backgroundColor: AppColors.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: AppColors.accent, size: 24.sp),
+            icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.secondary, size: 24.sp),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             'Report Lost / Found Pet',
             style: AppTextStyles.onboardingTitle.copyWith(
               fontSize: 20.sp,
-              color: AppColors.accent,
+              color: Theme.of(context).colorScheme.secondary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -179,13 +178,13 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
         decoration: BoxDecoration(
           color: isActive
-              ? (isLost ? AppColors.error : AppColors.success)
-              : AppColors.surface,
+              ? (isLost ? Theme.of(context).colorScheme.error : Colors.green)
+              : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24.r),
           border: Border.all(
             color: isActive
-                ? (isLost ? AppColors.error : AppColors.success)
-                : AppColors.border,
+                ? (isLost ? Theme.of(context).colorScheme.error : Colors.green)
+                : Theme.of(context).colorScheme.outline,
           ),
         ),
         child: Row(
@@ -194,7 +193,7 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
             Icon(
               isLost ? Icons.pets : Icons.check_circle_outline,
               size: 18.sp,
-              color: isActive ? Colors.white : AppColors.textSecondary,
+              color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             SizedBox(width: 6.w),
             Text(
@@ -202,7 +201,7 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
-                color: isActive ? Colors.white : AppColors.textPrimary,
+                color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
@@ -220,10 +219,10 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
         decoration: BoxDecoration(
           color: isActive
               ? _urgencyColor(value).withOpacity(0.15)
-              : AppColors.surface,
+              : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
-            color: isActive ? _urgencyColor(value) : AppColors.border,
+            color: isActive ? _urgencyColor(value) : Theme.of(context).colorScheme.outline,
           ),
         ),
         child: Text(
@@ -231,7 +230,7 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 13.sp,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-            color: isActive ? _urgencyColor(value) : AppColors.textSecondary,
+            color: isActive ? _urgencyColor(value) : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
       ),
@@ -244,7 +243,7 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
       style: AppTextStyles.onboardingBody.copyWith(
         fontSize: 14.sp,
         fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }
@@ -271,21 +270,21 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
             hintText: hint,
             hintStyle: AppTextStyles.onboardingBody.copyWith(
               fontSize: 14.sp,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
             ),
             contentPadding:
                 EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
@@ -305,7 +304,7 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
           child: ElevatedButton(
             onPressed: state.isCreating ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.r),
               ),
@@ -426,20 +425,20 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 14.h),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: Theme.of(context).colorScheme.outline),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.photo_library_outlined, size: 20.sp, color: AppColors.primary),
+                      Icon(Icons.photo_library_outlined, size: 20.sp, color: Theme.of(context).colorScheme.primary),
                       SizedBox(width: 8.w),
                       Text(
                         'Gallery',
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 14.sp,
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -455,20 +454,20 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 14.h),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: Theme.of(context).colorScheme.outline),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.camera_alt_outlined, size: 20.sp, color: AppColors.primary),
+                      Icon(Icons.camera_alt_outlined, size: 20.sp, color: Theme.of(context).colorScheme.primary),
                       SizedBox(width: 8.w),
                       Text(
                         'Camera',
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 14.sp,
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -484,7 +483,7 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
           '${_selectedImages.length}/5 photos (optional)',
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 12.sp,
-            color: AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
       ],
@@ -499,11 +498,13 @@ class _CreateLostFoundPageState extends State<CreateLostFoundPage> {
   Color _urgencyColor(String urgency) {
     switch (urgency) {
       case 'high':
-        return AppColors.error;
+        return Theme.of(context).colorScheme.error;
       case 'medium':
-        return AppColors.warning;
+        return Colors.orange;
       default:
-        return AppColors.info;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 }
+
+

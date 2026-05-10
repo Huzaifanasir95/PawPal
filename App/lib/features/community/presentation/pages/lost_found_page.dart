@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/community_hub_models.dart';
 import '../cubit/lost_found_cubit.dart';
@@ -19,7 +18,7 @@ class LostFoundPage extends StatelessWidget {
         return Scaffold(
           backgroundColor: Colors.transparent,
           floatingActionButton: FloatingActionButton(
-            backgroundColor: AppColors.primary,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             onPressed: () async {
               final created = await Navigator.push<bool>(
                 context,
@@ -34,7 +33,7 @@ class LostFoundPage extends StatelessWidget {
                 context.read<LostFoundCubit>().loadPosts();
               }
             },
-            child: Icon(Icons.add, color: AppColors.accent, size: 28.sp),
+            child: Icon(Icons.add, color: Theme.of(context).colorScheme.secondary, size: 28.sp),
           ),
           body: Column(
             children: [
@@ -70,17 +69,17 @@ class LostFoundPage extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.accent : AppColors.surface,
+          color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-            color: isActive ? AppColors.accent : AppColors.border,
+            color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.outline,
           ),
         ),
         child: Text(
           label,
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 13.sp,
-            color: isActive ? Colors.white : AppColors.textPrimary,
+            color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurface,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
@@ -112,13 +111,13 @@ class LostFoundPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64.sp, color: AppColors.textSecondary),
+            Icon(Icons.search_off, size: 64.sp, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
             SizedBox(height: 12.h),
             Text(
               'No lost & found posts yet',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 16.sp,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -155,11 +154,11 @@ class LostFoundPage extends StatelessWidget {
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadow,
+              color: Theme.of(context).colorScheme.shadow,
               blurRadius: 8.r,
               offset: const Offset(0, 2),
             ),
@@ -191,7 +190,7 @@ class LostFoundPage extends StatelessWidget {
                         child: Icon(
                           Icons.pets,
                           size: 40.sp,
-                          color: isLost ? AppColors.error.withOpacity(0.5) : AppColors.success.withOpacity(0.5),
+                          color: isLost ? Theme.of(context).colorScheme.error.withOpacity(0.5) : Colors.green.withOpacity(0.5),
                         ),
                       ),
                     ),
@@ -210,7 +209,7 @@ class LostFoundPage extends StatelessWidget {
                     child: Icon(
                       Icons.pets,
                       size: 40.sp,
-                      color: isLost ? AppColors.error.withOpacity(0.5) : AppColors.success.withOpacity(0.5),
+                      color: isLost ? Theme.of(context).colorScheme.error.withOpacity(0.5) : Colors.green.withOpacity(0.5),
                     ),
                   ),
                 // Info section
@@ -226,7 +225,7 @@ class LostFoundPage extends StatelessWidget {
                             Container(
                               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                               decoration: BoxDecoration(
-                                color: isLost ? AppColors.error : AppColors.success,
+                                color: isLost ? Theme.of(context).colorScheme.error : Colors.green,
                                 borderRadius: BorderRadius.circular(6.r),
                               ),
                               child: Text(
@@ -244,7 +243,7 @@ class LostFoundPage extends StatelessWidget {
                                 '• ${post.petType}',
                                 style: AppTextStyles.onboardingBody.copyWith(
                                   fontSize: 12.sp,
-                                  color: AppColors.textSecondary,
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                 ),
                               ),
                             ],
@@ -274,7 +273,7 @@ class LostFoundPage extends StatelessWidget {
                             style: AppTextStyles.onboardingTitle.copyWith(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         SizedBox(height: 4.h),
@@ -285,7 +284,7 @@ class LostFoundPage extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.onboardingBody.copyWith(
                             fontSize: 12.sp,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                         SizedBox(height: 8.h),
@@ -294,7 +293,7 @@ class LostFoundPage extends StatelessWidget {
                           children: [
                             if (post.lastSeenLocation != null) ...[
                               Icon(Icons.location_on_outlined,
-                                  size: 12.sp, color: AppColors.textSecondary),
+                                  size: 12.sp, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                               SizedBox(width: 2.w),
                               Expanded(
                                 child: Text(
@@ -303,7 +302,7 @@ class LostFoundPage extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTextStyles.onboardingBody.copyWith(
                                     fontSize: 11.sp,
-                                    color: AppColors.textSecondary,
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                   ),
                                 ),
                               ),
@@ -312,7 +311,7 @@ class LostFoundPage extends StatelessWidget {
                               _timeAgo(post.createdAt),
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 11.sp,
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               ),
                             ),
                           ],
@@ -332,11 +331,11 @@ class LostFoundPage extends StatelessWidget {
   Color _urgencyColor(String? urgency) {
     switch (urgency) {
       case 'high':
-        return AppColors.error;
+        return Theme.of(context).colorScheme.error;
       case 'medium':
-        return AppColors.warning;
+        return Theme.of(context).colorScheme.tertiary;
       default:
-        return AppColors.info;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 
@@ -348,3 +347,5 @@ class LostFoundPage extends StatelessWidget {
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 }
+
+

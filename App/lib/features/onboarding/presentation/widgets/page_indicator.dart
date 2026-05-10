@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
 
 class PageIndicator extends StatelessWidget {
   final int currentPage;
@@ -27,16 +26,16 @@ class PageIndicator extends StatelessWidget {
                 height: 20,
                 decoration: BoxDecoration(
                   color: index <= currentPage 
-                    ? AppColors.primary 
-                    : AppColors.neutral300,
+                    ? Theme.of(context).colorScheme.primary 
+                    : Theme.of(context).colorScheme.outline,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   Icons.pets,
                   size: 12,
                   color: index <= currentPage 
-                    ? AppColors.textOnPrimary 
-                    : AppColors.textSecondary,
+                    ? Theme.of(context).colorScheme.onPrimary 
+                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             );
@@ -48,3 +47,4 @@ class PageIndicator extends StatelessWidget {
     );
   }
 }
+

@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:typed_data';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/theme/app_theme_controller.dart';
 import '../../../../core/utils/image_service.dart';
@@ -186,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           content: Text(
             'Active role switched to ${_themeRoleLabel(normalizedRole)}',
           ),
-          backgroundColor: AppColors.success,
+          backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
@@ -194,7 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: AppColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -233,7 +232,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           content: Text(
             '${_themeRoleLabel(normalizedRole)} role added and activated',
           ),
-          backgroundColor: AppColors.success,
+          backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
@@ -241,7 +240,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: AppColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -303,7 +302,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ...availableRoles.map(
                   (role) => ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.person_add_alt_1_rounded),
+                    leading: Icon(Icons.person_add_alt_1_rounded),
                     title: Text(_themeRoleLabel(role)),
                     subtitle: Text(_roleDescription(role)),
                     onTap: () {
@@ -391,7 +390,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Home pixel pet style updated'),
-        backgroundColor: AppColors.success,
+        backgroundColor: Colors.green,
       ),
     );
   }
@@ -522,7 +521,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to load profile: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -539,7 +538,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Display name cannot be empty'),
-          backgroundColor: AppColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -608,14 +607,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(warningMessage),
-            backgroundColor: AppColors.warning,
+            backgroundColor: Colors.orange,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully!'),
-            backgroundColor: AppColors.success,
+            backgroundColor: Colors.green,
           ),
         );
       }
@@ -629,7 +628,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update profile: $e'),
-          backgroundColor: AppColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -653,7 +652,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Update Email'),
+              title: Text('Update Email'),
               content: Form(
                 key: formKey,
                 child: Column(
@@ -700,7 +699,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       isSubmitting
                           ? null
                           : () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
+                  child: Text('Cancel'),
                 ),
                 ElevatedButton(
                   onPressed:
@@ -728,7 +727,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Email updated successfully'),
-                                  backgroundColor: AppColors.success,
+                                  backgroundColor: Colors.green,
                                 ),
                               );
                             } catch (e) {
@@ -738,7 +737,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   content: Text(
                                     e.toString().replaceAll('Exception: ', ''),
                                   ),
-                                  backgroundColor: AppColors.error,
+                                  backgroundColor: Theme.of(context).colorScheme.error,
                                 ),
                               );
                             } finally {
@@ -749,12 +748,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                   child:
                       isSubmitting
-                          ? const SizedBox(
+                          ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                          : const Text('Update Email'),
+                          : Text('Update Email'),
                 ),
               ],
             );
@@ -780,7 +779,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Update Password'),
+              title: Text('Update Password'),
               content: Form(
                 key: formKey,
                 child: Column(
@@ -844,7 +843,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       isSubmitting
                           ? null
                           : () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
+                  child: Text('Cancel'),
                 ),
                 ElevatedButton(
                   onPressed:
@@ -871,7 +870,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   content: Text(
                                     'Password updated successfully',
                                   ),
-                                  backgroundColor: AppColors.success,
+                                  backgroundColor: Colors.green,
                                 ),
                               );
                             } catch (e) {
@@ -881,7 +880,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   content: Text(
                                     e.toString().replaceAll('Exception: ', ''),
                                   ),
-                                  backgroundColor: AppColors.error,
+                                  backgroundColor: Theme.of(context).colorScheme.error,
                                 ),
                               );
                             } finally {
@@ -892,12 +891,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                   child:
                       isSubmitting
-                          ? const SizedBox(
+                          ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                          : const Text('Update Password'),
+                          : Text('Update Password'),
                 ),
               ],
             );
@@ -987,7 +986,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to pick image: $e'),
-          backgroundColor: AppColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -1015,7 +1014,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to take photo: $e'),
-          backgroundColor: AppColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -1462,8 +1461,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           _isUpdating
                                               ? null
                                               : _showUpdateEmailDialog,
-                                      icon: const Icon(Icons.alternate_email),
-                                      label: const Text('Change Email'),
+                                      icon: Icon(Icons.alternate_email),
+                                      label: Text('Change Email'),
                                     ),
                                   ),
                                   SizedBox(width: 10.w),
@@ -1473,10 +1472,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           _isUpdating
                                               ? null
                                               : _showUpdatePasswordDialog,
-                                      icon: const Icon(
+                                      icon: Icon(
                                         Icons.lock_reset_outlined,
                                       ),
-                                      label: const Text('Change Password'),
+                                      label: Text('Change Password'),
                                     ),
                                   ),
                                 ],
@@ -1497,7 +1496,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                   child:
                                       _isUpdating
-                                          ? const CircularProgressIndicator(
+                                          ? CircularProgressIndicator(
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
                                                   Colors.white,
@@ -1698,8 +1697,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _isRoleUpdating || roles.length >= _availableRoles.length
                       ? null
                       : _showAddRoleSheet,
-              icon: const Icon(Icons.add_circle_outline_rounded),
-              label: const Text('Add Role'),
+              icon: Icon(Icons.add_circle_outline_rounded),
+              label: Text('Add Role'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: titleColor,
                 side: BorderSide(
@@ -2017,3 +2016,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ); // End Scaffold
   }
 }
+
+

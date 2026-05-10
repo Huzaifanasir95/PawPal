@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_text_styles.dart';
+import 'package:provider/provider.dart';
+import '../theme/app_theme_controller.dart';
 import '../widgets/user_avatar.dart';
 import '../navigation/app_navigator.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
@@ -16,168 +16,176 @@ class CustomDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return BlocConsumer<AuthBloc, AuthState>(
-      listener: (context, state) {
-        // Handle any state changes if needed
-      },
+      listener: (context, state) {},
       builder: (context, state) {
         return Drawer(
-          backgroundColor: AppColors.surface,
-          elevation: 16.r,
-          shape: RoundedRectangleBorder(
+          backgroundColor: colorScheme.surface,
+          elevation: 16,
+          shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.only(
-              topRight: Radius.circular(20.r),
-              bottomRight: Radius.circular(20.r),
+              topRight: Radius.circular(20),
+              bottomRight: Radius.circular(20),
             ),
           ),
           child: SafeArea(
             child: Column(
               children: [
-                // Header with User Profile
-                _buildUserProfileHeader(state),
-                SizedBox(height: 20.h),
-            
-                // Menu Items
+                // ── Header ──────────────────────────────────────────────
+                _buildHeader(context, state, colorScheme, isDark),
+
+                // ── Menu Items ──────────────────────────────────────────
                 Expanded(
                   child: ListView(
-                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    padding: EdgeInsets.fromLTRB(12.w, 8.h, 12.w, 16.h),
                     children: [
-                      // Home Section
-                      _buildDrawerSection('Home'),
-                      _buildDrawerItem(
-                        icon: Icons.home,
+                      _DrawerSection(label: 'Home'),
+                      _DrawerItem(
+                        icon: Icons.home_rounded,
                         title: 'Home',
+                        colorScheme: colorScheme,
                         onTap: () {
                           Navigator.pop(context);
-                          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/',
+                            (route) => false,
+                          );
                         },
                       ),
-            
-                      SizedBox(height: 20.h),
-            
-                      // Pets Section
-                      _buildDrawerSection('Pets'),
-                      _buildDrawerItem(
-                        icon: Icons.pets,
+
+                      SizedBox(height: 8.h),
+                      _DrawerSection(label: 'Pets'),
+                      _DrawerItem(
+                        icon: Icons.pets_rounded,
                         title: 'My Pets',
+                        colorScheme: colorScheme,
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const MyPetsScreen(),
+                              builder: (_) => const MyPetsScreen(),
                             ),
                           );
                         },
                       ),
-            
-                      SizedBox(height: 20.h),
-            
-                      // Services Section
-                      _buildDrawerSection('Services'),
-                      _buildDrawerItem(
-                        icon: Icons.local_hospital,
+
+                      SizedBox(height: 8.h),
+                      _DrawerSection(label: 'Services'),
+                      _DrawerItem(
+                        icon: Icons.local_hospital_rounded,
                         title: 'Find Vets',
+                        colorScheme: colorScheme,
                         onTap: () {
                           Navigator.pop(context);
                           AppNavigator.navigateToVetsList(context);
                         },
                       ),
-                      _buildDrawerItem(
-                        icon: Icons.shopping_bag,
+                      _DrawerItem(
+                        icon: Icons.storefront_rounded,
                         title: 'Marketplace',
+                        colorScheme: colorScheme,
                         onTap: () {
                           Navigator.pop(context);
                           AppNavigator.navigateToMarketplace(context);
                         },
                       ),
-                      _buildDrawerItem(
-                        icon: Icons.home_work_outlined,
+                      _DrawerItem(
+                        icon: Icons.home_work_rounded,
                         title: 'Pet Sitting',
+                        colorScheme: colorScheme,
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const CaregiversListScreen(),
+                              builder: (_) => const CaregiversListScreen(),
                             ),
                           );
                         },
                       ),
-            
-                      SizedBox(height: 20.h),
-            
-                      // Community Section
-                      _buildDrawerSection('Community'),
-                      _buildDrawerItem(
-                        icon: Icons.groups,
+
+                      SizedBox(height: 8.h),
+                      _DrawerSection(label: 'Community'),
+                      _DrawerItem(
+                        icon: Icons.groups_rounded,
                         title: 'Community Hub',
+                        colorScheme: colorScheme,
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const CommunityHubPage(),
+                              builder: (_) => const CommunityHubPage(),
                             ),
                           );
                         },
                       ),
-            
-                      SizedBox(height: 20.h),
-            
-                      // Chatbot Section
-                      _buildDrawerSection('Chatbot'),
-                      _buildDrawerItem(
-                        icon: Icons.chat,
+
+                      SizedBox(height: 8.h),
+                      _DrawerSection(label: 'AI Assistant'),
+                      _DrawerItem(
+                        icon: Icons.smart_toy_rounded,
                         title: 'Pet Care Assistant',
+                        colorScheme: colorScheme,
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const ChatbotScreen(),
+                              builder: (_) => const ChatbotScreen(),
                             ),
                           );
                         },
                       ),
-            
-                      SizedBox(height: 20.h),
-            
-                      // Account Section
-                      _buildDrawerSection('Account'),
-                      
-                      _buildDrawerItem(
-                        icon: Icons.settings,
+
+                      SizedBox(height: 8.h),
+                      _DrawerSection(label: 'Account'),
+                      _DrawerItem(
+                        icon: Icons.settings_rounded,
                         title: 'Settings',
+                        colorScheme: colorScheme,
                         onTap: () {
                           Navigator.pop(context);
-                          // Navigate to settings
                         },
                       ),
-                      _buildDrawerItem(
-                        icon: Icons.help_outline,
+                      _DrawerItem(
+                        icon: Icons.help_outline_rounded,
                         title: 'Help & Support',
+                        colorScheme: colorScheme,
                         onTap: () {
                           Navigator.pop(context);
-                          // Navigate to help
                         },
                       ),
-            
-                      SizedBox(height: 20.h),
-            
-                      // Logout
-                      _buildDrawerItem(
-                        icon: Icons.logout,
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.h),
+                        child: Divider(
+                          color: colorScheme.outline.withValues(alpha: 0.2),
+                        ),
+                      ),
+
+                      _DrawerItem(
+                        icon: Icons.logout_rounded,
                         title: 'Logout',
+                        colorScheme: colorScheme,
+                        isDestructive: true,
                         onTap: () {
                           Navigator.pop(context);
-                          _showLogoutDialog(context);
+                          _showLogoutDialog(context, colorScheme);
                         },
-                        isDestructive: true,
                       ),
                     ],
                   ),
                 ),
+
+                // ── Theme Indicator ─────────────────────────────────────
+                _buildThemeFooter(context, colorScheme),
               ],
             ),
           ),
@@ -186,245 +194,321 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildUserProfileHeader(AuthState state) {
+  Widget _buildHeader(
+    BuildContext context,
+    AuthState state,
+    ColorScheme colorScheme,
+    bool isDark,
+  ) {
     return state.when(
-      initial: () => _buildGuestHeader(),
-      loading: () => _buildGuestHeader(),
-      authenticated: (user) => Container(
-        height: 100.h,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(20.r),
-            bottomRight: Radius.circular(20.r),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 8.r,
-              offset: Offset(0, 2.h),
-            ),
-          ],
-        ),
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-        child: Row(
-          children: [
-            // User Avatar - Smaller circle on the left
-            UserAvatar(
-              imageUrl: user.photoURL,
-              size: 50.w,
-              showBorder: true,
-              borderColor: AppColors.accent.withOpacity(0.2),
-              borderWidth: 2.w,
-            ),
-            SizedBox(width: 16.w),
-            // User Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // User Name
-                  Text(
-                    user.displayName ?? user.email.split('@')[0],
-                    style: AppTextStyles.onboardingTitle.copyWith(
-                      fontSize: 18.sp,
-                      color: AppColors.accent,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 2.h),
-                  // User Email
-                  Text(
-                    user.email,
-                    style: AppTextStyles.onboardingBody.copyWith(
-                      fontSize: 12.sp,
-                      color: AppColors.accent.withOpacity(0.8),
-                      fontWeight: FontWeight.w400,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      initial: () => _buildHeaderContent(
+        context: context,
+        name: 'Guest',
+        email: '',
+        photoUrl: null,
+        colorScheme: colorScheme,
+        isDark: isDark,
       ),
-      unauthenticated: () => _buildGuestHeader(),
-      error: (message) => _buildGuestHeader(),
-      passwordResetSent: () => _buildGuestHeader(),
-      accountTypeRequired: (idToken, displayName, photoUrl) => _buildGuestHeader(),
-    );
-  }
-
-  Widget _buildGuestHeader() {
-    return Container(
-      height: 100.h,
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20.r),
-          bottomRight: Radius.circular(20.r),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 8.r,
-            offset: Offset(0, 2.h),
-          ),
-        ],
+      loading: () => _buildHeaderContent(
+        context: context,
+        name: 'Loading...',
+        email: '',
+        photoUrl: null,
+        colorScheme: colorScheme,
+        isDark: isDark,
       ),
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      child: Row(
-        children: [
-          Container(
-            width: 50.w,
-            height: 50.h,
-            decoration: BoxDecoration(
-              color: AppColors.accent.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(25.r),
-              border: Border.all(
-                color: AppColors.accent.withOpacity(0.2),
-                width: 2.w,
-              ),
-            ),
-            child: Icon(
-              Icons.person,
-              color: AppColors.accent,
-              size: 25.w,
-            ),
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Guest User',
-                  style: AppTextStyles.onboardingTitle.copyWith(
-                    fontSize: 18.sp,
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+      authenticated: (user) => _buildHeaderContent(
+        context: context,
+        name: user.displayName ?? user.email.split('@')[0],
+        email: user.email,
+        photoUrl: user.photoURL,
+        colorScheme: colorScheme,
+        isDark: isDark,
+      ),
+      unauthenticated: () => _buildHeaderContent(
+        context: context,
+        name: 'Guest',
+        email: '',
+        photoUrl: null,
+        colorScheme: colorScheme,
+        isDark: isDark,
+      ),
+      error: (_) => _buildHeaderContent(
+        context: context,
+        name: 'Guest',
+        email: '',
+        photoUrl: null,
+        colorScheme: colorScheme,
+        isDark: isDark,
+      ),
+      passwordResetSent: () => _buildHeaderContent(
+        context: context,
+        name: 'Guest',
+        email: '',
+        photoUrl: null,
+        colorScheme: colorScheme,
+        isDark: isDark,
+      ),
+      accountTypeRequired: (_, __, ___) => _buildHeaderContent(
+        context: context,
+        name: 'Guest',
+        email: '',
+        photoUrl: null,
+        colorScheme: colorScheme,
+        isDark: isDark,
       ),
     );
   }
 
-  Widget _buildDrawerSection(String title) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 8.h),
-      child: Text(
-        title,
-        style: AppTextStyles.onboardingBody.copyWith(
-          fontSize: 14.sp,
-          color: AppColors.textSecondary,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    bool isDestructive = false,
+  Widget _buildHeaderContent({
+    required BuildContext context,
+    required String name,
+    required String email,
+    required String? photoUrl,
+    required ColorScheme colorScheme,
+    required bool isDark,
   }) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 2.h),
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 24.h),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.r),
-        color: Colors.transparent,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.primary,
+            colorScheme.primary.withValues(alpha: 0.8),
+          ],
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(0),
+          bottomRight: Radius.circular(0),
+        ),
       ),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: isDestructive ? AppColors.error : AppColors.primary,
-          size: 24.sp,
-        ),
-        title: Text(
-          title,
-          style: AppTextStyles.onboardingBody.copyWith(
-            fontSize: 16.sp,
-            color: isDestructive ? AppColors.error : AppColors.textPrimary,
-            fontWeight: FontWeight.w500,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar
+          UserAvatar(
+            imageUrl: photoUrl,
+            size: 60.w,
+            showBorder: true,
+            borderColor: colorScheme.onPrimary.withValues(alpha: 0.4),
+            borderWidth: 2.5,
           ),
-        ),
-        onTap: onTap,
-        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-        dense: true,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.r),
-        ),
-        hoverColor: AppColors.primary.withOpacity(0.1),
-        selectedTileColor: AppColors.primary.withOpacity(0.1),
+          SizedBox(height: 14.h),
+          // Name
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w800,
+              color: colorScheme.onPrimary,
+              letterSpacing: -0.3,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (email.isNotEmpty) ...[
+            SizedBox(height: 3.h),
+            Text(
+              email,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w400,
+                color: colorScheme.onPrimary.withValues(alpha: 0.75),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
       ),
     );
   }
 
-  static void _showLogoutDialog(BuildContext context) {
-    showDialog(
+  Widget _buildThemeFooter(BuildContext context, ColorScheme colorScheme) {
+    final themeController = context.watch<AppThemeController>();
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.18),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            themeController.isDarkMode
+                ? Icons.dark_mode_rounded
+                : Icons.light_mode_rounded,
+            color: colorScheme.onSurfaceVariant,
+            size: 18.sp,
+          ),
+          SizedBox(width: 10.w),
+          Text(
+            themeController.isDarkMode ? 'Dark Mode' : 'Light Mode',
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const Spacer(),
+          Transform.scale(
+            scale: 0.85,
+            child: Switch.adaptive(
+              value: themeController.isDarkMode,
+              onChanged: (value) => themeController.setDarkMode(value),
+              activeColor: colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static void _showLogoutDialog(BuildContext context, ColorScheme colorScheme) {
+    showDialog<void>(
       context: context,
-      builder: (BuildContext dialogContext) {
+      builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: AppColors.surface,
+          backgroundColor: colorScheme.surface,
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(20),
           ),
           title: Text(
             'Logout',
-            style: AppTextStyles.onboardingTitle.copyWith(
-              fontSize: 20.sp,
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
             ),
           ),
           content: Text(
             'Are you sure you want to logout?',
-            style: AppTextStyles.onboardingBody.copyWith(
-              fontSize: 16.sp,
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              fontSize: 15,
+              color: colorScheme.onSurfaceVariant,
+              height: 1.4,
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 'Cancel',
-                style: AppTextStyles.onboardingBody.copyWith(
-                  fontSize: 16.sp,
-                  color: AppColors.primary,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-            TextButton(
+            FilledButton(
               onPressed: () {
-                Navigator.pop(dialogContext);
-                // Perform logout
-                // context.read<AuthBloc>().add(AuthLogoutRequested());
+                Navigator.of(dialogContext).pop();
+                Future.microtask(() {
+                  if (!context.mounted) return;
+                  context.read<AuthBloc>().add(const AuthEvent.signOut());
+                });
               },
-              child: Text(
-                'Logout',
-                style: AppTextStyles.onboardingBody.copyWith(
-                  fontSize: 16.sp,
-                  color: AppColors.error,
-                  fontWeight: FontWeight.w500,
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.error,
+                foregroundColor: colorScheme.onError,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
+              child: const Text('Logout'),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+// ── Section Label ──────────────────────────────────────────────────────────────
+
+class _DrawerSection extends StatelessWidget {
+  final String label;
+  const _DrawerSection({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(8.w, 12.h, 8.w, 4.h),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          fontSize: 10.5.sp,
+          fontWeight: FontWeight.w800,
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.65),
+          letterSpacing: 1.0,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Drawer Item ────────────────────────────────────────────────────────────────
+
+class _DrawerItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final ColorScheme colorScheme;
+  final bool isDestructive;
+
+  const _DrawerItem({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    required this.colorScheme,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fgColor = isDestructive ? colorScheme.error : colorScheme.onSurface;
+    final iconColor =
+        isDestructive ? colorScheme.error : colorScheme.onSurfaceVariant;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        splashColor: (isDestructive ? colorScheme.error : colorScheme.primary)
+            .withValues(alpha: 0.10),
+        highlightColor: (isDestructive
+                ? colorScheme.error
+                : colorScheme.primary)
+            .withValues(alpha: 0.06),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+          child: Row(
+            children: [
+              Icon(icon, color: iconColor, size: 20.sp),
+              SizedBox(width: 14.w),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14.5.sp,
+                  fontWeight: FontWeight.w600,
+                  color: fgColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

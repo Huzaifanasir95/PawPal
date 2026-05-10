@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
@@ -115,8 +114,8 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                   height: 28.h,
                   decoration: BoxDecoration(
                     color: isCompleted || isCurrent
-                        ? AppColors.primary
-                        : AppColors.textSecondary.withOpacity(0.2),
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -125,7 +124,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                         : Text(
                             '${index + 1}',
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: isCurrent ? Colors.white : AppColors.textSecondary,
+                              color: isCurrent ? Colors.white : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
                   ),
@@ -135,8 +134,8 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                     child: Container(
                       height: 2.h,
                       color: isCompleted
-                          ? AppColors.primary
-                          : AppColors.textSecondary.withOpacity(0.2),
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.2),
                     ),
                   ),
               ],
@@ -175,7 +174,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         SizedBox(height: 8.h),
         Text(
           'Choose the type of care you need',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
         ),
         SizedBox(height: 24.h),
         if (services.isEmpty)
@@ -183,18 +182,18 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
             width: double.infinity,
             padding: EdgeInsets.all(20.w),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: AppColors.textSecondary.withOpacity(0.2)),
+              border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.2)),
             ),
             child: Column(
               children: [
-                Icon(Icons.schedule_outlined, size: 40.w, color: AppColors.textSecondary),
+                Icon(Icons.schedule_outlined, size: 40.w, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                 SizedBox(height: 10.h),
                 Text(
                   'No bookable services available right now.',
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                 ),
               ],
             ),
@@ -214,10 +213,10 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         margin: EdgeInsets.only(bottom: 12.h),
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.transparent,
+            color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
             width: 2,
           ),
         ),
@@ -227,7 +226,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
               value: service.id,
               groupValue: _selectedService?.id,
               onChanged: (_) => setState(() => _selectedService = service),
-              activeColor: AppColors.primary,
+              activeColor: Theme.of(context).colorScheme.primary,
             ),
             SizedBox(width: 8.w),
             Expanded(
@@ -242,13 +241,13 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                     SizedBox(height: 4.h),
                     Text(
                       service.description!,
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                      style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                     ),
                   ],
                   SizedBox(height: 4.h),
                   Text(
                     '${service.durationMinutes ?? 60} mins • Max ${widget.caregiver.maxPetsAtOnce} pets',
-                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.labelSmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                   ),
                 ],
               ),
@@ -258,12 +257,12 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
               children: [
                 Text(
                   '${service.currency} ${service.rateAmount.toStringAsFixed(0)}',
-                  style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary),
+                  style: AppTextStyles.titleMedium.copyWith(color: Theme.of(context).colorScheme.primary),
                 ),
                 if (service.additionalPetRate > 0)
                   Text(
                     '+${service.additionalPetRate.toStringAsFixed(0)}/pet',
-                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.labelSmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                   ),
               ],
             ),
@@ -284,7 +283,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         SizedBox(height: 8.h),
         Text(
           'When do you need the service?',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
         ),
         SizedBox(height: 24.h),
         _buildDateSelector(),
@@ -346,7 +345,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Column(
@@ -359,19 +358,19 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
             child: Container(
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.textSecondary.withOpacity(0.2)),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.2)),
                 borderRadius: BorderRadius.circular(8.r),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_today, color: AppColors.primary, size: 20.w),
+                  Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary, size: 20.w),
                   SizedBox(width: 12.w),
                   Text(
                     '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
                     style: AppTextStyles.bodyLarge,
                   ),
                   const Spacer(),
-                  Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                  Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                 ],
               ),
             ),
@@ -385,7 +384,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Column(
@@ -401,12 +400,12 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                   child: Container(
                     padding: EdgeInsets.all(16.w),
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.textSecondary.withOpacity(0.2)),
+                      border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.2)),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Column(
                       children: [
-                        Text('Start', style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary)),
+                        Text('Start', style: AppTextStyles.labelSmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                         SizedBox(height: 4.h),
                         Text(
                           _formatTime(_startTime),
@@ -418,7 +417,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                 ),
               ),
               SizedBox(width: 16.w),
-              Icon(Icons.arrow_forward, color: AppColors.textSecondary),
+              Icon(Icons.arrow_forward, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               SizedBox(width: 16.w),
               Expanded(
                 child: GestureDetector(
@@ -426,12 +425,12 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                   child: Container(
                     padding: EdgeInsets.all(16.w),
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.textSecondary.withOpacity(0.2)),
+                      border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.2)),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Column(
                       children: [
-                        Text('End', style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary)),
+                        Text('End', style: AppTextStyles.labelSmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                         SizedBox(height: 4.h),
                         Text(
                           _formatTime(_endTime),
@@ -509,7 +508,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         SizedBox(height: 8.h),
         Text(
           'Which pets need care?',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
         ),
         SizedBox(height: 24.h),
         if (_isLoadingPets)
@@ -520,21 +519,21 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
           Container(
             padding: EdgeInsets.all(24.w),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Column(
               children: [
-                Icon(Icons.pets, size: 48.w, color: AppColors.textSecondary),
+                Icon(Icons.pets, size: 48.w, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                 SizedBox(height: 12.h),
                 Text(
                   _isLoadingPets ? 'Loading pets...' : 'No pets found',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                 ),
                 SizedBox(height: 8.h),
                 Text(
                   'Add your pets first to book a service',
-                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.labelSmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                 ),
               ],
             ),
@@ -567,10 +566,10 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         margin: EdgeInsets.only(bottom: 12.h),
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.transparent,
+            color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
             width: 2,
           ),
         ),
@@ -590,12 +589,12 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                   }
                 });
               },
-              activeColor: AppColors.primary,
+              activeColor: Theme.of(context).colorScheme.primary,
             ),
             SizedBox(width: 8.w),
             CircleAvatar(
               radius: 24.r,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               child: Text(
                 pet.type.toLowerCase() == 'dog' ? '🐕' : '🐈',
                 style: TextStyle(fontSize: 24.sp),
@@ -611,7 +610,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                 ),
                 Text(
                   petTypeLabel,
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                 ),
               ],
             ),
@@ -632,7 +631,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         SizedBox(height: 8.h),
         Text(
           'Final details for your booking',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
         ),
         SizedBox(height: 24.h),
         _buildLocationSelector(),
@@ -648,7 +647,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Column(
@@ -668,13 +667,13 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                     padding: EdgeInsets.all(12.w),
                     decoration: BoxDecoration(
                       color: _locationType == 'owner_home'
-                          ? AppColors.primary.withOpacity(0.1)
+                          ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(8.r),
                       border: Border.all(
                         color: _locationType == 'owner_home'
-                            ? AppColors.primary
-                            : AppColors.textSecondary.withOpacity(0.2),
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.2),
                       ),
                     ),
                     child: Column(
@@ -682,16 +681,16 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                         Icon(
                           Icons.home,
                           color: _locationType == 'owner_home'
-                              ? AppColors.primary
-                              : AppColors.textSecondary,
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         ),
                         SizedBox(height: 4.h),
                         Text(
                           'My Home',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: _locationType == 'owner_home'
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ],
@@ -707,13 +706,13 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                     padding: EdgeInsets.all(12.w),
                     decoration: BoxDecoration(
                       color: _locationType == 'caregiver_home'
-                          ? AppColors.primary.withOpacity(0.1)
+                          ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(8.r),
                       border: Border.all(
                         color: _locationType == 'caregiver_home'
-                            ? AppColors.primary
-                            : AppColors.textSecondary.withOpacity(0.2),
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.2),
                       ),
                     ),
                     child: Column(
@@ -721,16 +720,16 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                         Icon(
                           Icons.person_pin_circle,
                           color: _locationType == 'caregiver_home'
-                              ? AppColors.primary
-                              : AppColors.textSecondary,
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         ),
                         SizedBox(height: 4.h),
                         Text(
                           "Caregiver's",
                           style: AppTextStyles.bodySmall.copyWith(
                             color: _locationType == 'caregiver_home'
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ],
@@ -762,7 +761,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Column(
@@ -799,7 +798,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Column(
@@ -824,7 +823,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
               ),
               Text(
                 'PKR ${total.toStringAsFixed(0)}',
-                style: AppTextStyles.titleLarge.copyWith(color: AppColors.primary),
+                style: AppTextStyles.titleLarge.copyWith(color: Theme.of(context).colorScheme.primary),
               ),
             ],
           ),
@@ -850,7 +849,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -868,7 +867,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                   onPressed: () => setState(() => _currentStep--),
                   style: OutlinedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16.h),
-                    side: BorderSide(color: AppColors.primary),
+                    side: BorderSide(color: Theme.of(context).colorScheme.primary),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
@@ -882,7 +881,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
               child: ElevatedButton(
                 onPressed: _canProceed() ? _handleNext : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding: EdgeInsets.symmetric(vertical: 16.h),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
@@ -1112,3 +1111,4 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     }
   }
 }
+

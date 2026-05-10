@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
@@ -111,16 +110,16 @@ class _CaregiverAvailabilityScreenState extends State<CaregiverAvailabilityScree
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(
           'Availability',
-          style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.titleLarge.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
@@ -134,7 +133,7 @@ class _CaregiverAvailabilityScreenState extends State<CaregiverAvailabilityScree
                   )
                 : Text(
                     'Save',
-                    style: AppTextStyles.buttonMedium.copyWith(color: AppColors.primary),
+                    style: AppTextStyles.buttonMedium.copyWith(color: Theme.of(context).colorScheme.primary),
                   ),
           ),
         ],
@@ -158,7 +157,7 @@ class _CaregiverAvailabilityScreenState extends State<CaregiverAvailabilityScree
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
@@ -182,10 +181,10 @@ class _CaregiverAvailabilityScreenState extends State<CaregiverAvailabilityScree
                 if (!hasSlots)
                   Text(
                     'Not Available',
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                   ),
                 IconButton(
-                  icon: const Icon(Icons.add_circle, color: AppColors.primary),
+                  icon: Icon(Icons.add_circle, color: Theme.of(context).colorScheme.primary),
                   onPressed: () => _addTimeSlot(dayOfWeek),
                 ),
               ],
@@ -213,8 +212,8 @@ class _CaregiverAvailabilityScreenState extends State<CaregiverAvailabilityScree
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
         color: slot.isAvailable
-            ? AppColors.primary.withOpacity(0.1)
-            : AppColors.textSecondary.withOpacity(0.1),
+            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+            : Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.1),
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: Row(
@@ -263,7 +262,7 @@ class _CaregiverAvailabilityScreenState extends State<CaregiverAvailabilityScree
                 );
               });
             },
-            activeColor: AppColors.primary,
+            activeColor: Theme.of(context).colorScheme.primary,
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.red),
@@ -323,3 +322,4 @@ class _TimeSlot {
     this.isAvailable = true,
   });
 }
+

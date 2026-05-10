@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/app_images.dart';
 import '../../../../core/widgets/custom_drawer.dart';
 import '../../../../core/navigation/app_navigator.dart';
@@ -26,17 +24,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const CustomDrawer(),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
-            Icons.menu,
-            color: AppColors.accent,
+            Icons.menu_rounded,
+            color: colorScheme.onPrimary,
             size: 24.sp,
           ),
           onPressed: () {
@@ -54,12 +56,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 32.w,
                   height: 32.h,
                   decoration: BoxDecoration(
-                    color: AppColors.accent,
+                    color: colorScheme.onPrimary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16.r),
                   ),
                   child: Icon(
                     Icons.pets,
-                    color: AppColors.primary,
+                    color: colorScheme.onPrimary,
                     size: 16.w,
                   ),
                 );
@@ -68,23 +70,21 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(width: 12.w),
             Text(
               AppStrings.appName,
-              style: AppTextStyles.onboardingTitle.copyWith(
+              style: TextStyle(
                 fontSize: 20.sp,
-                color: AppColors.accent,
-                fontWeight: FontWeight.w600,
+                color: colorScheme.onPrimary,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
               ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            onPressed: () {
-              // Show logout confirmation dialog
-              _showLogoutDialog(context);
-            },
+            onPressed: () => _showLogoutDialog(context),
             icon: Icon(
-              Icons.logout,
-              color: AppColors.accent,
+              Icons.logout_rounded,
+              color: colorScheme.onPrimary,
               size: 24.sp,
             ),
           ),
@@ -96,85 +96,96 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 20.h),
-            
+
             // Welcome Message
             Text(
               AppStrings.welcome,
-              style: AppTextStyles.onboardingTitle.copyWith(
+              style: TextStyle(
                 fontSize: 32.sp,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
               ),
             ),
-            
+
             SizedBox(height: 8.h),
-            
+
             Text(
               AppStrings.findYourPet,
-              style: AppTextStyles.onboardingBody.copyWith(
-                fontSize: 18.sp,
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w400,
               ),
             ),
-            
-            SizedBox(height: 30.h),
-            
+
+            SizedBox(height: 24.h),
+
             // Search Bar
             Container(
-              height: 56.h,
+              height: 52.h,
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainer,
-                borderRadius: BorderRadius.circular(28.r),
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(
-                  color: AppColors.border,
-                  width: 1,
+                  color: colorScheme.outline.withValues(alpha: 0.35),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
-                  SizedBox(width: 20.w),
+                  SizedBox(width: 16.w),
                   Icon(
-                    Icons.search,
-                    color: AppColors.textSecondary,
+                    Icons.search_rounded,
+                    color: colorScheme.onSurfaceVariant,
                     size: 20.sp,
                   ),
                   SizedBox(width: 12.w),
                   Expanded(
                     child: TextField(
-                      style: AppTextStyles.onboardingBody.copyWith(
-                        fontSize: 16.sp,
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        color: colorScheme.onSurface,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Search for pets...',
-                        hintStyle: AppTextStyles.onboardingBody.copyWith(
-                          fontSize: 16.sp,
-                          color: AppColors.textSecondary,
+                        hintStyle: TextStyle(
+                          fontSize: 15.sp,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                         border: InputBorder.none,
+                        filled: false,
+                        contentPadding: EdgeInsets.zero,
                       ),
                     ),
                   ),
-                  SizedBox(width: 20.w),
+                  SizedBox(width: 16.w),
                 ],
               ),
             ),
-            
-            SizedBox(height: 30.h),
-            
+
+            SizedBox(height: 28.h),
+
             // Quick Actions
             Row(
               children: [
                 Expanded(
                   child: _buildQuickActionCard(
+                    context: context,
                     title: 'Add Pet',
-                    icon: Icons.add_circle_outline,
-                    color: AppColors.primary,
+                    icon: Icons.add_circle_outline_rounded,
+                    color: colorScheme.primary,
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const AddPetScreen(),
+                          builder: (_) => const AddPetScreen(),
                         ),
                       );
                     },
@@ -183,14 +194,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(width: 12.w),
                 Expanded(
                   child: _buildQuickActionCard(
+                    context: context,
                     title: 'My Pets',
-                    icon: Icons.pets,
-                    color: AppColors.accent,
+                    icon: Icons.pets_rounded,
+                    color: colorScheme.secondary,
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const MyPetsScreen(),
+                          builder: (_) => const MyPetsScreen(),
                         ),
                       );
                     },
@@ -198,31 +210,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            
+
             SizedBox(height: 12.h),
-            
-            // Vet & Chat Actions
+
             Row(
               children: [
                 Expanded(
                   child: _buildQuickActionCard(
+                    context: context,
                     title: 'Browse Vets',
                     icon: Icons.local_hospital_outlined,
                     color: const Color(0xFF4CAF50),
-                    onTap: () {
-                      AppNavigator.navigateToVetsList(context);
-                    },
+                    onTap: () => AppNavigator.navigateToVetsList(context),
                   ),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: _buildQuickActionCard(
+                    context: context,
                     title: 'My Chats',
-                    icon: Icons.chat_bubble_outline,
+                    icon: Icons.chat_bubble_outline_rounded,
                     color: const Color(0xFF2196F3),
-                    onTap: () {
-                      AppNavigator.navigateToChats(context);
-                    },
+                    onTap: () => AppNavigator.navigateToChats(context),
                   ),
                 ),
               ],
@@ -230,28 +239,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
             SizedBox(height: 12.h),
 
-            // Marketplace & Orders Actions
             Row(
               children: [
                 Expanded(
                   child: _buildQuickActionCard(
+                    context: context,
                     title: 'Pet Shop',
                     icon: Icons.shopping_bag_outlined,
                     color: const Color(0xFF8D6E63),
-                    onTap: () {
-                      AppNavigator.navigateToMarketplace(context);
-                    },
+                    onTap: () => AppNavigator.navigateToMarketplace(context),
                   ),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: _buildQuickActionCard(
+                    context: context,
                     title: 'My Orders',
                     icon: Icons.receipt_long_outlined,
                     color: const Color(0xFF5C6BC0),
-                    onTap: () {
-                      AppNavigator.navigateToOrders(context);
-                    },
+                    onTap: () => AppNavigator.navigateToOrders(context),
                   ),
                 ),
               ],
@@ -259,22 +265,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
             SizedBox(height: 12.h),
 
-            // Community Hub & Caregivers
             Row(
               children: [
                 Expanded(
                   child: _buildQuickActionCard(
+                    context: context,
                     title: 'Community',
                     icon: Icons.groups_outlined,
                     color: const Color(0xFF2C6E69),
-                    onTap: () {
-                      AppNavigator.navigateToCommunityHub(context);
-                    },
+                    onTap: () => AppNavigator.navigateToCommunityHub(context),
                   ),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: _buildQuickActionCard(
+                    context: context,
                     title: 'Pet Sitting',
                     icon: Icons.home_work_outlined,
                     color: const Color(0xFFFF6F00),
@@ -282,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const CaregiversListScreen(),
+                          builder: (_) => const CaregiversListScreen(),
                         ),
                       );
                     },
@@ -291,123 +296,135 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
 
-            SizedBox(height: 30.h),
-            
+            SizedBox(height: 32.h),
+
             // Categories
             Text(
               'Categories',
-              style: AppTextStyles.onboardingTitle.copyWith(
-                fontSize: 24.sp,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
+              style: TextStyle(
+                fontSize: 22.sp,
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
               ),
             ),
-            
-            SizedBox(height: 16.h),
-            
+
+            SizedBox(height: 14.h),
+
             Row(
               children: [
-                Expanded(child: _buildCategoryCard('Dogs', Icons.pets, AppColors.primary)),
+                Expanded(
+                  child: _buildCategoryCard(
+                    context,
+                    'Dogs',
+                    Icons.pets_rounded,
+                    colorScheme.primary,
+                  ),
+                ),
                 SizedBox(width: 12.w),
-                Expanded(child: _buildCategoryCard('Cats', Icons.pets, AppColors.accent)),
+                Expanded(
+                  child: _buildCategoryCard(
+                    context,
+                    'Cats',
+                    Icons.pets_rounded,
+                    colorScheme.secondary,
+                  ),
+                ),
               ],
             ),
-            
-            SizedBox(height: 30.h),
-            
+
+            SizedBox(height: 32.h),
+
             // Featured Pets
             Text(
               'Featured Pets',
-              style: AppTextStyles.onboardingTitle.copyWith(
-                fontSize: 24.sp,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
+              style: TextStyle(
+                fontSize: 22.sp,
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
               ),
             ),
-            
-            SizedBox(height: 16.h),
-            
-            // Pet Cards
+
+            SizedBox(height: 14.h),
+
             _buildPetCard(
+              context: context,
               name: 'Buddy',
               breed: 'Golden Retriever',
               age: '2 years old',
               image: AppImages.onboardingPage1Pet,
-              gradient: const LinearGradient(
-                begin: Alignment(-0.707, -0.707),
-                end: Alignment(0.707, 0.707),
-                colors: [
-                  Color(0xFFE0CEBB),
-                  Color(0x00C2B1B0),
-                ],
-              ),
+              accentColor: colorScheme.primary,
             ),
-            
-            SizedBox(height: 16.h),
-            
+
+            SizedBox(height: 14.h),
+
             _buildPetCard(
+              context: context,
               name: 'Whiskers',
               breed: 'Persian Cat',
               age: '1 year old',
               image: AppImages.onboardingPage2Pet,
-              gradient: const LinearGradient(
-                begin: Alignment(-0.707, -0.707),
-                end: Alignment(0.707, 0.707),
-                colors: [
-                  Color(0xFFAFDCD7),
-                  Color(0x00C2B1B0),
-                ],
-              ),
+              accentColor: colorScheme.secondary,
             ),
-            
-            SizedBox(height: 30.h),
+
+            SizedBox(height: 32.h),
           ],
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
+        backgroundColor: colorScheme.surface,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.onSurfaceVariant,
         currentIndex: _currentIndex,
+        elevation: 8,
+        selectedLabelStyle: TextStyle(
+          fontSize: 11.sp,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 11.sp,
+          fontWeight: FontWeight.w500,
+        ),
         onTap: (index) {
           switch (index) {
-            case 0: // Home
-              setState(() {
-                _currentIndex = 0;
-              });
+            case 0:
+              setState(() => _currentIndex = 0);
               break;
-            case 1: // Vets
+            case 1:
               AppNavigator.navigateToVetsList(context);
               break;
-            case 2: // Chats
+            case 2:
               AppNavigator.navigateToChats(context);
               break;
-            case 3: // Profile
+            case 3:
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
               );
               break;
           }
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home_rounded),
             label: 'Home',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.local_hospital_outlined),
+            activeIcon: Icon(Icons.local_hospital_rounded),
             label: 'Vets',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            activeIcon: Icon(Icons.chat_bubble_rounded),
             label: 'Chats',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
+            icon: Icon(Icons.person_outline_rounded),
+            activeIcon: Icon(Icons.person_rounded),
             label: 'Profile',
           ),
         ],
@@ -416,89 +433,87 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildQuickActionCard({
+    required BuildContext context,
     required String title,
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 100.h,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color,
-              color.withOpacity(0.7),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16.r),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16.r),
+        child: Ink(
+          height: 96.h,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [color, color.withValues(alpha: 0.72)],
+            ),
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.28),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                shape: BoxShape.circle,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(10.w),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: Colors.white, size: 24.sp),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 28.sp,
+              SizedBox(height: 8.h),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              title,
-              style: AppTextStyles.onboardingBody.copyWith(
-                fontSize: 14.sp,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCategoryCard(String title, IconData icon, Color color) {
+  Widget _buildCategoryCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color color,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      height: 80.h,
+      height: 76.h,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
-      child: Column(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 24.sp,
-          ),
-          SizedBox(height: 8.h),
+          Icon(icon, color: color, size: 22.sp),
+          SizedBox(width: 8.w),
           Text(
             title,
-            style: AppTextStyles.onboardingBody.copyWith(
-              fontSize: 12.sp,
-              color: color,
-              fontWeight: FontWeight.w500,
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -507,21 +522,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPetCard({
+    required BuildContext context,
     required String name,
     required String breed,
     required String age,
     required String image,
-    LinearGradient? gradient,
+    required Color accentColor,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      height: 120.h,
+      height: 110.h,
       decoration: BoxDecoration(
-        gradient: gradient,
-        color: gradient == null ? AppColors.surface : null,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.2),
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow,
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -531,76 +550,86 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // Pet Image
           Container(
-            width: 100.w,
-            height: 100.h,
+            width: 90.w,
+            height: double.infinity,
             margin: EdgeInsets.all(10.w),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12.r),
-              color: AppColors.surfaceContainer,
+              borderRadius: BorderRadius.circular(10.r),
+              color: accentColor.withValues(alpha: 0.12),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(10.r),
               child: Image.asset(
                 image,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.surfaceContainer,
-                    child: Icon(
-                      Icons.pets,
-                      color: AppColors.primary,
-                      size: 40.sp,
-                    ),
-                  );
-                },
+                errorBuilder: (_, __, ___) => Center(
+                  child: Icon(
+                    Icons.pets_rounded,
+                    color: accentColor,
+                    size: 36.sp,
+                  ),
+                ),
               ),
             ),
           ),
-          
+
           // Pet Info
           Expanded(
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 12.w),
+              padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 10.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     name,
-                    style: AppTextStyles.onboardingTitle.copyWith(
-                      fontSize: 18.sp,
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
+                    style: TextStyle(
+                      fontSize: 17.sp,
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
                     ),
                   ),
                   SizedBox(height: 4.h),
                   Text(
                     breed,
-                    style: AppTextStyles.onboardingBody.copyWith(
-                      fontSize: 14.sp,
-                      color: AppColors.textSecondary,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   SizedBox(height: 4.h),
-                  Text(
-                    age,
-                    style: AppTextStyles.onboardingBody.copyWith(
-                      fontSize: 12.sp,
-                      color: AppColors.textSecondary,
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8.w,
+                      vertical: 3.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Text(
+                      age,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: accentColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          
-          // Favorite Button
+
+          // Favourite
           Padding(
-            padding: EdgeInsets.all(16.w),
+            padding: EdgeInsets.only(right: 14.w),
             child: Icon(
-              Icons.favorite_outline,
-              color: AppColors.primary,
-              size: 24.sp,
+              Icons.favorite_outline_rounded,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              size: 22.sp,
             ),
           ),
         ],
@@ -609,66 +638,60 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   static void _showLogoutDialog(BuildContext context) {
-    showDialog(
+    final colorScheme = Theme.of(context).colorScheme;
+    showDialog<void>(
       context: context,
-      builder: (BuildContext dialogContext) {
+      builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: AppColors.surface,
+          backgroundColor: colorScheme.surface,
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(20),
           ),
           title: Text(
             'Logout',
-            style: AppTextStyles.onboardingTitle.copyWith(
-              fontSize: 20.sp,
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
+            style: TextStyle(
+              fontSize: 20,
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
             ),
           ),
           content: Text(
             'Are you sure you want to logout?',
-            style: AppTextStyles.onboardingBody.copyWith(
-              fontSize: 16.sp,
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              fontSize: 15,
+              color: colorScheme.onSurfaceVariant,
+              height: 1.4,
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 'Cancel',
-                style: AppTextStyles.onboardingBody.copyWith(
-                  fontSize: 16.sp,
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-            ElevatedButton(
+            FilledButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                // Trigger logout after the dialog is removed from the tree.
                 Future.microtask(() {
                   if (!context.mounted) return;
                   context.read<AuthBloc>().add(const AuthEvent.signOut());
                 });
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.error,
+                foregroundColor: colorScheme.onError,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.r),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: Text(
-                'Logout',
-                style: AppTextStyles.onboardingBody.copyWith(
-                  fontSize: 16.sp,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: const Text('Logout'),
             ),
           ],
         );

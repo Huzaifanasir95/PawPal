@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
@@ -135,16 +134,16 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
         title: Text(
           'Find Caregivers',
           style: AppTextStyles.titleLarge.copyWith(
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w700,
           ),
         ),
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list, color: AppColors.textPrimary),
+            icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface),
             onPressed: _showFilterSheet,
           ),
         ],
@@ -153,11 +152,11 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
         children: [
           Container(
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.primary,
+                  Theme.of(context).colorScheme.primary,
                   Color(0xFFA9DCD7),
                 ],
               ),
@@ -175,7 +174,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
           ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(child: CircularProgressIndicator())
                 : _caregivers.isEmpty
                     ? _buildEmptyState()
                     : RefreshIndicator(
@@ -189,7 +188,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                               return Center(
                                 child: Padding(
                                   padding: EdgeInsets.all(16.h),
-                                  child: const CircularProgressIndicator(),
+                                  child: CircularProgressIndicator(),
                                 ),
                               );
                             }
@@ -207,7 +206,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
     return Container(
       margin: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 12.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(18.r),
         boxShadow: [
           BoxShadow(
@@ -222,16 +221,16 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
         decoration: InputDecoration(
           hintText: 'Search by name or location...',
           hintStyle: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.6),
           ),
           prefixIcon: Icon(
             Icons.search,
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.primary,
             size: 22.w,
           ),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.clear, color: AppColors.textSecondary, size: 20.w),
+                  icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), size: 20.w),
                   onPressed: () {
                     _searchController.clear();
                     _applyFilters();
@@ -248,10 +247,10 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18.r),
-            borderSide: BorderSide(color: AppColors.primary, width: 2),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
           ),
           filled: true,
-          fillColor: AppColors.surface,
+          fillColor: Theme.of(context).colorScheme.surface,
           contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
         ),
         onSubmitted: (value) => _applyFilters(),
@@ -287,12 +286,12 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.darkTeal : AppColors.surface,
+                  color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(14.r),
                   border: Border.all(
                     color: isSelected
-                        ? AppColors.darkTeal
-                        : AppColors.textSecondary.withOpacity(0.18),
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.18),
                     width: 1,
                   ),
                   boxShadow: [
@@ -307,7 +306,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                   child: Text(
                     label,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                      color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                     ),
                   ),
@@ -330,20 +329,20 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
             Container(
               padding: EdgeInsets.all(32.w),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.search_off_rounded,
                 size: 80.w,
-                color: AppColors.primary.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
               ),
             ),
             SizedBox(height: 24.h),
             Text(
               'No caregivers found',
               style: AppTextStyles.titleLarge.copyWith(
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -352,7 +351,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
             Text(
               'Try adjusting your filters or search criteria\nto find the perfect caregiver',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -368,10 +367,10 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                 });
                 _applyFilters();
               },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Reset Filters'),
+              icon: Icon(Icons.refresh),
+              label: Text('Reset Filters'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                 shape: RoundedRectangleBorder(
@@ -403,7 +402,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
       child: Container(
         margin: EdgeInsets.only(bottom: 14.h),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
             color: const Color(0xFFDAE2E8),
@@ -430,8 +429,8 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppColors.primary.withOpacity(0.22),
-                      AppColors.primary.withOpacity(0.08),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.22),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.08),
                     ],
                   ),
                 ),
@@ -444,7 +443,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                           backgroundImage: caregiver.userAvatar != null
                               ? NetworkImage(caregiver.userAvatar!)
                               : null,
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           child: caregiver.userAvatar == null
                               ? Text(
                                   (caregiver.userName ?? 'C')[0].toUpperCase(),
@@ -464,7 +463,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.blue,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.surface, width: 2),
+                                border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
                               ),
                               child: Icon(Icons.verified, color: Colors.white, size: 12.w),
                             ),
@@ -483,7 +482,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                                   caregiver.userName ?? 'Caregiver',
                                   style: AppTextStyles.titleLarge.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -550,7 +549,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: Column(
@@ -587,7 +586,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                       Text(
                         caregiver.headline!,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                           height: 1.4,
                         ),
                         maxLines: 2,
@@ -654,11 +653,11 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                       SizedBox(height: 12.h),
                       Row(
                         children: [
-                          Icon(Icons.timer_outlined, size: 14.w, color: AppColors.textSecondary),
+                          Icon(Icons.timer_outlined, size: 14.w, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                           SizedBox(width: 4.w),
                           Text(
                             'Responds in ${caregiver.responseTimeHours}h',
-                            style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                            style: AppTextStyles.labelSmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                           ),
                           SizedBox(width: 12.w),
                           Icon(Icons.trending_up, size: 14.w, color: Colors.green),
@@ -690,7 +689,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
           child: Text(
             text,
             style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
             maxLines: 1,
@@ -780,7 +779,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                         _sortBy = 'rating';
                       });
                     },
-                    child: const Text('Reset'),
+                    child: Text('Reset'),
                   ),
                 ],
               ),
@@ -812,13 +811,13 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         decoration: BoxDecoration(
                           color: (_minRating ?? 0) >= index + 1
-                              ? AppColors.primary
-                              : AppColors.surface,
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(8.r),
                           border: Border.all(
                             color: (_minRating ?? 0) >= index + 1
-                                ? AppColors.primary
-                                : AppColors.textSecondary.withOpacity(0.2),
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.2),
                           ),
                         ),
                         child: Center(
@@ -830,14 +829,14 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                                 size: 16.w,
                                 color: (_minRating ?? 0) >= index + 1
                                     ? Colors.white
-                                    : AppColors.textSecondary,
+                                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               ),
                               Text(
                                 '${index + 1}',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: (_minRating ?? 0) >= index + 1
                                       ? Colors.white
-                                      : AppColors.textPrimary,
+                                      : Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                             ],
@@ -855,36 +854,36 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                 spacing: 8.w,
                 children: [
                   ChoiceChip(
-                    label: const Text('Rating'),
+                    label: Text('Rating'),
                     selected: _sortBy == 'rating',
                     onSelected: (selected) {
                       if (selected) setSheetState(() => _sortBy = 'rating');
                     },
-                    selectedColor: AppColors.primary,
+                    selectedColor: Theme.of(context).colorScheme.primary,
                     labelStyle: TextStyle(
-                      color: _sortBy == 'rating' ? Colors.white : AppColors.textPrimary,
+                      color: _sortBy == 'rating' ? Colors.white : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   ChoiceChip(
-                    label: const Text('Distance'),
+                    label: Text('Distance'),
                     selected: _sortBy == 'distance',
                     onSelected: (selected) {
                       if (selected) setSheetState(() => _sortBy = 'distance');
                     },
-                    selectedColor: AppColors.primary,
+                    selectedColor: Theme.of(context).colorScheme.primary,
                     labelStyle: TextStyle(
-                      color: _sortBy == 'distance' ? Colors.white : AppColors.textPrimary,
+                      color: _sortBy == 'distance' ? Colors.white : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   ChoiceChip(
-                    label: const Text('Bookings'),
+                    label: Text('Bookings'),
                     selected: _sortBy == 'bookings',
                     onSelected: (selected) {
                       if (selected) setSheetState(() => _sortBy = 'bookings');
                     },
-                    selectedColor: AppColors.primary,
+                    selectedColor: Theme.of(context).colorScheme.primary,
                     labelStyle: TextStyle(
-                      color: _sortBy == 'bookings' ? Colors.white : AppColors.textPrimary,
+                      color: _sortBy == 'bookings' ? Colors.white : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],
@@ -896,13 +895,13 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                   _applyFilters();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   minimumSize: Size(double.infinity, 48.h),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
-                child: const Text('Apply Filters'),
+                child: Text('Apply Filters'),
               ),
               SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
             ],
@@ -912,3 +911,5 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
     );
   }
 }
+
+

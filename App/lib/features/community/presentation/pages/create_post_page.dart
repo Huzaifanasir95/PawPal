@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/utils/image_service.dart';
@@ -119,12 +118,12 @@ class _CreatePostPageState extends State<CreatePostPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F1F1),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: AppColors.accent,
+            color: Theme.of(context).colorScheme.secondary,
             size: 24.sp,
           ),
           onPressed: () => Navigator.pop(context),
@@ -133,7 +132,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
           'Create Post',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
-            color: AppColors.accent,
+            color: Theme.of(context).colorScheme.secondary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -146,14 +145,14 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     height: 20.h,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.w,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.secondary),
                     ),
                   )
                 : Text(
                     'Post',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 16.sp,
-                      color: AppColors.accent,
+                      color: Theme.of(context).colorScheme.secondary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -296,18 +295,18 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     icon: Icon(
                       Icons.photo_library,
                       size: 20.w,
-                      color: AppColors.accent,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                     label: Text(
                       'Gallery',
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 14.sp,
-                        color: AppColors.accent,
+                        color: Theme.of(context).colorScheme.secondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       padding: EdgeInsets.symmetric(vertical: 12.h),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
@@ -322,18 +321,18 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     icon: Icon(
                       Icons.camera_alt,
                       size: 20.w,
-                      color: AppColors.accent,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                     label: Text(
                       'Camera',
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 14.sp,
-                        color: AppColors.accent,
+                        color: Theme.of(context).colorScheme.secondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       padding: EdgeInsets.symmetric(vertical: 12.h),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),

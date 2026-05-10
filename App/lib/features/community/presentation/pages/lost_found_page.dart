@@ -328,7 +328,7 @@ class LostFoundPage extends StatelessWidget {
     );
   }
 
-  Color _urgencyColor(String? urgency) {
+  Color _urgencyColor(String? urgency, BuildContext context) {
     switch (urgency) {
       case 'high':
         return Theme.of(context).colorScheme.error;

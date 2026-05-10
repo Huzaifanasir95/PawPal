@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, useTransition, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Trash2, Eye, X, UserRound } from 'lucide-react';
+import { useState, useMemo, useTransition, useEffect, type ReactNode } from 'react';
+import { AnimatePresence, motion, useAnimation } from 'framer-motion';
+import { Search, Trash2, Eye, X, UserRound, AlertTriangle } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { deleteUser } from '@/lib/admin-actions';
 
@@ -23,6 +23,68 @@ interface User {
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
   show: { opacity: 1, y: 0 },
+};
+
+const EASE_OUT = [0.16, 1, 0.3, 1] as const;
+const EASE_IN = [0.7, 0, 0.84, 0] as const;
+
+const backdropVariants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
+  exit: { opacity: 0, transition: { duration: 0.2, ease: EASE_IN } },
+};
+
+const modalVariants = {
+  hidden: { opacity: 0, scale: 0.82, y: 26, rotateX: -12, rotateZ: -1 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    rotateX: 0,
+    rotateZ: 0,
+    transition: { type: 'spring' as const, stiffness: 260, damping: 22, mass: 0.8 },
+  },
+  exit: { opacity: 0, scale: 0.9, y: 18, rotateX: 6, rotateZ: 1, transition: { duration: 0.2 } },
+};
+
+const modalContentVariants = {
+  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+};
+
+const modalItemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: EASE_OUT } },
+};
+
+const deleteBackdropVariants = {
+  hidden: { opacity: 0, backgroundColor: 'rgba(220, 38, 38, 0.0)' },
+  show: {
+    opacity: 1,
+    backgroundColor: ['rgba(220, 38, 38, 0.05)', 'rgba(220, 38, 38, 0.2)', 'rgba(220, 38, 38, 0.12)'],
+    transition: { duration: 0.45, ease: EASE_OUT },
+  },
+  exit: { opacity: 0, backgroundColor: 'rgba(220, 38, 38, 0.0)', transition: { duration: 0.2 } },
+};
+
+const deleteModalVariants = {
+  hidden: { opacity: 0, scale: 0.86, y: -8, rotateZ: -1 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    rotateZ: 0,
+    transition: { type: 'spring' as const, stiffness: 520, damping: 26, mass: 0.7 },
+  },
+  exit: { opacity: 0, scale: 0.92, y: 16, transition: { duration: 0.2 } },
+};
+
+const deleteContentVariants = {
+  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+};
+
+const deleteItemVariants = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
 };
 
 export default function UsersClient({ users: initialUsers }: { users: User[] }) {
@@ -83,7 +145,7 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
         initial="hidden"
         animate="show"
         variants={fadeUp}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
       >
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -118,7 +180,7 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
         initial="hidden"
         animate="show"
         variants={fadeUp}
-        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.05 }}
       >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -139,14 +201,16 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
                   <td colSpan={7} className="py-16 text-center text-sm text-gray-400">No users found</td>
                 </tr>
               ) : (
-                filtered.map((u, i) => (
-                  <motion.tr
-                    key={u.id}
-                    className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.25, ease: 'easeOut', delay: i * 0.04 }}
-                  >
+                <AnimatePresence initial={false}>
+                  {filtered.map((u, i) => (
+                    <motion.tr
+                      key={u.id}
+                      className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -16, transition: { duration: 0.2 } }}
+                      transition={{ duration: 0.25, ease: EASE_OUT, delay: i * 0.04 }}
+                    >
                     <td className="px-4 py-3">
                       <div>
                         <p className="font-medium text-gray-800">{u.display_name || '—'}</p>
@@ -176,16 +240,30 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
-                        <button onClick={() => setSelectedUser(u)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-[#2C6E69] transition-colors" title="View details">
+                        <motion.button
+                          onClick={() => setSelectedUser(u)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-[#0B1629] transition-colors"
+                          title="View details"
+                          whileHover={{ scale: 1.08, y: -1 }}
+                          whileTap={{ scale: 0.96 }}
+                        >
                           <Eye className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => setDeleteTarget(u)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors" title="Delete user">
+                        </motion.button>
+                        <motion.button
+                          onClick={() => setDeleteTarget(u)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                          title="Delete user"
+                          whileHover={{ x: [0, -1.5, 1.5, -1, 1, 0] }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={{ duration: 0.35 }}
+                        >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </motion.button>
                       </div>
                     </td>
                   </motion.tr>
-                ))
+                  ))}
+                </AnimatePresence>
               )}
             </tbody>
           </table>
@@ -193,154 +271,175 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
       </motion.div>
 
       {/* Detail Modal */}
-      {selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-          <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
-            onClick={() => setSelectedUser(null)}
-          />
-          <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5">
-            <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5">
-              <div className="flex items-center gap-4">
-                {selectedUser.avatar_url ? (
-                  <img
-                    src={selectedUser.avatar_url}
-                    alt=""
-                    className="h-14 w-14 rounded-2xl object-cover"
-                  />
-                ) : (
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
-                    <UserRound className="h-6 w-6" />
-                  </div>
-                )}
-                <div>
-                  <p className="text-lg font-semibold text-gray-900">{selectedUser.display_name || '—'}</p>
-                  <p className="text-sm text-gray-500">{selectedUser.email || '—'}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-600">
-                      {selectedUser.account_type || 'user'}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-600">
-                      {selectedUser.user_role || 'user'}
-                    </span>
-                    <span
-                      className={`rounded-full px-2.5 py-1 font-semibold ${
-                        selectedUser.is_active === false
-                          ? 'bg-red-50 text-red-600'
-                          : 'bg-emerald-50 text-emerald-600'
-                      }`}
-                    >
-                      {selectedUser.is_active === false ? 'Inactive' : 'Active'}
-                    </span>
+      <AnimatePresence>
+        {selectedUser && (
+          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+              onClick={() => setSelectedUser(null)}
+              variants={backdropVariants}
+              initial="hidden"
+              animate="show"
+              exit="exit"
+            />
+            <motion.div
+              className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
+              variants={modalVariants}
+              initial="hidden"
+              animate="show"
+              exit="exit"
+              style={{ transformOrigin: '85% 15%', transformPerspective: 1200 }}
+            >
+              <motion.div
+                className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5"
+                variants={modalItemVariants}
+                initial="hidden"
+                animate="show"
+              >
+                <div className="flex items-center gap-4">
+                  {selectedUser.avatar_url ? (
+                    <img
+                      src={selectedUser.avatar_url}
+                      alt=""
+                      className="h-14 w-14 rounded-2xl object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
+                      <UserRound className="h-6 w-6" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-lg font-semibold text-gray-900">{selectedUser.display_name || '—'}</p>
+                    <p className="text-sm text-gray-500">{selectedUser.email || '—'}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-600">
+                        {selectedUser.account_type || 'user'}
+                      </span>
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-600">
+                        {selectedUser.user_role || 'user'}
+                      </span>
+                      <span
+                        className={`rounded-full px-2.5 py-1 font-semibold ${
+                          selectedUser.is_active === false
+                            ? 'bg-red-50 text-red-600'
+                            : 'bg-emerald-50 text-emerald-600'
+                        }`}
+                      >
+                        {selectedUser.is_active === false ? 'Inactive' : 'Active'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <button
-                onClick={() => setSelectedUser(null)}
-                className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="max-h-[70vh] overflow-y-auto p-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                    Account
-                  </h3>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <InfoItem label="Account Type" value={selectedUser.account_type || 'user'} />
-                    <InfoItem label="Role" value={selectedUser.user_role || 'user'} />
-                    <InfoItem
-                      label="Status"
-                      value={selectedUser.is_active === false ? 'Inactive' : 'Active'}
-                    />
-                    <InfoItem label="Joined" value={formatDateTime(selectedUser.created_at)} />
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                    Engagement
-                  </h3>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <InfoItem label="Pets" value={String(selectedUser.pets_count)} />
-                    <InfoItem label="Posts" value={String(selectedUser.posts_count)} />
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 sm:col-span-2">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                    Identifiers
-                  </h3>
-                  <div className="mt-3">
-                    <p className="text-xs font-medium text-gray-400">User ID</p>
-                    <p className="mt-1 text-sm font-medium text-gray-700 break-all">
-                      {selectedUser.id}
-                    </p>
-                  </div>
-                </section>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-white/80 px-6 py-4">
-              <button
-                onClick={() => setSelectedUser(null)}
-                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-              >
-                Close
-              </button>
-              <div className="flex items-center gap-2">
                 <button
-                  type="button"
-                  disabled
-                  title="Edit coming soon"
-                  className="rounded-xl border border-[#0B1629]/20 bg-[#0B1629]/10 px-4 py-2 text-sm font-semibold text-[#0B1629] opacity-60"
+                  onClick={() => setSelectedUser(null)}
+                  className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                  aria-label="Close"
                 >
-                  Edit
+                  <X className="h-5 w-5" />
                 </button>
+              </motion.div>
+
+              <motion.div
+                className="max-h-[70vh] overflow-y-auto p-6"
+                variants={modalContentVariants}
+                initial="hidden"
+                animate="show"
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <motion.section
+                    className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4"
+                    variants={modalItemVariants}
+                  >
+                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+                      Account
+                    </h3>
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <InfoItem label="Account Type" value={selectedUser.account_type || 'user'} />
+                      <InfoItem label="Role" value={selectedUser.user_role || 'user'} />
+                      <InfoItem
+                        label="Status"
+                        value={selectedUser.is_active === false ? 'Inactive' : 'Active'}
+                      />
+                      <InfoItem label="Joined" value={formatDateTime(selectedUser.created_at)} />
+                      <InfoItem
+                        label="Last Active"
+                        value={selectedUser.updated_at ? formatDateTime(selectedUser.updated_at) : '—'}
+                      />
+                    </div>
+                  </motion.section>
+
+                  <motion.section
+                    className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4"
+                    variants={modalItemVariants}
+                  >
+                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+                      Engagement
+                    </h3>
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <InfoItem label="Pets" value={String(selectedUser.pets_count)} />
+                      <InfoItem label="Posts" value={String(selectedUser.posts_count)} />
+                    </div>
+                  </motion.section>
+
+                  <motion.section
+                    className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 sm:col-span-2"
+                    variants={modalItemVariants}
+                  >
+                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+                      Identifiers
+                    </h3>
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-gray-400">User ID</p>
+                      <p className="mt-1 text-sm font-medium text-gray-700 break-all">
+                        {selectedUser.id}
+                      </p>
+                    </div>
+                  </motion.section>
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-white/80 px-6 py-4"
+                variants={modalItemVariants}
+                initial="hidden"
+                animate="show"
+              >
                 <button
-                  onClick={() => { setSelectedUser(null); setDeleteTarget(selectedUser); }}
-                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+                  onClick={() => setSelectedUser(null)}
+                  className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                 >
-                  Delete
+                  Close
                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled
+                    title="Edit coming soon"
+                    className="rounded-xl border border-[#0B1629]/20 bg-[#0B1629]/10 px-4 py-2 text-sm font-semibold text-[#0B1629] opacity-60"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => { setSelectedUser(null); setDeleteTarget(selectedUser); }}
+                    className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Delete Confirmation Modal */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => !isPending && setDeleteTarget(null)} />
-          <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-800">Delete User?</h3>
-            <p className="mt-2 text-sm text-gray-500">
-              This will permanently delete <strong>{deleteTarget.display_name || deleteTarget.email}</strong> and all their associated data (pets, posts, comments, etc.). This cannot be undone.
-            </p>
-            <div className="mt-6 flex gap-3">
-              <button
-                disabled={isPending}
-                onClick={() => setDeleteTarget(null)}
-                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={isPending}
-                onClick={() => handleDelete(deleteTarget)}
-                className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-medium text-white hover:bg-red-600 transition-colors disabled:opacity-50"
-              >
-                {isPending ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteUserModal
+        user={deleteTarget}
+        open={!!deleteTarget}
+        isPending={isPending}
+        onCancel={() => !isPending && setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
+      />
     </>
   );
 }
@@ -351,5 +450,123 @@ function InfoItem({ label, value }: { label: string; value: ReactNode }) {
       <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
       <div className="mt-1 text-sm font-medium text-gray-800">{value}</div>
     </div>
+  );
+}
+
+function DeleteUserModal({
+  user,
+  open,
+  isPending,
+  onCancel,
+  onConfirm,
+}: {
+  user: User | null;
+  open: boolean;
+  isPending: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const warningControls = useAnimation();
+
+  useEffect(() => {
+    if (open) {
+      warningControls.start({
+        scale: [1, 1.15, 1],
+        rotate: [0, -8, 8, 0],
+        transition: { duration: 0.5, ease: EASE_OUT },
+      });
+    }
+  }, [open, warningControls]);
+
+  return (
+    <AnimatePresence>
+      {open && user && (
+        <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <motion.div
+            className="absolute inset-0 backdrop-blur-[2px]"
+            onClick={onCancel}
+            variants={deleteBackdropVariants}
+            initial="hidden"
+            animate="show"
+            exit="exit"
+          />
+          <motion.div
+            className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-red-200/40"
+            variants={deleteModalVariants}
+            initial="hidden"
+            animate="show"
+            exit="exit"
+            style={{ transformOrigin: '85% 15%', transformPerspective: 1200 }}
+          >
+            <motion.div
+              className="px-6 py-5"
+              variants={deleteContentVariants}
+              initial="hidden"
+              animate="show"
+            >
+              <motion.div className="flex items-start gap-4" variants={deleteItemVariants}>
+                <motion.div
+                  className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100"
+                  animate={warningControls}
+                >
+                  <AlertTriangle className="h-6 w-6" />
+                </motion.div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete user?</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Are you sure you want to delete this user? This action cannot be undone.
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="mt-4 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50/40 p-3"
+                variants={deleteItemVariants}
+              >
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} alt="" className="h-10 w-10 rounded-xl object-cover" />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-red-400 ring-1 ring-red-100">
+                    <UserRound className="h-5 w-5" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    {user.display_name || 'Unknown'}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">{user.email || '—'}</p>
+                </div>
+              </motion.div>
+
+              <motion.div className="mt-5 flex gap-3" variants={deleteItemVariants}>
+                <button
+                  disabled={isPending}
+                  onClick={onCancel}
+                  className="flex-1 rounded-xl border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <motion.button
+                  disabled={isPending}
+                  onClick={onConfirm}
+                  className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:opacity-50"
+                  whileHover={!isPending ? { scale: 1.02 } : {}}
+                  whileTap={!isPending ? { scale: 0.98 } : {}}
+                >
+                  {isPending ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
+                      Deleting...
+                    </span>
+                  ) : (
+                    'Delete'
+                  )}
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

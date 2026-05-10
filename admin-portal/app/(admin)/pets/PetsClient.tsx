@@ -160,12 +160,18 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
   return (
     <div className="p-8">
       {/* Header */}
-      <div className="mb-6">
+      <motion.div
+        className="mb-6"
+        initial="hidden"
+        animate="show"
+        variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
+      >
         <h1 className="text-2xl font-bold text-gray-900">Pets</h1>
         <p className="mt-1 text-sm text-gray-500">
           {pets.length} pets — {counts.dog} dogs, {counts.cat} cats, {counts.verified} verified
         </p>
-      </div>
+      </motion.div>
 
       {/* Filters */}
       <motion.div

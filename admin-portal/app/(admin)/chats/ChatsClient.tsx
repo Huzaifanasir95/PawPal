@@ -123,9 +123,9 @@ export default function ChatsClient({ chats: initialChats }: { chats: Chat[] }) 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/60">
+              <tr className="border-b border-gray-100 bg-[#0B1629]">
                 {['Pet Owner', 'Vet', 'Last Message', 'Messages', 'Unread', 'Last Active', 'Actions'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-white">
                     {h}
                   </th>
                 ))}

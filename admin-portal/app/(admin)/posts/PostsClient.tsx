@@ -143,7 +143,6 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
   }
 
   function handleDeleteComment(commentId: string) {
-    if (!confirm('Delete this comment?')) return;
     startTransition(async () => {
       const result = await deleteComment(commentId);
       if (result.success) {
@@ -241,14 +240,9 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
                       transition={{ duration: 0.25, ease: 'easeOut', delay: i * 0.04 }}
                     >
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#0B1629]/10 text-[#0B1629] text-[10px] font-bold uppercase">
-                            {(p.profiles?.full_name || p.profiles?.email || '?')[0]}
-                          </div>
-                          <span className="text-xs text-gray-600">
-                            {p.profiles?.full_name || p.profiles?.email || 'Unknown'}
-                          </span>
-                        </div>
+                        <span className="text-xs text-gray-600">
+                          {p.profiles?.full_name || p.profiles?.email || 'Unknown'}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-gray-700 max-w-xs">
                         <div className="flex items-center gap-2">
@@ -310,136 +304,230 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
       <AnimatePresence>
         {selectedPost && (
           <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            {/* Backdrop */}
             <motion.div
-              className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+              className="absolute inset-0 bg-black/40 backdrop-blur-[3px]"
               onClick={() => setSelectedPost(null)}
               variants={backdropVariants}
               initial="hidden"
               animate="show"
               exit="exit"
             />
+
+            {/* Modal */}
             <motion.div
               className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
               variants={modalVariants}
               initial="hidden"
               animate="show"
               exit="exit"
-              style={{ transformOrigin: '85% 15%', transformPerspective: 1200 }}
+              style={{ transformOrigin: '50% 10%', transformPerspective: 1200 }}
             >
+              {/* ── Branded Gradient Header ── */}
               <motion.div
-                className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5"
+                className="relative overflow-hidden px-6 pt-6 pb-5"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 45%, #2C6E69 100%)' }}
                 variants={modalItemVariants}
                 initial="hidden"
                 animate="show"
               >
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Post Details</h2>
-                  <p className="text-xs text-gray-500">
-                    {formatDateTime(selectedPost.created_at)} · {selectedPost.category ?? 'general'}
-                  </p>
+                {/* Decorative circles */}
+                <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
+                <div className="pointer-events-none absolute -right-2 top-8 h-24 w-24 rounded-full bg-white/5" />
+
+                <div className="relative flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-black text-white tracking-tight">Post Details</h2>
+                    <p className="mt-1 text-xs text-white/55">
+                      {formatDateTime(selectedPost.created_at)}
+                    </p>
+                    {/* Category pill on header */}
+                    <span className="mt-2 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold capitalize text-white ring-1 ring-white/20">
+                      {selectedPost.category ?? 'general'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setSelectedPost(null)}
+                    className="rounded-xl p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
+                    aria-label="Close"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setSelectedPost(null)}
-                  className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
-                  aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
               </motion.div>
 
+              {/* ── Scrollable Body ── */}
               <motion.div
-                className="max-h-[70vh] overflow-y-auto p-6"
+                className="max-h-[65vh] overflow-y-auto"
                 variants={modalContentVariants}
                 initial="hidden"
                 animate="show"
               >
-                <div className="space-y-6">
-                  <motion.div className="flex items-center gap-3" variants={modalItemVariants}>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#B3E0DB] text-[#2C6E69] text-sm font-bold uppercase">
-                      {(selectedPost.profiles?.full_name || selectedPost.profiles?.email || '?')[0]}
+                <div className="space-y-5 p-6">
+
+                  {/* ── Author Card ── */}
+                  <motion.div
+                    className="relative overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-gradient-to-r from-[#2C6E69]/5 to-transparent p-4 shadow-sm"
+                    variants={modalItemVariants}
+                    style={{ borderLeft: '3px solid #2C6E69' }}
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Avatar */}
+                      <div
+                        className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-base font-black text-white shadow-md"
+                        style={{ background: 'linear-gradient(135deg, #1a3a38, #2C6E69)' }}
+                      >
+                        {(selectedPost.profiles?.full_name || selectedPost.profiles?.email || '?')[0].toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-gray-900 text-base leading-tight">
+                          {selectedPost.profiles?.full_name || 'Unknown'}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">
+                          {selectedPost.profiles?.email || '—'}
+                        </p>
+                        {/* Metric badges */}
+                        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#2C6E69]/10 px-2.5 py-1 text-xs font-semibold capitalize text-[#2C6E69]">
+                            {selectedPost.category ?? 'general'}
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-500">
+                            <Heart className="h-3 w-3 fill-rose-400 text-rose-400" />
+                            {selectedPost.likes_count ?? 0}
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-500">
+                            <MessageSquare className="h-3 w-3" />
+                            {selectedPost.comments_count ?? 0}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-800">
-                        {selectedPost.profiles?.full_name || 'Unknown'}
-                      </p>
-                      <p className="text-xs text-gray-400 break-words">
-                        {selectedPost.profiles?.email || '—'}
+                  </motion.div>
+
+                  {/* ── Post Content ── */}
+                  <motion.div variants={modalItemVariants}>
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                      Post Content
+                    </p>
+                    <div className="rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4">
+                      <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+                        {selectedPost.content}
                       </p>
                     </div>
                   </motion.div>
 
-                  <motion.div className="flex flex-wrap items-center gap-3" variants={modalItemVariants}>
-                    <Badge variant={categoryBadgeVariant[selectedPost.category ?? 'general'] ?? 'default'}>
-                      {selectedPost.category ?? 'general'}
-                    </Badge>
-                    <span className="flex items-center gap-1 text-sm text-gray-500">
-                      <Heart className="h-4 w-4" />{selectedPost.likes_count ?? 0}
-                    </span>
-                    <span className="flex items-center gap-1 text-sm text-gray-500">
-                      <MessageSquare className="h-4 w-4" />{selectedPost.comments_count ?? 0}
-                    </span>
-                  </motion.div>
-
-                  <motion.div className="rounded-xl bg-gray-50 p-4" variants={modalItemVariants}>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedPost.content}</p>
-                  </motion.div>
-
+                  {/* ── Images ── */}
                   {selectedPost.image_urls && selectedPost.image_urls.length > 0 && (
                     <motion.div variants={modalItemVariants}>
-                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Images</p>
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Images</p>
                       <div className="grid grid-cols-2 gap-2">
                         {selectedPost.image_urls.map((url, i) => (
-                          <img key={`${url}-${i}`} src={url} alt={`Post image ${i + 1}`} className="rounded-lg object-cover w-full h-32" />
+                          <img
+                            key={`${url}-${i}`}
+                            src={url}
+                            alt={`Post image ${i + 1}`}
+                            className="h-32 w-full rounded-xl object-cover"
+                          />
                         ))}
                       </div>
                     </motion.div>
                   )}
 
+                  {/* ── Comments Section ── */}
                   <motion.div variants={modalItemVariants}>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
-                      Comments ({selectedPost.comments.length})
-                    </p>
+                    <div className="mb-3 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-[#2C6E69]" />
+                      <p className="text-sm font-bold text-gray-800">
+                        Comments
+                        <span className="ml-1.5 rounded-full bg-[#2C6E69]/10 px-2 py-0.5 text-xs font-semibold text-[#2C6E69]">
+                          {selectedPost.comments.length}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="h-px bg-gradient-to-r from-[#2C6E69]/20 to-transparent mb-3" />
+
                     {selectedPost.comments.length === 0 ? (
-                      <p className="text-sm text-gray-400">No comments yet</p>
+                      <p className="rounded-xl bg-gray-50 py-6 text-center text-sm text-gray-400">
+                        No comments yet
+                      </p>
                     ) : (
-                      <div className="space-y-3">
-                        {selectedPost.comments.map((c) => (
-                          <div key={c.id} className="rounded-lg border border-gray-100 p-3">
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium text-gray-700">{c.author}</span>
-                                <span className="text-xs text-gray-400">{timeAgo(c.created_at)}</span>
-                                {c.likes_count > 0 && (
-                                  <span className="flex items-center gap-0.5 text-xs text-gray-400">
-                                    <Heart className="h-3 w-3" />{c.likes_count}
-                                  </span>
-                                )}
+                      <div className="space-y-2.5">
+                        {selectedPost.comments.map((c, ci) => (
+                          <motion.div
+                            key={c.id}
+                            className="group relative overflow-hidden rounded-xl border border-gray-100 bg-white p-3.5 shadow-sm transition-shadow hover:shadow-md"
+                            style={{ borderLeft: '3px solid #B3E0DB' }}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.22, ease: EASE_OUT, delay: 0.05 + ci * 0.06 }}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-start gap-2.5 min-w-0">
+                                {/* Commenter avatar */}
+                                <div
+                                  className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-black text-white"
+                                  style={{ background: `hsl(${(c.author.charCodeAt(0) * 37) % 360}, 55%, 45%)` }}
+                                >
+                                  {c.author[0]?.toUpperCase() ?? '?'}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-xs font-bold text-gray-800">{c.author}</span>
+                                    <span className="text-[10px] text-gray-400">{timeAgo(c.created_at)}</span>
+                                    {c.likes_count > 0 && (
+                                      <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-400">
+                                        <Heart className="h-2.5 w-2.5 fill-rose-400" />
+                                        {c.likes_count}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="mt-1 text-sm text-gray-600 leading-snug">{c.content}</p>
+                                </div>
                               </div>
-                              <button
+                              {/* Delete comment button */}
+                              <motion.button
                                 onClick={() => handleDeleteComment(c.id)}
                                 disabled={isPending}
-                                className="rounded p-1 text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-50"
+                                className="flex-shrink-0 rounded-lg p-1.5 text-gray-300 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 disabled:opacity-30"
                                 title="Delete comment"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
-                              </button>
+                              </motion.button>
                             </div>
-                            <p className="text-sm text-gray-600">{c.content}</p>
-                          </div>
+                          </motion.div>
                         ))}
                       </div>
                     )}
                   </motion.div>
-
-                  <motion.button
-                    onClick={() => { setSelectedPost(null); setDeleteTarget(selectedPost); }}
-                    disabled={isPending}
-                    className="w-full rounded-xl border border-red-200 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                    variants={modalItemVariants}
-                  >
-                    {isPending ? 'Deleting...' : 'Delete Post'}
-                  </motion.button>
                 </div>
+              </motion.div>
+
+              {/* ── Footer Action Bar ── */}
+              <motion.div
+                className="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4"
+                variants={modalItemVariants}
+                initial="hidden"
+                animate="show"
+              >
+                <button
+                  onClick={() => setSelectedPost(null)}
+                  className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
+                >
+                  Close
+                </button>
+                <motion.button
+                  onClick={() => { setSelectedPost(null); setDeleteTarget(selectedPost); }}
+                  disabled={isPending}
+                  className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:opacity-50"
+                  whileHover={!isPending ? { scale: 1.02, x: [0, -2, 2, -1, 1, 0] } : {}}
+                  whileTap={!isPending ? { scale: 0.97 } : {}}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Post
+                </motion.button>
               </motion.div>
             </motion.div>
           </motion.div>

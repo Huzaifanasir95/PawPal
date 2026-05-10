@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useTransition, useEffect, type ReactNode } from 'react';
 import { AnimatePresence, motion, useAnimation } from 'framer-motion';
-import { Search, Trash2, Eye, X, UserRound, AlertTriangle } from 'lucide-react';
+import { Search, Trash2, Eye, X, UserRound, AlertTriangle, FileText, Dog, User, BarChart2 } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { deleteUser } from '@/lib/admin-actions';
 
@@ -274,91 +274,149 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
       <AnimatePresence>
         {selectedUser && (
           <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            {/* Backdrop */}
             <motion.div
-              className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+              className="absolute inset-0 bg-black/40 backdrop-blur-[3px]"
               onClick={() => setSelectedUser(null)}
               variants={backdropVariants}
               initial="hidden"
               animate="show"
               exit="exit"
             />
+
+            {/* Modal */}
             <motion.div
-              className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
+              className="relative w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
               variants={modalVariants}
               initial="hidden"
               animate="show"
               exit="exit"
-              style={{ transformOrigin: '85% 15%', transformPerspective: 1200 }}
+              style={{ transformOrigin: '50% 10%', transformPerspective: 1200 }}
             >
+              {/* ── Branded Gradient Header ── */}
               <motion.div
-                className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5"
+                className="relative overflow-hidden px-6 pt-7 pb-6"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 50%, #2C6E69 100%)' }}
                 variants={modalItemVariants}
                 initial="hidden"
                 animate="show"
               >
-                <div className="flex items-center gap-4">
-                  {selectedUser.avatar_url ? (
-                    <img
-                      src={selectedUser.avatar_url}
-                      alt=""
-                      className="h-14 w-14 rounded-2xl object-cover"
+                {/* Shimmer sweep */}
+                <motion.div
+                  className="pointer-events-none absolute inset-0 skew-x-[-20deg] bg-white/5"
+                  animate={{ x: ['-120%', '220%'] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
+                />
+                {/* Decorative circles */}
+                <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/5" />
+                <div className="pointer-events-none absolute right-8 top-12 h-24 w-24 rounded-full bg-white/5" />
+
+                {/* Close button */}
+                <button
+                  onClick={() => setSelectedUser(null)}
+                  className="absolute right-4 top-4 rounded-xl p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+
+                {/* Avatar + identity */}
+                <div className="relative flex items-center gap-5">
+                  {/* Avatar */}
+                  <div className="relative flex-shrink-0">
+                    {selectedUser.avatar_url ? (
+                      <img
+                        src={selectedUser.avatar_url}
+                        alt=""
+                        className="h-16 w-16 rounded-2xl object-cover ring-2 ring-white/30 shadow-lg"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-black text-white ring-2 ring-white/30 shadow-lg"
+                        style={{ background: 'linear-gradient(135deg, #1a4a45, #3d8f89)' }}
+                      >
+                        {(selectedUser.display_name || selectedUser.email || '?')[0].toUpperCase()}
+                      </div>
+                    )}
+                    {/* Active indicator dot */}
+                    <span
+                      className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full ring-2 ring-white/20 ${
+                        selectedUser.is_active === false ? 'bg-red-400' : 'bg-emerald-400'
+                      }`}
                     />
-                  ) : (
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
-                      <UserRound className="h-6 w-6" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-lg font-semibold text-gray-900">{selectedUser.display_name || '—'}</p>
-                    <p className="text-sm text-gray-500">{selectedUser.email || '—'}</p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-                      <span className="rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-600">
+                  </div>
+
+                  {/* Name / email / badges */}
+                  <div className="min-w-0 flex-1 pr-8">
+                    <p className="text-xl font-black text-white leading-tight truncate">
+                      {selectedUser.display_name || '—'}
+                    </p>
+                    <p className="mt-0.5 text-sm text-white/55 truncate">
+                      {selectedUser.email || '—'}
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {/* Account type pill */}
+                      <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold capitalize text-white ring-1 ring-white/15">
                         {selectedUser.account_type || 'user'}
                       </span>
-                      <span className="rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-600">
-                        {selectedUser.user_role || 'user'}
-                      </span>
+                      {/* Role pill */}
+                      {selectedUser.user_role && selectedUser.user_role !== selectedUser.account_type && (
+                        <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold capitalize text-white ring-1 ring-white/15">
+                          {selectedUser.user_role}
+                        </span>
+                      )}
+                      {/* Status badge */}
                       <span
-                        className={`rounded-full px-2.5 py-1 font-semibold ${
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${
                           selectedUser.is_active === false
-                            ? 'bg-red-50 text-red-600'
-                            : 'bg-emerald-50 text-emerald-600'
+                            ? 'bg-red-500/20 text-red-200 ring-1 ring-red-400/30'
+                            : 'bg-emerald-500/20 text-emerald-200 ring-1 ring-emerald-400/30'
                         }`}
                       >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            selectedUser.is_active === false ? 'bg-red-400' : 'bg-emerald-400'
+                          }`}
+                        />
                         {selectedUser.is_active === false ? 'Inactive' : 'Active'}
                       </span>
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedUser(null)}
-                  className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
-                  aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
               </motion.div>
 
+              {/* ── Scrollable Body ── */}
               <motion.div
-                className="max-h-[70vh] overflow-y-auto p-6"
+                className="max-h-[55vh] overflow-y-auto"
                 variants={modalContentVariants}
                 initial="hidden"
                 animate="show"
               >
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-4 p-6">
+
+                  {/* ── Account Card ── */}
                   <motion.section
-                    className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4"
+                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #2C6E69' }}
                     variants={modalItemVariants}
                   >
-                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                      Account
-                    </h3>
-                    <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div className="mb-3 flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
+                        <User className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      </div>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Account</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
                       <InfoItem label="Account Type" value={selectedUser.account_type || 'user'} />
                       <InfoItem label="Role" value={selectedUser.user_role || 'user'} />
                       <InfoItem
                         label="Status"
-                        value={selectedUser.is_active === false ? 'Inactive' : 'Active'}
+                        value={
+                          <span className={`inline-flex items-center gap-1 font-semibold ${selectedUser.is_active === false ? 'text-red-500' : 'text-emerald-600'}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${selectedUser.is_active === false ? 'bg-red-400' : 'bg-emerald-400'}`} />
+                            {selectedUser.is_active === false ? 'Inactive' : 'Active'}
+                          </span>
+                        }
                       />
                       <InfoItem label="Joined" value={formatDateTime(selectedUser.created_at)} />
                       <InfoItem
@@ -368,63 +426,94 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
                     </div>
                   </motion.section>
 
+                  {/* ── Engagement Card ── */}
                   <motion.section
-                    className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4"
+                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #2C6E69' }}
                     variants={modalItemVariants}
                   >
-                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                      Engagement
-                    </h3>
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <InfoItem label="Pets" value={String(selectedUser.pets_count)} />
-                      <InfoItem label="Posts" value={String(selectedUser.posts_count)} />
+                    <div className="mb-3 flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
+                        <BarChart2 className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      </div>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Engagement</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Pets metric */}
+                      <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#B3E0DB]/40 text-[#2C6E69]">
+                          <Dog className="h-4.5 w-4.5 h-[18px] w-[18px]" />
+                        </div>
+                        <div>
+                          <p className={`text-2xl font-black leading-none ${selectedUser.pets_count > 0 ? 'text-[#2C6E69]' : 'text-gray-300'}`}>
+                            {selectedUser.pets_count}
+                          </p>
+                          <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Pets</p>
+                          {selectedUser.pets_count === 0 && (
+                            <p className="text-[10px] text-gray-300 mt-0.5">No activity yet</p>
+                          )}
+                        </div>
+                      </div>
+                      {/* Posts metric */}
+                      <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-500">
+                          <FileText className="h-[18px] w-[18px]" />
+                        </div>
+                        <div>
+                          <p className={`text-2xl font-black leading-none ${selectedUser.posts_count > 0 ? 'text-blue-500' : 'text-gray-300'}`}>
+                            {selectedUser.posts_count}
+                          </p>
+                          <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Posts</p>
+                          {selectedUser.posts_count === 0 && (
+                            <p className="text-[10px] text-gray-300 mt-0.5">No activity yet</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </motion.section>
 
-                  <motion.section
-                    className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 sm:col-span-2"
-                    variants={modalItemVariants}
-                  >
-                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                      Identifiers
-                    </h3>
-                    <div className="mt-3">
-                      <p className="text-xs font-medium text-gray-400">User ID</p>
-                      <p className="mt-1 text-sm font-medium text-gray-700 break-all">
-                        {selectedUser.id}
-                      </p>
-                    </div>
-                  </motion.section>
+
+
                 </div>
               </motion.div>
 
+              {/* ── Footer Action Bar ── */}
               <motion.div
-                className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-white/80 px-6 py-4"
+                className="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4"
                 variants={modalItemVariants}
                 initial="hidden"
                 animate="show"
               >
-                <button
+                <motion.button
                   onClick={() => setSelectedUser(null)}
-                  className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                  className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
                 >
                   Close
-                </button>
+                </motion.button>
                 <div className="flex items-center gap-2">
-                  <button
+                  <motion.button
                     type="button"
                     disabled
                     title="Edit coming soon"
-                    className="rounded-xl border border-[#0B1629]/20 bg-[#0B1629]/10 px-4 py-2 text-sm font-semibold text-[#0B1629] opacity-60"
+                    className="flex items-center gap-2 rounded-xl bg-[#2C6E69] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
                   >
+                    <User className="h-4 w-4" />
                     Edit
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
                     onClick={() => { setSelectedUser(null); setDeleteTarget(selectedUser); }}
-                    className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+                    className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
+                    whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ duration: 0.35 }}
                   >
+                    <Trash2 className="h-4 w-4" />
                     Delete
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
             </motion.div>
@@ -448,10 +537,12 @@ function InfoItem({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
       <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
-      <div className="mt-1 text-sm font-medium text-gray-800">{value}</div>
+      <div className="mt-1 text-sm font-medium text-gray-800 capitalize">{value}</div>
     </div>
   );
 }
+
+
 
 function DeleteUserModal({
   user,

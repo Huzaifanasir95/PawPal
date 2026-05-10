@@ -6,7 +6,13 @@ function getAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+      db: { schema: 'public' },
+    }
   );
 }
 
@@ -69,8 +75,14 @@ export async function updateEventStatus(eventId: string, status: string): Promis
 export async function updateVetVerification(vetId: string, isVerified: boolean): Promise<Result> {
   try {
     const supabase = getAdminClient();
-    const { error } = await supabase.from('vet_profiles').update({ is_verified: isVerified }).eq('id', vetId);
+    const { error, count } = await supabase
+      .from('vet_profiles')
+      .update({ is_verified: isVerified, updated_at: new Date().toISOString() })
+      .eq('id', vetId)
+      .select('id, is_verified');   // forces Supabase to return affected rows
     if (error) return { success: false, error: error.message };
+    // count === 0 means RLS blocked the update silently — treat as failure
+    if (count === 0) return { success: false, error: 'No rows updated — check RLS or vet ID' };
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }

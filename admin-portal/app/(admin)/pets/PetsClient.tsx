@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, type ReactNode } from 'react';
 import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import Badge from '@/components/Badge';
-import { Search, Eye, Trash2, X, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Search, Eye, Trash2, X, ShieldCheck, AlertTriangle, User, PawPrint, Camera, Ruler, Weight, Palette, VenusAndMars, Shield, Heart, Edit } from 'lucide-react';
 import { timeAgo, formatDateTime } from '@/lib/utils';
 import { deletePet } from '@/lib/admin-actions';
 
@@ -105,6 +105,18 @@ function InfoItem({ label, value }: { label: string; value: ReactNode }) {
     <div className="min-w-0">
       <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
       <div className="mt-1 text-sm font-medium text-gray-800 break-words">{value}</div>
+    </div>
+  );
+}
+
+function PetInfoItem({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center gap-1 mb-1">
+        <span className="text-[#2C6E69]/60">{icon}</span>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
+      </div>
+      <div className="text-sm font-medium text-gray-800 capitalize break-words">{value}</div>
     </div>
   );
 }
@@ -322,180 +334,318 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
       <AnimatePresence>
         {selectedPet && (
           <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            {/* Backdrop */}
             <motion.div
-              className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+              className="absolute inset-0 bg-black/40 backdrop-blur-[3px]"
               onClick={() => setSelectedPet(null)}
               variants={backdropVariants}
               initial="hidden"
               animate="show"
               exit="exit"
             />
+
+            {/* Modal */}
             <motion.div
-              className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
+              className="relative w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
               variants={modalVariants}
               initial="hidden"
               animate="show"
               exit="exit"
-              style={{ transformOrigin: '85% 15%', transformPerspective: 1200 }}
+              style={{ transformOrigin: '50% 10%', transformPerspective: 1200 }}
             >
+              {/* ── Branded Gradient Header ── */}
               <motion.div
-                className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5"
+                className="relative overflow-hidden px-6 pt-7 pb-6"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 50%, #2C6E69 100%)' }}
                 variants={modalItemVariants}
                 initial="hidden"
                 animate="show"
               >
-                <div className="flex items-center gap-4">
-                  {selectedImages[0] ? (
-                    <img src={selectedImages[0]} alt="" className="h-14 w-14 rounded-2xl object-cover" />
-                  ) : (
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 text-lg">
-                      {selectedPet.type === 'dog' ? '🐕' : '🐈'}
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-lg font-semibold text-gray-900">{selectedPet.name}</p>
-                    <p className="text-sm text-gray-500 capitalize">
-                      {selectedPet.breed || '—'} · {selectedPet.type}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {selectedPet.owner?.name || selectedPet.owner?.email || 'Unknown owner'}
-                    </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-                      <span className="rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-600">
-                        {selectedPet.type === 'dog' ? 'Dog' : 'Cat'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                {/* Shimmer sweep */}
+                <motion.div
+                  className="pointer-events-none absolute inset-0 skew-x-[-20deg] bg-white/5"
+                  animate={{ x: ['-120%', '220%'] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
+                />
+                {/* Decorative circles */}
+                <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/5" />
+                <div className="pointer-events-none absolute right-8 top-12 h-24 w-24 rounded-full bg-white/5" />
+
+                {/* Close button */}
                 <button
                   onClick={() => setSelectedPet(null)}
-                  className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                  className="absolute right-4 top-4 rounded-xl p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
                   aria-label="Close"
                 >
                   <X className="h-5 w-5" />
                 </button>
+
+                {/* Avatar + identity */}
+                <div className="relative flex items-center gap-5">
+                  {/* Pet avatar */}
+                  <div className="relative flex-shrink-0">
+                    {selectedImages[0] ? (
+                      <img
+                        src={selectedImages[0]}
+                        alt={selectedPet.name}
+                        className="h-16 w-16 rounded-2xl object-cover ring-2 ring-white/30 shadow-lg"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl ring-2 ring-white/30 shadow-lg"
+                        style={{ background: 'linear-gradient(135deg, #1a4a45, #3d8f89)' }}
+                      >
+                        {selectedPet.type === 'dog' ? '🐕' : '🐈'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Name / breed / owner */}
+                  <div className="min-w-0 flex-1 pr-8">
+                    <p className="text-xl font-black text-white leading-tight truncate">
+                      {selectedPet.name}
+                    </p>
+                    <p className="mt-0.5 text-sm text-white/55 capitalize truncate">
+                      {selectedPet.breed || '—'} · {selectedPet.type}
+                    </p>
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                      {/* Species pill */}
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold capitalize text-white ring-1 ring-white/15">
+                        <PawPrint className="h-3 w-3" />
+                        {selectedPet.type === 'dog' ? 'Dog' : 'Cat'}
+                      </span>
+                      {/* Owner pill */}
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white ring-1 ring-white/15">
+                        <User className="h-3 w-3" />
+                        {selectedPet.owner?.name || selectedPet.owner?.email || 'Unknown'}
+                      </span>
+                      {/* Verified badge */}
+                      {selectedPet.is_verified && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-1 text-[11px] font-bold text-emerald-200 ring-1 ring-emerald-400/30">
+                          <ShieldCheck className="h-3 w-3" />
+                          Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </motion.div>
 
+              {/* ── Scrollable Body ── */}
               <motion.div
-                className="max-h-[70vh] overflow-y-auto p-6"
+                className="max-h-[60vh] overflow-y-auto"
                 variants={modalContentVariants}
                 initial="hidden"
                 animate="show"
               >
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <motion.section
-                    className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 sm:col-span-2"
-                    variants={modalItemVariants}
-                  >
-                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                      Profile
-                    </h3>
-                    {selectedImages.length > 0 && (
-                      <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="space-y-4 p-6">
+
+                  {/* ── Pet Photos ── */}
+                  {selectedImages.length > 0 && (
+                    <motion.section variants={modalItemVariants}>
+                      <div className="mb-2.5 flex items-center gap-2">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
+                          <Camera className="h-3.5 w-3.5 text-[#2C6E69]" />
+                        </div>
+                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Pet Photos</h3>
+                      </div>
+                      <div className={`grid gap-2 ${selectedImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                         {selectedImages.map((url, i) => (
-                          <img
+                          <motion.div
                             key={`${url}-${i}`}
-                            src={url}
-                            alt={
-                              selectedPet.name ? `${selectedPet.name} photo ${i + 1}` : `Pet photo ${i + 1}`
-                            }
-                            className="h-28 w-full rounded-xl object-cover"
-                          />
+                            className="overflow-hidden rounded-xl shadow-sm"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3, delay: 0.1 + i * 0.07, ease: EASE_OUT }}
+                            whileHover={{ scale: 1.02 }}
+                          >
+                            <img
+                              src={url}
+                              alt={`${selectedPet.name} photo ${i + 1}`}
+                              className="h-32 w-full object-cover transition-transform duration-300 hover:scale-105"
+                            />
+                          </motion.div>
                         ))}
                       </div>
-                    )}
-                    {selectedPet.bio && (
-                      <div className="mt-3">
-                        <p className="text-xs font-semibold uppercase text-gray-400">Bio</p>
-                        <p className="mt-2 rounded-xl bg-white/70 p-3 text-sm text-gray-700 whitespace-pre-wrap">
-                          {selectedPet.bio}
+                    </motion.section>
+                  )}
+
+                  {/* ── Bio ── */}
+                  {selectedPet.bio && (
+                    <motion.div
+                      className="rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4"
+                      style={{ borderLeft: '3px solid #2C6E69' }}
+                      variants={modalItemVariants}
+                    >
+                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Bio</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{selectedPet.bio}</p>
+                    </motion.div>
+                  )}
+
+                  {/* ── Pet Details ── */}
+                  <motion.section
+                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #2C6E69' }}
+                    variants={modalItemVariants}
+                  >
+                    <div className="mb-3 flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
+                        <PawPrint className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      </div>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Pet Details</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+                      <PetInfoItem icon={<PawPrint className="h-3 w-3" />} label="Species" value={selectedPet.type === 'dog' ? 'Dog' : 'Cat'} />
+                      <PetInfoItem icon={<PawPrint className="h-3 w-3" />} label="Breed" value={selectedPet.breed || '—'} />
+                      <PetInfoItem icon={<Ruler className="h-3 w-3" />} label="Age" value={selectedPet.age != null ? `${selectedPet.age} ${selectedPet.age_unit}` : '—'} />
+                      <PetInfoItem icon={<User className="h-3 w-3" />} label="Gender" value={selectedPet.gender || '—'} />
+                      <PetInfoItem icon={<Palette className="h-3 w-3" />} label="Color" value={selectedPet.color || '—'} />
+                      <PetInfoItem icon={<Weight className="h-3 w-3" />} label="Weight" value={selectedPet.weight != null ? `${selectedPet.weight} ${selectedPet.weight_unit}` : '—'} />
+                    </div>
+                  </motion.section>
+
+                  {/* ── Owner Card ── */}
+                  <motion.section
+                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #2C6E69' }}
+                    variants={modalItemVariants}
+                  >
+                    <div className="mb-3 flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
+                        <User className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      </div>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Owner</h3>
+                    </div>
+                    <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm transition-shadow hover:shadow-md">
+                      <div
+                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
+                        style={{ background: 'linear-gradient(135deg, #1a3a38, #2C6E69)' }}
+                      >
+                        {(selectedPet.owner?.name || selectedPet.owner?.email || '?')[0].toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-gray-900 text-sm truncate">
+                          {selectedPet.owner?.name || 'Unknown'}
+                        </p>
+                        <p className="text-xs text-gray-400 truncate">
+                          {selectedPet.owner?.email || '—'}
                         </p>
                       </div>
-                    )}
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <InfoItem label="Species" value={selectedPet.type === 'dog' ? 'Dog' : 'Cat'} />
-                      <InfoItem label="Breed" value={selectedPet.breed || '—'} />
-                      <InfoItem
-                        label="Age"
-                        value={selectedPet.age != null ? `${selectedPet.age} ${selectedPet.age_unit}` : '—'}
-                      />
-                      <InfoItem label="Gender" value={selectedPet.gender || '—'} />
-                      <InfoItem label="Color" value={selectedPet.color || '—'} />
-                      <InfoItem
-                        label="Weight"
-                        value={selectedPet.weight != null ? `${selectedPet.weight} ${selectedPet.weight_unit}` : '—'}
-                      />
                     </div>
                   </motion.section>
 
+                  {/* ── Status Card ── */}
                   <motion.section
-                    className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4"
+                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #2C6E69' }}
                     variants={modalItemVariants}
                   >
-                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                      Owner
-                    </h3>
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <InfoItem label="Name" value={selectedPet.owner?.name || 'Unknown'} />
-                      <InfoItem label="Email" value={selectedPet.owner?.email || '—'} />
+                    <div className="mb-3 flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
+                        <Shield className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      </div>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Status</h3>
                     </div>
-                  </motion.section>
-
-                  <motion.section
-                    className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4"
-                    variants={modalItemVariants}
-                  >
-                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                      Status
-                    </h3>
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <InfoItem label="Verification" value={selectedPet.is_verified ? 'Verified' : 'Unverified'} />
-                      <InfoItem label="Adoption" value={selectedPet.is_adopted ? 'Adopted' : 'Active'} />
-                      <InfoItem label="Verified Breed" value={selectedPet.verified_breed || '—'} />
-                      <InfoItem
-                        label="Confidence"
-                        value={
-                          selectedPet.verification_confidence != null
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Verification */}
+                      <div>
+                        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Verification</p>
+                        {selectedPet.is_verified ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 ring-1 ring-emerald-200">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            Verified
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-600 ring-1 ring-amber-200">
+                            <AlertTriangle className="h-3 w-3" />
+                            Unverified
+                          </span>
+                        )}
+                      </div>
+                      {/* Adoption */}
+                      <div>
+                        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Adoption</p>
+                        {selectedPet.is_adopted ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 ring-1 ring-blue-200">
+                            <Heart className="h-3 w-3 fill-blue-400" />
+                            Adopted
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 ring-1 ring-emerald-200">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      {/* Verified Breed */}
+                      <div>
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Verified Breed</p>
+                        <p className="text-sm font-medium text-gray-800 capitalize">
+                          {selectedPet.verified_breed || <span className="text-gray-300 italic text-xs">Not available</span>}
+                        </p>
+                      </div>
+                      {/* Confidence */}
+                      <div>
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Confidence</p>
+                        <p className="text-sm font-medium text-gray-800">
+                          {selectedPet.verification_confidence != null
                             ? `${(selectedPet.verification_confidence * 100).toFixed(1)}%`
-                            : '—'
-                        }
-                      />
-                      <InfoItem label="Vaccination Records" value="—" />
-                      <InfoItem label="Added" value={formatDateTime(selectedPet.created_at)} />
-                      <InfoItem label="Updated" value={formatDateTime(selectedPet.updated_at)} />
+                            : <span className="text-gray-300 italic text-xs">Not available</span>}
+                        </p>
+                      </div>
+                      {/* Added */}
+                      <div>
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Added</p>
+                        <p className="text-sm font-medium text-gray-800">{formatDateTime(selectedPet.created_at)}</p>
+                      </div>
+                      {/* Updated */}
+                      <div>
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Updated</p>
+                        <p className="text-sm font-medium text-gray-800">{formatDateTime(selectedPet.updated_at)}</p>
+                      </div>
                     </div>
                   </motion.section>
 
                 </div>
               </motion.div>
 
+              {/* ── Footer Action Bar ── */}
               <motion.div
-                className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-white/80 px-6 py-4"
+                className="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4"
                 variants={modalItemVariants}
                 initial="hidden"
                 animate="show"
               >
-                <button
+                <motion.button
                   onClick={() => setSelectedPet(null)}
-                  className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                  className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
                 >
                   Close
-                </button>
+                </motion.button>
                 <div className="flex items-center gap-2">
-                  <button
+                  <motion.button
                     type="button"
                     disabled
                     title="Edit coming soon"
-                    className="rounded-xl border border-[#0B1629]/20 bg-[#0B1629]/10 px-4 py-2 text-sm font-semibold text-[#0B1629] opacity-60"
+                    className="flex items-center gap-2 rounded-xl bg-[#2C6E69] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
                   >
+                    <Edit className="h-4 w-4" />
                     Edit
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
                     onClick={() => { setSelectedPet(null); setDeleteTarget(selectedPet); }}
-                    className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+                    className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
+                    whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ duration: 0.35 }}
                   >
+                    <Trash2 className="h-4 w-4" />
                     Delete
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
             </motion.div>

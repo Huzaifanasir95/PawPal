@@ -1,44 +1,69 @@
 @startuml DFD_Level0_Context_Diagram
-!define RECTANGLE class
 
 skinparam defaultTextAlignment center
 skinparam componentStyle rectangle
 
+title DFD Level 0: PawPal System Context Diagram
+
 ' External Entities
 actor "Pet Owner" as Owner <<External Entity>>
 actor "Veterinarian" as Vet <<External Entity>>
-actor "Caregiver/Seller" as Caregiver <<External Entity>>
+actor "Caregiver" as Caregiver <<External Entity>>
+actor "Seller" as Seller <<External Entity>>
+actor "System Administrator" as Admin <<External Entity>>
 database "OpenStreetMap API" as OSM <<External System>>
 database "Groq LLM API" as Groq <<External System>>
 database "Firebase Cloud Messaging" as FCM <<External System>>
+database "Blockchain Network\n(BTC/ETH/USDT)" as Blockchain <<External System>>
 
 ' Main System
 rectangle "PawPal\nPet Care Management System" as PawPal <<Process 0>>
 
-' Data Flows
-Owner --> PawPal : User Credentials\nPet Information\nHealth Queries\nAppointment Requests\nPet Photos
-PawPal --> Owner : Authentication Token\nBreed Predictions\nHealth Guidance\nAppointment Confirmations\nNotifications
+' Pet Owner flows
+Owner --> PawPal : Credentials / Pet Info /\nHealth Queries / Pet Photos /\nMarketplace Orders /\nCommunity Posts /\nLost-Found Alerts /\nBooking Requests /\nPayment
+PawPal --> Owner : Auth Token / Breed Predictions /\nAI Health Guidance /\nOrder Confirmations /\nCommunity Feed /\nCaregiver Location /\nAppointment Confirmations /\nNotifications
 
-Vet --> PawPal : Clinic Information\nAvailability Slots\nAppointment Status
-PawPal --> Vet : Appointment Requests\nPet Medical History\nNotifications
+' Veterinarian flows
+Vet --> PawPal : Clinic Info / Availability /\nAppointment Status
+PawPal --> Vet : Appointment Requests /\nPet Medical History /\nNotifications
 
-Caregiver --> PawPal : Service Listings\nProduct Catalog
-PawPal --> Caregiver : Order Details\nService Requests
+' Caregiver flows
+Caregiver --> PawPal : Profile & Services /\nAvailability / GPS Location /\nService Updates /\nCompletion Reports
+PawPal --> Caregiver : Booking Requests /\nService Schedule /\nNotifications
 
-PawPal --> OSM : GPS Coordinates\nClinic Search Query
+' Seller flows
+Seller --> PawPal : Product Listings /\nOrder Status Updates /\nInventory Updates
+PawPal --> Seller : Order Notifications /\nSales Analytics /\nPayment Credits
+
+' Admin flows
+Admin --> PawPal : Moderation Actions /\nUser Management /\nContent Removal
+PawPal --> Admin : System Stats /\nAll Module Data /\nDashboard Analytics
+
+' External API flows
+PawPal --> OSM : GPS Coordinates /\nClinic Search Query
 OSM --> PawPal : Nearby Clinics Data
 
-PawPal --> Groq : Contextualized Query\nPet Profile
+PawPal --> Groq : Contextualized Query /\nPet Profile Context
 Groq --> PawPal : AI-Generated Response
 
-PawPal --> FCM : Notification Payload\nUser Tokens
+PawPal --> FCM : Notification Payload /\nUser Device Tokens
 FCM --> PawPal : Delivery Status
+
+PawPal --> Blockchain : Crypto Payment Request /\nWallet Address
+Blockchain --> PawPal : Transaction Confirmation
 
 note right of PawPal
   Context Level (Level 0)
   Shows the entire PawPal system
   as a single process with all
-  external entities and data flows
+  external entities and data flows.
+
+  System includes:
+  - Flutter Mobile App (iOS/Android)
+  - Next.js Admin Portal
+  - Golang Modular Monolith Backend
+  - Python FastAPI AI Services
+  - PostgreSQL / Redis / ChromaDB
 end note
 
 @enduml

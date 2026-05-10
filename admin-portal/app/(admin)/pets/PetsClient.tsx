@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { motion } from 'framer-motion';
 import Badge from '@/components/Badge';
 import { Search, Eye, Trash2, X, ShieldCheck } from 'lucide-react';
 import { timeAgo, formatDateTime } from '@/lib/utils';
@@ -31,6 +32,11 @@ interface Pet {
 }
 
 const TYPE_OPTIONS = ['all', 'dog', 'cat'] as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0 },
+};
 
 function InfoItem({ label, value }: { label: string; value: string | null | undefined }) {
   return (
@@ -96,57 +102,70 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
         </p>
       </div>
 
-      {/* Search + Type Filter */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name, breed, color, owner…"
-            className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#2C6E69] focus:outline-none focus:ring-1 focus:ring-[#2C6E69]"
-          />
+      {/* Filters */}
+      <motion.div
+        className="mb-5 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+        initial="hidden"
+        animate="show"
+        variants={fadeUp}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name, breed, color, owner…"
+              className="w-full rounded-2xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm focus:border-[#0B1629] focus:outline-none focus:ring-1 focus:ring-[#0B1629]"
+            />
+          </div>
+          {TYPE_OPTIONS.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTypeFilter(t)}
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                typeFilter === t
+                  ? 'bg-[#0B1629] text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-[#0B1629]/5 hover:text-[#0B1629]'
+              }`}
+            >
+              {t === 'all' ? 'All' : t === 'dog' ? '🐕 Dogs' : '🐈 Cats'} ({counts[t]})
+            </button>
+          ))}
         </div>
-        {TYPE_OPTIONS.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTypeFilter(t)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              typeFilter === t
-                ? 'bg-[#2C6E69] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {t === 'all' ? 'All' : t === 'dog' ? '🐕 Dogs' : '🐈 Cats'} ({counts[t]})
-          </button>
-        ))}
-      </div>
 
-      {/* Verified Filter */}
-      <div className="mb-4 flex flex-wrap gap-2">
-        {(['all', 'verified', 'unverified'] as const).map((v) => (
-          <button
-            key={v}
-            onClick={() => setVerifiedFilter(v)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              verifiedFilter === v
-                ? 'bg-[#2C6E69] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {v === 'all' ? `All (${counts.all})` : v === 'verified' ? `✅ Verified (${counts.verified})` : `Unverified (${counts.unverified})`}
-          </button>
-        ))}
-      </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(['all', 'verified', 'unverified'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setVerifiedFilter(v)}
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                verifiedFilter === v
+                  ? 'bg-[#0B1629] text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-[#0B1629]/5 hover:text-[#0B1629]'
+              }`}
+            >
+              {v === 'all' ? `All (${counts.all})` : v === 'verified' ? `Verified (${counts.verified})` : `Unverified (${counts.unverified})`}
+            </button>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <motion.div
+        className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+        initial="hidden"
+        animate="show"
+        variants={fadeUp}
+        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/60">
+              <tr className="border-b border-gray-100 bg-[#0B1629]">
                 {['Pet', 'Type', 'Breed', 'Age', 'Owner', 'Verified', 'Status', 'Added', 'Actions'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white">
                     {h}
                   </th>
                 ))}
@@ -160,14 +179,20 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                   </td>
                 </tr>
               ) : (
-                filtered.map((pet) => (
-                  <tr key={pet.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                filtered.map((pet, i) => (
+                  <motion.tr
+                    key={pet.id}
+                    className="border-b border-gray-50 last:border-0 hover:bg-[#0B1629]/5 transition-colors"
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25, ease: 'easeOut', delay: i * 0.04 }}
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {pet.image_url ? (
                           <img src={pet.image_url} alt={pet.name} className="h-9 w-9 rounded-full object-cover" />
                         ) : (
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#B3E0DB] text-sm font-bold text-[#2C6E69]">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0B1629]/10 text-sm font-bold text-[#0B1629]">
                             {pet.type === 'dog' ? '🐕' : '🐈'}
                           </div>
                         )}
@@ -178,7 +203,7 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={pet.type === 'dog' ? 'warning' : 'default'}>
+                      <Badge variant={pet.type === 'dog' ? 'warning' : 'default'} className="bg-[#0B1629]/10 text-[#0B1629]">
                         {pet.type === 'dog' ? '🐕 Dog' : '🐈 Cat'}
                       </Badge>
                     </td>
@@ -191,25 +216,25 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                     </td>
                     <td className="px-4 py-3">
                       {pet.is_verified ? (
-                        <Badge variant="success">
+                        <Badge variant="success" className="bg-[#0B1629]/10 text-[#0B1629]">
                           <ShieldCheck className="mr-1 inline h-3 w-3" />
                           Verified
                         </Badge>
                       ) : (
-                        <Badge variant="default">Unverified</Badge>
+                        <Badge variant="default" className="bg-[#0B1629]/10 text-[#0B1629]">Unverified</Badge>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       {pet.is_adopted ? (
-                        <Badge variant="warning">Adopted</Badge>
+                        <Badge variant="warning" className="bg-[#0B1629]/10 text-[#0B1629]">Adopted</Badge>
                       ) : (
-                        <Badge variant="success">Active</Badge>
+                        <Badge variant="success" className="bg-[#0B1629]/10 text-[#0B1629]">Active</Badge>
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-400">{timeAgo(pet.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => setSelectedPet(pet)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-[#2C6E69]">
+                        <button onClick={() => setSelectedPet(pet)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#0B1629]/10 hover:text-[#0B1629]">
                           <Eye className="h-4 w-4" />
                         </button>
                         <button onClick={() => setDeleteTarget(pet)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500">
@@ -217,13 +242,13 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                         </button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
       {/* Detail Drawer */}
       {selectedPet && (

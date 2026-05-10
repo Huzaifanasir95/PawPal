@@ -138,7 +138,7 @@ class LostFoundPage extends StatelessWidget {
 
   Widget _buildPostCard(BuildContext context, LostFoundPost post) {
     final isLost = post.type == 'lost';
-    final urgencyColor = _urgencyColor(post.urgency);
+    final urgencyColor = _urgencyColor(post.urgency, context);
     return GestureDetector(
       onTap: () {
         Navigator.push(

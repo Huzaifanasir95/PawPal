@@ -535,10 +535,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _updateProfile() async {
     if (_displayNameController.text.trim().isEmpty) {
+      final errorColor = Theme.of(context).colorScheme.error;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Display name cannot be empty'),
-          backgroundColor: Theme.of(context).colorScheme.error,
+        SnackBar(
+          content: const Text('Display name cannot be empty'),
+          backgroundColor: errorColor,
         ),
       );
       return;

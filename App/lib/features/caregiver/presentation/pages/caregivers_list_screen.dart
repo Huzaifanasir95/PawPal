@@ -128,22 +128,23 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFECEFF3),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Find Caregivers',
           style: AppTextStyles.titleLarge.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
+            color: colorScheme.onPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: colorScheme.primary,
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface),
+            icon: Icon(Icons.filter_list, color: colorScheme.onPrimary),
             onPressed: _showFilterSheet,
           ),
         ],
@@ -156,8 +157,8 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Color(0xFFA9DCD7),
+                  colorScheme.primary,
+                  colorScheme.primaryContainer,
                 ],
               ),
               borderRadius: BorderRadius.only(
@@ -210,7 +211,7 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
         borderRadius: BorderRadius.circular(18.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.12),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -405,12 +406,12 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-            color: const Color(0xFFDAE2E8),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.35),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.14),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),

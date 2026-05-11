@@ -124,15 +124,16 @@ class _AdoptionPageState extends State<AdoptionPage> {
   }
 
   Widget _buildSearchBar(BuildContext context, String currentQuery) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
       child: Container(
         height: 50.h,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainer,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(25.r),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline,
+            color: colorScheme.outline.withValues(alpha: 0.6),
             width: 1,
           ),
         ),
@@ -141,7 +142,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
             SizedBox(width: 16.w),
             Icon(
               Icons.search,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: colorScheme.onSurfaceVariant,
               size: 20.sp,
             ),
             SizedBox(width: 12.w),
@@ -153,13 +154,13 @@ class _AdoptionPageState extends State<AdoptionPage> {
                 },
                 style: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 15.sp,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search by pet name...',
                   hintStyle: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 15.sp,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurfaceVariant,
                   ),
                   border: InputBorder.none,
                   isDense: true,
@@ -171,7 +172,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
               IconButton(
                 icon: Icon(
                   Icons.clear,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurfaceVariant,
                   size: 20.sp,
                 ),
                 onPressed: () {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect, type ReactNode } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import Badge from '@/components/Badge';
 import { Search, Eye, Trash2, X, ShieldCheck, AlertTriangle, User, PawPrint, Camera, Ruler, Weight, Palette, Shield, Heart, Edit } from 'lucide-react';
@@ -39,34 +39,27 @@ const fadeUp = {
 };
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-const EASE_IN = [0.7, 0, 0.84, 0] as const;
+const EASE_IN  = [0.7, 0, 0.84, 0] as const;
 
 const backdropVariants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
-  exit: { opacity: 0, transition: { duration: 0.2, ease: EASE_IN } },
+  show:   { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
+  exit:   { opacity: 0, transition: { duration: 0.2,  ease: EASE_IN  } },
 };
 
-const modalVariants = {
-  hidden: { opacity: 0, scale: 0.82, y: 26, rotateX: -12, rotateZ: -1 },
-  show: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    rotateX: 0,
-    rotateZ: 0,
-    transition: { type: 'spring' as const, stiffness: 260, damping: 22, mass: 0.8 },
-  },
-  exit: { opacity: 0, scale: 0.9, y: 18, rotateX: 6, rotateZ: 1, transition: { duration: 0.2 } },
+const drawerVariants = {
+  hidden: { x: '100%', opacity: 0 },
+  show:   { x: 0, opacity: 1, transition: { type: 'spring' as const, stiffness: 280, damping: 28, mass: 0.9 } },
+  exit:   { x: '100%', opacity: 0, transition: { duration: 0.22, ease: EASE_IN } },
 };
 
-const modalContentVariants = {
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+const drawerItemVariants = {
+  hidden: { opacity: 0, x: 18 },
+  show:   { opacity: 1, x: 0, transition: { duration: 0.28, ease: EASE_OUT } },
 };
 
-const modalItemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: EASE_OUT } },
+const drawerContentVariants = {
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.08 } },
 };
 
 const deleteBackdropVariants = {
@@ -82,10 +75,7 @@ const deleteBackdropVariants = {
 const deleteModalVariants = {
   hidden: { opacity: 0, scale: 0.86, y: -8, rotateZ: -1 },
   show: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    rotateZ: 0,
+    opacity: 1, scale: 1, y: 0, rotateZ: 0,
     transition: { type: 'spring' as const, stiffness: 520, damping: 26, mass: 0.7 },
   },
   exit: { opacity: 0, scale: 0.92, y: 16, transition: { duration: 0.2 } },
@@ -97,20 +87,8 @@ const deleteContentVariants = {
 
 const deleteItemVariants = {
   hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
 };
-
-function PetInfoItem({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
-  return (
-    <div className="min-w-0">
-      <div className="flex items-center gap-1 mb-1">
-        <span className="text-[#2C6E69]/60">{icon}</span>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
-      </div>
-      <div className="text-sm font-medium text-gray-800 capitalize break-words">{value}</div>
-    </div>
-  );
-}
 
 export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
   const [pets, setPets] = useState(initialPets);
@@ -120,8 +98,10 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Pet | null>(null);
   const [isPending, startTransition] = useTransition();
-  const selectedImages = selectedPet
-    ? [selectedPet.image_url, ...(selectedPet.image_urls ?? [])].filter((url): url is string => Boolean(url))
+
+  const display = selectedPet;
+  const displayImages = display
+    ? [display.image_url, ...(display.image_urls ?? [])].filter((url): url is string => Boolean(url))
     : [];
 
   const filtered = pets.filter((pet) => {
@@ -248,9 +228,7 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-sm text-gray-400">
-                    No pets found
-                  </td>
+                  <td colSpan={8} className="py-16 text-center text-sm text-gray-400">No pets found</td>
                 </tr>
               ) : (
                 <AnimatePresence initial={false}>
@@ -275,9 +253,7 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 capitalize">{pet.breed || '—'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {pet.age} {pet.age_unit}
-                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{pet.age} {pet.age_unit}</td>
                       <td className="px-4 py-3 text-xs text-gray-600">
                         {pet.owner?.name || pet.owner?.email || 'Unknown'}
                       </td>
@@ -293,7 +269,7 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                         <div className="flex items-center justify-center gap-1">
                           <motion.button
                             onClick={() => setSelectedPet(pet)}
-                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-[#0B1629] transition-colors"
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-[#0B1629]/5 hover:text-[#0B1629] transition-colors"
                             title="View details"
                             whileHover={{ scale: 1.08, y: -1 }}
                             whileTap={{ scale: 0.96 }}
@@ -321,13 +297,13 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
         </div>
       </motion.div>
 
-      {/* Detail Modal */}
+      {/* ── Right-side Detail Drawer ── */}
       <AnimatePresence>
-        {selectedPet && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        {display && (
+          <motion.div className="fixed inset-0 z-50 flex justify-end">
             {/* Backdrop */}
             <motion.div
-              className="absolute inset-0 bg-black/40 backdrop-blur-[3px]"
+              className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
               onClick={() => setSelectedPet(null)}
               variants={backdropVariants}
               initial="hidden"
@@ -335,35 +311,28 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
               exit="exit"
             />
 
-            {/* Modal */}
+            {/* Drawer panel */}
             <motion.div
-              className="relative w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
-              variants={modalVariants}
+              className="relative flex h-full w-full max-w-lg flex-col bg-white shadow-2xl"
+              variants={drawerVariants}
               initial="hidden"
               animate="show"
               exit="exit"
-              style={{ transformOrigin: '50% 10%', transformPerspective: 1200 }}
             >
-              {/* ── Branded Gradient Header ── */}
-              <motion.div
-                className="relative overflow-hidden px-6 pt-7 pb-6"
-                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 50%, #2C6E69 100%)' }}
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
+              {/* Branded header */}
+              <div
+                className="relative flex-shrink-0 overflow-hidden px-6 pb-5 pt-6"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 55%, #2C6E69 100%)' }}
               >
-                {/* Shimmer sweep */}
                 <motion.div
                   className="pointer-events-none absolute inset-0 skew-x-[-20deg] bg-white/5"
                   animate={{ x: ['-120%', '220%'] }}
                   transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
                 />
-                {/* Decorative circles */}
-                <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/5" />
-                <div className="pointer-events-none absolute right-8 top-12 h-24 w-24 rounded-full bg-white/5" />
+                <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
 
-                {/* Close button */}
                 <button
+                  type="button"
                   onClick={() => setSelectedPet(null)}
                   className="absolute right-4 top-4 rounded-xl p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
                   aria-label="Close"
@@ -371,48 +340,41 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                   <X className="h-5 w-5" />
                 </button>
 
-                {/* Avatar + identity */}
-                <div className="relative flex items-center gap-5">
+                <div className="relative flex items-start gap-4">
                   {/* Pet avatar */}
                   <div className="relative flex-shrink-0">
-                    {selectedImages[0] ? (
+                    {displayImages[0] ? (
                       <img
-                        src={selectedImages[0]}
-                        alt={selectedPet.name}
-                        className="h-16 w-16 rounded-2xl object-cover ring-2 ring-white/30 shadow-lg"
+                        src={displayImages[0]}
+                        alt={display.name}
+                        className="h-14 w-14 rounded-2xl object-cover ring-2 ring-white/30 shadow-lg"
                       />
                     ) : (
                       <div
-                        className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl ring-2 ring-white/30 shadow-lg"
+                        className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl ring-2 ring-white/30 shadow-lg"
                         style={{ background: 'linear-gradient(135deg, #1a4a45, #3d8f89)' }}
                       >
-                        {selectedPet.type === 'dog' ? '🐕' : '🐈'}
+                        {display.type === 'dog' ? '🐕' : '🐈'}
                       </div>
                     )}
                   </div>
 
-                  {/* Name / breed / owner */}
                   <div className="min-w-0 flex-1 pr-8">
-                    <p className="text-xl font-black text-white leading-tight truncate">
-                      {selectedPet.name}
-                    </p>
+                    <p className="text-lg font-black leading-tight text-white truncate">{display.name}</p>
                     <p className="mt-0.5 text-sm text-white/55 capitalize truncate">
-                      {selectedPet.breed || '—'} · {selectedPet.type}
+                      {display.breed || '—'} · {display.type}
                     </p>
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                      {/* Species pill */}
-                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold capitalize text-white ring-1 ring-white/15">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold capitalize text-white ring-1 ring-white/20">
                         <PawPrint className="h-3 w-3" />
-                        {selectedPet.type === 'dog' ? 'Dog' : 'Cat'}
+                        {display.type === 'dog' ? 'Dog' : 'Cat'}
                       </span>
-                      {/* Owner pill */}
-                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white ring-1 ring-white/15">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white ring-1 ring-white/15">
                         <User className="h-3 w-3" />
-                        {selectedPet.owner?.name || selectedPet.owner?.email || 'Unknown'}
+                        {display.owner?.name || display.owner?.email || 'Unknown'}
                       </span>
-                      {/* Verified badge */}
-                      {selectedPet.is_verified && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-1 text-[11px] font-bold text-emerald-200 ring-1 ring-emerald-400/30">
+                      {display.is_verified && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-200 ring-1 ring-emerald-400/30">
                           <ShieldCheck className="h-3 w-3" />
                           Verified
                         </span>
@@ -420,28 +382,28 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
-              {/* ── Scrollable Body ── */}
+              {/* Scrollable body */}
               <motion.div
-                className="max-h-[60vh] overflow-y-auto"
-                variants={modalContentVariants}
+                className="flex-1 overflow-y-auto"
+                variants={drawerContentVariants}
                 initial="hidden"
                 animate="show"
               >
                 <div className="space-y-4 p-6">
 
-                  {/* ── Pet Photos ── */}
-                  {selectedImages.length > 0 && (
-                    <motion.section variants={modalItemVariants}>
+                  {/* Photos */}
+                  {displayImages.length > 0 && (
+                    <motion.section variants={drawerItemVariants}>
                       <div className="mb-2.5 flex items-center gap-2">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                          <Camera className="h-3.5 w-3.5 text-[#2C6E69]" />
+                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                          <Camera className="h-3.5 w-3.5 text-[#0B1629]" />
                         </div>
-                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Pet Photos</h3>
+                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Pet Photos</h3>
                       </div>
-                      <div className={`grid gap-2 ${selectedImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                        {selectedImages.map((url, i) => (
+                      <div className={`grid gap-2 ${displayImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                        {displayImages.map((url, i) => (
                           <motion.div
                             key={`${url}-${i}`}
                             className="overflow-hidden rounded-xl shadow-sm"
@@ -452,8 +414,8 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                           >
                             <img
                               src={url}
-                              alt={`${selectedPet.name} photo ${i + 1}`}
-                              className="h-32 w-full object-cover transition-transform duration-300 hover:scale-105"
+                              alt={`${display.name} photo ${i + 1}`}
+                              className="h-32 w-full object-cover"
                             />
                           </motion.div>
                         ))}
@@ -461,87 +423,93 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                     </motion.section>
                   )}
 
-                  {/* ── Bio ── */}
-                  {selectedPet.bio && (
+                  {/* Bio */}
+                  {display.bio && (
                     <motion.div
-                      className="rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4"
-                      style={{ borderLeft: '3px solid #2C6E69' }}
-                      variants={modalItemVariants}
+                      className="rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4"
+                      style={{ borderLeft: '3px solid #0B1629' }}
+                      variants={drawerItemVariants}
                     >
-                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Bio</p>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{selectedPet.bio}</p>
+                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Bio</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{display.bio}</p>
                     </motion.div>
                   )}
 
-                  {/* ── Pet Details ── */}
+                  {/* Pet Details */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <PawPrint className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <PawPrint className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Pet Details</h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Pet Details</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-                      <PetInfoItem icon={<PawPrint className="h-3 w-3" />} label="Species" value={selectedPet.type === 'dog' ? 'Dog' : 'Cat'} />
-                      <PetInfoItem icon={<PawPrint className="h-3 w-3" />} label="Breed" value={selectedPet.breed || '—'} />
-                      <PetInfoItem icon={<Ruler className="h-3 w-3" />} label="Age" value={selectedPet.age != null ? `${selectedPet.age} ${selectedPet.age_unit}` : '—'} />
-                      <PetInfoItem icon={<User className="h-3 w-3" />} label="Gender" value={selectedPet.gender || '—'} />
-                      <PetInfoItem icon={<Palette className="h-3 w-3" />} label="Color" value={selectedPet.color || '—'} />
-                      <PetInfoItem icon={<Weight className="h-3 w-3" />} label="Weight" value={selectedPet.weight != null ? `${selectedPet.weight} ${selectedPet.weight_unit}` : '—'} />
+                      {[
+                        { icon: <PawPrint className="h-3 w-3" />, label: 'Species',  value: display.type === 'dog' ? 'Dog' : 'Cat' },
+                        { icon: <PawPrint className="h-3 w-3" />, label: 'Breed',    value: display.breed || '—' },
+                        { icon: <Ruler    className="h-3 w-3" />, label: 'Age',      value: display.age != null ? `${display.age} ${display.age_unit}` : '—' },
+                        { icon: <User     className="h-3 w-3" />, label: 'Gender',   value: display.gender || '—' },
+                        { icon: <Palette  className="h-3 w-3" />, label: 'Color',    value: display.color || '—' },
+                        { icon: <Weight   className="h-3 w-3" />, label: 'Weight',   value: display.weight != null ? `${display.weight} ${display.weight_unit}` : '—' },
+                      ].map(({ icon, label, value }) => (
+                        <div key={label} className="min-w-0">
+                          <div className="flex items-center gap-1 mb-1">
+                            <span className="text-[#0B1629]/50">{icon}</span>
+                            <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
+                          </div>
+                          <div className="text-sm font-medium text-gray-800 capitalize break-words">{value}</div>
+                        </div>
+                      ))}
                     </div>
                   </motion.section>
 
-                  {/* ── Owner Card ── */}
+                  {/* Owner Card */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <User className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <User className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Owner</h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Owner</h3>
                     </div>
-                    <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm transition-shadow hover:shadow-md">
+                    <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm">
                       <div
                         className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
-                        style={{ background: 'linear-gradient(135deg, #1a3a38, #2C6E69)' }}
+                        style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
                       >
-                        {(selectedPet.owner?.name || selectedPet.owner?.email || '?')[0].toUpperCase()}
+                        {(display.owner?.name || display.owner?.email || '?')[0].toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-gray-900 text-sm truncate">
-                          {selectedPet.owner?.name || 'Unknown'}
-                        </p>
-                        <p className="text-xs text-gray-400 truncate">
-                          {selectedPet.owner?.email || '—'}
-                        </p>
+                        <p className="font-bold text-gray-900 text-sm truncate">{display.owner?.name || 'Unknown'}</p>
+                        <p className="text-xs text-gray-400 truncate">{display.owner?.email || '—'}</p>
                       </div>
                     </div>
+                    <p className="mt-2 text-xs text-gray-400 px-1">Added {formatDateTime(display.created_at)}</p>
                   </motion.section>
 
-                  {/* ── Status Card ── */}
+                  {/* Status Card */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <Shield className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <Shield className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Status</h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Status</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      {/* Verification */}
                       <div>
                         <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Verification</p>
-                        {selectedPet.is_verified ? (
+                        {display.is_verified ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 ring-1 ring-emerald-200">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                             Verified
@@ -553,10 +521,9 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                           </span>
                         )}
                       </div>
-                      {/* Adoption */}
                       <div>
                         <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Adoption</p>
-                        {selectedPet.is_adopted ? (
+                        {display.is_adopted ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 ring-1 ring-blue-200">
                             <Heart className="h-3 w-3 fill-blue-400" />
                             Adopted
@@ -568,31 +535,23 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                           </span>
                         )}
                       </div>
-                      {/* Verified Breed */}
                       <div>
                         <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Verified Breed</p>
                         <p className="text-sm font-medium text-gray-800 capitalize">
-                          {selectedPet.verified_breed || <span className="text-gray-300 italic text-xs">Not available</span>}
+                          {display.verified_breed || <span className="text-gray-300 italic text-xs">Not available</span>}
                         </p>
                       </div>
-                      {/* Confidence */}
                       <div>
                         <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Confidence</p>
                         <p className="text-sm font-medium text-gray-800">
-                          {selectedPet.verification_confidence != null
-                            ? `${(selectedPet.verification_confidence * 100).toFixed(1)}%`
+                          {display.verification_confidence != null
+                            ? `${(display.verification_confidence * 100).toFixed(1)}%`
                             : <span className="text-gray-300 italic text-xs">Not available</span>}
                         </p>
                       </div>
-                      {/* Added */}
-                      <div>
-                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Added</p>
-                        <p className="text-sm font-medium text-gray-800">{formatDateTime(selectedPet.created_at)}</p>
-                      </div>
-                      {/* Updated */}
                       <div>
                         <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Updated</p>
-                        <p className="text-sm font-medium text-gray-800">{formatDateTime(selectedPet.updated_at)}</p>
+                        <p className="text-sm font-medium text-gray-800">{formatDateTime(display.updated_at)}</p>
                       </div>
                     </div>
                   </motion.section>
@@ -600,14 +559,10 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                 </div>
               </motion.div>
 
-              {/* ── Footer Action Bar ── */}
-              <motion.div
-                className="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4"
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
-              >
+              {/* Sticky footer */}
+              <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
                 <motion.button
+                  type="button"
                   onClick={() => setSelectedPet(null)}
                   className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
                   whileHover={{ scale: 1.02 }}
@@ -615,12 +570,12 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                 >
                   Close
                 </motion.button>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <motion.button
                     type="button"
                     disabled
                     title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#2C6E69] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
+                    className="flex items-center gap-2 rounded-xl bg-[#0B1629] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                   >
@@ -628,7 +583,7 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                     Edit
                   </motion.button>
                   <motion.button
-                    onClick={() => { setSelectedPet(null); setDeleteTarget(selectedPet); }}
+                    onClick={() => { setSelectedPet(null); setDeleteTarget(display); }}
                     className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
                     whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
                     whileTap={{ scale: 0.97 }}
@@ -638,7 +593,7 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                     Delete
                   </motion.button>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -730,15 +685,13 @@ function DeletePetModal({
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="" className="h-10 w-10 rounded-xl object-cover" />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-red-400 ring-1 ring-red-100">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-xl ring-1 ring-red-100">
                     {pet.type === 'dog' ? '🐕' : '🐈'}
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">
-                    {pet.name || 'Unknown'}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">{pet.breed || '—'}</p>
+                  <p className="text-sm font-semibold text-gray-900 truncate">{pet.name || 'Unknown'}</p>
+                  <p className="text-xs text-gray-500 truncate capitalize">{pet.breed || '—'} · {pet.type}</p>
                 </div>
               </motion.div>
 
@@ -758,7 +711,7 @@ function DeletePetModal({
                   whileTap={!isPending ? { scale: 0.98 } : {}}
                 >
                   {isPending ? (
-                    <span className="inline-flex items-center gap-2">
+                    <span className="inline-flex items-center justify-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
                       Deleting...
                     </span>

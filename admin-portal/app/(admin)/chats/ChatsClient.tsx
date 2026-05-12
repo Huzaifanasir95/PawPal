@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
+import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import Badge from '@/components/Badge';
-import { Search, Eye, Trash2, X, MessageSquare } from 'lucide-react';
+import { Search, Eye, Trash2, X, MessageSquare, AlertTriangle } from 'lucide-react';
 import { timeAgo, formatDateTime } from '@/lib/utils';
 import { deleteChat, deleteMessage } from '@/lib/admin-actions';
 
@@ -33,6 +34,77 @@ interface Chat {
   message_count: number;
 }
 
+// ── Animation constants ──────────────────────────────────────────────────────
+
+const EASE_OUT = [0.16, 1, 0.3, 1] as const;
+const EASE_IN  = [0.7, 0, 0.84, 0] as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0 },
+};
+
+const backdropVariants = {
+  hidden: { opacity: 0 },
+  show:   { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
+  exit:   { opacity: 0, transition: { duration: 0.2,  ease: EASE_IN  } },
+};
+
+const drawerVariants = {
+  hidden: { x: '100%', opacity: 0 },
+  show:   { x: 0, opacity: 1, transition: { type: 'spring' as const, stiffness: 280, damping: 28, mass: 0.9 } },
+  exit:   { x: '100%', opacity: 0, transition: { duration: 0.22, ease: EASE_IN } },
+};
+
+const drawerItemVariants = {
+  hidden: { opacity: 0, x: 18 },
+  show:   { opacity: 1, x: 0, transition: { duration: 0.28, ease: EASE_OUT } },
+};
+
+const drawerContentVariants = {
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.08 } },
+};
+
+const deleteBackdropVariants = {
+  hidden: { opacity: 0, backgroundColor: 'rgba(220, 38, 38, 0.0)' },
+  show: {
+    opacity: 1,
+    backgroundColor: ['rgba(220, 38, 38, 0.05)', 'rgba(220, 38, 38, 0.2)', 'rgba(220, 38, 38, 0.12)'],
+    transition: { duration: 0.45, ease: EASE_OUT },
+  },
+  exit: { opacity: 0, backgroundColor: 'rgba(220, 38, 38, 0.0)', transition: { duration: 0.2 } },
+};
+
+const deleteModalVariants = {
+  hidden: { opacity: 0, scale: 0.86, y: -8, rotateZ: -1 },
+  show: {
+    opacity: 1, scale: 1, y: 0, rotateZ: 0,
+    transition: { type: 'spring' as const, stiffness: 520, damping: 26, mass: 0.7 },
+  },
+  exit: { opacity: 0, scale: 0.92, y: 16, transition: { duration: 0.2 } },
+};
+
+const deleteContentVariants = {
+  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+};
+
+const deleteItemVariants = {
+  hidden: { opacity: 0, y: 8 },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
+};
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function displayName(user: { name: string | null; email: string | null } | null) {
+  return user?.name || user?.email || 'Unknown';
+}
+
+function userInitial(user: { name: string | null; email: string | null } | null) {
+  return (displayName(user))[0]?.toUpperCase() ?? '?';
+}
+
+// ── Main component ───────────────────────────────────────────────────────────
+
 export default function ChatsClient({ chats: initialChats }: { chats: Chat[] }) {
   const [chats, setChats] = useState(initialChats);
   const [search, setSearch] = useState('');
@@ -52,8 +124,6 @@ export default function ChatsClient({ chats: initialChats }: { chats: Chat[] }) 
     );
   });
 
-  const totalMessages = chats.reduce((sum, c) => sum + c.message_count, 0);
-
   function handleDeleteChat(id: string) {
     startTransition(async () => {
       const res = await deleteChat(id);
@@ -69,63 +139,58 @@ export default function ChatsClient({ chats: initialChats }: { chats: Chat[] }) 
     startTransition(async () => {
       const res = await deleteMessage(msgId);
       if (res.success) {
-        setChats((prev) =>
-          prev.map((c) => ({
-            ...c,
-            messages: c.messages.filter((m) => m.id !== msgId),
-            message_count: c.messages.filter((m) => m.id !== msgId).length,
-          }))
-        );
-        if (selectedChat) {
-          setSelectedChat((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  messages: prev.messages.filter((m) => m.id !== msgId),
-                  message_count: prev.messages.filter((m) => m.id !== msgId).length,
-                }
-              : prev
-          );
-        }
+        const updater = (c: Chat) => ({
+          ...c,
+          messages: c.messages.filter((m) => m.id !== msgId),
+          message_count: c.messages.filter((m) => m.id !== msgId).length,
+        });
+        setChats((prev) => prev.map(updater));
+        if (selectedChat) setSelectedChat((prev) => (prev ? updater(prev) : prev));
       }
     });
   }
 
-  function displayName(user: { name: string | null; email: string | null } | null) {
-    return user?.name || user?.email || 'Unknown';
-  }
+  const display = selectedChat;
+  const totalMessages = chats.reduce((sum, c) => sum + c.message_count, 0);
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Chats & Messages</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {chats.length} conversations — {totalMessages} total messages
-        </p>
-      </div>
-
+    <>
       {/* Search */}
-      <div className="mb-4">
-        <div className="relative max-w-md">
+      <motion.div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        initial="hidden"
+        animate="show"
+        variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
+      >
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by participant name, email, or message…"
-            className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#2C6E69] focus:outline-none focus:ring-1 focus:ring-[#2C6E69]"
+            className="w-80 rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm text-gray-700 outline-none focus:border-[#0B1629] focus:ring-1 focus:ring-[#0B1629]"
           />
         </div>
-      </div>
+        <p className="text-sm text-gray-400">
+          {chats.length} conversations · {totalMessages} total messages
+        </p>
+      </motion.div>
 
-      {/* Chat List */}
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      {/* Table */}
+      <motion.div
+        className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+        initial="hidden"
+        animate="show"
+        variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.05 }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-[#0B1629]">
                 {['Pet Owner', 'Vet', 'Last Message', 'Messages', 'Unread', 'Last Active', 'Actions'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-white">
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white">
                     {h}
                   </th>
                 ))}
@@ -134,20 +199,24 @@ export default function ChatsClient({ chats: initialChats }: { chats: Chat[] }) 
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center text-sm text-gray-400">
-                    No chats found
-                  </td>
+                  <td colSpan={7} className="py-16 text-center text-sm text-gray-400">No chats found</td>
                 </tr>
               ) : (
-                filtered.map((chat) => (
-                  <tr key={chat.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                filtered.map((chat, i) => (
+                  <motion.tr
+                    key={chat.id}
+                    className="border-b border-gray-50 last:border-0 hover:bg-[#0B1629]/5 transition-colors"
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25, ease: EASE_OUT, delay: i * 0.04 }}
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {chat.owner?.avatar ? (
                           <img src={chat.owner.avatar} alt="" className="h-7 w-7 rounded-full object-cover" />
                         ) : (
                           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                            {(chat.owner?.name ?? '?')[0]?.toUpperCase()}
+                            {userInitial(chat.owner)}
                           </div>
                         )}
                         <span className="text-sm text-gray-700">{displayName(chat.owner)}</span>
@@ -158,8 +227,8 @@ export default function ChatsClient({ chats: initialChats }: { chats: Chat[] }) 
                         {chat.vet?.avatar ? (
                           <img src={chat.vet.avatar} alt="" className="h-7 w-7 rounded-full object-cover" />
                         ) : (
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#B3E0DB] text-xs font-bold text-[#2C6E69]">
-                            {(chat.vet?.name ?? '?')[0]?.toUpperCase()}
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0B1629]/10 text-xs font-bold text-[#0B1629]">
+                            {userInitial(chat.vet)}
                           </div>
                         )}
                         <span className="text-sm text-gray-700">{displayName(chat.vet)}</span>
@@ -186,122 +255,332 @@ export default function ChatsClient({ chats: initialChats }: { chats: Chat[] }) 
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => setSelectedChat(chat)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-[#2C6E69]">
+                        <motion.button
+                          onClick={() => setSelectedChat(chat)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-[#0B1629]/5 hover:text-[#0B1629] transition-colors"
+                          title="View chat"
+                          whileHover={{ scale: 1.08, y: -1 }}
+                          whileTap={{ scale: 0.96 }}
+                        >
                           <Eye className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => setDeleteTarget(chat)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500">
+                        </motion.button>
+                        <motion.button
+                          onClick={() => setDeleteTarget(chat)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                          title="Delete chat"
+                          whileHover={{ x: [0, -1.5, 1.5, -1, 1, 0] }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={{ duration: 0.35 }}
+                        >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </motion.button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Message Viewer Drawer */}
-      {selectedChat && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/20" onClick={() => setSelectedChat(null)} />
-          <div className="relative flex w-full max-w-lg flex-col bg-white shadow-2xl">
-            {/* Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Chat Messages</h2>
-                <p className="text-xs text-gray-500">
-                  {displayName(selectedChat.owner)} ↔ {displayName(selectedChat.vet)}
-                </p>
-              </div>
-              <button onClick={() => setSelectedChat(null)} className="rounded-lg p-2 hover:bg-gray-100">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+      {/* ── Right-side Detail Drawer ── */}
+      <AnimatePresence>
+        {display && (
+          <motion.div className="fixed inset-0 z-50 flex justify-end">
+            {/* Backdrop */}
+            <motion.div
+              className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+              onClick={() => setSelectedChat(null)}
+              variants={backdropVariants}
+              initial="hidden"
+              animate="show"
+              exit="exit"
+            />
 
-            {/* Chat Info */}
-            <div className="border-b bg-gray-50 px-6 py-3">
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>{selectedChat.message_count} messages</span>
-                <span>Started {formatDateTime(selectedChat.created_at)}</span>
-              </div>
-            </div>
+            {/* Drawer panel */}
+            <motion.div
+              className="relative flex h-full w-full max-w-lg flex-col bg-white shadow-2xl"
+              variants={drawerVariants}
+              initial="hidden"
+              animate="show"
+              exit="exit"
+            >
+              {/* Branded header */}
+              <div
+                className="relative flex-shrink-0 overflow-hidden px-6 pb-5 pt-6"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 55%, #2C6E69 100%)' }}
+              >
+                <motion.div
+                  className="pointer-events-none absolute inset-0 skew-x-[-20deg] bg-white/5"
+                  animate={{ x: ['-120%', '220%'] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
+                />
+                <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {selectedChat.messages.length === 0 ? (
-                <p className="py-8 text-center text-sm text-gray-400">No messages in this chat</p>
-              ) : (
-                selectedChat.messages.map((msg) => {
-                  const isOwner = msg.sender_id === selectedChat.pet_owner_id;
-                  return (
-                    <div key={msg.id} className={`flex ${isOwner ? 'justify-start' : 'justify-end'}`}>
-                      <div className={`group relative max-w-[80%] rounded-xl px-3 py-2 ${
-                        isOwner ? 'bg-gray-100 text-gray-800' : 'bg-[#2C6E69] text-white'
-                      }`}>
-                        <p className={`text-[10px] font-semibold mb-0.5 ${isOwner ? 'text-gray-500' : 'text-white/70'}`}>
-                          {msg.sender?.name || msg.sender?.email || 'Unknown'}
-                          {isOwner ? ' (Owner)' : ' (Vet)'}
-                        </p>
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                        <p className={`text-[10px] mt-1 ${isOwner ? 'text-gray-400' : 'text-white/60'}`}>
-                          {formatDateTime(msg.created_at)}
-                          {!msg.is_read && <span className="ml-1">• unread</span>}
-                        </p>
-                        <button
-                          onClick={() => handleDeleteMessage(msg.id)}
-                          className={`absolute -top-2 -right-2 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs shadow`}
-                          title="Delete message"
-                        >
-                          ×
-                        </button>
-                      </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedChat(null)}
+                  className="absolute right-4 top-4 rounded-xl p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+
+                <div className="relative flex items-start gap-4">
+                  {/* Two participant avatars overlapping */}
+                  <div className="relative flex-shrink-0 h-14 w-14">
+                    <div className="absolute bottom-0 left-0 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/80 text-sm font-black text-white ring-2 ring-white/20 shadow">
+                      {userInitial(display.owner)}
                     </div>
-                  );
-                })
-              )}
-            </div>
+                    <div
+                      className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black text-white ring-2 ring-white/20 shadow"
+                      style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
+                    >
+                      {userInitial(display.vet)}
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1 pr-8">
+                    <p className="text-lg font-black leading-tight text-white truncate">Chat Messages</p>
+                    <p className="mt-0.5 text-sm text-white/55 truncate">
+                      {displayName(display.owner)} ↔ {displayName(display.vet)}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold text-white ring-1 ring-white/20">
+                        <MessageSquare className="h-3 w-3" />
+                        {display.message_count} messages
+                      </span>
+                      {(display.unread_count_owner + display.unread_count_vet) > 0 && (
+                        <span className="inline-flex items-center rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[11px] font-semibold text-amber-200 ring-1 ring-amber-400/30">
+                          {display.unread_count_owner + display.unread_count_vet} unread
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            {/* Footer */}
-            <div className="border-t bg-white px-6 py-4 space-y-3">
-              <p className="text-xs text-gray-300">Chat ID: {selectedChat.id}</p>
-              <button
-                onClick={() => { setSelectedChat(null); setDeleteTarget(selectedChat); }}
-                className="w-full rounded-xl bg-red-50 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors"
+              {/* Chat info bar */}
+              <motion.div
+                className="flex-shrink-0 flex items-center justify-between border-b border-gray-100 bg-gray-50/60 px-6 py-2.5 text-xs text-gray-400"
+                variants={drawerItemVariants}
+                initial="hidden"
+                animate="show"
               >
-                Delete Entire Chat
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                <span>Started {formatDateTime(display.created_at)}</span>
+                <span>{display.message_count} total messages</span>
+              </motion.div>
 
-      {/* Delete Modal */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setDeleteTarget(null)} />
-          <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-900">Delete Chat</h3>
-            <p className="mt-2 text-sm text-gray-500">
-              Permanently delete the conversation between <strong>{displayName(deleteTarget.owner)}</strong> and{' '}
-              <strong>{displayName(deleteTarget.vet)}</strong>? All {deleteTarget.message_count} messages will be removed. This cannot be undone.
-            </p>
-            <div className="mt-5 flex gap-3">
-              <button onClick={() => setDeleteTarget(null)} className="flex-1 rounded-xl border border-gray-200 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                Cancel
-              </button>
-              <button
-                disabled={isPending}
-                onClick={() => handleDeleteChat(deleteTarget.id)}
-                className="flex-1 rounded-xl bg-red-600 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              {/* Messages */}
+              <motion.div
+                className="flex-1 overflow-y-auto p-4 space-y-3"
+                variants={drawerContentVariants}
+                initial="hidden"
+                animate="show"
               >
-                {isPending ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
+                {display.messages.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-gray-400">No messages in this chat</p>
+                ) : (
+                  display.messages.map((msg, mi) => {
+                    const isOwner = msg.sender_id === display.pet_owner_id;
+                    return (
+                      <motion.div
+                        key={msg.id}
+                        className={`flex ${isOwner ? 'justify-start' : 'justify-end'}`}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, ease: EASE_OUT, delay: 0.05 + mi * 0.04 }}
+                      >
+                        <div className={`group relative max-w-[80%] rounded-2xl px-3.5 py-2.5 ${
+                          isOwner
+                            ? 'bg-gray-100 text-gray-800'
+                            : 'bg-[#0B1629] text-white'
+                        }`}>
+                          <p className={`text-[10px] font-semibold mb-0.5 ${isOwner ? 'text-gray-500' : 'text-white/60'}`}>
+                            {msg.sender?.name || msg.sender?.email || 'Unknown'}
+                            {isOwner ? ' (Owner)' : ' (Vet)'}
+                          </p>
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                          <p className={`text-[10px] mt-1 ${isOwner ? 'text-gray-400' : 'text-white/50'}`}>
+                            {formatDateTime(msg.created_at)}
+                            {!msg.is_read && <span className="ml-1">· unread</span>}
+                          </p>
+                          <motion.button
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            disabled={isPending}
+                            className="absolute -top-2 -right-2 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs shadow disabled:opacity-50"
+                            title="Delete message"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            ×
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </motion.div>
+
+              {/* Sticky footer */}
+              <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
+                <motion.button
+                  type="button"
+                  onClick={() => setSelectedChat(null)}
+                  className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  Close
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => { setSelectedChat(null); setDeleteTarget(display); }}
+                  className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
+                  whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Chat
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Delete Modal ── */}
+      <DeleteChatModal
+        chat={deleteTarget}
+        open={!!deleteTarget}
+        isPending={isPending}
+        onCancel={() => !isPending && setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && handleDeleteChat(deleteTarget.id)}
+      />
+    </>
+  );
+}
+
+// ── Animated delete confirmation ─────────────────────────────────────────────
+
+function DeleteChatModal({
+  chat,
+  open,
+  isPending,
+  onCancel,
+  onConfirm,
+}: {
+  chat: Chat | null;
+  open: boolean;
+  isPending: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const warningControls = useAnimation();
+
+  useEffect(() => {
+    if (open) {
+      warningControls.start({
+        scale: [1, 1.15, 1],
+        rotate: [0, -8, 8, 0],
+        transition: { duration: 0.5, ease: EASE_OUT },
+      });
+    }
+  }, [open, warningControls]);
+
+  return (
+    <AnimatePresence>
+      {open && chat && (
+        <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <motion.div
+            className="absolute inset-0 backdrop-blur-[2px]"
+            onClick={onCancel}
+            variants={deleteBackdropVariants}
+            initial="hidden"
+            animate="show"
+            exit="exit"
+          />
+          <motion.div
+            className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-red-200/40"
+            variants={deleteModalVariants}
+            initial="hidden"
+            animate="show"
+            exit="exit"
+            style={{ transformOrigin: '85% 15%', transformPerspective: 1200 }}
+          >
+            <motion.div className="px-6 py-5" variants={deleteContentVariants} initial="hidden" animate="show">
+              <motion.div className="flex items-start gap-4" variants={deleteItemVariants}>
+                <motion.div
+                  className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100"
+                  animate={warningControls}
+                >
+                  <AlertTriangle className="h-6 w-6" />
+                </motion.div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete chat?</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Permanently delete the conversation between{' '}
+                    <strong>{displayName(chat.owner)}</strong> and{' '}
+                    <strong>{displayName(chat.vet)}</strong>? All {chat.message_count} messages will be removed. This cannot be undone.
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="mt-4 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50/40 p-3"
+                variants={deleteItemVariants}
+              >
+                <div className="flex -space-x-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-xs font-black text-blue-600 ring-2 ring-white">
+                    {userInitial(chat.owner)}
+                  </div>
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black text-white ring-2 ring-white"
+                    style={{ background: '#0B1629' }}
+                  >
+                    {userInitial(chat.vet)}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    {displayName(chat.owner)} ↔ {displayName(chat.vet)}
+                  </p>
+                  <p className="text-xs text-gray-500">{chat.message_count} messages</p>
+                </div>
+              </motion.div>
+
+              <motion.div className="mt-5 flex gap-3" variants={deleteItemVariants}>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={onCancel}
+                  className="flex-1 rounded-xl border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <motion.button
+                  type="button"
+                  disabled={isPending}
+                  onClick={onConfirm}
+                  className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:opacity-50"
+                  whileHover={!isPending ? { scale: 1.02 } : {}}
+                  whileTap={!isPending ? { scale: 0.98 } : {}}
+                >
+                  {isPending ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
+                      Deleting…
+                    </span>
+                  ) : (
+                    'Delete'
+                  )}
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       )}
-    </div>
+    </AnimatePresence>
   );
 }

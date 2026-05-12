@@ -26,34 +26,27 @@ const fadeUp = {
 };
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-const EASE_IN = [0.7, 0, 0.84, 0] as const;
+const EASE_IN  = [0.7, 0, 0.84, 0] as const;
 
 const backdropVariants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
-  exit: { opacity: 0, transition: { duration: 0.2, ease: EASE_IN } },
+  show:   { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
+  exit:   { opacity: 0, transition: { duration: 0.2,  ease: EASE_IN  } },
 };
 
-const modalVariants = {
-  hidden: { opacity: 0, scale: 0.82, y: 26, rotateX: -12, rotateZ: -1 },
-  show: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    rotateX: 0,
-    rotateZ: 0,
-    transition: { type: 'spring' as const, stiffness: 260, damping: 22, mass: 0.8 },
-  },
-  exit: { opacity: 0, scale: 0.9, y: 18, rotateX: 6, rotateZ: 1, transition: { duration: 0.2 } },
+const drawerVariants = {
+  hidden: { x: '100%', opacity: 0 },
+  show:   { x: 0, opacity: 1, transition: { type: 'spring' as const, stiffness: 280, damping: 28, mass: 0.9 } },
+  exit:   { x: '100%', opacity: 0, transition: { duration: 0.22, ease: EASE_IN } },
 };
 
-const modalContentVariants = {
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+const drawerItemVariants = {
+  hidden: { opacity: 0, x: 18 },
+  show:   { opacity: 1, x: 0, transition: { duration: 0.28, ease: EASE_OUT } },
 };
 
-const modalItemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: EASE_OUT } },
+const drawerContentVariants = {
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.08 } },
 };
 
 const deleteBackdropVariants = {
@@ -69,10 +62,7 @@ const deleteBackdropVariants = {
 const deleteModalVariants = {
   hidden: { opacity: 0, scale: 0.86, y: -8, rotateZ: -1 },
   show: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    rotateZ: 0,
+    opacity: 1, scale: 1, y: 0, rotateZ: 0,
     transition: { type: 'spring' as const, stiffness: 520, damping: 26, mass: 0.7 },
   },
   exit: { opacity: 0, scale: 0.92, y: 16, transition: { duration: 0.2 } },
@@ -84,7 +74,7 @@ const deleteContentVariants = {
 
 const deleteItemVariants = {
   hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
 };
 
 interface Comment {
@@ -163,6 +153,8 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
       }
     });
   }
+
+  const display = selectedPost;
 
   return (
     <>
@@ -300,13 +292,13 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
         </div>
       </motion.div>
 
-      {/* Detail Modal */}
+      {/* ── Right-side Detail Drawer ── */}
       <AnimatePresence>
-        {selectedPost && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        {display && (
+          <motion.div className="fixed inset-0 z-50 flex justify-end">
             {/* Backdrop */}
             <motion.div
-              className="absolute inset-0 bg-black/40 backdrop-blur-[3px]"
+              className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
               onClick={() => setSelectedPost(null)}
               variants={backdropVariants}
               initial="hidden"
@@ -314,156 +306,166 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
               exit="exit"
             />
 
-            {/* Modal */}
+            {/* Drawer panel */}
             <motion.div
-              className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
-              variants={modalVariants}
+              className="relative flex h-full w-full max-w-lg flex-col bg-white shadow-2xl"
+              variants={drawerVariants}
               initial="hidden"
               animate="show"
               exit="exit"
-              style={{ transformOrigin: '50% 10%', transformPerspective: 1200 }}
             >
-              {/* ── Branded Gradient Header ── */}
-              <motion.div
-                className="relative overflow-hidden px-6 pt-6 pb-5"
-                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 45%, #2C6E69 100%)' }}
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
+              {/* Branded header */}
+              <div
+                className="relative flex-shrink-0 overflow-hidden px-6 pb-5 pt-6"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 55%, #2C6E69 100%)' }}
               >
-                {/* Decorative circles */}
+                <motion.div
+                  className="pointer-events-none absolute inset-0 skew-x-[-20deg] bg-white/5"
+                  animate={{ x: ['-120%', '220%'] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
+                />
                 <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
-                <div className="pointer-events-none absolute -right-2 top-8 h-24 w-24 rounded-full bg-white/5" />
 
-                <div className="relative flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-black text-white tracking-tight">Post Details</h2>
-                    <p className="mt-1 text-xs text-white/55">
-                      {formatDateTime(selectedPost.created_at)}
-                    </p>
-                    {/* Category pill on header */}
-                    <span className="mt-2 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold capitalize text-white ring-1 ring-white/20">
-                      {selectedPost.category ?? 'general'}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setSelectedPost(null)}
-                    className="rounded-xl p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
-                    aria-label="Close"
+                <button
+                  type="button"
+                  onClick={() => setSelectedPost(null)}
+                  className="absolute right-4 top-4 rounded-xl p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+
+                <div className="relative flex items-start gap-4">
+                  {/* Author avatar */}
+                  <div
+                    className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl text-xl font-black text-white ring-2 ring-white/30 shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
                   >
-                    <X className="h-5 w-5" />
-                  </button>
+                    {(display.profiles?.full_name || display.profiles?.email || '?')[0].toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1 pr-8">
+                    <p className="text-lg font-black leading-tight text-white truncate">
+                      Post Details
+                    </p>
+                    <p className="mt-0.5 text-sm text-white/55 truncate">
+                      by {display.profiles?.full_name || display.profiles?.email || 'Unknown'}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold capitalize text-white ring-1 ring-white/20">
+                        {display.category ?? 'general'}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white ring-1 ring-white/15">
+                        <Heart className="h-3 w-3 fill-white/70" />
+                        {display.likes_count ?? 0}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white ring-1 ring-white/15">
+                        <MessageSquare className="h-3 w-3" />
+                        {display.comments_count ?? 0}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </motion.div>
+              </div>
 
-              {/* ── Scrollable Body ── */}
+              {/* Scrollable body */}
               <motion.div
-                className="max-h-[65vh] overflow-y-auto"
-                variants={modalContentVariants}
+                className="flex-1 overflow-y-auto"
+                variants={drawerContentVariants}
                 initial="hidden"
                 animate="show"
               >
-                <div className="space-y-5 p-6">
+                <div className="space-y-4 p-6">
 
-                  {/* ── Author Card ── */}
+                  {/* Author Card */}
                   <motion.div
-                    className="relative overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-gradient-to-r from-[#2C6E69]/5 to-transparent p-4 shadow-sm"
-                    variants={modalItemVariants}
-                    style={{ borderLeft: '3px solid #2C6E69' }}
+                    className="relative overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
-                    <div className="flex items-center gap-4">
-                      {/* Avatar */}
-                      <div
-                        className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-base font-black text-white shadow-md"
-                        style={{ background: 'linear-gradient(135deg, #1a3a38, #2C6E69)' }}
-                      >
-                        {(selectedPost.profiles?.full_name || selectedPost.profiles?.email || '?')[0].toUpperCase()}
+                    <div className="mb-2 flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <MessageSquare className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-gray-900 text-base leading-tight">
-                          {selectedPost.profiles?.full_name || 'Unknown'}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">
-                          {selectedPost.profiles?.email || '—'}
-                        </p>
-                        {/* Metric badges */}
-                        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#2C6E69]/10 px-2.5 py-1 text-xs font-semibold capitalize text-[#2C6E69]">
-                            {selectedPost.category ?? 'general'}
-                          </span>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-500">
-                            <Heart className="h-3 w-3 fill-rose-400 text-rose-400" />
-                            {selectedPost.likes_count ?? 0}
-                          </span>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-500">
-                            <MessageSquare className="h-3 w-3" />
-                            {selectedPost.comments_count ?? 0}
-                          </span>
-                        </div>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Author</h3>
+                    </div>
+                    <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm">
+                      <div
+                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
+                        style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
+                      >
+                        {(display.profiles?.full_name || display.profiles?.email || '?')[0].toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-gray-900 text-sm truncate">{display.profiles?.full_name || 'Unknown'}</p>
+                        <p className="text-xs text-gray-400 truncate">{display.profiles?.email || '—'}</p>
                       </div>
                     </div>
+                    <p className="mt-2 text-xs text-gray-400 px-1">Posted {formatDateTime(display.created_at)}</p>
                   </motion.div>
 
-                  {/* ── Post Content ── */}
-                  <motion.div variants={modalItemVariants}>
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                      Post Content
-                    </p>
-                    <div className="rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4">
+                  {/* Post Content */}
+                  <motion.div variants={drawerItemVariants}>
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Post Content</p>
+                    <div
+                      className="rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4"
+                      style={{ borderLeft: '3px solid #0B1629' }}
+                    >
                       <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
-                        {selectedPost.content}
+                        {display.content}
                       </p>
                     </div>
                   </motion.div>
 
-                  {/* ── Images ── */}
-                  {selectedPost.image_urls && selectedPost.image_urls.length > 0 && (
-                    <motion.div variants={modalItemVariants}>
-                      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Images</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {selectedPost.image_urls.map((url, i) => (
-                          <img
+                  {/* Images */}
+                  {display.image_urls && display.image_urls.length > 0 && (
+                    <motion.div variants={drawerItemVariants}>
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Images</p>
+                      <div className={`grid gap-2 ${display.image_urls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                        {display.image_urls.map((url, i) => (
+                          <motion.div
                             key={`${url}-${i}`}
-                            src={url}
-                            alt={`Post image ${i + 1}`}
-                            className="h-32 w-full rounded-xl object-cover"
-                          />
+                            className="overflow-hidden rounded-xl shadow-sm"
+                            whileHover={{ scale: 1.02 }}
+                          >
+                            <img src={url} alt={`Post image ${i + 1}`} className="h-32 w-full object-cover" />
+                          </motion.div>
                         ))}
                       </div>
                     </motion.div>
                   )}
 
-                  {/* ── Comments Section ── */}
-                  <motion.div variants={modalItemVariants}>
+                  {/* Comments Section */}
+                  <motion.div variants={drawerItemVariants}>
                     <div className="mb-3 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <MessageSquare className="h-3.5 w-3.5 text-[#0B1629]" />
+                      </div>
                       <p className="text-sm font-bold text-gray-800">
                         Comments
-                        <span className="ml-1.5 rounded-full bg-[#2C6E69]/10 px-2 py-0.5 text-xs font-semibold text-[#2C6E69]">
-                          {selectedPost.comments.length}
+                        <span className="ml-1.5 rounded-full bg-[#0B1629]/10 px-2 py-0.5 text-xs font-semibold text-[#0B1629]">
+                          {display.comments.length}
                         </span>
                       </p>
                     </div>
-                    <div className="h-px bg-gradient-to-r from-[#2C6E69]/20 to-transparent mb-3" />
+                    <div className="h-px bg-gradient-to-r from-[#0B1629]/20 to-transparent mb-3" />
 
-                    {selectedPost.comments.length === 0 ? (
+                    {display.comments.length === 0 ? (
                       <p className="rounded-xl bg-gray-50 py-6 text-center text-sm text-gray-400">
                         No comments yet
                       </p>
                     ) : (
                       <div className="space-y-2.5">
-                        {selectedPost.comments.map((c, ci) => (
+                        {display.comments.map((c, ci) => (
                           <motion.div
                             key={c.id}
                             className="group relative overflow-hidden rounded-xl border border-gray-100 bg-white p-3.5 shadow-sm transition-shadow hover:shadow-md"
-                            style={{ borderLeft: '3px solid #B3E0DB' }}
+                            style={{ borderLeft: '3px solid #0B1629' }}
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.22, ease: EASE_OUT, delay: 0.05 + ci * 0.06 }}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex items-start gap-2.5 min-w-0">
-                                {/* Commenter avatar */}
                                 <div
                                   className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-black text-white"
                                   style={{ background: `hsl(${(c.author.charCodeAt(0) * 37) % 360}, 55%, 45%)` }}
@@ -484,7 +486,6 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
                                   <p className="mt-1 text-sm text-gray-600 leading-snug">{c.content}</p>
                                 </div>
                               </div>
-                              {/* Delete comment button */}
                               <motion.button
                                 onClick={() => handleDeleteComment(c.id)}
                                 disabled={isPending}
@@ -501,24 +502,23 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
                       </div>
                     )}
                   </motion.div>
+
                 </div>
               </motion.div>
 
-              {/* ── Footer Action Bar ── */}
-              <motion.div
-                className="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4"
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
-              >
-                <button
+              {/* Sticky footer */}
+              <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
+                <motion.button
+                  type="button"
                   onClick={() => setSelectedPost(null)}
                   className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
                 >
                   Close
-                </button>
+                </motion.button>
                 <motion.button
-                  onClick={() => { setSelectedPost(null); setDeleteTarget(selectedPost); }}
+                  onClick={() => { setSelectedPost(null); setDeleteTarget(display); }}
                   disabled={isPending}
                   className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:opacity-50"
                   whileHover={!isPending ? { scale: 1.02, x: [0, -2, 2, -1, 1, 0] } : {}}
@@ -528,7 +528,7 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
                   <Trash2 className="h-4 w-4" />
                   Delete Post
                 </motion.button>
-              </motion.div>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -622,12 +622,8 @@ function DeletePostModal({
                   {author[0] || '?'}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">
-                    {author}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {preview || 'No content'}
-                  </p>
+                  <p className="text-sm font-semibold text-gray-900 truncate">{author}</p>
+                  <p className="text-xs text-gray-500 truncate">{preview || 'No content'}</p>
                 </div>
               </motion.div>
 
@@ -647,7 +643,7 @@ function DeletePostModal({
                   whileTap={!isPending ? { scale: 0.98 } : {}}
                 >
                   {isPending ? (
-                    <span className="inline-flex items-center gap-2">
+                    <span className="inline-flex items-center justify-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
                       Deleting...
                     </span>

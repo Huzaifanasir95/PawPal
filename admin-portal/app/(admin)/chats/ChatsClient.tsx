@@ -390,7 +390,14 @@ export default function ChatsClient({ chats: initialChats }: { chats: Chat[] }) 
                 initial="hidden"
                 animate="show"
               >
-                <span>Started {formatDateTime(display.created_at)}</span>
+                <div className="flex items-center gap-2">
+                  <span>Started {formatDateTime(display.created_at)}</span>
+                  {(() => { const t = chatTypeBadge(display.chat_type); return (
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${t.cls}`}>
+                      {t.label}
+                    </span>
+                  ); })()}
+                </div>
                 <span>{display.message_count} total messages</span>
               </motion.div>
 
@@ -421,7 +428,10 @@ export default function ChatsClient({ chats: initialChats }: { chats: Chat[] }) 
                         }`}>
                           <p className={`text-[10px] font-semibold mb-0.5 ${isOwner ? 'text-gray-500' : 'text-white/60'}`}>
                             {msg.sender?.name || msg.sender?.email || 'Unknown'}
-                            {isOwner ? ' (Owner)' : ' (Vet)'}
+                            {isOwner
+                              ? ` (${display.owner?.role ? display.owner.role.charAt(0).toUpperCase() + display.owner.role.slice(1) : 'Owner'})`
+                              : ` (${display.vet?.role ? display.vet.role.charAt(0).toUpperCase() + display.vet.role.slice(1) : 'Vet'})`
+                            }
                           </p>
                           <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                           <p className={`text-[10px] mt-1 ${isOwner ? 'text-gray-400' : 'text-white/50'}`}>

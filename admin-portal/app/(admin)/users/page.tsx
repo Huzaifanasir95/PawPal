@@ -13,7 +13,7 @@ async function getUsers() {
 
   const { data, error } = await supabase
     .from('users')
-    .select('id, display_name, email, account_type, user_role, avatar_url, is_active, created_at, updated_at')
+    .select('id, display_name, email, account_type, user_role, avatar_url, is_active, email_verified, created_at, updated_at')
     .order('created_at', { ascending: false })
     .limit(500);
 
@@ -40,7 +40,7 @@ async function getUsers() {
 export default async function UsersPage() {
   const users = await getUsers();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const vets = users.filter((u: any) => u.user_role === 'vet').length;
+  const vets = users.filter((u: any) => u.user_role === 'vet' || u.account_type === 'vet').length;
 
   return (
     <div className="p-8">

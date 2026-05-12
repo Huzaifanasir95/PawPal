@@ -8,7 +8,7 @@ import {
   DollarSign, MapPin, Phone, Hash,
 } from 'lucide-react';
 import Badge from '@/components/Badge';
-import { timeAgo, formatDateTime } from '@/lib/utils';
+import { timeAgo } from '@/lib/utils';
 import { updateProductStatus, deleteProduct, updateOrderStatus, deleteOrder } from '@/lib/admin-actions';
 
 export interface Product {

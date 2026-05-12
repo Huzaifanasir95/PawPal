@@ -162,8 +162,8 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                       ),
                     ),
                     SizedBox(height: 10.h),
-                    SizedBox(
-                      width: 198.w,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 198.w),
                       child: Text(
                         '${_getGreeting()}. Keep your pets healthy, happy, and safe.',
                         style: TextStyle(
@@ -780,9 +780,10 @@ class _InteractivePixelCatWidget extends StatefulWidget {
 }
 
 class _InteractivePixelCatWidgetState
-    extends State<_InteractivePixelCatWidget> {
+    extends State<_InteractivePixelCatWidget> with SingleTickerProviderStateMixin {
   int _spriteIndex = 0;
-  Timer? _runTimer;
+  late final AnimationController _animController;
+  double _prevAnimValue = 0.0;
 
   static const Map<String, List<List<String>>> _spritePresets = {
     'classic': [
@@ -988,19 +989,24 @@ class _InteractivePixelCatWidgetState
   @override
   void initState() {
     super.initState();
-    _runTimer = Timer.periodic(const Duration(milliseconds: 140), (_) {
-      if (!mounted) return;
-      final spriteSet =
-          _spritePresets[widget.theme] ?? _spritePresets['classic']!;
-      setState(() {
-        _spriteIndex = (_spriteIndex + 1) % spriteSet.length;
-      });
-    });
+    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 140))
+      ..addListener(() {
+        final v = _animController.value;
+        if (v < _prevAnimValue) {
+          if (!mounted) return;
+          final spriteSet = _spritePresets[widget.theme] ?? _spritePresets['classic']!;
+          setState(() {
+            _spriteIndex = (_spriteIndex + 1) % spriteSet.length;
+          });
+        }
+        _prevAnimValue = v;
+      })
+      ..repeat();
   }
 
   @override
   void dispose() {
-    _runTimer?.cancel();
+    _animController.dispose();
     super.dispose();
   }
 
@@ -1175,28 +1181,45 @@ class _PixelSprite extends StatelessWidget {
     return SizedBox(
       width: columns * pixel,
       height: rows * pixel,
-      child: GridView.builder(
-        padding: EdgeInsets.zero,
-        itemCount: rows * columns,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: columns,
-        ),
-        itemBuilder: (context, index) {
-          final x = index % columns;
-          final y = index ~/ columns;
-          final pixelValue = sprite[y][x];
-
-          return Container(
-            margin: const EdgeInsets.all(0.35),
-            decoration: BoxDecoration(
-              color: pixelColor(pixelValue),
-              borderRadius: BorderRadius.circular(0.8),
-            ),
-          );
-        },
+      child: CustomPaint(
+        painter: _PixelPainter(sprite: sprite, pixelColor: pixelColor),
       ),
     );
+  }
+}
+
+class _PixelPainter extends CustomPainter {
+  _PixelPainter({required this.sprite, required this.pixelColor});
+
+  final List<String> sprite;
+  final Color? Function(String) pixelColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rows = sprite.length;
+    final columns = sprite.first.length;
+    const double pixel = 4.2;
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    for (var y = 0; y < rows; y++) {
+      for (var x = 0; x < columns; x++) {
+        final value = sprite[y][x];
+        final color = pixelColor(value);
+        if (color == null) continue;
+        paint.color = color;
+        final rect = Rect.fromLTWH(x * pixel, y * pixel, pixel - 0.7, pixel - 0.7);
+        canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(0.6)), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PixelPainter oldDelegate) {
+    if (oldDelegate.sprite.length != sprite.length) return true;
+    for (var i = 0; i < sprite.length; i++) {
+      if (oldDelegate.sprite[i] != sprite[i]) return true;
+    }
+    return false;
   }
 }
 

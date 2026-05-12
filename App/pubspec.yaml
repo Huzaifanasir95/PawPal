@@ -143,29 +143,29 @@ flutter_launcher_icons:
   ios: true
   web:
     generate: true
-    image_path: assets/appicon/appicon.jpeg
+    image_path: assets/appicon/appicon_square.png
     background_color: "#132A63"
     theme_color: "#132A63"
   windows:
     generate: true
-    image_path: assets/appicon/appicon.jpeg
+    image_path: assets/appicon/appicon_square.png
   macos:
     generate: true
-    image_path: assets/appicon/appicon.jpeg
-  image_path: assets/appicon/appicon.jpeg
+    image_path: assets/appicon/appicon_square.png
+  image_path: assets/appicon/appicon_square.png
   min_sdk_android: 21
 
 flutter_native_splash:
   color: "#132A63"
-  background_image: assets/appicon/appicon.jpeg
+  image: assets/appicon/appicon_square.png
   color_dark: "#132A63"
-  background_image_dark: assets/appicon/appicon.jpeg
+  image_dark: assets/appicon/appicon_square.png
   android_12:
     color: "#132A63"
-    image: assets/appicon/appicon.jpeg
+    image: assets/appicon/appicon_square.png
     icon_background_color: "#132A63"
     color_dark: "#132A63"
-    image_dark: assets/appicon/appicon.jpeg
+    image_dark: assets/appicon/appicon_square.png
     icon_background_color_dark: "#132A63"
 
   # An image asset can refer to one or more resolution-specific "variants", see

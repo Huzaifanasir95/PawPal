@@ -238,14 +238,14 @@ class OnboardingScreenWrapper extends StatelessWidget {
   }
 }
 
-class PawPalApp extends StatefulWidget {
-  const PawPalApp({super.key});
+class PawPawlApp extends StatefulWidget {
+  const PawPawlApp({super.key});
 
   @override
-  State<PawPalApp> createState() => _PawPalAppState();
+  State<PawPawlApp> createState() => _PawPawlAppState();
 }
 
-class _PawPalAppState extends State<PawPalApp> {
+class _PawPawlAppState extends State<PawPawlApp> {
   final AuthRepository _authRepository = getIt<AuthRepository>();
   late AuthBloc _authBloc;
   late AppThemeController _themeController;
@@ -289,7 +289,7 @@ class _PawPalAppState extends State<PawPalApp> {
           return Consumer<AppThemeController>(
             builder: (context, themeController, _) {
               return MaterialApp(
-                title: 'PawPal',
+                title: 'PawPawl',
                 debugShowCheckedModeBanner: false,
                 theme: themeController.lightTheme,
                 darkTheme: themeController.darkTheme,

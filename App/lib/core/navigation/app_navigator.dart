@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:pawpal/features/marketplace/presentation/pages/marketplace_screen.dart';
-import 'package:pawpal/features/marketplace/presentation/pages/orders_screen.dart';
-import 'package:pawpal/features/vet/presentation/pages/vets_list_screen.dart';
-import 'package:pawpal/features/vet/presentation/pages/vet_detail_screen.dart';
-import 'package:pawpal/features/chat/presentation/pages/chats_list_screen.dart';
-import 'package:pawpal/features/chat/presentation/pages/chat_conversation_screen.dart';
-import 'package:pawpal/features/vet/presentation/pages/vet_home_screen.dart';
-import 'package:pawpal/features/community/presentation/pages/community_hub_page.dart';
+import 'package:pawpawl/features/marketplace/presentation/pages/marketplace_screen.dart';
+import 'package:pawpawl/features/marketplace/presentation/pages/orders_screen.dart';
+import 'package:pawpawl/features/vet/presentation/pages/vets_list_screen.dart';
+import 'package:pawpawl/features/vet/presentation/pages/vet_detail_screen.dart';
+import 'package:pawpawl/features/chat/presentation/pages/chats_list_screen.dart';
+import 'package:pawpawl/features/chat/presentation/pages/chat_conversation_screen.dart';
+import 'package:pawpawl/features/vet/presentation/pages/vet_home_screen.dart';
+import 'package:pawpawl/features/community/presentation/pages/community_hub_page.dart';
 
 /// Navigation helper for app-wide routing
 class AppNavigator {

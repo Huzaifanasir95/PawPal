@@ -4,7 +4,7 @@ import { useState, useMemo, useTransition, useEffect } from 'react';
 import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import {
   Search, Trash2, Eye, X, MapPin, Users, Calendar,
-  AlertTriangle, User, Edit,
+  AlertTriangle, User,
 } from 'lucide-react';
 import { formatDateTime, timeAgo } from '@/lib/utils';
 import Badge from '@/components/Badge';
@@ -30,7 +30,7 @@ interface Event {
   status: string | null;
   created_at: string;
   organizer_id: string;
-  organizer: { name: string | null; email: string | null } | null;
+  organizer: { name: string | null; email: string | null; avatar_url: string | null } | null;
   rsvps: RSVP[];
 }
 
@@ -89,6 +89,8 @@ const deleteItemVariants = {
   hidden: { opacity: 0, y: 8 },
   show:   { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
 };
+
+const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -166,7 +168,11 @@ export default function EventsClient({ events: initialEvents }: { events: Event[
   return (
     <>
       {/* Filters */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <motion.div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
+      >
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -188,10 +194,14 @@ export default function EventsClient({ events: initialEvents }: { events: Event[
             </button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Card Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <motion.div
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.06 }}
+      >
         {filtered.length === 0 && (
           <p className="col-span-3 py-16 text-center text-sm text-gray-400">No events found</p>
         )}
@@ -274,7 +284,7 @@ export default function EventsClient({ events: initialEvents }: { events: Event[
             </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* ── Right-side Detail Drawer ── */}
       <AnimatePresence>
@@ -428,12 +438,20 @@ export default function EventsClient({ events: initialEvents }: { events: Event[
                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Organizer</h3>
                     </div>
                     <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm">
-                      <div
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
-                        style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a38)' }}
-                      >
-                        {(display.organizer?.name || display.organizer?.email || '?')[0].toUpperCase()}
-                      </div>
+                      {display.organizer?.avatar_url ? (
+                        <img
+                          src={display.organizer.avatar_url}
+                          alt={display.organizer.name || ''}
+                          className="h-10 w-10 flex-shrink-0 rounded-xl object-cover shadow-sm"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
+                          style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a38)' }}
+                        >
+                          {(display.organizer?.name || display.organizer?.email || '?')[0].toUpperCase()}
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="font-bold text-gray-900 text-sm truncate">{display.organizer?.name || 'Unknown'}</p>
                         <p className="text-xs text-gray-400 truncate">{display.organizer?.email || '—'}</p>
@@ -495,30 +513,17 @@ export default function EventsClient({ events: initialEvents }: { events: Event[
                 >
                   Close
                 </motion.button>
-                <div className="flex flex-wrap items-center gap-2">
-                  <motion.button
-                    type="button"
-                    disabled
-                    title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#0B1629] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    onClick={() => { setSelectedEvent(null); setDeleteTarget(display); }}
-                    className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
-                    whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ duration: 0.35 }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </motion.button>
-                </div>
+                <motion.button
+                  type="button"
+                  onClick={() => { setSelectedEvent(null); setDeleteTarget(display); }}
+                  className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
+                  whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>

@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
-import '../../../../core/constants/app_colors.dart';
+
 import '../../data/models/marketplace_models.dart';
 
 class ProductCard extends StatelessWidget {
@@ -20,16 +20,20 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(18.r),
-          border: Border.all(color: AppColors.primary.withOpacity(0.35)),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.25),
+          ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.18),
+              color: colorScheme.shadow.withValues(alpha: isDark ? 0.18 : 0.07),
               blurRadius: 14,
               offset: const Offset(0, 5),
             ),
@@ -45,8 +49,8 @@ class ProductCard extends StatelessWidget {
                 aspectRatio: 1.0,
                 child:
                     product.firstImage.isNotEmpty
-                        ? _buildProductImage(product.firstImage)
-                        : _buildImagePlaceholder(),
+                        ? _buildProductImage(context, product.firstImage)
+                        : _buildImagePlaceholder(context),
               ),
             ),
 
@@ -65,7 +69,7 @@ class ProductCard extends StatelessWidget {
                           vertical: 3.h,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.googleButton.withOpacity(0.45),
+                          color: colorScheme.primaryContainer.withValues(alpha: 0.55),
                           borderRadius: BorderRadius.circular(6.r),
                         ),
                         child: Text(
@@ -73,7 +77,7 @@ class ProductCard extends StatelessWidget {
                           style: GoogleFonts.mulish(
                             fontSize: 9.sp,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF2C6E69),
+                            color: colorScheme.primary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -88,7 +92,7 @@ class ProductCard extends StatelessWidget {
                       style: GoogleFonts.mulish(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF191D21),
+                        color: colorScheme.onSurface,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -101,7 +105,7 @@ class ProductCard extends StatelessWidget {
                         Icon(
                           Icons.star_rounded,
                           size: 12.sp,
-                          color: const Color(0xFFFFA726),
+                          color: colorScheme.tertiary,
                         ),
                         SizedBox(width: 2.w),
                         Text(
@@ -109,7 +113,7 @@ class ProductCard extends StatelessWidget {
                           style: GoogleFonts.mulish(
                             fontSize: 10.sp,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF6A6A6A),
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                         SizedBox(width: 4.w),
@@ -117,7 +121,7 @@ class ProductCard extends StatelessWidget {
                           '(${product.totalReviews})',
                           style: GoogleFonts.mulish(
                             fontSize: 9.sp,
-                            color: const Color(0xFF6A6A6A),
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -134,7 +138,7 @@ class ProductCard extends StatelessWidget {
                             style: GoogleFonts.mulish(
                               fontSize: 18.sp,
                               fontWeight: FontWeight.w800,
-                              color: const Color(0xFF2C6E69),
+                              color: colorScheme.primary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -147,13 +151,13 @@ class ProductCard extends StatelessWidget {
                               width: 32.w,
                               height: 32.w,
                               decoration: BoxDecoration(
-                                color: AppColors.primary,
+                                color: colorScheme.primary,
                                 borderRadius: BorderRadius.circular(10.r),
                               ),
                               child: Icon(
                                 Icons.add,
                                 size: 18.sp,
-                                color: const Color(0xFF191D21),
+                                color: colorScheme.onPrimary,
                               ),
                             ),
                           ),
@@ -169,20 +173,20 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImagePlaceholder() {
+  Widget _buildImagePlaceholder(BuildContext context) {
     return Container(
-      color: const Color(0xFFF3EFE8),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Center(
         child: Icon(
           Icons.shopping_bag_outlined,
           size: 36.sp,
-          color: const Color(0xFF9AD9D2),
+          color: Theme.of(context).colorScheme.primary,
         ),
       ),
     );
   }
 
-  Widget _buildProductImage(String imageUrl) {
+  Widget _buildProductImage(BuildContext context, String imageUrl) {
     if (imageUrl.startsWith('data:image/')) {
       try {
         final base64Data = imageUrl.split(',').last;
@@ -191,18 +195,18 @@ class ProductCard extends StatelessWidget {
           bytes,
           fit: BoxFit.cover,
           errorBuilder:
-              (context, error, stackTrace) => _buildImagePlaceholder(),
+              (context, error, stackTrace) => _buildImagePlaceholder(context),
         );
       } catch (_) {
-        return _buildImagePlaceholder();
+        return _buildImagePlaceholder(context);
       }
     }
 
     return CachedNetworkImage(
       imageUrl: imageUrl,
       fit: BoxFit.cover,
-      placeholder: (context, url) => _buildImagePlaceholder(),
-      errorWidget: (context, url, error) => _buildImagePlaceholder(),
+      placeholder: (context, url) => _buildImagePlaceholder(context),
+      errorWidget: (context, url, error) => _buildImagePlaceholder(context),
     );
   }
 }

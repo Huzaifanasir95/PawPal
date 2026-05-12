@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/app_images.dart';
@@ -59,7 +58,7 @@ class _AccountTypeSelectionScreenState
         );
       },
       child: Scaffold(
-        backgroundColor: AppColors.authBackground,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: SafeArea(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -79,12 +78,12 @@ class _AccountTypeSelectionScreenState
                           width: 58.w,
                           height: 58.h,
                           decoration: BoxDecoration(
-                            color: AppColors.accent,
+                            color: Theme.of(context).colorScheme.secondary,
                             borderRadius: BorderRadius.circular(29.r),
                           ),
                           child: Icon(
                             Icons.pets,
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                             size: 30.w,
                           ),
                         );
@@ -100,7 +99,7 @@ class _AccountTypeSelectionScreenState
                   AppStrings.selectAccountType,
                   style: AppTextStyles.onboardingTitle.copyWith(
                     fontSize: 20.sp,
-                    color: AppColors.authText,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w400,
                   ),
                   textAlign: TextAlign.center,
@@ -175,10 +174,10 @@ class _AccountTypeSelectionScreenState
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? AppColors.primary.withOpacity(0.1)
-                  : AppColors.surface,
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                  : Theme.of(context).colorScheme.surface,
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.socialBorder,
+            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
             width: 2,
           ),
           borderRadius: BorderRadius.circular(12.r),
@@ -189,10 +188,10 @@ class _AccountTypeSelectionScreenState
               width: 48.w,
               height: 48.h,
               decoration: BoxDecoration(
-                color: AppColors.accent,
+                color: Theme.of(context).colorScheme.secondary,
                 borderRadius: BorderRadius.circular(24.r),
               ),
-              child: Icon(icon, color: AppColors.surface, size: 24.sp),
+              child: Icon(icon, color: Theme.of(context).colorScheme.surface, size: 24.sp),
             ),
             SizedBox(width: 16.w),
             Expanded(
@@ -203,7 +202,7 @@ class _AccountTypeSelectionScreenState
                     title,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 16.sp,
-                      color: AppColors.authInputText,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -212,14 +211,14 @@ class _AccountTypeSelectionScreenState
                     description,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 14.sp,
-                      color: AppColors.authTextSecondary,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ],
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: AppColors.primary, size: 24.sp),
+              Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary, size: 24.sp),
           ],
         ),
       ),
@@ -240,8 +239,8 @@ class _AccountTypeSelectionScreenState
           decoration: BoxDecoration(
             color:
                 _selectedAccountType != null && !isLoading
-                    ? AppColors.googleButton
-                    : AppColors.googleButton.withOpacity(0.5),
+                    ? Colors.white
+                    : Colors.white.withOpacity(0.5),
             borderRadius: BorderRadius.circular(98.r),
           ),
           child: Material(
@@ -261,7 +260,7 @@ class _AccountTypeSelectionScreenState
                           child: CircularProgressIndicator(
                             strokeWidth: 2.w,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.accent,
+                              Theme.of(context).colorScheme.secondary,
                             ),
                           ),
                         )
@@ -269,7 +268,7 @@ class _AccountTypeSelectionScreenState
                           AppStrings.continueText,
                           style: AppTextStyles.onboardingTitle.copyWith(
                             fontSize: 24.sp,
-                            color: AppColors.accent,
+                            color: Theme.of(context).colorScheme.secondary,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -329,3 +328,5 @@ class _AccountTypeSelectionScreenState
     }
   }
 }
+
+

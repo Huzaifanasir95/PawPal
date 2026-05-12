@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/api_client.dart';
@@ -482,14 +481,14 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
           Icon(
             Icons.event_available_outlined,
             size: 56.w,
-            color: AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
           SizedBox(height: 12.h),
           Center(
             child: Text(
               emptyMessage,
               style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ),
@@ -700,7 +699,7 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
       case 'cancelled_vet':
         return Colors.red;
       default:
-        return AppColors.textSecondary;
+        return Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     }
   }
 
@@ -709,3 +708,4 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
     return '${datetime.day}/${datetime.month}/${datetime.year}  ${datetime.hour}:$minutes';
   }
 }
+

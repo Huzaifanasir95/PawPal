@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
@@ -156,7 +155,7 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                         'New Password',
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       SizedBox(height: 10.h),
@@ -166,12 +165,12 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                         decoration: InputDecoration(
                           hintText: 'Enter new password',
                           hintStyle: TextStyle(
-                            color: AppColors.textSecondary.withOpacity(0.6),
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.6),
                             fontSize: 14.sp,
                           ),
                           prefixIcon: Icon(
                             Icons.lock_outlined,
-                            color: AppColors.darkTeal,
+                            color: Theme.of(context).colorScheme.primary,
                             size: 22.sp,
                           ),
                           suffixIcon: IconButton(
@@ -179,7 +178,7 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                               _obscurePassword
                                   ? Icons.visibility_outlined
                                   : Icons.visibility_off_outlined,
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               size: 20.sp,
                             ),
                             onPressed: () => setState(
@@ -196,22 +195,22 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.border, width: 1),
+                                color: Theme.of(context).colorScheme.outline, width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.darkTeal, width: 2),
+                                color: Theme.of(context).colorScheme.primary, width: 2),
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.error, width: 1),
+                                color: Theme.of(context).colorScheme.error, width: 1),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.error, width: 2),
+                                color: Theme.of(context).colorScheme.error, width: 2),
                           ),
                         ),
                         validator: (value) {
@@ -244,7 +243,7 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                         'Confirm Password',
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       SizedBox(height: 10.h),
@@ -254,12 +253,12 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                         decoration: InputDecoration(
                           hintText: 'Re-enter new password',
                           hintStyle: TextStyle(
-                            color: AppColors.textSecondary.withOpacity(0.6),
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.6),
                             fontSize: 14.sp,
                           ),
                           prefixIcon: Icon(
                             Icons.lock_outlined,
-                            color: AppColors.darkTeal,
+                            color: Theme.of(context).colorScheme.primary,
                             size: 22.sp,
                           ),
                           suffixIcon: IconButton(
@@ -267,7 +266,7 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                               _obscureConfirm
                                   ? Icons.visibility_outlined
                                   : Icons.visibility_off_outlined,
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               size: 20.sp,
                             ),
                             onPressed: () => setState(
@@ -284,22 +283,22 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.border, width: 1),
+                                color: Theme.of(context).colorScheme.outline, width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.darkTeal, width: 2),
+                                color: Theme.of(context).colorScheme.primary, width: 2),
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.error, width: 1),
+                                color: Theme.of(context).colorScheme.error, width: 1),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.error, width: 2),
+                                color: Theme.of(context).colorScheme.error, width: 2),
                           ),
                         ),
                         validator: (value) {
@@ -321,9 +320,9 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _resetPassword,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.darkTeal,
+                            backgroundColor: Theme.of(context).colorScheme.primary,
                             disabledBackgroundColor:
-                                AppColors.darkTeal.withOpacity(0.5),
+                                Theme.of(context).colorScheme.primary.withOpacity(0.5),
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -366,14 +365,14 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
         Icon(
           met ? Icons.check_circle : Icons.radio_button_unchecked,
           size: 16.sp,
-          color: met ? AppColors.success : AppColors.textSecondary,
+          color: met ? Colors.green : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
         ),
         SizedBox(width: 8.w),
         Text(
           label,
           style: TextStyle(
             fontSize: 12.sp,
-            color: met ? AppColors.success : AppColors.textSecondary,
+            color: met ? Colors.green : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             fontWeight: met ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
@@ -381,3 +380,5 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
     );
   }
 }
+
+

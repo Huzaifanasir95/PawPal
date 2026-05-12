@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../models/onboarding_page_config.dart';
@@ -21,8 +20,8 @@ class OnboardingPageWidget extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary,
       ),
       child: Stack(
         children: [
@@ -35,7 +34,7 @@ class OnboardingPageWidget extends StatelessWidget {
                 width: petConfig.width.w,
                 height: petConfig.height.h,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(20.r),
                 ),
                 child: ClipRRect(
@@ -49,11 +48,11 @@ class OnboardingPageWidget extends StatelessWidget {
                     return Container(
                       width: 431.w,
                       height: 419.h,
-                      color: AppColors.primary,
-                      child: const Icon(
+                      color: Theme.of(context).colorScheme.primary,
+                      child: Icon(
                         Icons.pets,
                         size: 80,
-                        color: AppColors.accent,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     );
                   },
@@ -71,7 +70,7 @@ class OnboardingPageWidget extends StatelessWidget {
               width: AppDimensions.onboardingPageWidth.w,
               height: 437.h,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(AppDimensions.onboardingContentRadius.r),
                   topRight: Radius.circular(AppDimensions.onboardingContentRadius.r),
@@ -89,12 +88,12 @@ class OnboardingPageWidget extends StatelessWidget {
                         width: 60.w,
                         height: 60.h,
                         decoration: BoxDecoration(
-                          color: AppColors.accent,
+                          color: Theme.of(context).colorScheme.secondary,
                           borderRadius: BorderRadius.circular(30.r),
                         ),
                         child: Icon(
                           Icons.pets,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           size: 30.w,
                         ),
                       );
@@ -110,7 +109,7 @@ class OnboardingPageWidget extends StatelessWidget {
                     child: Text(
                       config.title,
                       style: AppTextStyles.onboardingTitle.copyWith(
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 32.sp,
                       ),
                       textAlign: TextAlign.center,
@@ -126,21 +125,21 @@ class OnboardingPageWidget extends StatelessWidget {
                     child: Text(
                       config.body,
                       style: AppTextStyles.onboardingBody.copyWith(
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         fontSize: 20.sp,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   
-                  const Spacer(),
+                  Spacer(),
                   
                   // Bottom indicator bar
                   Container(
                     width: AppDimensions.onboardingIndicatorWidth.w,
                     height: AppDimensions.onboardingIndicatorHeight.h,
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceContainer,
+                      color: Theme.of(context).colorScheme.surfaceContainer,
                       borderRadius: BorderRadius.circular(AppDimensions.onboardingIndicatorRadius.r),
                     ),
                   ),

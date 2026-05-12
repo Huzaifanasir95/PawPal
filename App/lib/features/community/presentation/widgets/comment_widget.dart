@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/services/api_client.dart';
@@ -79,7 +78,7 @@ class _CommentWidgetState extends State<CommentWidget> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
-              color: AppColors.primary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               width: 1.w,
             ),
           ),
@@ -92,13 +91,13 @@ class _CommentWidgetState extends State<CommentWidget> {
                   // User Avatar
                   CircleAvatar(
                     radius: 14.r,
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     child: Text(
                       widget.comment.userName?.isNotEmpty == true
                           ? widget.comment.userName![0].toUpperCase()
                           : 'U',
                       style: AppTextStyles.onboardingBody.copyWith(
-                        color: AppColors.surface,
+                        color: Theme.of(context).colorScheme.surface,
                         fontWeight: FontWeight.w600,
                         fontSize: 10.sp,
                       ),
@@ -234,7 +233,7 @@ class _CommentWidgetState extends State<CommentWidget> {
                           'Reply',
                           style: AppTextStyles.onboardingBody.copyWith(
                             fontSize: 12.sp,
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -252,11 +251,11 @@ class _CommentWidgetState extends State<CommentWidget> {
                       // User Avatar for reply
                       CircleAvatar(
                         radius: 12.r,
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         child: Text(
                           'U', // TODO: Use current user initial
                           style: AppTextStyles.onboardingBody.copyWith(
-                            color: AppColors.surface,
+                            color: Theme.of(context).colorScheme.surface,
                             fontWeight: FontWeight.w600,
                             fontSize: 8.sp,
                           ),
@@ -276,21 +275,21 @@ class _CommentWidgetState extends State<CommentWidget> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16.r),
                               borderSide: BorderSide(
-                                color: AppColors.primary.withOpacity(0.3),
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                                 width: 1.w,
                               ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16.r),
                               borderSide: BorderSide(
-                                color: AppColors.primary.withOpacity(0.3),
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                                 width: 1.w,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16.r),
                               borderSide: BorderSide(
-                                color: AppColors.primary,
+                                color: Theme.of(context).colorScheme.primary,
                                 width: 1.w,
                               ),
                             ),
@@ -315,7 +314,7 @@ class _CommentWidgetState extends State<CommentWidget> {
                         onPressed: _submitReply,
                         icon: Icon(
                           Icons.send,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           size: 18.w,
                         ),
                       ),
@@ -408,7 +407,7 @@ class _CommentWidgetState extends State<CommentWidget> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
             ),
             child: Text('Save', style: AppTextStyles.onboardingBody.copyWith(
@@ -464,3 +463,4 @@ class _CommentWidgetState extends State<CommentWidget> {
     );
   }
 }
+

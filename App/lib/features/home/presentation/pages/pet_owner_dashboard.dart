@@ -325,7 +325,10 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                     colorScheme.surface,
                     colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
                   ]
-                  : const <Color>[Color(0xFFDCE5EB), Color(0xFFD5E0E7)],
+                  : <Color>[
+                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.85),
+                    colorScheme.surface,
+                  ],
         ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(22.r)),
       ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 
 class CustomPasswordField extends StatefulWidget {
@@ -33,7 +32,7 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
           widget.labelText,
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 14.sp,
-            color: AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -43,20 +42,20 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
           obscureText: _isObscured,
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 16.sp,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w400,
           ),
           decoration: InputDecoration(
             hintText: widget.hintText,
             hintStyle: AppTextStyles.onboardingBody.copyWith(
               fontSize: 16.sp,
-              color: AppColors.textSecondary.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.6),
               fontWeight: FontWeight.w400,
             ),
             suffixIcon: IconButton(
               icon: Icon(
                 _isObscured ? Icons.visibility_off : Icons.visibility,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 size: 20.w,
               ),
               onPressed: () {
@@ -66,7 +65,7 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
               },
             ),
             filled: true,
-            fillColor: AppColors.neutral100,
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
             contentPadding: EdgeInsets.symmetric(
               horizontal: 16.w,
               vertical: 16.h,
@@ -74,35 +73,35 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide(
-                color: AppColors.border,
+                color: Theme.of(context).colorScheme.outline,
                 width: 1.w,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide(
-                color: AppColors.border,
+                color: Theme.of(context).colorScheme.outline,
                 width: 1.w,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide(
-                color: AppColors.borderFocus,
+                color: Theme.of(context).colorScheme.primary,
                 width: 2.w,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide(
-                color: AppColors.error,
+                color: Theme.of(context).colorScheme.error,
                 width: 1.w,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide(
-                color: AppColors.error,
+                color: Theme.of(context).colorScheme.error,
                 width: 2.w,
               ),
             ),

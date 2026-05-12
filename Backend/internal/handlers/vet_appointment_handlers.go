@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -56,14 +57,24 @@ func (h *VetAppointmentHandlers) CreateAppointment(c *gin.Context) {
 		return
 	}
 
-	if req.VetUserID == ownerID {
+	resolvedVetUserID, found, err := h.vetRepo.ResolveBookableVetUserID(c.Request.Context(), req.VetUserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate vet"})
+		return
+	}
+	if !found {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Selected user is not a veterinarian"})
+		return
+	}
+
+	if resolvedVetUserID == ownerID {
 		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You cannot book a vet appointment with your own account"})
 		return
 	}
 
-	appointmentDatetime, err := time.Parse(time.RFC3339, req.AppointmentDatetime)
+	appointmentDatetime, err := parseVetAppointmentDatetime(req.AppointmentDatetime)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid appointment datetime format"})
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 		return
 	}
 
@@ -72,7 +83,7 @@ func (h *VetAppointmentHandlers) CreateAppointment(c *gin.Context) {
 		return
 	}
 
-	isVet, err := h.vetRepo.CheckUserIsVet(c.Request.Context(), req.VetUserID)
+	isVet, err := h.vetRepo.CheckUserIsVet(c.Request.Context(), resolvedVetUserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to validate vet"})
 		return
@@ -82,14 +93,15 @@ func (h *VetAppointmentHandlers) CreateAppointment(c *gin.Context) {
 		return
 	}
 
-	meetingType := strings.TrimSpace(req.MeetingType)
-	if meetingType == "" {
-		meetingType = "in_person"
+	meetingType, err := normalizeVetMeetingType(req.MeetingType)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		return
 	}
 
 	appointment := &models.VetAppointment{
 		PetOwnerID:          ownerID,
-		VetUserID:           req.VetUserID,
+		VetUserID:           resolvedVetUserID,
 		PetID:               req.PetID,
 		Reason:              req.Reason,
 		Symptoms:            req.Symptoms,
@@ -257,9 +269,9 @@ func (h *VetAppointmentHandlers) RespondAppointment(c *gin.Context) {
 
 	var appointmentDatetime *time.Time
 	if req.AppointmentDatetime != nil {
-		parsedTime, err := time.Parse(time.RFC3339, strings.TrimSpace(*req.AppointmentDatetime))
+		parsedTime, err := parseVetAppointmentDatetime(*req.AppointmentDatetime)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid appointmentDatetime format"})
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 			return
 		}
 		appointmentDatetime = &parsedTime
@@ -394,4 +406,41 @@ func (h *VetAppointmentHandlers) CompleteAppointment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Appointment completed"})
+}
+
+func parseVetAppointmentDatetime(raw string) (time.Time, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return time.Time{}, errors.New("Appointment datetime is required")
+	}
+
+	layouts := []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02 15:04:05",
+		"2006-01-02T15:04",
+		"2006-01-02 15:04",
+	}
+
+	for _, layout := range layouts {
+		parsed, err := time.Parse(layout, trimmed)
+		if err == nil {
+			return parsed, nil
+		}
+	}
+
+	return time.Time{}, errors.New("Invalid appointment datetime format")
+}
+
+func normalizeVetMeetingType(raw string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "", "in_person", "in-person", "inperson", "physical":
+		return "in_person", nil
+	case "video", "video_call", "video-call", "videocall", "online":
+		return "video", nil
+	case "chat", "text", "message":
+		return "chat", nil
+	default:
+		return "", errors.New("Invalid meeting type. Use in_person, video, or chat")
+	}
 }

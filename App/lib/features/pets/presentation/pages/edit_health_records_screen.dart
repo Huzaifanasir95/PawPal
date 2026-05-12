@@ -253,7 +253,7 @@ class _EditHealthRecordsScreenState extends State<EditHealthRecordsScreen> {
                   _isVaccinated = value;
                 });
               },
-              activeColor: colorScheme.primary,
+              activeThumbColor: colorScheme.primary,
             ),
 
             if (_isVaccinated) ...[

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
@@ -53,16 +52,16 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(
           'My Services',
-          style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.titleLarge.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -75,27 +74,27 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
                 children: [
                   Text(
                     'Active Services',
-                    style: AppTextStyles.titleMedium.copyWith(color: AppColors.textPrimary),
+                    style: AppTextStyles.titleMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
                   ),
                   SizedBox(height: 12.h),
                   if (_myServices.isEmpty)
                     Container(
                       padding: EdgeInsets.all(24.w),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.add_circle_outline, size: 48.w, color: AppColors.textSecondary),
+                          Icon(Icons.add_circle_outline, size: 48.w, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                           SizedBox(height: 12.h),
                           Text(
                             'No services added yet',
-                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                            style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                           ),
                           Text(
                             'Add services below to start receiving bookings',
-                            style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                            style: AppTextStyles.labelSmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                           ),
                         ],
                       ),
@@ -106,7 +105,7 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
                   SizedBox(height: 24.h),
                   Text(
                     'Add New Service',
-                    style: AppTextStyles.titleMedium.copyWith(color: AppColors.textPrimary),
+                    style: AppTextStyles.titleMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
                   ),
                   SizedBox(height: 12.h),
                   ..._serviceTypes.where((type) {
@@ -122,7 +121,7 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
@@ -142,12 +141,12 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
                 Container(
                   padding: EdgeInsets.all(12.w),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(
                     _getServiceIcon(service.serviceTypeIcon),
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 24.w,
                   ),
                 ),
@@ -162,7 +161,7 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
                       ),
                       Text(
                         '${service.currency} ${service.rateAmount.toStringAsFixed(0)} / ${service.rateType}',
-                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary),
+                        style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).colorScheme.primary),
                       ),
                     ],
                   ),
@@ -170,7 +169,7 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
                 Switch(
                   value: service.isAvailable,
                   onChanged: (value) => _toggleServiceAvailability(service.id, value),
-                  activeColor: AppColors.primary,
+                  activeThumbColor: Theme.of(context).colorScheme.primary,
                 ),
               ],
             ),
@@ -178,7 +177,7 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
               SizedBox(height: 12.h),
               Text(
                 service.description!,
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               ),
             ],
             SizedBox(height: 12.h),
@@ -187,7 +186,7 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
               children: [
                 TextButton(
                   onPressed: () => _showEditServiceDialog(service),
-                  child: Text('Edit', style: TextStyle(color: AppColors.primary)),
+                  child: Text('Edit', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                 ),
                 TextButton(
                   onPressed: () => _deleteService(service.id),
@@ -205,9 +204,9 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: InkWell(
         onTap: () => _showAddServiceDialog(type),
@@ -219,12 +218,12 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
               Container(
                 padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Icon(
                   _getServiceIcon(type.iconName),
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   size: 24.w,
                 ),
               ),
@@ -239,14 +238,14 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
                     ),
                     Text(
                       type.description ?? '',
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                      style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.add_circle, color: AppColors.primary, size: 28.w),
+              Icon(Icons.add_circle, color: Theme.of(context).colorScheme.primary, size: 28.w),
             ],
           ),
         ),
@@ -304,7 +303,7 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
                 ),
                 SizedBox(height: 16.h),
                 DropdownButtonFormField<String>(
-                  value: rateType,
+                  initialValue: rateType,
                   decoration: const InputDecoration(labelText: 'Rate Type'),
                   items: const [
                     DropdownMenuItem(value: 'hourly', child: Text('Per Hour')),
@@ -515,3 +514,4 @@ class _CaregiverServicesScreenState extends State<CaregiverServicesScreen> {
     }
   }
 }
+

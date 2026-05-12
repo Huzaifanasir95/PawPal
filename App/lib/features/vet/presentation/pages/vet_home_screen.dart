@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/widgets/user_avatar.dart';
@@ -174,15 +173,18 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
                 SizedBox(height: 24.h),
 
                 // Pending Chats Section
-                Padding(
+                  Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Text(
-                    'Pending Chats',
-                    style: AppTextStyles.titleLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
+                  child: Builder(builder: (context) {
+                    final colorScheme = Theme.of(context).colorScheme;
+                    return Text(
+                      'Pending Chats',
+                      style: AppTextStyles.titleLarge.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    );
+                  }),
                 ),
                 SizedBox(height: 12.h),
 
@@ -198,15 +200,18 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
                 SizedBox(height: 24.h),
 
                 // Quick Actions
-                Padding(
+                  Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Text(
-                    'Quick Actions',
-                    style: AppTextStyles.titleLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
+                  child: Builder(builder: (context) {
+                    final colorScheme = Theme.of(context).colorScheme;
+                    return Text(
+                      'Quick Actions',
+                      style: AppTextStyles.titleLarge.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    );
+                  }),
                 ),
                 SizedBox(height: 12.h),
 
@@ -269,11 +274,12 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
       orElse: () => null,
     );
 
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+          colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -298,13 +304,13 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
                       Text(
                         'Welcome back,',
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textOnPrimary.withOpacity(0.9),
+                          color: colorScheme.onPrimary.withValues(alpha: 0.85),
                         ),
                       ),
                       Text(
                         profile.fullName,
                         style: AppTextStyles.headlineMedium.copyWith(
-                          color: AppColors.textOnPrimary,
+                          color: colorScheme.onPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -319,8 +325,8 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
               decoration: BoxDecoration(
                 color:
                     profile.isAvailable
-                        ? Colors.green.withOpacity(0.2)
-                        : Colors.orange.withOpacity(0.2),
+                        ? Colors.green.withValues(alpha: 0.2)
+                        : Colors.orange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20.r),
                 border: Border.all(
                   color: profile.isAvailable ? Colors.green : Colors.orange,
@@ -338,7 +344,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
                   Text(
                     profile.isAvailable ? 'Available' : 'Not Available',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textOnPrimary,
+                      color: colorScheme.onPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -352,9 +358,10 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
   }
 
   Widget _buildWelcomeHeaderSkeleton() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.all(20.w),
-      color: AppColors.primary,
+      color: colorScheme.primary,
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -364,7 +371,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
               children: [
                 CircleAvatar(
                   radius: 32.r,
-                  backgroundColor: AppColors.surface.withOpacity(0.3),
+                  backgroundColor: colorScheme.onPrimary.withValues(alpha: 0.25),
                 ),
                 SizedBox(width: 16.w),
                 Expanded(
@@ -375,7 +382,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
                         width: 100.w,
                         height: 14.h,
                         decoration: BoxDecoration(
-                          color: AppColors.surface.withOpacity(0.3),
+                          color: colorScheme.onPrimary.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                       ),
@@ -384,7 +391,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
                         width: 150.w,
                         height: 20.h,
                         decoration: BoxDecoration(
-                          color: AppColors.surface.withOpacity(0.3),
+                          color: colorScheme.onPrimary.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                       ),
@@ -404,38 +411,16 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Row(
         children: [
-          // Rating card - commented out until averageRating field added to model
-          // Expanded(
-          //   child: _StatCard(
-          //     icon: Icons.star,
-          //     iconColor: Colors.amber,
-          //     title: 'Rating',
-          //     value: profile.averageRating?.toStringAsFixed(1) ?? 'N/A',
-          //     subtitle: '${profile.totalRatings ?? 0} reviews',
-          //   ),
-          // ),
-          // SizedBox(width: 12.w),
           Expanded(
             child: _StatCard(
               icon: Icons.medical_services,
-              iconColor: AppColors.primary,
+              iconColor: Theme.of(context).colorScheme.primary,
               title: 'Experience',
               value: '${profile.experience}',
               subtitle: 'Years',
             ),
           ),
           SizedBox(width: 12.w),
-          // Consultations card - commented out until totalConsultations field added
-          // Expanded(
-          //   child: _StatCard(
-          //     icon: Icons.medical_services,
-          //     iconColor: AppColors.primary,
-          //     title: 'Consultations',
-          //     value: profile.totalConsultations?.toString() ?? '0',
-          //     subtitle: 'Total',
-          //   ),
-          // ),
-          // SizedBox(width: 12.w),
           Expanded(
             child: BlocBuilder<ChatBloc, ChatState>(
               builder: (context, state) {
@@ -469,14 +454,17 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
     final pendingChats =
         chats.where((chat) => chat.unreadCountVet > 0).toList();
 
+    final colorScheme = Theme.of(context).colorScheme;
     if (pendingChats.isEmpty) {
       return Container(
         margin: EdgeInsets.symmetric(horizontal: 20.w),
         padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.3),
+          ),
         ),
         child: Center(
           child: Column(
@@ -484,13 +472,13 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
               Icon(
                 Icons.check_circle_outline,
                 size: 48.sp,
-                color: AppColors.success,
+                color: Colors.green,
               ),
               SizedBox(height: 12.h),
               Text(
                 'All caught up!',
                 style: AppTextStyles.titleMedium.copyWith(
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -498,7 +486,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
               Text(
                 'No pending chats at the moment',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -521,6 +509,8 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
   }
 
   Widget _buildPendingChatsSkeleton() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final shimmer = colorScheme.onSurface.withValues(alpha: 0.08);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
@@ -529,15 +519,17 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
             margin: EdgeInsets.only(bottom: 12.h),
             padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 24.r,
-                  backgroundColor: AppColors.neutral300,
+                  backgroundColor: shimmer,
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
@@ -548,7 +540,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
                         width: 120.w,
                         height: 16.h,
                         decoration: BoxDecoration(
-                          color: AppColors.neutral300,
+                          color: shimmer,
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                       ),
@@ -557,7 +549,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
                         width: 180.w,
                         height: 14.h,
                         decoration: BoxDecoration(
-                          color: AppColors.neutral300,
+                          color: shimmer,
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                       ),
@@ -631,12 +623,15 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         children: [
@@ -646,21 +641,21 @@ class _StatCard extends StatelessWidget {
             value,
             style: AppTextStyles.headlineMedium.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: colorScheme.onSurface,
             ),
           ),
           SizedBox(height: 4.h),
           Text(
             title,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),
           Text(
             subtitle,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
               fontSize: 10.sp,
             ),
           ),
@@ -686,12 +681,16 @@ class _PendingChatCard extends StatelessWidget {
           ),
         );
       },
-      child: Container(
+      child: Builder(builder: (ctx) {
+        final colorScheme = Theme.of(ctx).colorScheme;
+        return Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           children: [
@@ -699,11 +698,11 @@ class _PendingChatCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 24.r,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  backgroundColor: colorScheme.primary.withValues(alpha: 0.12),
                   child: Icon(
                     Icons.person,
                     size: 24.sp,
-                    color: AppColors.primary,
+                    color: colorScheme.primary,
                   ),
                 ),
                 if (chat.unreadCountVet > 0)
@@ -737,7 +736,7 @@ class _PendingChatCard extends StatelessWidget {
                     'Pet Owner',
                     style: AppTextStyles.titleMedium.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   if (chat.lastMessage != null) ...[
@@ -745,7 +744,7 @@ class _PendingChatCard extends StatelessWidget {
                     Text(
                       chat.lastMessage!,
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -757,11 +756,12 @@ class _PendingChatCard extends StatelessWidget {
             Icon(
               Icons.arrow_forward_ios,
               size: 16.sp,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
             ),
           ],
         ),
-      ),
+        );
+      }),
     );
   }
 }
@@ -781,24 +781,27 @@ class _QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12.r),
               ),
-              child: Icon(icon, color: AppColors.primary, size: 24.sp),
+              child: Icon(icon, color: colorScheme.primary, size: 24.sp),
             ),
             SizedBox(width: 16.w),
             Expanded(
@@ -809,13 +812,13 @@ class _QuickActionButton extends StatelessWidget {
                     title,
                     style: AppTextStyles.titleMedium.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   Text(
                     subtitle,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -824,7 +827,7 @@ class _QuickActionButton extends StatelessWidget {
             Icon(
               Icons.arrow_forward_ios,
               size: 16.sp,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
             ),
           ],
         ),

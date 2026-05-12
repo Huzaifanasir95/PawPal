@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../constants/app_colors.dart';
 
 /// Reusable user avatar widget that displays profile picture or fallback icon
 class UserAvatar extends StatelessWidget {
@@ -75,10 +74,11 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final avatarSize = size ?? 40.w;
-    final bgColor = backgroundColor ?? AppColors.primary.withValues(alpha: 0.1);
+    final bgColor = backgroundColor ?? colorScheme.primary.withValues(alpha: 0.1);
     final icon = fallbackIcon ?? Icons.person;
-    final icColor = iconColor ?? AppColors.primary;
+    final icColor = iconColor ?? colorScheme.primary;
 
     return Container(
       width: avatarSize,
@@ -88,7 +88,7 @@ class UserAvatar extends StatelessWidget {
         color: bgColor,
         border: showBorder
             ? Border.all(
-                color: borderColor ?? AppColors.primary,
+                color: borderColor ?? colorScheme.primary,
                 width: borderWidth ?? 2.w,
               )
             : null,

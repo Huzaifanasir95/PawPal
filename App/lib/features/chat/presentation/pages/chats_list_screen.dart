@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
+
 import '../../../../core/services/chat_cache_service.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
@@ -191,7 +191,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(color: AppColors.primary),
+          CircularProgressIndicator(color: colorScheme.primary),
           SizedBox(height: 16.h),
           Text(
             'Loading conversations...',

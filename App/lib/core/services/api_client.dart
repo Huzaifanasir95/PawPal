@@ -17,60 +17,78 @@ class ApiClient {
   }
 
   ApiClient._() {
-    _dio = Dio(BaseOptions(
-      baseUrl: AppConfig.backendBaseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
-      },
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: AppConfig.backendBaseUrl,
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
+        },
+      ),
+    );
 
     // Add interceptor for auth token
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        if (_accessToken != null) {
-          options.headers['Authorization'] = 'Bearer $_accessToken';
-        }
-        _debugLog('📤 [${options.method}] ${options.path}');
-        if (kDebugMode && options.data is Map<String, dynamic>) {
-          final keys = (options.data as Map<String, dynamic>).keys.join(', ');
-          _debugLog('   Payload keys: $keys');
-        }
-        return handler.next(options);
-      },
-      onResponse: (response, handler) {
-        _debugLog(
-          '✅ [${response.statusCode}] ${response.requestOptions.path}',
-        );
-        return handler.next(response);
-      },
-      onError: (error, handler) async {
-        _debugLog(
-          '❌ [${error.response?.statusCode}] ${error.requestOptions.path}: ${error.message}',
-        );
-        
-        // If 401, try to refresh token
-        if (error.response?.statusCode == 401 && _refreshToken != null) {
-          try {
-            final refreshed = await _refreshAccessToken();
-            if (refreshed) {
-              // Retry the request
-              final opts = error.requestOptions;
-              opts.headers['Authorization'] = 'Bearer $_accessToken';
-              final response = await _dio.fetch(opts);
-              return handler.resolve(response);
-            }
-          } catch (e) {
-            // Refresh failed, logout
-            await clearTokens();
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          if (_accessToken != null) {
+            options.headers['Authorization'] = 'Bearer $_accessToken';
           }
-        }
-        return handler.next(error);
-      },
-    ));
+          _debugLog('📤 [${options.method}] ${options.path}');
+          if (kDebugMode && options.data is Map<String, dynamic>) {
+            final keys = (options.data as Map<String, dynamic>).keys.join(', ');
+            _debugLog('   Payload keys: $keys');
+          }
+          return handler.next(options);
+        },
+        onResponse: (response, handler) {
+          _debugLog(
+            '✅ [${response.statusCode}] ${response.requestOptions.path}',
+          );
+          return handler.next(response);
+        },
+        onError: (error, handler) async {
+          _debugLog(
+            '❌ [${error.response?.statusCode}] ${error.requestOptions.path}: ${error.message}',
+          );
+
+          final responseData = error.response?.data;
+          if (responseData is Map) {
+            final backendMessage =
+                responseData['error'] ??
+                responseData['message'] ??
+                responseData['details'];
+            if (backendMessage != null) {
+              _debugLog('   Server message: $backendMessage');
+            }
+            _debugLog('   Response body: $responseData');
+          } else if (responseData != null) {
+            _debugLog('   Response body: $responseData');
+          }
+
+          // If 401, try to refresh token
+          if (error.response?.statusCode == 401 && _refreshToken != null) {
+            try {
+              final refreshed = await _refreshAccessToken();
+              if (refreshed) {
+                // Retry the request
+                final opts = error.requestOptions;
+                opts.headers['Authorization'] = 'Bearer $_accessToken';
+                final response = await _dio.fetch(opts);
+                return handler.resolve(response);
+              }
+            } catch (e) {
+              // Refresh failed, logout
+              await clearTokens();
+            }
+          }
+          return handler.next(error);
+        },
+      ),
+    );
   }
 
   Dio get dio => _dio;
@@ -79,7 +97,7 @@ class ApiClient {
   Future<void> setTokens(String accessToken, String refreshToken) async {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
-    
+
     // Extract user ID from JWT token
     try {
       final decoded = JwtDecoder.decode(accessToken);
@@ -87,7 +105,7 @@ class ApiClient {
     } catch (e) {
       // Handle JWT decode error silently
     }
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', accessToken);
     await prefs.setString('refresh_token', refreshToken);
@@ -107,7 +125,7 @@ class ApiClient {
     _accessToken = null;
     _refreshToken = null;
     _userId = null;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
@@ -117,7 +135,7 @@ class ApiClient {
   bool get isAuthenticated => _accessToken != null;
 
   String? get accessToken => _accessToken;
-  
+
   String? get userId => _userId;
 
   Future<bool> _refreshAccessToken() async {
@@ -136,11 +154,11 @@ class ApiClient {
         if (_accessToken == null || _refreshToken == null) {
           return false;
         }
-        
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', _accessToken!);
         await prefs.setString('refresh_token', _refreshToken!);
-        
+
         return true;
       }
     } catch (e) {
@@ -150,7 +168,10 @@ class ApiClient {
   }
 
   // API Methods
-  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) async {
+  Future<Response> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     return _dio.get(path, queryParameters: queryParameters);
   }
 

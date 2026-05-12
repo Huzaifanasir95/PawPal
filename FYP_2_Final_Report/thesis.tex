@@ -1,0 +1,102 @@
+\documentclass{fast-nuces-bs}
+%\documentclass{article}
+
+\usepackage{blindtext}
+\usepackage{mathptmx}% Times Roman font
+\usepackage[T1]{fontenc}
+\usepackage{lipsum} 
+\usepackage{sectsty}
+\usepackage{tikz-uml}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+
+% Algorithm counter and environment using tcolorbox
+\newcounter{algorithm}[chapter]
+\renewcommand{\thealgorithm}{\thechapter.\arabic{algorithm}}
+
+\newenvironment{algorithmbox}[1]{%
+  \refstepcounter{algorithm}%
+  \begin{tcolorbox}[
+    enhanced,
+    breakable,
+    colback=white,
+    colframe=black,
+    boxrule=0.8pt,
+    arc=0pt,
+    left=8pt, right=8pt, top=6pt, bottom=6pt,
+    title={\bfseries\small Algorithm~\thealgorithm\normalfont\small\quad\itshape #1},
+    colbacktitle=black,
+    coltitle=white,
+  ]%
+  \small\rmfamily\setlength{\parskip}{0pt}\setlength{\parindent}{0pt}%
+}{%
+  \end{tcolorbox}%
+  \vspace{6pt}%
+}
+
+\newcommand{\KwIn}[1]{{\bfseries Input:\enspace}\normalfont#1\par\smallskip}
+\newcommand{\KwOut}[1]{{\bfseries Output:\enspace}\normalfont#1\par\smallskip\hrule\smallskip}
+% Indentation helpers for algorithm lines
+\newcommand{\I}{\hspace*{1.2em}}
+\newcommand{\II}{\hspace*{2.4em}}
+\newcommand{\III}{\hspace*{3.6em}}
+\newcommand{\IV}{\hspace*{4.8em}}
+\newcommand{\aln}[2]{\makebox[1.6em][r]{\small#1}\enspace#2\par\vspace{1pt}}
+
+
+% Information about the Thesis 
+% -----------------------------------------------------------------------------
+% (All are compulsory, do not delete any line other than author Information)
+% For e.g., usually there are 3 students in a group, so leave authorone, 
+% authortwo, and authorthree, and delete authorfour.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\department{Department of Computer Science}
+\faculty{Computer Science}
+\degreeyear{2026}
+\degreemonth{June}
+\degreename{Computer Science}
+\campuscity{Islamabad}
+\authorone{Huzaifa Nasir}{22I-1053}
+\authortwo{Maaz Ali}{22I-1042}
+\authorthree{Hamza Naveed}{22I-0961}
+\supervisor{Ms. Amna Irum}
+\sessionduration{2022-2026}
+\deanname{Dr. Dean Computing}
+\directorname{Dr. Director of the Campus}
+\hodname{Dr. Head of Computer Science Department}
+\fypcoordinatorname{Name of FYP Coordinator}
+\title{PawPal: A Comprehensive Pet Care Mobile Application}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Former document starts below this
+\begin{document}
+
+%\begin{acknowledgements}
+%	Your acknowledgments here
+%\end{acknowledgements}
+
+%\begin{abstract}
+%Briefly state the (1) research problem, (2) methodology, (3) key results, and (4) conclusion. Generally, abstracts are between 150 and 200 words–roughly 10-15 sentences.
+%\end{abstract}
+
+\include{sections/chapter1}
+\include{sections/chapter2}
+\include{sections/chapter3}
+\include{sections/chapter4}
+\include{sections/conclusions}
+
+%\appendix
+%\include{appendix1/appendix1}
+
+%\bibliographystyle{plain}
+%\bibliography{bib}
+%\addcontentsline{toc}{chapter}{References}
+\input{appendix}
+
+\end{document}

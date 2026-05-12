@@ -13,6 +13,11 @@ import '../../../caregiver/presentation/pages/caregivers_list_screen.dart';
 import '../../../caregiver/presentation/pages/owner_bookings_screen.dart';
 import '../../../home/presentation/pages/all_categories_page.dart';
 import '../../../marketplace/data/repositories/marketplace_repository.dart';
+import '../../../marketplace/presentation/cubit/marketplace_cubit.dart';
+import '../../../marketplace/presentation/cubit/marketplace_state.dart';
+import '../../../marketplace/presentation/cubit/cart_cubit.dart';
+import '../../../marketplace/presentation/widgets/product_card.dart';
+import '../../../marketplace/presentation/pages/product_detail_screen.dart';
 import '../../../pets/presentation/pages/add_pet_screen.dart';
 import '../../../pets/presentation/pages/pet_identification_scan_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
@@ -162,8 +167,8 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                       ),
                     ),
                     SizedBox(height: 10.h),
-                    SizedBox(
-                      width: 198.w,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 198.w),
                       child: Text(
                         '${_getGreeting()}. Keep your pets healthy, happy, and safe.',
                         style: TextStyle(
@@ -400,6 +405,20 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                     ),
                   ),
             ),
+            SizedBox(height: 14.h),
+            
+            // Marketplace Products Section
+            Text(
+              'Featured Products',
+              style: TextStyle(
+                fontSize: 24.sp,
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            SizedBox(height: 12.h),
+            _buildMarketplaceProductsSection(colorScheme),
+            
             SizedBox(height: 14.h),
             Text(
               'Most Popular',
@@ -677,6 +696,108 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
     );
   }
 
+  Widget _buildMarketplaceProductsSection(ColorScheme colorScheme) {
+    final repo = MarketplaceRepository.instance;
+    
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => MarketplaceCubit(repo)..loadInitial()),
+        BlocProvider(create: (_) => CartCubit(repo)..loadCart()),
+      ],
+      child: BlocBuilder<MarketplaceCubit, MarketplaceState>(
+        builder: (context, state) {
+          if (state.isLoading) {
+            return SizedBox(
+              height: 240.h,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: colorScheme.primary,
+                ),
+              ),
+            );
+          }
+
+          if (state.error != null && state.products.isEmpty) {
+            return Container(
+              height: 120.h,
+              alignment: Alignment.center,
+              child: Text(
+                'Unable to load products',
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 14.sp,
+                ),
+              ),
+            );
+          }
+
+          if (state.products.isEmpty) {
+            return Container(
+              height: 120.h,
+              alignment: Alignment.center,
+              child: Text(
+                'No products available',
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 14.sp,
+                ),
+              ),
+            );
+          }
+
+          // Show first 4 products in a 2x2 grid or scrollable list
+          final displayProducts = state.products.take(4).toList();
+          
+          return SizedBox(
+            height: 240.h,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: displayProducts.length,
+              itemBuilder: (context, index) {
+                final product = displayProducts[index];
+                return Padding(
+                  padding: EdgeInsets.only(right: 12.w),
+                  child: SizedBox(
+                    width: 160.w,
+                    child: ProductCard(
+                      product: product,
+                      onTap: () {
+                        final marketplaceCubit = context.read<MarketplaceCubit>();
+                        final cartCubit = context.read<CartCubit>();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MultiBlocProvider(
+                              providers: [
+                                BlocProvider.value(value: marketplaceCubit),
+                                BlocProvider.value(value: cartCubit),
+                              ],
+                              child: ProductDetailScreen(productId: product.id),
+                            ),
+                          ),
+                        );
+                      },
+                      onAddToCart: () {
+                        final cartCubit = context.read<CartCubit>();
+                        cartCubit.addToCart(product.id, 1);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${product.name} added to cart'),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildBottomBar() {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -780,9 +901,10 @@ class _InteractivePixelCatWidget extends StatefulWidget {
 }
 
 class _InteractivePixelCatWidgetState
-    extends State<_InteractivePixelCatWidget> {
+    extends State<_InteractivePixelCatWidget> with SingleTickerProviderStateMixin {
   int _spriteIndex = 0;
-  Timer? _runTimer;
+  late final AnimationController _animController;
+  double _prevAnimValue = 0.0;
 
   static const Map<String, List<List<String>>> _spritePresets = {
     'classic': [
@@ -988,19 +1110,24 @@ class _InteractivePixelCatWidgetState
   @override
   void initState() {
     super.initState();
-    _runTimer = Timer.periodic(const Duration(milliseconds: 140), (_) {
-      if (!mounted) return;
-      final spriteSet =
-          _spritePresets[widget.theme] ?? _spritePresets['classic']!;
-      setState(() {
-        _spriteIndex = (_spriteIndex + 1) % spriteSet.length;
-      });
-    });
+    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 140))
+      ..addListener(() {
+        final v = _animController.value;
+        if (v < _prevAnimValue) {
+          if (!mounted) return;
+          final spriteSet = _spritePresets[widget.theme] ?? _spritePresets['classic']!;
+          setState(() {
+            _spriteIndex = (_spriteIndex + 1) % spriteSet.length;
+          });
+        }
+        _prevAnimValue = v;
+      })
+      ..repeat();
   }
 
   @override
   void dispose() {
-    _runTimer?.cancel();
+    _animController.dispose();
     super.dispose();
   }
 
@@ -1175,28 +1302,45 @@ class _PixelSprite extends StatelessWidget {
     return SizedBox(
       width: columns * pixel,
       height: rows * pixel,
-      child: GridView.builder(
-        padding: EdgeInsets.zero,
-        itemCount: rows * columns,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: columns,
-        ),
-        itemBuilder: (context, index) {
-          final x = index % columns;
-          final y = index ~/ columns;
-          final pixelValue = sprite[y][x];
-
-          return Container(
-            margin: const EdgeInsets.all(0.35),
-            decoration: BoxDecoration(
-              color: pixelColor(pixelValue),
-              borderRadius: BorderRadius.circular(0.8),
-            ),
-          );
-        },
+      child: CustomPaint(
+        painter: _PixelPainter(sprite: sprite, pixelColor: pixelColor),
       ),
     );
+  }
+}
+
+class _PixelPainter extends CustomPainter {
+  _PixelPainter({required this.sprite, required this.pixelColor});
+
+  final List<String> sprite;
+  final Color? Function(String) pixelColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rows = sprite.length;
+    final columns = sprite.first.length;
+    const double pixel = 4.2;
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    for (var y = 0; y < rows; y++) {
+      for (var x = 0; x < columns; x++) {
+        final value = sprite[y][x];
+        final color = pixelColor(value);
+        if (color == null) continue;
+        paint.color = color;
+        final rect = Rect.fromLTWH(x * pixel, y * pixel, pixel - 0.7, pixel - 0.7);
+        canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(0.6)), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PixelPainter oldDelegate) {
+    if (oldDelegate.sprite.length != sprite.length) return true;
+    for (var i = 0; i < sprite.length; i++) {
+      if (oldDelegate.sprite[i] != sprite[i]) return true;
+    }
+    return false;
   }
 }
 

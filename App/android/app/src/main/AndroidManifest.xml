@@ -8,7 +8,7 @@
                      android:maxSdkVersion="28" />
     
     <application
-        android:label="pawpawl"
+        android:label="PawPal"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"

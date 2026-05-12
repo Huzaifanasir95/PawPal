@@ -67,7 +67,7 @@ func LoadConfig() (*Config, error) {
 		Models: ModelsConfig{
 			Dogs: DogModelConfig{
 				Name:           "ConvNeXt V2 Base - Dog Breed Classifier",
-				ModelPath:      getEnv("DOG_MODEL_PATH", "d:\\PawPal\\ML_Models\\dogs\\model\\cat_breed_classifier_complete.pth"),
+				ModelPath:      getEnv("DOG_MODEL_PATH", "d:\\PawPal\\ML_Models\\dogs\\model\\dog_breed_classifier_complete.pth"),
 				ClassNamesPath: getEnv("DOG_CLASS_NAMES_PATH", "d:\\PawPal\\ML_Models\\dogs\\model\\class_names.json"),
 				ImageSize:      384,
 				NumClasses:     120,

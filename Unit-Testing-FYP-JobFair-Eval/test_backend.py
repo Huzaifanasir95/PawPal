@@ -1063,12 +1063,8 @@ def s17_adoptions():
     def list_adoptions(r):
         resp = api("GET", "/api/v1/adoptions", token=tok())
         r.status_code = resp.status_code
-        # 500 = known backend SQL bug in GetAdoptionListings
-        assert resp.status_code in (200, 500), f"Unexpected: {resp.status_code}"
-        if resp.status_code == 500:
-            r.detail = "BACKEND BUG: SQL alias error in GetAdoptionListings → 500"
-        else:
-            r.detail = f"status={resp.status_code}"
+        assert resp.status_code == 200, f"Unexpected: {resp.status_code}"
+        r.detail = f"status={resp.status_code}"
 
     def list_no_auth(r):
         resp = api("GET", "/api/v1/adoptions")

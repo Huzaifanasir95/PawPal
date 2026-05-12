@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_drawer.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
@@ -136,10 +135,10 @@ class _CommunityPageState extends State<CommunityPage> {
           ), // Background color from design
           drawer: const CustomDrawer(),
           appBar: AppBar(
-            backgroundColor: AppColors.primary,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             elevation: 0,
             leading: IconButton(
-              icon: Icon(Icons.menu, color: AppColors.accent, size: 24.sp),
+              icon: Icon(Icons.menu, color: Theme.of(context).colorScheme.secondary, size: 24.sp),
               onPressed: () {
                 _scaffoldKey.currentState?.openDrawer();
               },
@@ -148,7 +147,7 @@ class _CommunityPageState extends State<CommunityPage> {
               'Community',
               style: AppTextStyles.onboardingTitle.copyWith(
                 fontSize: 20.sp,
-                color: AppColors.accent,
+                color: Theme.of(context).colorScheme.secondary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -256,7 +255,7 @@ class _CommunityPageState extends State<CommunityPage> {
           width: 49.w,
           height: 46.h,
           decoration: BoxDecoration(
-            color: AppColors.accent,
+            color: Theme.of(context).colorScheme.secondary,
             borderRadius: BorderRadius.circular(484.r),
           ),
           child: PopupMenuButton<String>(
@@ -288,7 +287,7 @@ class _CommunityPageState extends State<CommunityPage> {
                 ],
             child: Icon(
               Icons.filter_list,
-              color: AppColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               size: 20.w,
             ),
           ),
@@ -358,13 +357,13 @@ class _CommunityPageState extends State<CommunityPage> {
               selected: isSelected,
               onSelected: (_) => _onCategorySelected(category),
               backgroundColor: Colors.white,
-              selectedColor: AppColors.primary,
+              selectedColor: Theme.of(context).colorScheme.primary,
               checkmarkColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20.r),
                 side: BorderSide(
                   color:
-                      isSelected ? AppColors.primary : const Color(0xFFAAD5D1),
+                      isSelected ? Theme.of(context).colorScheme.primary : const Color(0xFFAAD5D1),
                 ),
               ),
             ),
@@ -412,11 +411,11 @@ class _CommunityPageState extends State<CommunityPage> {
                     ),
                   ),
                   backgroundColor:
-                      isSelected ? AppColors.primary : Colors.white,
+                      isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
                   side: BorderSide(
                     color:
                         isSelected
-                            ? AppColors.primary
+                            ? Theme.of(context).colorScheme.primary
                             : const Color(0xFFAAD5D1),
                   ),
                   onPressed: () {
@@ -516,7 +515,7 @@ class _CommunityPageState extends State<CommunityPage> {
                             backgroundColor:
                                 group.isMember
                                     ? Colors.grey.shade300
-                                    : AppColors.primary,
+                                    : Theme.of(context).colorScheme.primary,
                             foregroundColor:
                                 group.isMember
                                     ? const Color(0xFF324B49)
@@ -621,3 +620,4 @@ class _CommunityPageState extends State<CommunityPage> {
     );
   }
 }
+

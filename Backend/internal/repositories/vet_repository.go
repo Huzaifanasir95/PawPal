@@ -111,6 +111,26 @@ func (r *VetRepository) GetByUserID(ctx context.Context, userID uuid.UUID, profi
 	return err
 }
 
+// ResolveBookableVetUserID resolves either a vet user ID or vet profile ID to the canonical vet user ID.
+func (r *VetRepository) ResolveBookableVetUserID(ctx context.Context, candidateID uuid.UUID) (uuid.UUID, bool, error) {
+	var resolvedUserID uuid.UUID
+	err := r.db.QueryRow(ctx, `
+		SELECT user_id
+		FROM vet_profiles
+		WHERE user_id = $1 OR id = $1
+		ORDER BY CASE WHEN user_id = $1 THEN 0 ELSE 1 END
+		LIMIT 1
+	`, candidateID).Scan(&resolvedUserID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return uuid.Nil, false, nil
+		}
+		return uuid.Nil, false, err
+	}
+
+	return resolvedUserID, true, nil
+}
+
 // List lists all available vets with filters
 func (r *VetRepository) List(ctx context.Context, filters map[string]interface{}, limit, offset int) ([]models.VetProfile, int, error) {
 	// Build query - join with users table to get avatar_url

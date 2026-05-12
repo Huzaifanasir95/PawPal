@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../auth/data/repositories/auth_repository.dart';
@@ -21,12 +20,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -42,7 +41,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               Text(
                 'Choose Your Role',
                 style: AppTextStyles.headlineLarge.copyWith(
-                  color: AppColors.authTitle,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -52,7 +51,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               Text(
                 'Select how you\'d like to use PawPawl',
                 style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.authTextSecondary,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
 
@@ -107,17 +106,17 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
         padding: EdgeInsets.all(20.w),
         decoration: BoxDecoration(
           color: isSelected 
-              ? AppColors.primary.withOpacity(0.15) 
-              : AppColors.surface,
+              ? Theme.of(context).colorScheme.primary.withOpacity(0.15) 
+              : Theme.of(context).colorScheme.surface,
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   )
@@ -132,13 +131,13 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               height: 56.h,
               decoration: BoxDecoration(
                 color: isSelected 
-                    ? AppColors.primary 
-                    : AppColors.primary.withOpacity(0.1),
+                    ? Theme.of(context).colorScheme.primary 
+                    : Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(28.r),
               ),
               child: Icon(
                 icon,
-                color: isSelected ? AppColors.surface : AppColors.primary,
+                color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.primary,
                 size: 28.w,
               ),
             ),
@@ -153,7 +152,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   Text(
                     title,
                     style: AppTextStyles.titleMedium.copyWith(
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -161,7 +160,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   Text(
                     description,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       height: 1.4,
                     ),
                   ),
@@ -173,7 +172,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             if (isSelected)
               Icon(
                 Icons.check_circle,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 size: 24.w,
               ),
           ],
@@ -191,8 +190,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             ? null
             : () => _handleContinue(context),
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.neutral300,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          disabledBackgroundColor: Theme.of(context).colorScheme.outline,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.r),
           ),
@@ -202,17 +201,17 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             ? SizedBox(
                 width: 24.w,
                 height: 24.h,
-                child: const CircularProgressIndicator(
+                child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.surface),
+                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.surface),
                 ),
               )
             : Text(
                 'Continue',
                 style: AppTextStyles.buttonLarge.copyWith(
                   color: _selectedRole == null 
-                      ? AppColors.neutral500 
-                      : AppColors.textOnPrimary,
+                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5) 
+                      : Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
       ),
@@ -260,3 +259,5 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     }
   }
 }
+
+

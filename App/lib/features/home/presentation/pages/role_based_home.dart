@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:pawpawl/core/theme/app_theme_controller.dart';
+import 'package:pawpawl/features/auth/data/models/auth_user.dart';
 import 'package:pawpawl/features/auth/data/repositories/auth_repository.dart';
 import 'package:pawpawl/features/caregiver/presentation/pages/caregiver_home_screen.dart';
 import 'package:pawpawl/features/home/presentation/pages/pet_owner_dashboard.dart';
@@ -18,6 +21,7 @@ class RoleBasedHome extends StatefulWidget {
 
 class _RoleBasedHomeState extends State<RoleBasedHome> {
   late final AuthRepository _authRepository;
+  late final StreamSubscription<AuthUser?> _authSubscription;
   final Map<String, Widget> _dashboardCache = <String, Widget>{};
 
   bool _isLoading = true;
@@ -28,6 +32,15 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   void initState() {
     super.initState();
     _authRepository = context.read<AuthRepository>();
+    _authSubscription = _authRepository.authStateChanges.listen((user) {
+      if (!mounted) return;
+      final normalized = _normalizeAccountType(
+        user?.accountType ?? _authRepository.activeRole,
+      );
+      if (normalized.isNotEmpty && normalized != _activeRole) {
+        _bootstrapRoles();
+      }
+    });
     _bootstrapRoles();
   }
 
@@ -110,6 +123,12 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
 
   void _syncThemeRole(String role) {
     context.read<AppThemeController>().setActiveRole(role);
+  }
+
+  @override
+  void dispose() {
+    _authSubscription.cancel();
+    super.dispose();
   }
 
   String _normalizeAccountType(String? rawAccountType) {

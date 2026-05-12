@@ -42,7 +42,7 @@ class VetAppointmentRepository {
       }
 
       return VetAppointment.fromJson(
-        Map<String, dynamic>.from(appointmentJson as Map),
+        Map<String, dynamic>.from(appointmentJson),
       );
     } on DioException catch (e) {
       throw _handleError(e, 'Failed to create appointment');
@@ -126,7 +126,7 @@ class VetAppointmentRepository {
       }
 
       return VetAppointment.fromJson(
-        Map<String, dynamic>.from(appointmentJson as Map),
+        Map<String, dynamic>.from(appointmentJson),
       );
     } on DioException catch (e) {
       throw _handleError(e, 'Failed to load appointment');

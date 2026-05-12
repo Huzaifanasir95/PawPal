@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../data/repositories/community_hub_repository.dart';
@@ -148,7 +147,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
         : pet.imageUrl;
 
     if (imagePath == null || imagePath.trim().isEmpty) {
-      return Icon(Icons.pets_rounded, color: AppColors.primary, size: 18.sp);
+      return Icon(Icons.pets_rounded, color: Theme.of(context).colorScheme.primary, size: 18.sp);
     }
 
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -156,7 +155,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
         imagePath,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) =>
-            Icon(Icons.pets_rounded, color: AppColors.primary, size: 18.sp),
+            Icon(Icons.pets_rounded, color: Theme.of(context).colorScheme.primary, size: 18.sp),
       );
     }
 
@@ -169,7 +168,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
             bytes,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) =>
-                Icon(Icons.pets_rounded, color: AppColors.primary, size: 18.sp),
+                Icon(Icons.pets_rounded, color: Theme.of(context).colorScheme.primary, size: 18.sp),
           );
         }
       } catch (_) {
@@ -189,11 +188,11 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
             snapshot.data!,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) =>
-                Icon(Icons.pets_rounded, color: AppColors.primary, size: 18.sp),
+                Icon(Icons.pets_rounded, color: Theme.of(context).colorScheme.primary, size: 18.sp),
           );
         }
 
-        return Icon(Icons.pets_rounded, color: AppColors.primary, size: 18.sp);
+        return Icon(Icons.pets_rounded, color: Theme.of(context).colorScheme.primary, size: 18.sp);
       },
     );
   }
@@ -219,19 +218,19 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F6F2),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: AppColors.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: AppColors.accent, size: 24.sp),
+            icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary, size: 24.sp),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             'List Pet for Adoption',
             style: AppTextStyles.onboardingTitle.copyWith(
               fontSize: 20.sp,
-              color: AppColors.accent,
+              color: Theme.of(context).colorScheme.onPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -248,7 +247,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
                             _petsError!,
                             style: AppTextStyles.onboardingBody.copyWith(
                               fontSize: 14.sp,
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
                           SizedBox(height: 12.h),
@@ -266,7 +265,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
                               Icon(
                                 Icons.pets_outlined,
                                 size: 56.sp,
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               ),
                               SizedBox(height: 10.h),
                               Text(
@@ -276,7 +275,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
                                 textAlign: TextAlign.center,
                                 style: AppTextStyles.onboardingBody.copyWith(
                                   fontSize: 15.sp,
-                                  color: AppColors.textSecondary,
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                 ),
                               ),
                               SizedBox(height: 12.h),
@@ -316,10 +315,10 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
                       margin: EdgeInsets.only(bottom: 8.h),
                       padding: EdgeInsets.all(12.w),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(
-                          color: isSelected ? AppColors.accent : AppColors.border,
+                          color: isSelected ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.outline,
                           width: isSelected ? 1.8 : 1,
                         ),
                       ),
@@ -327,7 +326,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
                         children: [
                           CircleAvatar(
                             radius: 20.r,
-                            backgroundColor: AppColors.primary.withOpacity(0.12),
+                            backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.12),
                             child: ClipOval(
                               child: SizedBox(
                                 width: 40.r,
@@ -351,7 +350,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
                                         style: AppTextStyles.onboardingBody.copyWith(
                                           fontSize: 14.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: AppColors.textPrimary,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
                                     ),
@@ -366,7 +365,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTextStyles.onboardingBody.copyWith(
                                     fontSize: 12.sp,
-                                    color: AppColors.textSecondary,
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                   ),
                                 ),
                               ],
@@ -375,7 +374,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
                           SizedBox(width: 8.w),
                           Icon(
                             isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                            color: isSelected ? AppColors.accent : AppColors.textSecondary,
+                            color: isSelected ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ],
                       ),
@@ -433,13 +432,13 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
             label,
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 14.sp,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.success,
+            activeThumbColor: Theme.of(context).colorScheme.primary,
           ),
         ],
       ),
@@ -452,7 +451,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
       style: AppTextStyles.onboardingBody.copyWith(
         fontSize: 14.sp,
         fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }
@@ -479,21 +478,21 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
             hintText: hint,
             hintStyle: AppTextStyles.onboardingBody.copyWith(
               fontSize: 14.sp,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
             ),
             contentPadding:
                 EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
@@ -513,7 +512,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
           child: ElevatedButton(
             onPressed: state.isCreating ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.r),
               ),
@@ -532,7 +531,7 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSecondary,
                     ),
                   ),
           ),
@@ -589,3 +588,4 @@ class _CreateAdoptionPageState extends State<CreateAdoptionPage> {
     return v.isEmpty ? null : v;
   }
 }
+

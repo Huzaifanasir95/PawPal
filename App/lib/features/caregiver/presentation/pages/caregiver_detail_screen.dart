@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
@@ -147,15 +146,15 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return SliverAppBar(
       expandedHeight: 200.h,
       pinned: true,
-      backgroundColor: AppColors.primary,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       leading: IconButton(
         icon: Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
+            color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          child: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
         ),
         onPressed: () => Navigator.of(context).pop(),
       ),
@@ -164,7 +163,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
             _caregiver!.userAvatar != null
                 ? Image.network(_caregiver!.userAvatar!, fit: BoxFit.cover)
                 : Container(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                   child: Center(
                     child: Text(
                       (_caregiver!.userName ?? 'C')[0].toUpperCase(),
@@ -182,7 +181,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
   SliverToBoxAdapter _buildProfileHeader() {
     return SliverToBoxAdapter(
       child: Container(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         child: Container(
           padding: EdgeInsets.all(20.w),
           child: Column(
@@ -227,7 +226,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                           Text(
                             _caregiver!.headline!,
                             style: AppTextStyles.bodyLarge.copyWith(
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               fontSize: 15.sp,
                             ),
                           ),
@@ -299,7 +298,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.08),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Column(
@@ -326,7 +325,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
           Text(
             label,
             style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               fontSize: 11.sp,
             ),
             maxLines: 1,
@@ -377,7 +376,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return Container(
       padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.08),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
@@ -389,7 +388,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 width: 4.w,
                 height: 20.h,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
@@ -406,7 +405,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
           Text(
             content,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               height: 1.5,
             ),
           ),
@@ -419,7 +418,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return Container(
       padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.08),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
@@ -431,7 +430,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 width: 4.w,
                 height: 20.h,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
@@ -513,13 +512,13 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
               color:
                   value
                       ? const Color(0xFF4CAF50).withOpacity(0.1)
-                      : AppColors.textSecondary.withOpacity(0.1),
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12.r),
               border: Border.all(
                 color:
                     value
                         ? const Color(0xFF4CAF50).withOpacity(0.3)
-                        : AppColors.textSecondary.withOpacity(0.3),
+                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.3),
                 width: 1,
               ),
             ),
@@ -530,7 +529,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                   value ? Icons.check_circle : Icons.cancel,
                   size: 16.w,
                   color:
-                      value ? const Color(0xFF4CAF50) : AppColors.textSecondary,
+                      value ? const Color(0xFF4CAF50) : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
                 SizedBox(width: 4.w),
                 Text(
@@ -539,7 +538,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                     color:
                         value
                             ? const Color(0xFF4CAF50)
-                            : AppColors.textSecondary,
+                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -557,7 +556,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return Container(
       padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.08),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
@@ -569,7 +568,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 width: 4.w,
                 height: 20.h,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
@@ -600,8 +599,8 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                           isAvailable
                               ? LinearGradient(
                                 colors: [
-                                  AppColors.primary,
-                                  AppColors.primary.withOpacity(0.7),
+                                  Theme.of(context).colorScheme.primary,
+                                  Theme.of(context).colorScheme.primary.withOpacity(0.7),
                                 ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -610,13 +609,13 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                       color:
                           isAvailable
                               ? null
-                              : AppColors.textSecondary.withOpacity(0.1),
+                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.1),
                       shape: BoxShape.circle,
                       boxShadow:
                           isAvailable
                               ? [
                                 BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.3),
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -630,7 +629,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                           color:
                               isAvailable
                                   ? Colors.white
-                                  : AppColors.textSecondary,
+                                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           fontWeight: FontWeight.w700,
                           fontSize: 11.sp,
                         ),
@@ -645,6 +644,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
   }
 
   Widget _buildServicesTab() {
+    final colorScheme = Theme.of(context).colorScheme;
     if (_services.isEmpty) {
       return Center(
         child: Column(
@@ -653,20 +653,20 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
             Container(
               padding: EdgeInsets.all(24.w),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.pets_rounded,
                 size: 48.w,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             SizedBox(height: 16.h),
             Text(
               'No services available',
               style: AppTextStyles.titleMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -683,11 +683,11 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
         return Container(
           margin: EdgeInsets.only(bottom: 16.h),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16.r),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.08),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -701,8 +701,8 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primary.withOpacity(0.1),
-                      AppColors.primary.withOpacity(0.05),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.vertical(
@@ -714,12 +714,12 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                     Container(
                       padding: EdgeInsets.all(10.w),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.15),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(10.r),
                       ),
                       child: Icon(
                         Icons.pets_rounded,
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         size: 24.w,
                       ),
                     ),
@@ -738,13 +738,13 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                         vertical: 6.h,
                       ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.primary, Color(0xFF6A1B9A)],
+                        gradient: LinearGradient(
+                          colors: [colorScheme.primary, colorScheme.secondary],
                         ),
                         borderRadius: BorderRadius.circular(12.r),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: colorScheme.primary.withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -770,7 +770,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                       Text(
                         service.description!,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           height: 1.5,
                         ),
                       ),
@@ -869,20 +869,20 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
             Container(
               padding: EdgeInsets.all(24.w),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.photo_library_rounded,
                 size: 48.w,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             SizedBox(height: 16.h),
             Text(
               'No photos yet',
               style: AppTextStyles.titleMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -890,7 +890,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
             Text(
               'Gallery photos will appear here',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -917,7 +917,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
               fit: BoxFit.cover,
               errorBuilder:
                   (context, error, stackTrace) => Container(
-                    color: AppColors.textSecondary.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.1),
                     child: const Icon(Icons.broken_image),
                   ),
             ),
@@ -998,7 +998,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
             Text(
               'No reviews yet',
               style: AppTextStyles.titleMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1006,7 +1006,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
             Text(
               'Be the first to book and review!',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -1023,7 +1023,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
           margin: EdgeInsets.only(bottom: 16.h),
           padding: EdgeInsets.all(18.w),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16.r),
             boxShadow: [
               BoxShadow(
@@ -1042,17 +1042,17 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                         width: 2,
                       ),
                     ),
                     child: CircleAvatar(
                       radius: 24.r,
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                       child: Text(
                         'P',
                         style: AppTextStyles.titleMedium.copyWith(
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -1100,13 +1100,13 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                       vertical: 6.h,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.textSecondary.withOpacity(0.1),
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Text(
                       _formatReviewDate(review.ownerReviewAt),
                       style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1118,10 +1118,10 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 Container(
                   padding: EdgeInsets.all(12.w),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.03),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.03),
                     borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                       width: 1,
                     ),
                   ),
@@ -1129,7 +1129,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                     review.ownerReview!,
                     style: AppTextStyles.bodyMedium.copyWith(
                       height: 1.5,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -1220,7 +1220,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -1237,8 +1237,8 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 child: OutlinedButton.icon(
                   onPressed: _isOpeningChat ? null : _openCaregiverChat,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: BorderSide(color: AppColors.primary.withOpacity(0.6)),
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    side: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.6)),
                     minimumSize: Size(double.infinity, 54.h),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14.r),
@@ -1251,14 +1251,14 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                             height: 18.h,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           )
                           : Icon(Icons.chat_bubble_outline_rounded, size: 18.w),
                   label: Text(
                     _isOpeningChat ? 'Opening...' : 'Message',
                     style: AppTextStyles.labelLarge.copyWith(
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1272,8 +1272,8 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primary,
-                      AppColors.primary.withOpacity(0.8),
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.primary.withOpacity(0.8),
                     ],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
@@ -1281,7 +1281,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                   borderRadius: BorderRadius.circular(14.r),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.4),
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -1339,3 +1339,4 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
     );
   }
 }
+

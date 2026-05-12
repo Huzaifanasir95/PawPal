@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../cubit/events_cubit.dart';
@@ -57,17 +56,17 @@ class _CreateEventPageState extends State<CreateEventPage> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F6F2),
         appBar: AppBar(
-          backgroundColor: AppColors.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: AppColors.accent, size: 24.sp),
+            icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.secondary, size: 24.sp),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             'Create Event',
             style: AppTextStyles.onboardingTitle.copyWith(
               fontSize: 20.sp,
-              color: AppColors.accent,
+              color: Theme.of(context).colorScheme.secondary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -92,17 +91,17 @@ class _CreateEventPageState extends State<CreateEventPage> {
                       child: Container(
                         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                         decoration: BoxDecoration(
-                          color: isActive ? AppColors.accent : AppColors.surface,
+                          color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(20.r),
                           border: Border.all(
-                            color: isActive ? AppColors.accent : AppColors.border,
+                            color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.outline,
                           ),
                         ),
                         child: Text(
                           e.key,
                           style: AppTextStyles.onboardingBody.copyWith(
                             fontSize: 13.sp,
-                            color: isActive ? Colors.white : AppColors.textPrimary,
+                            color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurface,
                             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                           ),
                         ),
@@ -153,7 +152,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                     Switch(
                       value: _isPetFriendly,
                       onChanged: (v) => setState(() => _isPetFriendly = v),
-                      activeColor: AppColors.success,
+                      activeThumbColor: Colors.green,
                     ),
                   ],
                 ),
@@ -177,20 +176,20 @@ class _CreateEventPageState extends State<CreateEventPage> {
         width: double.infinity,
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: Theme.of(context).colorScheme.outline),
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today, size: 18.sp, color: AppColors.textSecondary),
+            Icon(Icons.calendar_today, size: 18.sp, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
             SizedBox(width: 10.w),
             Expanded(
               child: Text(
                 value != null ? fmt.format(value) : hint,
                 style: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 14.sp,
-                  color: value != null ? AppColors.textPrimary : AppColors.textSecondary,
+                  color: value != null ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ),
@@ -234,7 +233,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
       style: AppTextStyles.onboardingBody.copyWith(
         fontSize: 14.sp,
         fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }
@@ -261,21 +260,21 @@ class _CreateEventPageState extends State<CreateEventPage> {
             hintText: hint,
             hintStyle: AppTextStyles.onboardingBody.copyWith(
               fontSize: 14.sp,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
             ),
             contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
           ),
@@ -294,7 +293,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
           child: ElevatedButton(
             onPressed: state.isCreating ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.r),
               ),
@@ -354,3 +353,4 @@ class _CreateEventPageState extends State<CreateEventPage> {
     return v.isEmpty ? null : v;
   }
 }
+

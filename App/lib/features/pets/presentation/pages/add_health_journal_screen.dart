@@ -39,8 +39,8 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
   bool _vetVisit = false;
   String? _vetVisitReason;
 
-  List<String> _symptoms = [];
-  List<String> _medicationsTaken = [];
+  final List<String> _symptoms = [];
+  final List<String> _medicationsTaken = [];
 
   @override
   void dispose() {
@@ -536,7 +536,7 @@ class _AddHealthJournalScreenState extends State<AddHealthJournalScreen> {
                     _vetVisit = value;
                   });
                 },
-                activeColor: colorScheme.primary,
+                activeThumbColor: colorScheme.primary,
               ),
 
               if (_vetVisit) ...[

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
+
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/widgets/user_avatar.dart';
@@ -62,6 +62,8 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: widget.onTap,
       borderRadius: BorderRadius.circular(16.r),
@@ -69,25 +71,17 @@ class _PostCardState extends State<PostCard> {
         width: double.infinity,
         margin: EdgeInsets.symmetric(vertical: 6.h),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF1F6F8),
-              Color(0xFFDDE9EE),
-            ],
-          ),
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 12.r,
-              offset: Offset(0, 5.h),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
           border: Border.all(
-            color: const Color(0xFFB9CBD4),
-            width: 1,
+            color: colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
         child: Column(
@@ -115,14 +109,14 @@ class _PostCardState extends State<PostCard> {
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF324B49),
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         _formatTimestamp(widget.post.createdAt),
                         style: AppTextStyles.onboardingBody.copyWith(
                           fontSize: 12.sp,
-                          color: const Color(0xFFA1A1A1),
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -131,7 +125,7 @@ class _PostCardState extends State<PostCard> {
                 // Three-dot menu for post owner
                 if (ApiClient.instance.userId == widget.post.userId)
                   PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert, color: const Color(0xFF324B49)),
+                    icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
                     onSelected: (value) {
                       if (value == 'edit') {
                         _showEditDialog(context);
@@ -174,14 +168,14 @@ class _PostCardState extends State<PostCard> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.12),
+                    color: colorScheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(
                     PostCategory.getLabel(widget.post.category),
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 10.sp,
-                      color: AppColors.primary,
+                      color: colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -192,7 +186,7 @@ class _PostCardState extends State<PostCard> {
                     widget.post.title,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 18.sp,
-                      color: const Color(0xFF324B49),
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -208,7 +202,7 @@ class _PostCardState extends State<PostCard> {
               widget.post.content,
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
-                color: const Color(0xFF324B49),
+                color: colorScheme.onSurface,
                 height: 1.5,
               ),
               maxLines: 4,
@@ -240,10 +234,12 @@ class _PostCardState extends State<PostCard> {
                   duration: const Duration(milliseconds: 180),
                   decoration: BoxDecoration(
                     color: widget.post.likesCount > 0
-                        ? Colors.red.withOpacity(0.08)
-                        : Colors.white.withOpacity(0.5),
+                        ? Colors.red.withValues(alpha: 0.08)
+                        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(color: const Color(0xFFCCD8DF)),
+                    border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: InkWell(
                     onTap: _isLikeLoading
@@ -298,9 +294,11 @@ class _PostCardState extends State<PostCard> {
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.5),
+                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(color: const Color(0xFFCCD8DF)),
+                    border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: InkWell(
                     onTap: _toggleCommentInput,
@@ -341,8 +339,7 @@ class _PostCardState extends State<PostCard> {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: const Color(0xFFCCD8DF),
-                    width: 1,
+                    color: colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
               ),
@@ -368,22 +365,20 @@ class _PostCardState extends State<PostCard> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20.r),
                           borderSide: BorderSide(
-                            color: AppColors.primary.withOpacity(0.3),
-                            width: 1.w,
+                            color: colorScheme.outline.withValues(alpha: 0.35),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20.r),
                           borderSide: BorderSide(
-                            color: AppColors.primary.withOpacity(0.3),
-                            width: 1.w,
+                            color: colorScheme.outline.withValues(alpha: 0.35),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20.r),
                           borderSide: BorderSide(
-                            color: AppColors.primary,
-                            width: 1.w,
+                            color: colorScheme.primary,
+                            width: 1.5,
                           ),
                         ),
                         contentPadding: EdgeInsets.symmetric(
@@ -393,7 +388,7 @@ class _PostCardState extends State<PostCard> {
                       ),
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 14.sp,
-                        color: const Color(0xFF324B49),
+                        color: colorScheme.onSurface,
                       ),
                       maxLines: 3,
                       minLines: 1,
@@ -407,7 +402,7 @@ class _PostCardState extends State<PostCard> {
                     onPressed: _submitComment,
                     icon: Icon(
                       Icons.send,
-                      color: AppColors.primary,
+                      color: colorScheme.primary,
                       size: 24.w,
                     ),
                   ),
@@ -499,12 +494,13 @@ class _PostCardState extends State<PostCard> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: Theme.of(dialogContext).colorScheme.primary,
+              foregroundColor: Theme.of(dialogContext).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
             ),
             child: Text('Save', style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 14.sp,
-              color: Colors.white,
+              color: Theme.of(dialogContext).colorScheme.onPrimary,
             )),
           ),
         ],

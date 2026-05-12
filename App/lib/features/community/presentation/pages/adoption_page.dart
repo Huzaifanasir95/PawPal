@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/community_hub_models.dart';
 import '../cubit/adoption_cubit.dart';
@@ -72,6 +71,16 @@ class _AdoptionPageState extends State<AdoptionPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<AdoptionCubit>().loadListings();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -84,7 +93,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
         return Scaffold(
           backgroundColor: Colors.transparent,
           floatingActionButton: FloatingActionButton(
-            backgroundColor: AppColors.primary,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             heroTag: 'adoption_fab',
             onPressed: () async {
               final created = await Navigator.push<bool>(
@@ -100,7 +109,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
                 context.read<AdoptionCubit>().loadListings();
               }
             },
-            child: Icon(Icons.add, color: AppColors.accent, size: 28.sp),
+            child: Icon(Icons.add, color: Theme.of(context).colorScheme.secondary, size: 28.sp),
           ),
           body: Column(
             children: [
@@ -115,15 +124,16 @@ class _AdoptionPageState extends State<AdoptionPage> {
   }
 
   Widget _buildSearchBar(BuildContext context, String currentQuery) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
       child: Container(
         height: 50.h,
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainer,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(25.r),
           border: Border.all(
-            color: AppColors.border,
+            color: colorScheme.outline.withValues(alpha: 0.6),
             width: 1,
           ),
         ),
@@ -132,7 +142,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
             SizedBox(width: 16.w),
             Icon(
               Icons.search,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
               size: 20.sp,
             ),
             SizedBox(width: 12.w),
@@ -144,13 +154,13 @@ class _AdoptionPageState extends State<AdoptionPage> {
                 },
                 style: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 15.sp,
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search by pet name...',
                   hintStyle: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 15.sp,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                   border: InputBorder.none,
                   isDense: true,
@@ -162,7 +172,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
               IconButton(
                 icon: Icon(
                   Icons.clear,
-                  color: AppColors.textSecondary,
+                  color: colorScheme.onSurfaceVariant,
                   size: 20.sp,
                 ),
                 onPressed: () {
@@ -196,17 +206,17 @@ class _AdoptionPageState extends State<AdoptionPage> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: isActive ? AppColors.accent : AppColors.surface,
+                color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(20.r),
                 border: Border.all(
-                  color: isActive ? AppColors.accent : AppColors.border,
+                  color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.outline,
                 ),
               ),
               child: Text(
                 type,
                 style: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 13.sp,
-                  color: isActive ? Colors.white : AppColors.textPrimary,
+                  color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurface,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
@@ -243,13 +253,13 @@ class _AdoptionPageState extends State<AdoptionPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.favorite_border, size: 64.sp, color: AppColors.textSecondary),
+            Icon(Icons.favorite_border, size: 64.sp, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
             SizedBox(height: 12.h),
             Text(
               'No adoption listings yet',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 16.sp,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -262,13 +272,13 @@ class _AdoptionPageState extends State<AdoptionPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64.sp, color: AppColors.textSecondary),
+            Icon(Icons.search_off, size: 64.sp, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
             SizedBox(height: 12.h),
             Text(
               'No pets found matching "${state.searchQuery}"',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 16.sp,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -306,11 +316,11 @@ class _AdoptionPageState extends State<AdoptionPage> {
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadow,
+              color: Theme.of(context).colorScheme.shadow,
               blurRadius: 8.r,
               offset: const Offset(0, 2),
             ),
@@ -323,7 +333,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
               width: 110.w,
               height: 120.h,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                 borderRadius: BorderRadius.horizontal(
                   left: Radius.circular(16.r),
                 ),
@@ -357,7 +367,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
                                   style: AppTextStyles.onboardingTitle.copyWith(
                                     fontSize: 16.sp,
                                     fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -390,7 +400,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
                             style: AppTextStyles.onboardingBody.copyWith(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.success,
+                              color: Colors.green,
                             ),
                           ),
                       ],
@@ -404,7 +414,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
                       ].join(' • '),
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 12.sp,
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                     SizedBox(height: 8.h),
@@ -416,9 +426,9 @@ class _AdoptionPageState extends State<AdoptionPage> {
                         if (_hasVerifiedBadge(listing))
                           _badge('Breed Verified', const Color(0xFF0E9F6E)),
                         if (listing.isVaccinated == true)
-                          _badge('Vaccinated', AppColors.success),
+                          _badge('Vaccinated', Colors.green),
                         if (listing.isNeutered == true)
-                          _badge('Neutered', AppColors.info),
+                          _badge('Neutered', Theme.of(context).colorScheme.primary),
                         if (listing.isTrained == true)
                           _badge('Trained', const Color(0xFF8D6E63)),
                       ],
@@ -428,7 +438,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
                       Row(
                         children: [
                           Icon(Icons.location_on_outlined,
-                              size: 12.sp, color: AppColors.textSecondary),
+                              size: 12.sp, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                           SizedBox(width: 3.w),
                           Expanded(
                             child: Text(
@@ -437,7 +447,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
                               overflow: TextOverflow.ellipsis,
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 11.sp,
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               ),
                             ),
                           ),
@@ -459,7 +469,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
       child: Icon(
         petType.toLowerCase() == 'cat' ? Icons.pets : Icons.pets,
         size: 40.sp,
-        color: const Color(0xFF2C6E69).withOpacity(0.4),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
       ),
     );
   }
@@ -482,3 +492,5 @@ class _AdoptionPageState extends State<AdoptionPage> {
     );
   }
 }
+
+

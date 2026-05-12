@@ -388,7 +388,7 @@ type CreateVetAppointmentRequest struct {
 	PetID               uuid.UUID `json:"petId" binding:"required"`
 	AppointmentDatetime string    `json:"appointmentDatetime" binding:"required"` // ISO 8601
 	DurationMinutes     int       `json:"durationMinutes"`
-	MeetingType         string    `json:"meetingType" binding:"omitempty,oneof=in_person video chat"`
+	MeetingType         string    `json:"meetingType" binding:"omitempty"`
 	Reason              string    `json:"reason" binding:"required,min=3"`
 	Symptoms            *string   `json:"symptoms,omitempty"`
 	OwnerNotes          *string   `json:"ownerNotes,omitempty"`

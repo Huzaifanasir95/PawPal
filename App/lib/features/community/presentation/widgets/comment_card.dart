@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/comment.dart';
 
@@ -44,13 +43,13 @@ class CommentCard extends StatelessWidget {
               // User Avatar
               CircleAvatar(
                 radius: 16.r,
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 child: Text(
                   comment.userName?.isNotEmpty == true
                       ? comment.userName![0].toUpperCase()
                       : 'U',
                   style: AppTextStyles.onboardingBody.copyWith(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     fontWeight: FontWeight.w600,
                     fontSize: 12.sp,
                   ),

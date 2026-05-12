@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pawpawl/core/constants/app_images.dart';
 import '../bloc/onboarding_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../widgets/onboarding_page_widget.dart';
@@ -53,11 +52,11 @@ class _OnboardingViewState extends State<OnboardingView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primary,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       body: SafeArea(
         top: false, // Allow content to extend to the top for background color
         child: Container(
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
           child: BlocConsumer<OnboardingBloc, OnboardingState>(
         listener: (context, state) {
           state.maybeWhen(
@@ -70,7 +69,7 @@ class _OnboardingViewState extends State<OnboardingView> {
         },
         builder: (context, state) {
           return Scaffold(
-            backgroundColor: AppColors.primary,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             body: Stack(
               children: [
                 // PageView for different onboarding pages
@@ -96,9 +95,8 @@ class _OnboardingViewState extends State<OnboardingView> {
                     );
                   },
                 ),
-              Positioned(child: Image.asset(AppImages.primaryLogo),
-              top: 60.h,
-              left: 20.w,
+              Positioned(top: 60.h,
+              left: 20.w,child: Image.asset(AppImages.primaryLogo),
               ),
               // Skip Button positioned according to Figma
               Positioned(

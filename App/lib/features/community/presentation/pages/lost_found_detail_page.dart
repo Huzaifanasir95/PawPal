@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/community_hub_models.dart';
 import '../cubit/lost_found_cubit.dart';
@@ -24,22 +23,27 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return BlocBuilder<LostFoundCubit, LostFoundState>(
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: const Color(0xFFF8F6F2),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
-            backgroundColor: AppColors.primary,
+            backgroundColor: colorScheme.primary,
             elevation: 0,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: AppColors.accent, size: 24.sp),
+              icon: Icon(
+                Icons.arrow_back,
+                color: colorScheme.onPrimary,
+                size: 24.sp,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
               'Details',
               style: AppTextStyles.onboardingTitle.copyWith(
                 fontSize: 20.sp,
-                color: AppColors.accent,
+                color: colorScheme.onPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -51,6 +55,10 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
   }
 
   Widget _buildBody(LostFoundState state) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final lostSurface = colorScheme.errorContainer;
+    final foundSurface = colorScheme.primaryContainer;
+    final shadowColor = colorScheme.shadow.withValues(alpha: 0.12);
     if (state.isLoadingDetail) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -75,9 +83,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                 height: 280.h,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: post.type == 'lost' 
-                      ? const Color(0xFFFFEBEE)
-                      : const Color(0xFFE8F5E9),
+                  color: post.type == 'lost' ? lostSurface : foundSurface,
                 ),
                 child: post.imageUrls.isNotEmpty
                     ? PageView.builder(
@@ -109,10 +115,10 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                         margin: EdgeInsets.symmetric(horizontal: 3.w),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white,
+                          color: colorScheme.surface,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: shadowColor,
                               blurRadius: 4.r,
                             ),
                           ],
@@ -146,7 +152,10 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
   Widget _buildPlaceholder(post) {
     final isLost = post.type == 'lost';
     return Container(
-      color: isLost ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
+      color:
+          isLost
+              ? Theme.of(context).colorScheme.errorContainer
+              : Theme.of(context).colorScheme.primaryContainer,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -154,14 +163,18 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
             Icon(
               Icons.pets,
               size: 80.sp,
-              color: (isLost ? AppColors.error : AppColors.success).withOpacity(0.3),
+              color:
+                  (isLost
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.primary)
+                      .withValues(alpha: 0.3),
             ),
             SizedBox(height: 12.h),
             Text(
               'No image available',
               style: TextStyle(
                 fontSize: 14.sp,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -171,6 +184,8 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
   }
 
   Widget _buildContentSection(post) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final shadowColor = colorScheme.shadow.withValues(alpha: 0.12);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -181,7 +196,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
             style: AppTextStyles.onboardingTitle.copyWith(
               fontSize: 32.sp,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               letterSpacing: -0.5,
             ),
           ),
@@ -204,11 +219,11 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
           width: double.infinity,
           padding: EdgeInsets.all(20.w),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16.r),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: shadowColor,
                 blurRadius: 12.r,
                 offset: const Offset(0, 4),
               ),
@@ -222,12 +237,12 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                   Container(
                     padding: EdgeInsets.all(8.w),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Icon(
                       Icons.description_outlined,
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       size: 20.sp,
                     ),
                   ),
@@ -237,7 +252,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                     style: AppTextStyles.onboardingTitle.copyWith(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],
@@ -247,7 +262,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                 post.description,
                 style: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 15.sp,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   height: 1.6,
                   letterSpacing: 0.2,
                 ),
@@ -262,11 +277,11 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
             width: double.infinity,
             padding: EdgeInsets.all(20.w),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(16.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: shadowColor,
                   blurRadius: 12.r,
                   offset: const Offset(0, 4),
                 ),
@@ -280,12 +295,12 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                     Container(
                       padding: EdgeInsets.all(8.w),
                       decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.1),
+                        color: colorScheme.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Icon(
                         Icons.location_on,
-                        color: AppColors.error,
+                        color: colorScheme.error,
                         size: 20.sp,
                       ),
                     ),
@@ -295,7 +310,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                       style: AppTextStyles.onboardingTitle.copyWith(
                         fontSize: 18.sp,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -305,7 +320,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                   post.lastSeenLocation!,
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 15.sp,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w500,
                     height: 1.5,
                   ),
@@ -321,11 +336,11 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
             width: double.infinity,
             padding: EdgeInsets.all(20.w),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(16.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: shadowColor,
                   blurRadius: 12.r,
                   offset: const Offset(0, 4),
                 ),
@@ -339,12 +354,12 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                     Container(
                       padding: EdgeInsets.all(8.w),
                       decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.1),
+                        color: colorScheme.tertiary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Icon(
                         Icons.phone_outlined,
-                        color: AppColors.success,
+                        color: colorScheme.tertiary,
                         size: 20.sp,
                       ),
                     ),
@@ -354,7 +369,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                       style: AppTextStyles.onboardingTitle.copyWith(
                         fontSize: 18.sp,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -365,7 +380,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                     Icons.phone,
                     'Phone',
                     post.contactPhone!,
-                    AppColors.success,
+                    colorScheme.tertiary,
                   ),
                 ],
                 if (post.contactPhone != null && post.contactEmail != null) 
@@ -375,7 +390,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                     Icons.email_outlined,
                     'Email',
                     post.contactEmail!,
-                    AppColors.info,
+                    Theme.of(context).colorScheme.primary,
                   ),
                 ],
               ],
@@ -388,11 +403,11 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
           width: double.infinity,
           padding: EdgeInsets.all(20.w),
           decoration: BoxDecoration(
-            color: Colors.white,
+              color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16.r),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                  color: shadowColor,
                 blurRadius: 12.r,
                 offset: const Offset(0, 4),
               ),
@@ -404,18 +419,18 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                     width: 2,
                   ),
                 ),
                 child: CircleAvatar(
                   radius: 28.r,
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: colorScheme.primary,
                   backgroundImage: post.userAvatar != null 
                       ? NetworkImage(post.userAvatar!) 
                       : null,
                   child: post.userAvatar == null 
-                      ? Icon(Icons.person, size: 28.sp, color: Colors.white) 
+                      ? Icon(Icons.person, size: 28.sp, color: colorScheme.onPrimary) 
                       : null,
                 ),
               ),
@@ -428,7 +443,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                       'Posted by',
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 12.sp,
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -438,7 +453,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     SizedBox(height: 2.h),
@@ -446,7 +461,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                       _formatDate(post.createdAt),
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 13.sp,
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                   ],
@@ -467,7 +482,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
           decoration: BoxDecoration(
-            color: isLost ? AppColors.error : AppColors.success,
+            color: isLost ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.tertiary,
             borderRadius: BorderRadius.circular(20.r),
           ),
           child: Text(
@@ -475,7 +490,10 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 14.sp,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color:
+                  isLost
+                      ? Theme.of(context).colorScheme.onError
+                      : Theme.of(context).colorScheme.onTertiary,
             ),
           ),
         ),
@@ -499,7 +517,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
         Container(
           padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
           decoration: BoxDecoration(
-            color: AppColors.neutral300,
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: Text(
@@ -507,7 +525,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 11.sp,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
         ),
@@ -519,11 +537,11 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
             blurRadius: 8.r,
             offset: const Offset(0, 2),
           ),
@@ -532,13 +550,17 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16.sp, color: Colors.white),
+          Icon(
+            icon,
+            size: 16.sp,
+            color: Theme.of(context).colorScheme.onPrimary,
+          ),
           SizedBox(width: 6.w),
           Text(
             text,
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 13.sp,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -577,7 +599,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                   label,
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 12.sp,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -586,7 +608,7 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
                   value,
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 15.sp,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -602,11 +624,11 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
   Color _urgencyColor(String? urgency) {
     switch (urgency) {
       case 'high':
-        return AppColors.error;
+        return Theme.of(context).colorScheme.error;
       case 'medium':
-        return AppColors.warning;
+        return Theme.of(context).colorScheme.tertiary;
       default:
-        return AppColors.info;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 
@@ -614,3 +636,5 @@ class _LostFoundDetailPageState extends State<LostFoundDetailPage> {
     return '${dt.day}/${dt.month}/${dt.year} at ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }
+
+

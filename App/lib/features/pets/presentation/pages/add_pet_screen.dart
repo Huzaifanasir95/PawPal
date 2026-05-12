@@ -37,7 +37,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
   // Image
   XFile? _selectedImage;
-  List<XFile> _selectedImages = []; // Multiple images
+  final List<XFile> _selectedImages = []; // Multiple images
   bool _isVerifying = false;
   bool _isVerified = false;
   double? _verificationConfidence;
@@ -99,10 +99,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
       if (pickedFile != null) {
         setState(() {
           _selectedImages.add(pickedFile);
-          if (_selectedImage == null) {
-            _selectedImage =
-                pickedFile; // Keep the first image as primary for verification
-          }
+          _selectedImage ??= pickedFile;
           _isVerified = false;
         });
       }
@@ -837,7 +834,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                             _hasHealthRecord = value;
                           });
                         },
-                        activeColor: colorScheme.primary,
+                        activeThumbColor: colorScheme.primary,
                       ),
                       if (_hasHealthRecord) ...[
                         SizedBox(height: 8.h),
@@ -856,7 +853,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                               _isVaccinated = value;
                             });
                           },
-                          activeColor: colorScheme.primary,
+                          activeThumbColor: colorScheme.primary,
                         ),
                         if (_isVaccinated) ...[
                           SizedBox(height: 10.h),

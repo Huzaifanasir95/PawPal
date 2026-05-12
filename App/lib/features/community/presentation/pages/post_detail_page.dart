@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/community_state.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/user_avatar.dart';
 import '../widgets/comment_widget.dart';
@@ -56,15 +55,16 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: AppColors.primary,
+            color: colorScheme.primary,
             size: 24.w,
           ),
           onPressed: () => Navigator.of(context).pop(),
@@ -74,7 +74,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF324B49),
+            color: colorScheme.onSurface,
           ),
         ),
       ),
@@ -97,7 +97,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF324B49),
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   SizedBox(height: 16.h),
@@ -117,7 +117,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                   'No comments yet. Be the first to comment!',
                                   style: AppTextStyles.onboardingBody.copyWith(
                                     fontSize: 14.sp,
-                                    color: Colors.grey,
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ),
@@ -156,7 +156,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                               'Error loading comments: $message',
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 14.sp,
-                                color: Colors.red,
+                                color: colorScheme.error,
                               ),
                             ),
                           ),
@@ -180,17 +180,17 @@ class _PostDetailPageState extends State<PostDetailPage> {
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
             blurRadius: 8.r,
             offset: Offset(0, 2.h),
           ),
         ],
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           width: 1.w,
         ),
       ),
@@ -217,14 +217,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF324B49),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     Text(
                       _formatTimestamp(widget.post.createdAt),
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 12.sp,
-                        color: const Color(0xFFA1A1A1),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -240,7 +240,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
             widget.post.title,
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 20.sp,
-              color: const Color(0xFF324B49),
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -252,7 +252,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
             widget.post.content,
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 16.sp,
-              color: const Color(0xFF324B49),
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.5,
             ),
           ),
@@ -284,7 +284,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 children: [
                   Icon(
                     Icons.favorite,
-                    color: widget.post.likesCount > 0 ? Colors.red : Colors.grey,
+                    color: widget.post.likesCount > 0
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 20.w,
                   ),
                   SizedBox(width: 6.w),
@@ -292,7 +294,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     '${widget.post.likesCount}',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 14.sp,
-                      color: widget.post.likesCount > 0 ? Colors.red : Colors.grey,
+                      color: widget.post.likesCount > 0
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -306,7 +310,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 children: [
                   Icon(
                     Icons.comment,
-                    color: Colors.grey,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 20.w,
                   ),
                   SizedBox(width: 6.w),
@@ -314,7 +318,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     '${widget.post.commentsCount}',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 14.sp,
-                      color: Colors.grey,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -331,10 +335,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         border: Border(
           top: BorderSide(
-            color: AppColors.primary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             width: 1.w,
           ),
         ),
@@ -356,26 +360,26 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 hintText: 'Write a comment...',
                 hintStyle: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 14.sp,
-                  color: Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20.r),
                   borderSide: BorderSide(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                     width: 1.w,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20.r),
                   borderSide: BorderSide(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                     width: 1.w,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20.r),
                   borderSide: BorderSide(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     width: 1.w,
                   ),
                 ),
@@ -386,7 +390,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
               ),
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
-                color: const Color(0xFF324B49),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               maxLines: 3,
               minLines: 1,
@@ -400,7 +404,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
             onPressed: _submitComment,
             icon: Icon(
               Icons.send,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               size: 24.w,
             ),
           ),
@@ -433,13 +437,13 @@ class _PostDetailPageState extends State<PostDetailPage> {
           const Base64Decoder().convert(base64String),
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => Container(
-            color: Colors.grey[300],
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: const Icon(Icons.broken_image, size: 50),
           ),
         );
       } catch (e) {
         return Container(
-          color: Colors.grey[300],
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: const Icon(Icons.broken_image, size: 50),
         );
       }
@@ -450,7 +454,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
       imageUrl,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => Container(
-        color: Colors.grey[300],
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         child: const Icon(Icons.broken_image, size: 50),
       ),
     );

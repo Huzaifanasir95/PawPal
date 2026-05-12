@@ -259,12 +259,12 @@ func (r *CommunityHubRepository) GetAdoptionListings(ctx context.Context, petTyp
 	argIdx := 1
 
 	if petType != "" {
-		conditions = append(conditions, fmt.Sprintf("pet_type = $%d", argIdx))
+		conditions = append(conditions, fmt.Sprintf("a.pet_type = $%d", argIdx))
 		args = append(args, petType)
 		argIdx++
 	}
 	if status != "" {
-		conditions = append(conditions, fmt.Sprintf("status = $%d", argIdx))
+		conditions = append(conditions, fmt.Sprintf("a.status = $%d", argIdx))
 		args = append(args, status)
 		argIdx++
 	}
@@ -275,7 +275,7 @@ func (r *CommunityHubRepository) GetAdoptionListings(ctx context.Context, petTyp
 	}
 
 	var total int
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM adoption_listings %s", where)
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM adoption_listings a %s", where)
 	if err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
@@ -300,7 +300,7 @@ func (r *CommunityHubRepository) GetAdoptionListings(ctx context.Context, petTyp
 		good_with_kids, good_with_pets, image_urls, location,
 		contact_phone, contact_email, adoption_fee, status, user_name, user_avatar,
 		created_at, updated_at
-		FROM adoption_listings %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d`,
+		FROM adoption_listings a %s ORDER BY a.created_at DESC LIMIT $%d OFFSET $%d`,
 		where, argIdx, argIdx+1)
 
 	args = append(args, limit, offset)

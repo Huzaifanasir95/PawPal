@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
@@ -67,18 +66,18 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(
           'Booking Details',
           style: AppTextStyles.titleLarge.copyWith(
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -160,7 +159,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
@@ -176,7 +175,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           Text(
             'Service Details',
             style: AppTextStyles.titleMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           SizedBox(height: 16.h),
@@ -216,13 +215,13 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             children: [
               CircleAvatar(
                 radius: 20.r,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 child: Text(
                   widget.isCaregiver
                       ? (_booking!.ownerName ?? 'O')[0].toUpperCase()
                       : (_booking!.caregiverName ?? 'C')[0].toUpperCase(),
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -234,7 +233,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                   Text(
                     widget.isCaregiver ? 'Pet Owner' : 'Caregiver',
                     style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                   Text(
@@ -260,7 +259,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20.w, color: AppColors.textSecondary),
+          Icon(icon, size: 20.w, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
@@ -269,7 +268,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 Text(
                   label,
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
                 Text(value, style: AppTextStyles.bodyMedium),
@@ -287,7 +286,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
@@ -306,7 +305,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 child: Text(
                   'Invoice Summary',
                   style: AppTextStyles.titleMedium.copyWith(
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -337,7 +336,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             width: double.infinity,
             padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
-              color: AppColors.background.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: Column(
@@ -346,7 +345,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 Text(
                   'Invoice #${_booking!.bookingNumber}',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -354,7 +353,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 Text(
                   'Issued on ${_formatDate(_booking!.requestedAt ?? _booking!.createdAt ?? _booking!.startDatetime)}',
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -384,7 +383,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
               Text(
                 '${_booking!.currency} ${_booking!.totalAmount.toStringAsFixed(0)}',
                 style: AppTextStyles.titleLarge.copyWith(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ],
@@ -394,7 +393,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             Text(
               'Transactions',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -410,7 +409,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       child: Text(
                         '${payment.paymentType.toUpperCase()} • ${payment.paymentMethod ?? 'method'}',
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -421,7 +420,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                         color:
                             isCompleted
                                 ? Colors.green.shade700
-                                : AppColors.textSecondary,
+                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -448,13 +447,13 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           Text(
             label,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
           Text(
             '${isDiscount ? '-' : ''}${_booking!.currency} ${amount.abs().toStringAsFixed(0)}',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: isDiscount ? Colors.green : AppColors.textPrimary,
+              color: isDiscount ? Colors.green : Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -466,7 +465,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
@@ -482,7 +481,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           Text(
             'Live Tracking',
             style: AppTextStyles.titleMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           SizedBox(height: 16.h),
@@ -501,12 +500,12 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.location_on,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               size: 16.w,
             ),
           ),
@@ -525,7 +524,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                   Text(
                     point.note!,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                 Text(
@@ -533,7 +532,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       ? '${point.recordedAt!.hour}:${point.recordedAt!.minute.toString().padLeft(2, '0')}'
                       : '',
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -548,7 +547,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
@@ -564,7 +563,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           Text(
             'Completion Report',
             style: AppTextStyles.titleMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           SizedBox(height: 16.h),
@@ -583,7 +582,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                   _completionReport!.activitiesPerformed.map((activity) {
                     return Chip(
                       label: Text(activity, style: AppTextStyles.labelSmall),
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     );
                   }).toList(),
             ),
@@ -593,7 +592,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             Text(
               'Behavior Notes: ${_completionReport!.behaviorNotes}',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -611,8 +610,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           OutlinedButton.icon(
             onPressed: _isOpeningChat ? null : _openBookingChat,
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              side: BorderSide(color: AppColors.primary),
+              foregroundColor: Theme.of(context).colorScheme.primary,
+              side: BorderSide(color: Theme.of(context).colorScheme.primary),
               padding: EdgeInsets.symmetric(vertical: 14.h),
               minimumSize: Size(double.infinity, 48.h),
             ),
@@ -632,7 +631,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           ElevatedButton.icon(
             onPressed: _isProcessingPayment ? null : _showPaymentDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(vertical: 16.h),
               minimumSize: Size(double.infinity, 48.h),
@@ -673,7 +672,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 child: ElevatedButton(
                   onPressed: () => _respondToBooking(true),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     padding: EdgeInsets.symmetric(vertical: 16.h),
                   ),
                   child: const Text('Accept'),
@@ -712,7 +711,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           ElevatedButton(
             onPressed: _showCompleteDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               padding: EdgeInsets.symmetric(vertical: 16.h),
               minimumSize: Size(double.infinity, 48.h),
             ),
@@ -722,7 +721,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           ElevatedButton(
             onPressed: _showReviewDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               padding: EdgeInsets.symmetric(vertical: 16.h),
               minimumSize: Size(double.infinity, 48.h),
             ),
@@ -886,7 +885,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       ),
                       SizedBox(height: 14.h),
                       DropdownButtonFormField<String>(
-                        value: selectedMethod,
+                        initialValue: selectedMethod,
                         items: const [
                           DropdownMenuItem(value: 'card', child: Text('Card')),
                           DropdownMenuItem(
@@ -1195,3 +1194,4 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     }
   }
 }
+

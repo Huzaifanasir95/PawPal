@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../pages/create_post_page.dart';
 
@@ -49,10 +48,10 @@ class CreatePostCard extends StatelessWidget {
             // User Avatar
             CircleAvatar(
               radius: 24.r,
-              backgroundColor: AppColors.primary.withOpacity(0.18),
+              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.18),
               child: Icon(
                 Icons.person,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 size: 24.w,
               ),
             ),
@@ -66,7 +65,7 @@ class CreatePostCard extends StatelessWidget {
                     'Share your thoughts...',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 16.sp,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -87,11 +86,11 @@ class CreatePostCard extends StatelessWidget {
               width: 48.w,
               height: 48.h,
               decoration: BoxDecoration(
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(24.r),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.25),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),

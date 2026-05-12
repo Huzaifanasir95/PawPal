@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
@@ -139,7 +138,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         'Email Address',
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       SizedBox(height: 10.h),
@@ -150,12 +149,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         decoration: InputDecoration(
                           hintText: 'you@example.com',
                           hintStyle: TextStyle(
-                            color: AppColors.textSecondary.withOpacity(0.6),
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.6),
                             fontSize: 14.sp,
                           ),
                           prefixIcon: Icon(
                             Icons.email_outlined,
-                            color: AppColors.darkTeal,
+                            color: Theme.of(context).colorScheme.primary,
                             size: 22.sp,
                           ),
                           filled: true,
@@ -169,22 +168,22 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.border, width: 1),
+                                color: Theme.of(context).colorScheme.outline, width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.darkTeal, width: 2),
+                                color: Theme.of(context).colorScheme.primary, width: 2),
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.error, width: 1),
+                                color: Theme.of(context).colorScheme.error, width: 1),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
                             borderSide: BorderSide(
-                                color: AppColors.error, width: 2),
+                                color: Theme.of(context).colorScheme.error, width: 2),
                           ),
                         ),
                         validator: (value) {
@@ -206,9 +205,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _sendResetCode,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.darkTeal,
+                            backgroundColor: Theme.of(context).colorScheme.primary,
                             disabledBackgroundColor:
-                                AppColors.darkTeal.withOpacity(0.5),
+                                Theme.of(context).colorScheme.primary.withOpacity(0.5),
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -242,13 +241,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             text: TextSpan(
                               style: TextStyle(
                                   fontSize: 14.sp,
-                                  color: AppColors.textSecondary),
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                               children: [
                                 const TextSpan(text: 'Remember your password? '),
                                 TextSpan(
                                   text: 'Sign In',
                                   style: TextStyle(
-                                    color: AppColors.darkTeal,
+                                    color: Theme.of(context).colorScheme.primary,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -268,3 +267,5 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 }
+
+

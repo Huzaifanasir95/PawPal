@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/app_images.dart';
@@ -38,7 +37,7 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.authBackground,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: BlocListener<AuthBloc, AuthState>(
           listener: (context, state) {
@@ -82,12 +81,12 @@ class _SignInScreenState extends State<SignInScreen> {
                         width: 58.w,
                         height: 58.h,
                         decoration: BoxDecoration(
-                          color: AppColors.accent,
+                          color: Theme.of(context).colorScheme.secondary,
                           borderRadius: BorderRadius.circular(29.r),
                         ),
                         child: Icon(
                           Icons.pets,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           size: 30.w,
                         ),
                       );
@@ -103,7 +102,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 AppStrings.signIn,
                 style: AppTextStyles.onboardingTitle.copyWith(
                   fontSize: 48.sp,
-                  color: AppColors.authTitle,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -131,7 +130,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 AppStrings.orWithEmail,
                 style: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 20.sp,
-                  color: AppColors.authText,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               
@@ -170,7 +169,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     AppStrings.forgot,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 14.sp,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -192,7 +191,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     '${AppStrings.newUser} ',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 14.sp,
-                      color: AppColors.authTextSecondary,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                   GestureDetector(
@@ -212,7 +211,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       AppStrings.signUp,
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 14.sp,
-                        color: AppColors.authTextSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -240,11 +239,11 @@ class _SignInScreenState extends State<SignInScreen> {
         return Container(
           height: 50.h,
           decoration: BoxDecoration(
-            color: isLoading ? AppColors.googleButton.withOpacity(0.7) : AppColors.googleButton,
+            color: isLoading ? Colors.white.withOpacity(0.7) : Colors.white,
             borderRadius: BorderRadius.circular(25.r),
             boxShadow: [
               BoxShadow(
-                color: AppColors.googleButton.withOpacity(0.24),
+                color: Colors.white.withOpacity(0.24),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -284,13 +283,13 @@ class _SignInScreenState extends State<SignInScreen> {
                       height: 20.h,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.w,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.surface),
+                        valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.surface),
                       ),
                     )
                   else
                     Icon(
                       Icons.g_mobiledata,
-                      color: AppColors.surface,
+                      color: Theme.of(context).colorScheme.surface,
                       size: 30.sp,
                     ),
                   SizedBox(width: 8.w),
@@ -298,7 +297,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     AppStrings.withGoogle,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 14.sp,
-                      color: AppColors.surface,
+                      color: Theme.of(context).colorScheme.surface,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -381,7 +380,7 @@ class _SignInScreenState extends State<SignInScreen> {
           width: double.infinity,
           height: 65.h,
           decoration: BoxDecoration(
-            color: isLoading ? AppColors.googleButton.withOpacity(0.7) : AppColors.googleButton,
+            color: isLoading ? Colors.white.withOpacity(0.7) : Colors.white,
             borderRadius: BorderRadius.circular(98.r),
           ),
           child: Material(
@@ -437,14 +436,14 @@ class _SignInScreenState extends State<SignInScreen> {
                       height: 24.h,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.w,
-                        color: AppColors.accent,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     )
                   : Text(
                       AppStrings.getStarted,
                       style: AppTextStyles.onboardingTitle.copyWith(
                         fontSize: 24.sp,
-                        color: AppColors.accent,
+                        color: Theme.of(context).colorScheme.secondary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -456,3 +455,4 @@ class _SignInScreenState extends State<SignInScreen> {
     );
   }
 }
+

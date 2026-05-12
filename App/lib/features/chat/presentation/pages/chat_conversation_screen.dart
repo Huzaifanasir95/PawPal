@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/chat_cache_service.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/services/websocket_service.dart';
@@ -470,7 +469,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: AppColors.primary),
+            CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
             SizedBox(height: 16.h),
             Text(
               'Loading messages...',
@@ -794,3 +793,4 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 }
+

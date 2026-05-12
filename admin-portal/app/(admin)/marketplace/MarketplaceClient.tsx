@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import {
   Search, Eye, Trash2, X, Star, Package, ShoppingBag,
   ToggleLeft, ToggleRight, AlertTriangle, User, Tag,
-  DollarSign, MapPin, Phone, Hash, Edit,
+  DollarSign, MapPin, Phone, Hash,
 } from 'lucide-react';
 import Badge from '@/components/Badge';
 import { timeAgo, formatDateTime } from '@/lib/utils';
@@ -26,7 +26,7 @@ export interface Product {
   images: string[] | null;
   created_at: string;
   updated_at: string;
-  seller: { id: string; display_name: string | null; email: string | null } | null;
+  seller: { id: string; display_name: string | null; email: string | null; avatar_url: string | null } | null;
   category: { name: string } | null;
 }
 
@@ -54,7 +54,7 @@ export interface Order {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  buyer: { id: string; display_name: string | null; email: string | null } | null;
+  buyer: { id: string; display_name: string | null; email: string | null; avatar_url: string | null } | null;
   items: OrderItem[];
 }
 
@@ -87,6 +87,8 @@ const backdropVariants = {
   show:   { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
   exit:   { opacity: 0, transition: { duration: 0.2,  ease: EASE_IN  } },
 };
+
+const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
 const rowVariants = {
   hidden: { opacity: 0, y: 6 },
@@ -267,7 +269,11 @@ export default function MarketplaceClient({
   return (
     <>
       {/* Tabs */}
-      <div className="mb-5 flex gap-1 rounded-xl border border-gray-200 bg-white p-1 w-fit">
+      <motion.div
+        className="mb-5 flex gap-1 rounded-xl border border-gray-200 bg-white p-1 w-fit"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
+      >
         <button
           onClick={() => { setTab('products'); setSearch(''); setStatusFilter('all'); }}
           className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === 'products' ? 'bg-[#0B1629] text-white' : 'text-gray-600 hover:text-gray-900'}`}
@@ -280,10 +286,14 @@ export default function MarketplaceClient({
         >
           <ShoppingBag className="h-4 w-4" /> Orders ({orders.length})
         </button>
-      </div>
+      </motion.div>
 
       {/* Search + Filters */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <motion.div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.04 }}
+      >
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -319,11 +329,15 @@ export default function MarketplaceClient({
             ))}
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Products Table */}
       {tab === 'products' && (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <motion.div
+          className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+          initial="hidden" animate="show" variants={fadeUp}
+          transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.08 }}
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -344,7 +358,7 @@ export default function MarketplaceClient({
                       variants={rowVariants}
                       initial="hidden"
                       animate="show"
-                      className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
+                      className="border-b border-gray-50 last:border-0 hover:bg-[#0B1629]/5 transition-colors"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -385,7 +399,7 @@ export default function MarketplaceClient({
                           <motion.button
                             type="button"
                             onClick={() => setSelectedProduct(p)}
-                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-[#0B1629] transition-colors"
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-[#0B1629]/5 hover:text-[#0B1629] transition-colors"
                             title="View details"
                             whileHover={{ scale: 1.08, y: -1 }}
                             whileTap={{ scale: 0.96 }}
@@ -422,12 +436,16 @@ export default function MarketplaceClient({
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Orders Table */}
       {tab === 'orders' && (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <motion.div
+          className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+          initial="hidden" animate="show" variants={fadeUp}
+          transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.08 }}
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -448,7 +466,7 @@ export default function MarketplaceClient({
                       variants={rowVariants}
                       initial="hidden"
                       animate="show"
-                      className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
+                      className="border-b border-gray-50 last:border-0 hover:bg-[#0B1629]/5 transition-colors"
                     >
                       <td className="px-4 py-3">
                         <p className="font-mono text-xs font-semibold text-[#0B1629]">{o.id.slice(0, 8).toUpperCase()}</p>
@@ -474,7 +492,7 @@ export default function MarketplaceClient({
                           <motion.button
                             type="button"
                             onClick={() => setSelectedOrder(o)}
-                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-[#0B1629] transition-colors"
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-[#0B1629]/5 hover:text-[#0B1629] transition-colors"
                             title="View details"
                             whileHover={{ scale: 1.08, y: -1 }}
                             whileTap={{ scale: 0.96 }}
@@ -500,7 +518,7 @@ export default function MarketplaceClient({
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Product Detail Drawer ── */}
@@ -658,12 +676,20 @@ export default function MarketplaceClient({
                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Seller</h3>
                     </div>
                     <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm">
-                      <div
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
-                        style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
-                      >
-                        {(selectedProduct.seller?.display_name || selectedProduct.seller?.email || '?')[0].toUpperCase()}
-                      </div>
+                      {selectedProduct.seller?.avatar_url ? (
+                        <img
+                          src={selectedProduct.seller.avatar_url}
+                          alt={selectedProduct.seller.display_name || ''}
+                          className="h-10 w-10 flex-shrink-0 rounded-xl object-cover shadow-sm"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
+                          style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
+                        >
+                          {(selectedProduct.seller?.display_name || selectedProduct.seller?.email || '?')[0].toUpperCase()}
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="font-bold text-gray-900 text-sm truncate">{selectedProduct.seller?.display_name || 'Unknown'}</p>
                         <p className="text-xs text-gray-400 truncate">{selectedProduct.seller?.email || '—'}</p>
@@ -697,30 +723,17 @@ export default function MarketplaceClient({
                 >
                   Close
                 </motion.button>
-                <div className="flex flex-wrap items-center gap-2">
-                  <motion.button
-                    type="button"
-                    disabled
-                    title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#0B1629] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    onClick={() => { setSelectedProduct(null); setDeleteProductTarget(selectedProduct); }}
-                    className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
-                    whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ duration: 0.35 }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </motion.button>
-                </div>
+                <motion.button
+                  type="button"
+                  onClick={() => { setSelectedProduct(null); setDeleteProductTarget(selectedProduct); }}
+                  className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
+                  whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </motion.button>
               </div>
             </motion.aside>
           </>
@@ -810,8 +823,26 @@ export default function MarketplaceClient({
                       <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">
                         <User className="h-3.5 w-3.5" /> Buyer
                       </p>
-                      <p className="text-sm font-bold text-gray-900">{selectedOrder.buyer?.display_name || '—'}</p>
-                      <p className="text-xs text-gray-500">{selectedOrder.buyer?.email}</p>
+                      <div className="flex items-center gap-2">
+                        {selectedOrder.buyer?.avatar_url ? (
+                          <img
+                            src={selectedOrder.buyer.avatar_url}
+                            alt={selectedOrder.buyer.display_name || ''}
+                            className="h-8 w-8 flex-shrink-0 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div
+                            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
+                            style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
+                          >
+                            {(selectedOrder.buyer?.display_name || selectedOrder.buyer?.email || '?')[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-gray-900 truncate">{selectedOrder.buyer?.display_name || '—'}</p>
+                          <p className="text-xs text-gray-500 truncate">{selectedOrder.buyer?.email}</p>
+                        </div>
+                      </div>
                     </div>
                     <div className="rounded-xl bg-[#0B1629]/5 p-4 ring-1 ring-[#0B1629]/10">
                       <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">
@@ -909,30 +940,17 @@ export default function MarketplaceClient({
                 >
                   Close
                 </motion.button>
-                <div className="flex flex-wrap items-center gap-2">
-                  <motion.button
-                    type="button"
-                    disabled
-                    title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#0B1629] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    onClick={() => { setSelectedOrder(null); setDeleteOrderTarget(selectedOrder); }}
-                    className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
-                    whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ duration: 0.35 }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </motion.button>
-                </div>
+                <motion.button
+                  type="button"
+                  onClick={() => { setSelectedOrder(null); setDeleteOrderTarget(selectedOrder); }}
+                  className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
+                  whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </motion.button>
               </div>
             </motion.aside>
           </>

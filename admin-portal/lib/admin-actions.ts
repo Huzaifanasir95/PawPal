@@ -361,6 +361,8 @@ export async function deleteBooking(bookingId: string): Promise<Result> {
     const supabase = getAdminClient();
     await supabase.from('booking_payments').delete().eq('booking_id', bookingId);
     await supabase.from('booking_tracking').delete().eq('booking_id', bookingId);
+    await supabase.from('booking_completion_reports').delete().eq('booking_id', bookingId);
+    await supabase.from('service_reviews').delete().eq('booking_id', bookingId);
     await supabase.from('service_incidents').delete().eq('booking_id', bookingId);
     const { error } = await supabase.from('service_bookings').delete().eq('id', bookingId);
     if (error) return { success: false, error: error.message };
@@ -424,6 +426,40 @@ export async function updateCaregiverVerification(caregiverId: string, isVerifie
 export async function deleteCaregiver(caregiverId: string): Promise<Result> {
   try {
     const supabase = getAdminClient();
+
+    // 1. Delete service bookings referencing this caregiver or their services
+    const { data: cgServices } = await supabase
+      .from('caregiver_services')
+      .select('id')
+      .eq('caregiver_id', caregiverId);
+    const serviceIds = (cgServices ?? []).map((s: { id: string }) => s.id);
+
+    // Fetch bookings by caregiver_id
+    const { data: cgBookings } = await supabase
+      .from('service_bookings')
+      .select('id')
+      .eq('caregiver_id', caregiverId);
+    const bookingIds = (cgBookings ?? []).map((b: { id: string }) => b.id);
+
+    if (bookingIds.length > 0) {
+      await supabase.from('booking_payments').delete().in('booking_id', bookingIds);
+      await supabase.from('booking_tracking').delete().in('booking_id', bookingIds);
+      await supabase.from('booking_completion_reports').delete().in('booking_id', bookingIds);
+      await supabase.from('service_reviews').delete().in('booking_id', bookingIds);
+      await supabase.from('service_incidents').delete().in('booking_id', bookingIds);
+      await supabase.from('service_bookings').delete().in('id', bookingIds);
+    }
+
+    // 2. Delete caregiver sub-tables
+    await supabase.from('caregiver_services').delete().eq('caregiver_id', caregiverId);
+    await supabase.from('caregiver_availability').delete().eq('caregiver_id', caregiverId);
+    await supabase.from('caregiver_blocked_dates').delete().eq('caregiver_id', caregiverId);
+    await supabase.from('caregiver_gallery').delete().eq('caregiver_id', caregiverId);
+
+    // Suppress unused variable warning
+    void serviceIds;
+
+    // 3. Delete the profile
     const { error } = await supabase.from('caregiver_profiles').delete().eq('id', caregiverId);
     if (error) return { success: false, error: error.message };
     return { success: true };
@@ -443,6 +479,9 @@ export async function updateVetAppointmentStatus(appointmentId: string, status: 
 export async function deleteVetAppointment(appointmentId: string): Promise<Result> {
   try {
     const supabase = getAdminClient();
+    // chats.appointment_id has ON DELETE SET NULL — Postgres handles it automatically
+    // Nullify explicitly anyway to be safe with any RLS that might block the cascade
+    await supabase.from('chats').update({ appointment_id: null }).eq('appointment_id', appointmentId);
     const { error } = await supabase.from('vet_appointments').delete().eq('id', appointmentId);
     if (error) return { success: false, error: error.message };
     return { success: true };

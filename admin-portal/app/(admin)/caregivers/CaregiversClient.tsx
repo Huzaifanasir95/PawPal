@@ -14,13 +14,15 @@ import {
   ShieldCheck,
   AlertTriangle,
   Check,
-  Edit,
   Briefcase,
   User,
   MapPin,
   Calendar,
   Award,
   Heart,
+  Home,
+  Car,
+  Users,
 } from 'lucide-react';
 import Badge from '@/components/Badge';
 import { formatDateTime } from '@/lib/utils';
@@ -28,25 +30,36 @@ import { updateCaregiverVerification, deleteCaregiver } from '@/lib/admin-action
 
 export interface Caregiver {
   id: string;
+  user_id: string;
   bio: string | null;
   headline: string | null;
   years_of_experience: number | null;
+  address: string | null;
   city: string | null;
   state: string | null;
+  postal_code: string | null;
   country: string | null;
   service_radius_km: number | null;
   is_verified: boolean;
   verification_date: string | null;
   background_check_status: string | null;
+  background_check_date: string | null;
+  background_check_expiry: string | null;
   id_verified: boolean;
   pet_first_aid_certified: boolean;
   insurance_verified: boolean;
+  insurance_policy_number: string | null;
   accepted_pet_types: string[] | null;
   accepted_pet_sizes: string[] | null;
+  max_pets_at_once: number | null;
+  has_fenced_yard: boolean;
+  has_own_transport: boolean;
+  smoke_free_home: boolean;
   average_rating: number;
   total_reviews: number;
   total_bookings: number;
   completion_rate: number;
+  response_time_hours: number | null;
   is_active: boolean;
   is_accepting_bookings: boolean;
   created_at: string;
@@ -193,12 +206,12 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
     });
   }
 
-  async function handleModalApprove() {
-    if (!selected || selected.is_verified) return;
+  async function handleModalToggleVerify(newValue: boolean) {
+    if (!selected) return;
     setModalApproving(true);
-    const res = await updateCaregiverVerification(selected.id, true);
+    const res = await updateCaregiverVerification(selected.id, newValue);
     setModalApproving(false);
-    if (res.success) syncPatch(selected.id, { is_verified: true });
+    if (res.success) syncPatch(selected.id, { is_verified: newValue });
     else alert('Failed: ' + res.error);
   }
 
@@ -561,6 +574,51 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                     </motion.section>
                   ) : null}
 
+                  {/* Home environment */}
+                  <motion.section
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
+                  >
+                    <div className="mb-3 flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <Home className="h-3.5 w-3.5 text-[#0B1629]" />
+                      </div>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Home Environment</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: 'Fenced yard',    value: display.has_fenced_yard,     icon: <Home className="h-3 w-3" /> },
+                        { label: 'Own transport',  value: display.has_own_transport,   icon: <Car className="h-3 w-3" /> },
+                        { label: 'Smoke-free',     value: display.smoke_free_home,     icon: <Shield className="h-3 w-3" /> },
+                      ].map(({ label, value, icon }) => (
+                        <span
+                          key={label}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ${
+                            value
+                              ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                              : 'bg-gray-100 text-gray-400 ring-gray-200'
+                          }`}
+                        >
+                          {icon}
+                          {label}: {value ? 'Yes' : 'No'}
+                        </span>
+                      ))}
+                      {display.max_pets_at_once != null && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700 ring-1 ring-blue-200">
+                          <Users className="h-3 w-3" />
+                          Max {display.max_pets_at_once} pets
+                        </span>
+                      )}
+                      {display.response_time_hours != null && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-1 text-[11px] font-medium text-purple-700 ring-1 ring-purple-200">
+                          <Calendar className="h-3 w-3" />
+                          Responds in {display.response_time_hours}h
+                        </span>
+                      )}
+                    </div>
+                  </motion.section>
+
                   {/* Linked account */}
                   <motion.section
                     className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
@@ -574,12 +632,16 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Linked Account</h3>
                     </div>
                     <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm">
-                      <div
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
-                        style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
-                      >
-                        {initials(display.owner?.display_name, display.owner?.email)}
-                      </div>
+                      {display.owner?.avatar_url ? (
+                        <img src={display.owner.avatar_url} alt="" className="h-10 w-10 flex-shrink-0 rounded-xl object-cover shadow-sm" />
+                      ) : (
+                        <div
+                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
+                          style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
+                        >
+                          {initials(display.owner?.display_name, display.owner?.email)}
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="truncate text-sm font-bold text-gray-900">{display.owner?.display_name || 'Unknown'}</p>
                         <p className="truncate text-xs text-gray-400">{display.owner?.email || '—'}</p>
@@ -602,11 +664,32 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                   Close
                 </motion.button>
                 <div className="flex flex-wrap items-center gap-2">
-                  {!display.is_verified && (
+                  {display.is_verified ? (
                     <motion.button
                       type="button"
                       disabled={modalApproving}
-                      onClick={() => void handleModalApprove()}
+                      onClick={() => void handleModalToggleVerify(false)}
+                      className="flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm disabled:opacity-50 hover:bg-amber-600"
+                      whileHover={!modalApproving ? { scale: 1.02 } : {}}
+                      whileTap={!modalApproving ? { scale: 0.97 } : {}}
+                    >
+                      {modalApproving ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
+                          Revoking…
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-4 w-4" />
+                          Revoke
+                        </>
+                      )}
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      type="button"
+                      disabled={modalApproving}
+                      onClick={() => void handleModalToggleVerify(true)}
                       className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm disabled:opacity-50 hover:bg-emerald-600"
                       whileHover={!modalApproving ? { scale: 1.02 } : {}}
                       whileTap={!modalApproving ? { scale: 0.97 } : {}}
@@ -624,17 +707,6 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                       )}
                     </motion.button>
                   )}
-                  <motion.button
-                    type="button"
-                    disabled
-                    title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#0B1629] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </motion.button>
                   <motion.button
                     type="button"
                     onClick={() => { const cg = display; setSelected(null); setDeleteTarget(cg); }}

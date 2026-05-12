@@ -158,17 +158,15 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   color: "#132A63"
-  image: assets/appicon/appicon_square-transparent.png
+  image: assets/appicon/appicon_square-removebg.png
   color_dark: "#132A63"
-  image_dark: assets/appicon/appicon_square-transparent.png
+  image_dark: assets/appicon/appicon_square-removebg.png
   android_12:
     color: "#132A63"
-    image: assets/appicon/appicon_square-transparent.png
-    icon_background_color: "#132A63"
+    image: assets/appicon/appicon_square-removebg.png
     color_dark: "#132A63"
-    image_dark: assets/appicon/appicon_square-transparent.png
-    icon_background_color_dark: "#132A63"
-
+    image_dark: assets/appicon/appicon_square-removebg.png
+    
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import Badge from '@/components/Badge';
 import {
   Search, Eye, Trash2, X, MapPin, Phone, Mail,
-  AlertTriangle, PawPrint, User, Edit,
+  AlertTriangle, PawPrint, User,
 } from 'lucide-react';
 import { timeAgo, formatDateTime } from '@/lib/utils';
 import { updateLostFoundStatus, deleteLostFound } from '@/lib/admin-actions';
@@ -25,7 +25,7 @@ interface LostFoundItem {
   image_urls: string[] | null;
   created_at: string;
   user_id: string;
-  reporter: { name: string | null; email: string | null } | null;
+  reporter: { name: string | null; email: string | null; avatar_url: string | null } | null;
 }
 
 const TYPE_OPTIONS = ['all', 'lost', 'found'] as const;
@@ -101,13 +101,24 @@ const deleteItemVariants = {
   show:   { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
 };
 
+const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
+
+const rowVariants = {
+  hidden: { opacity: 0, y: 6 },
+  show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.22, ease: EASE_OUT, delay: i * 0.03 },
+  }),
+};
+
 // ── Helper ───────────────────────────────────────────────────────────────────
 
 function LFField({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
   return (
     <div className="min-w-0">
       <div className="mb-1 flex items-center gap-1">
-        <span className="text-[#2C6E69]/60">{icon}</span>
+        <span className="text-[#0B1629]/50">{icon}</span>
         <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
       </div>
       <div className="break-words text-sm font-semibold text-gray-800">{value || '—'}</div>
@@ -173,52 +184,56 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
   const display = selectedItem;
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Lost &amp; Found</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {items.length} reports — {counts.type.lost} lost, {counts.type.found} found, {counts.status.open} still open
-        </p>
-      </div>
-
+    <>
       {/* Search + Type Filter */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <motion.div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
+      >
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search pet name, breed, location, reporter…"
-            className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#2C6E69] focus:outline-none focus:ring-1 focus:ring-[#2C6E69]"
+            className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#0B1629] focus:outline-none focus:ring-1 focus:ring-[#0B1629]"
           />
         </div>
         {TYPE_OPTIONS.map((t) => (
           <button
             key={t}
             onClick={() => setTypeFilter(t)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${typeFilter === t ? 'bg-[#2C6E69] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${typeFilter === t ? 'bg-[#0B1629] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
             {t === 'all' ? 'All' : t === 'lost' ? '🔍 Lost' : '📢 Found'} ({counts.type[t]})
           </button>
         ))}
-      </div>
+      </motion.div>
 
       {/* Status Filter */}
-      <div className="mb-4 flex flex-wrap gap-2">
+      <motion.div
+        className="mb-4 flex flex-wrap gap-2"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.04 }}
+      >
         {STATUS_OPTIONS.map((s) => (
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === s ? 'bg-[#2C6E69] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === s ? 'bg-[#0B1629] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
             {s.charAt(0).toUpperCase() + s.slice(1)} ({counts.status[s as keyof typeof counts.status] ?? 0})
           </button>
         ))}
-      </div>
+      </motion.div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <motion.div
+        className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.08 }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -232,11 +247,18 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
               {filtered.length === 0 ? (
                 <tr><td colSpan={8} className="py-16 text-center text-sm text-gray-400">No reports found</td></tr>
               ) : (
-                filtered.map((item) => {
+                filtered.map((item, i) => {
                   const urgency = urgencyMap[item.urgency ?? ''] ?? { label: item.urgency || '—', variant: 'default' as const };
                   const status  = statusMap[item.status]          ?? { label: item.status  || '—', variant: 'default' as const };
                   return (
-                    <tr key={item.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                    <motion.tr
+                      key={item.id}
+                      custom={i}
+                      variants={rowVariants}
+                      initial="hidden"
+                      animate="show"
+                      className="border-b border-gray-50 last:border-0 hover:bg-[#0B1629]/5 transition-colors"
+                    >
                       <td className="px-4 py-3">
                         <Badge variant={item.type === 'lost' ? 'danger' : 'success'}>
                           {item.type === 'lost' ? '🔍 Lost' : '📢 Found'}
@@ -271,7 +293,7 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                           <motion.button
                             type="button"
                             onClick={() => setSelectedItem(item)}
-                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-[#0B1629] transition-colors"
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-[#0B1629]/5 hover:text-[#0B1629] transition-colors"
                             title="View details"
                             whileHover={{ scale: 1.08, y: -1 }}
                             whileTap={{ scale: 0.96 }}
@@ -291,14 +313,14 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                           </motion.button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
       {/* ── Detail Modal ── */}
       <AnimatePresence>
@@ -408,7 +430,7 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                   {/* Photos */}
                   {display.image_urls && display.image_urls.length > 0 && (
                     <motion.section variants={modalItemVariants}>
-                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Photos</p>
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Photos</p>
                       <div className={`grid gap-2 ${display.image_urls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                         {display.image_urls.map((url, i) => (
                           <motion.div
@@ -429,26 +451,26 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                   {/* Description */}
                   {display.description && (
                     <motion.div
-                      className="rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4"
-                      style={{ borderLeft: '3px solid #2C6E69' }}
+                      className="rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4"
+                      style={{ borderLeft: '3px solid #0B1629' }}
                       variants={modalItemVariants}
                     >
-                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Description</p>
+                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Description</p>
                       <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{display.description}</p>
                     </motion.div>
                   )}
 
                   {/* Pet details */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
                     variants={modalItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <PawPrint className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <PawPrint className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Pet Details</h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Pet Details</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                       <LFField icon={<PawPrint className="h-3 w-3" />} label="Type" value={display.pet_type} />
@@ -460,23 +482,31 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
 
                   {/* Reporter */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
                     variants={modalItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <User className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <User className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Reporter &amp; Contact</h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Reporter &amp; Contact</h3>
                     </div>
                     <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm mb-3">
-                      <div
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
-                        style={{ background: 'linear-gradient(135deg, #1a3a38, #2C6E69)' }}
-                      >
-                        {(display.reporter?.name || display.reporter?.email || '?')[0].toUpperCase()}
-                      </div>
+                      {display.reporter?.avatar_url ? (
+                        <img
+                          src={display.reporter.avatar_url}
+                          alt={display.reporter.name || ''}
+                          className="h-10 w-10 flex-shrink-0 rounded-xl object-cover shadow-sm"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
+                          style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a38)' }}
+                        >
+                          {(display.reporter?.name || display.reporter?.email || '?')[0].toUpperCase()}
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="font-bold text-gray-900 text-sm truncate">{display.reporter?.name || 'Unknown'}</p>
                         <p className="text-xs text-gray-400 truncate">{display.reporter?.email || '—'}</p>
@@ -511,7 +541,7 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                           type="button"
                           disabled={isPending || display.status === s}
                           onClick={() => handleStatusChange(display.id, s)}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 ${display.status === s ? 'bg-[#2C6E69] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 ${display.status === s ? 'bg-[#0B1629] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                         >
                           {s.charAt(0).toUpperCase() + s.slice(1)}
                         </button>
@@ -539,30 +569,17 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                 >
                   Close
                 </motion.button>
-                <div className="flex flex-wrap items-center gap-2">
-                  <motion.button
-                    type="button"
-                    disabled
-                    title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#2C6E69] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    onClick={() => { setSelectedItem(null); setDeleteTarget(display); }}
-                    className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
-                    whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ duration: 0.35 }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </motion.button>
-                </div>
+                <motion.button
+                  type="button"
+                  onClick={() => { setSelectedItem(null); setDeleteTarget(display); }}
+                  className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
+                  whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </motion.button>
               </motion.div>
             </motion.div>
           </motion.div>
@@ -577,7 +594,7 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
         onCancel={() => !isPending && setDeleteTarget(null)}
         onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
       />
-    </div>
+    </>
   );
 }
 

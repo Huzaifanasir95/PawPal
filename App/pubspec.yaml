@@ -119,6 +119,8 @@ dev_dependencies:
   freezed: ^2.4.6
   json_serializable: ^6.7.1
   injectable_generator: ^2.4.1
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -134,6 +136,37 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/logo/
+    - assets/appicon/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web:
+    generate: true
+    image_path: assets/appicon/appicon.jpeg
+    background_color: "#132A63"
+    theme_color: "#132A63"
+  windows:
+    generate: true
+    image_path: assets/appicon/appicon.jpeg
+  macos:
+    generate: true
+    image_path: assets/appicon/appicon.jpeg
+  image_path: assets/appicon/appicon.jpeg
+  min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#132A63"
+  background_image: assets/appicon/appicon.jpeg
+  color_dark: "#132A63"
+  background_image_dark: assets/appicon/appicon.jpeg
+  android_12:
+    color: "#132A63"
+    image: assets/appicon/appicon.jpeg
+    icon_background_color: "#132A63"
+    color_dark: "#132A63"
+    image_dark: assets/appicon/appicon.jpeg
+    icon_background_color_dark: "#132A63"
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

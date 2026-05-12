@@ -1240,6 +1240,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                     foregroundColor: Theme.of(context).colorScheme.primary,
                     side: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.6)),
                     minimumSize: Size(double.infinity, 54.h),
+                    padding: EdgeInsets.symmetric(horizontal: 4.w),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14.r),
                     ),
@@ -1257,6 +1258,8 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
                           : Icon(Icons.chat_bubble_outline_rounded, size: 18.w),
                   label: Text(
                     _isOpeningChat ? 'Opening...' : 'Message',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.labelLarge.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w700,
@@ -1267,7 +1270,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen>
               SizedBox(width: 10.w),
             ],
             Expanded(
-              flex: canMessage ? 2 : 1,
+              flex: 1,
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(

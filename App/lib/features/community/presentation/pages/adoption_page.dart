@@ -109,7 +109,7 @@ class _AdoptionPageState extends State<AdoptionPage> {
                 context.read<AdoptionCubit>().loadListings();
               }
             },
-            child: Icon(Icons.add, color: Theme.of(context).colorScheme.secondary, size: 28.sp),
+            child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary, size: 28.sp),
           ),
           body: Column(
             children: [
@@ -163,6 +163,12 @@ class _AdoptionPageState extends State<AdoptionPage> {
                     color: colorScheme.onSurfaceVariant,
                   ),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+                  filled: true,
+                  fillColor: Colors.transparent,
                   isDense: true,
                   contentPadding: EdgeInsets.zero,
                 ),

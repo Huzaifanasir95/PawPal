@@ -101,7 +101,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
                   width: 130.w,
                   height: 130.h,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.16),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -147,7 +147,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
               ),
               child: Icon(
                 Icons.arrow_back_rounded,
-                color: Theme.of(context).colorScheme.secondary,
+                color: Theme.of(context).colorScheme.onPrimary,
                 size: 22.sp,
               ),
             ),
@@ -202,7 +202,7 @@ class _VetsListScreenState extends State<VetsListScreen> {
                       Icons.tune_rounded,
                       color: _hasActiveFilters
                           ? Theme.of(context).colorScheme.surface
-                          : Theme.of(context).colorScheme.secondary,
+                          : Theme.of(context).colorScheme.onPrimary,
                       size: 22.sp,
                     ),
                   ),
@@ -888,7 +888,7 @@ class _VetCard extends StatelessWidget {
                           vertical: 7.h,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.45),
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10.r),
                         ),
                         child: Text(

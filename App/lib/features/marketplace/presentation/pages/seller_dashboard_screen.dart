@@ -1280,17 +1280,48 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                               _isSubmitting
                                   ? null
                                   : () async {
-                                    FocusManager.instance.primaryFocus
-                                        ?.unfocus();
-                                    final picked = await _imagePicker
-                                        .pickMultiImage(imageQuality: 80);
-                                    if (picked.isEmpty) return;
-                                    setDialogState(() {
-                                      selectedLocalImages = [
-                                        ...selectedLocalImages,
-                                        ...picked,
-                                      ];
-                                    });
+                                    final source = await showModalBottomSheet<ImageSource>(
+                                      context: context,
+                                      builder: (ctx) => SafeArea(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            ListTile(
+                                              leading: Icon(Icons.photo_library, color: dialogColorScheme.onSurface),
+                                              title: Text('Gallery', style: GoogleFonts.mulish(color: dialogColorScheme.onSurface)),
+                                              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                                            ),
+                                            ListTile(
+                                              leading: Icon(Icons.camera_alt, color: dialogColorScheme.onSurface),
+                                              title: Text('Camera', style: GoogleFonts.mulish(color: dialogColorScheme.onSurface)),
+                                              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+
+                                    if (source == null) return;
+
+                                    if (source == ImageSource.gallery) {
+                                      final picked = await _imagePicker.pickMultiImage(imageQuality: 80);
+                                      if (picked.isEmpty) return;
+                                      setDialogState(() {
+                                        selectedLocalImages = [
+                                          ...selectedLocalImages,
+                                          ...picked,
+                                        ];
+                                      });
+                                    } else {
+                                      final picked = await _imagePicker.pickImage(source: source, imageQuality: 80);
+                                      if (picked == null) return;
+                                      setDialogState(() {
+                                        selectedLocalImages = [
+                                          ...selectedLocalImages,
+                                          picked,
+                                        ];
+                                      });
+                                    }
                                   },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: dialogColorScheme.onSurface,

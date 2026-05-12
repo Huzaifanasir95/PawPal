@@ -651,7 +651,7 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 44.h),
                 backgroundColor: colorScheme.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: colorScheme.onPrimary,
               ),
               icon: const Icon(Icons.star_rate_rounded),
               label: const Text('Leave Review'),

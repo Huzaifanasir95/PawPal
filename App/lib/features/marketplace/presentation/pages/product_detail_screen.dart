@@ -192,7 +192,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 colorScheme.primary.withValues(alpha: 0.2),
                                 colorScheme.primary,
                               ),
-                            if (product.petType != null) ...[
+                            if (product.petType != null && product.petType!.isNotEmpty) ...[
                               SizedBox(width: 8.w),
                               _buildChip(
                                 product.petType![0].toUpperCase() +
@@ -324,6 +324,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       ),
                                       Text(
                                         product.sellerName!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: GoogleFonts.mulish(
                                           fontSize: 14.sp,
                                           fontWeight: FontWeight.w700,
@@ -1233,7 +1235,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     final parts =
         cleaned
-            .split(RegExp(r'[.!?]+\\s*'))
+            .split(RegExp(r'[.!?]+\s*'))
             .map((e) => e.trim())
             .where((e) => e.length >= 12)
             .toList();

@@ -22,14 +22,7 @@ class CreatePostCard extends StatelessWidget {
         padding: EdgeInsets.all(16.w),
         margin: EdgeInsets.symmetric(vertical: 6.h),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF1F6F8),
-              Color(0xFFDDE9EE),
-            ],
-          ),
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
@@ -39,8 +32,7 @@ class CreatePostCard extends StatelessWidget {
             ),
           ],
           border: Border.all(
-            color: const Color(0xFFB9CBD4),
-            width: 1,
+            color: Theme.of(context).colorScheme.outline,
           ),
         ),
         child: Row(
@@ -74,7 +66,7 @@ class CreatePostCard extends StatelessWidget {
                     'Start a conversation with the community',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 12.sp,
-                      color: const Color(0xFFA1A1A1),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -98,7 +90,7 @@ class CreatePostCard extends StatelessWidget {
               ),
               child: Icon(
                 Icons.add,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
                 size: 24.w,
               ),
             ),

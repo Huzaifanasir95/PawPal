@@ -234,18 +234,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
           loading: () => true,
           orElse: () => false,
         );
+        final colorScheme = Theme.of(context).colorScheme;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final foregroundColor =
+            isLoading
+                ? colorScheme.onSurfaceVariant.withValues(alpha: 0.7)
+                : colorScheme.onSurface;
 
         return Container(
           height: 50.h,
           decoration: BoxDecoration(
-            color:
-                isLoading
-                    ? Colors.white.withOpacity(0.7)
-                    : Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(25.r),
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.4),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.white.withOpacity(0.24),
+                color: colorScheme.shadow.withValues(
+                  alpha: isDark ? 0.18 : 0.08,
+                ),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -293,14 +301,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       child: CircularProgressIndicator(
                         strokeWidth: 2.w,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.surface,
+                          foregroundColor,
                         ),
                       ),
                     )
                   else
                     Icon(
                       Icons.g_mobiledata,
-                      color: Theme.of(context).colorScheme.surface,
+                      color: foregroundColor,
                       size: 30.sp,
                     ),
                   SizedBox(width: 8.w),
@@ -308,8 +316,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     AppStrings.withGoogle,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 14.sp,
-                      color: Theme.of(context).colorScheme.surface,
-                      fontWeight: FontWeight.w500,
+                      color: foregroundColor,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -332,10 +340,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Container(
       height: 60.h,
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        color: colorScheme.surface,
         border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.35),
-          width: 2,
+          color: colorScheme.outline.withValues(alpha: 0.4),
+          width: 1,
         ),
         borderRadius: BorderRadius.circular(12.r),
       ),

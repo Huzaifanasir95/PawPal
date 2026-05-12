@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 
 function getAdminClient() {
@@ -23,106 +24,117 @@ export async function deleteUser(userId: string): Promise<Result> {
   try {
     const supabase = getAdminClient();
 
-    // 1. Delete messages in chats where user is owner or vet
-    const { data: userChats } = await supabase
-      .from('chats')
-      .select('id')
-      .or(`pet_owner_id.eq.${userId},vet_id.eq.${userId}`);
-    const chatIds = (userChats ?? []).map((c: { id: string }) => c.id);
-    if (chatIds.length > 0) {
-      await supabase.from('messages').delete().in('chat_id', chatIds);
-      await supabase.from('chats').delete().in('id', chatIds);
-    }
-    // Also delete messages sent by this user in other chats
-    await supabase.from('messages').delete().eq('sender_id', userId);
+    // Fetch all IDs we need in parallel
+    const [userChatsRes, userBookingsRes, userOrdersRes, userProductsRes, userPetsRes, userPostsRes, cgProfileRes] =
+      await Promise.all([
+        supabase.from('chats').select('id').or(`pet_owner_id.eq.${userId},vet_id.eq.${userId}`),
+        supabase.from('service_bookings').select('id').eq('pet_owner_id', userId),
+        supabase.from('orders').select('id').eq('buyer_id', userId),
+        supabase.from('products').select('id').eq('seller_id', userId),
+        supabase.from('pets').select('id').eq('owner_id', userId),
+        supabase.from('posts').select('id').eq('user_id', userId),
+        supabase.from('caregiver_profiles').select('id').eq('user_id', userId).maybeSingle(),
+      ]);
 
-    // 2. Delete booking-related data
-    const { data: userBookings } = await supabase
-      .from('service_bookings')
-      .select('id')
-      .or(`pet_owner_id.eq.${userId}`);
-    const bookingIds = (userBookings ?? []).map((b: { id: string }) => b.id);
-    if (bookingIds.length > 0) {
-      await supabase.from('booking_payments').delete().in('booking_id', bookingIds);
-      await supabase.from('booking_tracking').delete().in('booking_id', bookingIds);
-      await supabase.from('booking_completion_reports').delete().in('booking_id', bookingIds);
-      await supabase.from('service_reviews').delete().in('booking_id', bookingIds);
-      await supabase.from('service_incidents').delete().in('booking_id', bookingIds);
-      await supabase.from('service_bookings').delete().in('id', bookingIds);
-    }
+    const chatIds     = (userChatsRes.data    ?? []).map((c: { id: string }) => c.id);
+    const bookingIds  = (userBookingsRes.data  ?? []).map((b: { id: string }) => b.id);
+    const orderIds    = (userOrdersRes.data    ?? []).map((o: { id: string }) => o.id);
+    const productIds  = (userProductsRes.data  ?? []).map((p: { id: string }) => p.id);
+    const petIds      = (userPetsRes.data      ?? []).map((p: { id: string }) => p.id);
+    const postIds     = (userPostsRes.data     ?? []).map((p: { id: string }) => p.id);
+    const cgProfile   = cgProfileRes.data;
 
-    // 3. Delete vet appointments
-    await supabase.from('vet_appointments').delete().or(`pet_owner_id.eq.${userId},vet_user_id.eq.${userId}`);
+    // Delete all children in parallel (grouped by what they depend on)
+    await Promise.all([
+      // chats
+      chatIds.length > 0
+        ? supabase.from('messages').delete().in('chat_id', chatIds)
+        : Promise.resolve(),
+      // messages sent in other chats
+      supabase.from('messages').delete().eq('sender_id', userId),
+      // bookings children
+      bookingIds.length > 0
+        ? Promise.all([
+            supabase.from('booking_payments').delete().in('booking_id', bookingIds),
+            supabase.from('booking_tracking').delete().in('booking_id', bookingIds),
+            supabase.from('booking_completion_reports').delete().in('booking_id', bookingIds),
+            supabase.from('service_reviews').delete().in('booking_id', bookingIds),
+            supabase.from('service_incidents').delete().in('booking_id', bookingIds),
+          ])
+        : Promise.resolve(),
+      // vet appointments
+      supabase.from('vet_appointments').delete().or(`pet_owner_id.eq.${userId},vet_user_id.eq.${userId}`),
+      // order items
+      orderIds.length > 0
+        ? supabase.from('order_items').delete().in('order_id', orderIds)
+        : Promise.resolve(),
+      // seller products children
+      productIds.length > 0
+        ? Promise.all([
+            supabase.from('product_reviews').delete().in('product_id', productIds),
+            supabase.from('cart_items').delete().in('product_id', productIds),
+            supabase.from('order_items').delete().in('product_id', productIds),
+          ])
+        : Promise.resolve(),
+      // buyer cart/reviews
+      supabase.from('cart_items').delete().eq('user_id', userId),
+      supabase.from('product_reviews').delete().eq('user_id', userId),
+      // pet children
+      petIds.length > 0
+        ? Promise.all([
+            supabase.from('health_journals').delete().in('pet_id', petIds),
+            supabase.from('health_records').delete().in('pet_id', petIds),
+            supabase.from('adoption_listings').delete().in('pet_id', petIds),
+          ])
+        : Promise.resolve(),
+      // post children
+      postIds.length > 0
+        ? Promise.all([
+            supabase.from('comments').delete().in('post_id', postIds),
+            supabase.from('likes').delete().in('target_id', postIds),
+          ])
+        : Promise.resolve(),
+      // user's own comments/likes on other posts
+      supabase.from('comments').delete().eq('user_id', userId),
+      supabase.from('likes').delete().eq('user_id', userId),
+      // social/community
+      supabase.from('event_rsvps').delete().eq('user_id', userId),
+      supabase.from('lost_found_posts').delete().eq('user_id', userId),
+      // vet profile
+      supabase.from('vet_reviews').delete().or(`vet_id.eq.${userId},user_id.eq.${userId}`),
+      // caregiver children
+      cgProfile
+        ? Promise.all([
+            supabase.from('caregiver_availability').delete().eq('caregiver_id', cgProfile.id),
+            supabase.from('caregiver_blocked_dates').delete().eq('caregiver_id', cgProfile.id),
+            supabase.from('caregiver_gallery').delete().eq('caregiver_id', cgProfile.id),
+            supabase.from('caregiver_services').delete().eq('caregiver_id', cgProfile.id),
+          ])
+        : Promise.resolve(),
+      // auth data
+      supabase.from('user_roles').delete().eq('user_id', userId),
+      supabase.from('refresh_tokens').delete().eq('user_id', userId),
+      supabase.from('password_reset_tokens').delete().eq('user_id', userId),
+    ]);
 
-    // 4. Delete marketplace data
-    const { data: userOrders } = await supabase.from('orders').select('id').eq('buyer_id', userId);
-    const orderIds = (userOrders ?? []).map((o: { id: string }) => o.id);
-    if (orderIds.length > 0) {
-      await supabase.from('order_items').delete().in('order_id', orderIds);
-      await supabase.from('orders').delete().in('id', orderIds);
-    }
-    const { data: userProducts } = await supabase.from('products').select('id').eq('seller_id', userId);
-    const productIds = (userProducts ?? []).map((p: { id: string }) => p.id);
-    if (productIds.length > 0) {
-      await supabase.from('product_reviews').delete().in('product_id', productIds);
-      await supabase.from('cart_items').delete().in('product_id', productIds);
-      await supabase.from('order_items').delete().in('product_id', productIds);
-      await supabase.from('products').delete().in('id', productIds);
-    }
-    await supabase.from('cart_items').delete().eq('user_id', userId);
-    await supabase.from('product_reviews').delete().eq('user_id', userId);
+    // Delete parent rows that had children above
+    await Promise.all([
+      chatIds.length > 0    ? supabase.from('chats').delete().in('id', chatIds)               : Promise.resolve(),
+      bookingIds.length > 0 ? supabase.from('service_bookings').delete().in('id', bookingIds) : Promise.resolve(),
+      orderIds.length > 0   ? supabase.from('orders').delete().in('id', orderIds)             : Promise.resolve(),
+      productIds.length > 0 ? supabase.from('products').delete().in('id', productIds)         : Promise.resolve(),
+      petIds.length > 0     ? supabase.from('pets').delete().in('id', petIds)                 : Promise.resolve(),
+      postIds.length > 0    ? supabase.from('posts').delete().in('id', postIds)               : Promise.resolve(),
+      supabase.from('events').delete().eq('organizer_id', userId),
+      supabase.from('adoption_listings').delete().eq('user_id', userId),
+      supabase.from('vet_profiles').delete().eq('user_id', userId),
+      cgProfile ? supabase.from('caregiver_profiles').delete().eq('id', cgProfile.id) : Promise.resolve(),
+    ]);
 
-    // 5. Delete pets and their health data
-    const { data: userPets } = await supabase.from('pets').select('id').eq('owner_id', userId);
-    const petIds = (userPets ?? []).map((p: { id: string }) => p.id);
-    if (petIds.length > 0) {
-      await supabase.from('health_journals').delete().in('pet_id', petIds);
-      await supabase.from('health_records').delete().in('pet_id', petIds);
-      await supabase.from('adoption_listings').delete().in('pet_id', petIds);
-      await supabase.from('pets').delete().in('id', petIds);
-    }
-
-    // 6. Delete posts, comments, likes
-    const { data: userPosts } = await supabase.from('posts').select('id').eq('user_id', userId);
-    const postIds = (userPosts ?? []).map((p: { id: string }) => p.id);
-    if (postIds.length > 0) {
-      await supabase.from('comments').delete().in('post_id', postIds);
-      await supabase.from('likes').delete().in('target_id', postIds);
-      await supabase.from('posts').delete().in('id', postIds);
-    }
-    await supabase.from('comments').delete().eq('user_id', userId);
-    await supabase.from('likes').delete().eq('user_id', userId);
-
-    // 7. Delete social/community data
-    await supabase.from('event_rsvps').delete().eq('user_id', userId);
-    await supabase.from('events').delete().eq('organizer_id', userId);
-    await supabase.from('adoption_listings').delete().eq('user_id', userId);
-    await supabase.from('lost_found_posts').delete().eq('user_id', userId);
-
-    // 8. Delete profile data
-    await supabase.from('vet_reviews').delete().or(`vet_id.eq.${userId},user_id.eq.${userId}`);
-    await supabase.from('vet_profiles').delete().eq('user_id', userId);
-    const { data: cgProfile } = await supabase
-      .from('caregiver_profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
-    if (cgProfile) {
-      await supabase.from('caregiver_availability').delete().eq('caregiver_id', cgProfile.id);
-      await supabase.from('caregiver_blocked_dates').delete().eq('caregiver_id', cgProfile.id);
-      await supabase.from('caregiver_gallery').delete().eq('caregiver_id', cgProfile.id);
-      await supabase.from('caregiver_services').delete().eq('caregiver_id', cgProfile.id);
-      await supabase.from('caregiver_profiles').delete().eq('id', cgProfile.id);
-    }
-
-    // 9. Delete auth data
-    await supabase.from('user_roles').delete().eq('user_id', userId);
-    await supabase.from('refresh_tokens').delete().eq('user_id', userId);
-    await supabase.from('password_reset_tokens').delete().eq('user_id', userId);
-
-    // 10. Finally delete the user
+    // Finally delete the user
     const { error } = await supabase.from('users').delete().eq('id', userId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/users');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -148,6 +160,7 @@ export async function deletePost(postId: string): Promise<Result> {
     await supabase.from('likes').delete().eq('target_id', postId).eq('target_type', 'post');
     const { error } = await supabase.from('posts').delete().eq('id', postId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/posts');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -168,6 +181,7 @@ export async function deleteComment(commentId: string): Promise<Result> {
     await supabase.from('likes').delete().eq('target_id', commentId);
     const { error } = await supabase.from('comments').delete().eq('id', commentId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/posts');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -179,6 +193,7 @@ export async function deleteEvent(eventId: string): Promise<Result> {
     await supabase.from('event_rsvps').delete().eq('event_id', eventId);
     const { error } = await supabase.from('events').delete().eq('id', eventId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/events');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -188,6 +203,7 @@ export async function updateEventStatus(eventId: string, status: string): Promis
     const supabase = getAdminClient();
     const { error } = await supabase.from('events').update({ status }).eq('id', eventId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/events');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -201,6 +217,7 @@ export async function updateVetVerification(vetId: string, isVerified: boolean):
       .update({ is_verified: isVerified, updated_at: new Date().toISOString() })
       .eq('id', vetId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/vets');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -262,6 +279,7 @@ export async function deleteVet(vetId: string): Promise<Result> {
     // 5. Finally delete the vet profile
     const { error } = await supabase.from('vet_profiles').delete().eq('id', vetId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/vets');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -272,6 +290,7 @@ export async function updateAdoptionStatus(id: string, status: string): Promise<
     const supabase = getAdminClient();
     const { error } = await supabase.from('adoption_listings').update({ status }).eq('id', id);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/adoptions');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -281,6 +300,7 @@ export async function deleteAdoption(id: string): Promise<Result> {
     const supabase = getAdminClient();
     const { error } = await supabase.from('adoption_listings').delete().eq('id', id);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/adoptions');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -291,6 +311,7 @@ export async function updateLostFoundStatus(id: string, status: string): Promise
     const supabase = getAdminClient();
     const { error } = await supabase.from('lost_found_posts').update({ status }).eq('id', id);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/lost-found');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -300,6 +321,7 @@ export async function deleteLostFound(id: string): Promise<Result> {
     const supabase = getAdminClient();
     const { error } = await supabase.from('lost_found_posts').delete().eq('id', id);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/lost-found');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -342,6 +364,7 @@ export async function deletePet(petId: string): Promise<Result> {
     // Finally delete the pet
     const { error } = await supabase.from('pets').delete().eq('id', petId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/pets');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -352,6 +375,7 @@ export async function updateBookingStatus(bookingId: string, status: string): Pr
     const supabase = getAdminClient();
     const { error } = await supabase.from('service_bookings').update({ status }).eq('id', bookingId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/bookings');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -366,6 +390,7 @@ export async function deleteBooking(bookingId: string): Promise<Result> {
     await supabase.from('service_incidents').delete().eq('booking_id', bookingId);
     const { error } = await supabase.from('service_bookings').delete().eq('id', bookingId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/bookings');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -376,6 +401,7 @@ export async function updateProductStatus(productId: string, isActive: boolean):
     const supabase = getAdminClient();
     const { error } = await supabase.from('products').update({ is_active: isActive }).eq('id', productId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/marketplace');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -383,10 +409,38 @@ export async function updateProductStatus(productId: string, isActive: boolean):
 export async function deleteProduct(productId: string): Promise<Result> {
   try {
     const supabase = getAdminClient();
+
+    // 1. Find all order_items referencing this product
+    const { data: affectedItems } = await supabase
+      .from('order_items')
+      .select('id, order_id')
+      .eq('product_id', productId);
+
+    if (affectedItems && affectedItems.length > 0) {
+      // 2. Delete those order_items
+      await supabase.from('order_items').delete().eq('product_id', productId);
+
+      // 3. For each affected order, delete the whole order if it now has no items
+      const orderIds = Array.from(new Set(affectedItems.map((i: { order_id: string }) => i.order_id)));
+      for (const orderId of orderIds) {
+        const { count } = await supabase
+          .from('order_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('order_id', orderId);
+        if ((count ?? 0) === 0) {
+          await supabase.from('orders').delete().eq('id', orderId);
+        }
+      }
+    }
+
+    // 4. Delete reviews and cart items
     await supabase.from('product_reviews').delete().eq('product_id', productId);
     await supabase.from('cart_items').delete().eq('product_id', productId);
+
+    // 5. Delete the product
     const { error } = await supabase.from('products').delete().eq('id', productId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/marketplace');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -396,6 +450,7 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
     const supabase = getAdminClient();
     const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/marketplace');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -406,6 +461,7 @@ export async function deleteOrder(orderId: string): Promise<Result> {
     await supabase.from('order_items').delete().eq('order_id', orderId);
     const { error } = await supabase.from('orders').delete().eq('id', orderId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/marketplace');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -419,6 +475,7 @@ export async function updateCaregiverVerification(caregiverId: string, isVerifie
       .update({ is_verified: isVerified, verification_date: isVerified ? new Date().toISOString() : null })
       .eq('id', caregiverId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/caregivers');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -462,6 +519,7 @@ export async function deleteCaregiver(caregiverId: string): Promise<Result> {
     // 3. Delete the profile
     const { error } = await supabase.from('caregiver_profiles').delete().eq('id', caregiverId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/caregivers');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -472,6 +530,7 @@ export async function updateVetAppointmentStatus(appointmentId: string, status: 
     const supabase = getAdminClient();
     const { error } = await supabase.from('vet_appointments').update({ status }).eq('id', appointmentId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/appointments');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -484,6 +543,7 @@ export async function deleteVetAppointment(appointmentId: string): Promise<Resul
     await supabase.from('chats').update({ appointment_id: null }).eq('appointment_id', appointmentId);
     const { error } = await supabase.from('vet_appointments').delete().eq('id', appointmentId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/appointments');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -495,6 +555,7 @@ export async function deleteChat(chatId: string): Promise<Result> {
     await supabase.from('messages').delete().eq('chat_id', chatId);
     const { error } = await supabase.from('chats').delete().eq('id', chatId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/chats');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -504,6 +565,7 @@ export async function deleteMessage(messageId: string): Promise<Result> {
     const supabase = getAdminClient();
     const { error } = await supabase.from('messages').delete().eq('id', messageId);
     if (error) return { success: false, error: error.message };
+    revalidatePath('/chats');
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }

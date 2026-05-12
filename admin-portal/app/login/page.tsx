@@ -76,7 +76,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
 
-  useEffect(() => { router.prefetch('/dashboard'); }, [router]);
+  useEffect(() => {
+    const routes = [
+      '/dashboard', '/users', '/pets', '/posts', '/bookings',
+      '/appointments', '/caregivers', '/vets', '/marketplace',
+      '/adoptions', '/events', '/lost-found', '/chats',
+    ];
+    routes.forEach(r => router.prefetch(r));
+  }, [router]);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0);
@@ -102,7 +109,7 @@ export default function LoginPage() {
         body: JSON.stringify({ password }),
       });
       if (res.ok) {
-        router.push('/dashboard');
+        window.location.href = '/dashboard';
       } else {
         const data = await res.json();
         setError(data.error || 'Invalid credentials');
@@ -126,7 +133,9 @@ export default function LoginPage() {
       className="relative min-h-screen overflow-hidden flex"
       style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d1f3c 45%, #0f2744 100%)' }}
     >
-      <Link href="/dashboard" prefetch className="sr-only" aria-hidden tabIndex={-1}>prefetch</Link>
+      {['/dashboard','/users','/pets','/posts','/bookings','/appointments','/caregivers','/vets','/marketplace','/adoptions','/events','/lost-found','/chats'].map(r => (
+        <Link key={r} href={r} prefetch className="sr-only" aria-hidden tabIndex={-1}>{r}</Link>
+      ))}
 
       {/* Shared background */}
       <BgCircles />

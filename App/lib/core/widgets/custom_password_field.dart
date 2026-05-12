@@ -7,6 +7,7 @@ class CustomPasswordField extends StatefulWidget {
   final String labelText;
   final String? hintText;
   final bool isConfirmPassword;
+  final bool showLabel;
 
   const CustomPasswordField({
     super.key,
@@ -14,6 +15,7 @@ class CustomPasswordField extends StatefulWidget {
     required this.labelText,
     this.hintText,
     this.isConfirmPassword = false,
+    this.showLabel = false,
   });
 
   @override
@@ -25,6 +27,71 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final field = Container(
+      height: 60.h,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.4),
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Row(
+        children: [
+          SizedBox(width: 16.w),
+          Expanded(
+            child: TextField(
+              controller: widget.controller,
+              obscureText: _isObscured,
+              style: AppTextStyles.onboardingBody.copyWith(
+                fontSize: 14.sp,
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+              decoration: InputDecoration(
+                isCollapsed: true,
+                hintText: widget.hintText ?? widget.labelText,
+                hintStyle: AppTextStyles.onboardingBody.copyWith(
+                  fontSize: 14.sp,
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(
+              _isObscured ? Icons.visibility_off : Icons.visibility,
+              color: colorScheme.onSurfaceVariant,
+              size: 20.w,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints.tightFor(width: 40.w, height: 40.h),
+            onPressed: () {
+              setState(() {
+                _isObscured = !_isObscured;
+              });
+            },
+          ),
+          SizedBox(width: 8.w),
+        ],
+      ),
+    );
+
+    if (!widget.showLabel) {
+      return field;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -32,81 +99,12 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
           widget.labelText,
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 14.sp,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: colorScheme.onSurface.withOpacity(0.6),
             fontWeight: FontWeight.w500,
           ),
         ),
         SizedBox(height: 8.h),
-        TextField(
-          controller: widget.controller,
-          obscureText: _isObscured,
-          style: AppTextStyles.onboardingBody.copyWith(
-            fontSize: 16.sp,
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w400,
-          ),
-          decoration: InputDecoration(
-            hintText: widget.hintText,
-            hintStyle: AppTextStyles.onboardingBody.copyWith(
-              fontSize: 16.sp,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.6),
-              fontWeight: FontWeight.w400,
-            ),
-            suffixIcon: IconButton(
-              icon: Icon(
-                _isObscured ? Icons.visibility_off : Icons.visibility,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                size: 20.w,
-              ),
-              onPressed: () {
-                setState(() {
-                  _isObscured = !_isObscured;
-                });
-              },
-            ),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 16.w,
-              vertical: 16.h,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline,
-                width: 1.w,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline,
-                width: 1.w,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2.w,
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.error,
-                width: 1.w,
-              ),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.error,
-                width: 2.w,
-              ),
-            ),
-          ),
-        ),
+        field,
       ],
     );
   }

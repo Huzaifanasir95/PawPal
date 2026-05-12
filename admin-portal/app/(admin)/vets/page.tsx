@@ -12,27 +12,51 @@ async function getVets() {
 
   const { data, error } = await supabase
     .from('vet_profiles')
-    .select('id, user_id, full_name, phone, specialization, clinic_name, clinic_address, experience, license_number, is_verified, is_available, rating, consultation_fee, created_at')
+    .select(
+      'id, user_id, full_name, phone, specialization, clinic_name, clinic_address, experience, license_number, is_verified, is_available, rating, consultation_fee, currency, created_at'
+    )
     .order('created_at', { ascending: false })
     .limit(200);
 
   if (error) throw error;
 
-  // Enrich with user emails
   const userIds = Array.from(new Set((data ?? []).map((v: { user_id: string }) => v.user_id)));
   const { data: users } = await supabase
     .from('users')
-    .select('id, email')
+    .select('id, email, display_name, avatar_url')
     .in('id', userIds);
-  const userMap = Object.fromEntries((users ?? []).map((u: { id: string; email: string | null }) => [u.id, u.email]));
+  const userMap = Object.fromEntries(
+    (users ?? []).map((u: { id: string; email: string | null; display_name: string | null; avatar_url: string | null }) => [
+      u.id,
+      { email: u.email, display_name: u.display_name, avatar_url: u.avatar_url },
+    ])
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data ?? []).map((v: any) => ({
-    ...v,
-    name: v.full_name,
-    email: userMap[v.user_id] ?? null,
-    years_of_experience: v.experience,
-  }));
+  return (data ?? []).map((v: any) => {
+    const u = userMap[v.user_id];
+    return {
+      id: v.id,
+      user_id: v.user_id,
+      name: v.full_name,
+      email: u?.email ?? null,
+      phone: v.phone ?? null,
+      specialization: v.specialization ?? null,
+      clinic_name: v.clinic_name ?? null,
+      clinic_address: v.clinic_address ?? null,
+      years_of_experience: v.experience ?? null,
+      license_number: v.license_number ?? null,
+      is_verified: v.is_verified === true,
+      is_available: v.is_available,
+      rating: v.rating ?? null,
+      consultation_fee: v.consultation_fee ?? null,
+      currency: v.currency ?? null,
+      created_at: v.created_at,
+      linked_user: u
+        ? { display_name: u.display_name, email: u.email, avatar_url: u.avatar_url }
+        : null,
+    };
+  });
 }
 
 export default async function VetsPage() {

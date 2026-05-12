@@ -5,10 +5,10 @@ import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import {
   Search, Eye, Trash2, X, Star, Package, ShoppingBag,
   ToggleLeft, ToggleRight, AlertTriangle, User, Tag,
-  DollarSign, MapPin, Phone, Hash, Edit,
+  DollarSign, MapPin, Phone, Hash,
 } from 'lucide-react';
 import Badge from '@/components/Badge';
-import { timeAgo, formatDateTime } from '@/lib/utils';
+import { timeAgo } from '@/lib/utils';
 import { updateProductStatus, deleteProduct, updateOrderStatus, deleteOrder } from '@/lib/admin-actions';
 
 export interface Product {
@@ -26,7 +26,7 @@ export interface Product {
   images: string[] | null;
   created_at: string;
   updated_at: string;
-  seller: { id: string; display_name: string | null; email: string | null } | null;
+  seller: { id: string; display_name: string | null; email: string | null; avatar_url: string | null } | null;
   category: { name: string } | null;
 }
 
@@ -54,7 +54,7 @@ export interface Order {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  buyer: { id: string; display_name: string | null; email: string | null } | null;
+  buyer: { id: string; display_name: string | null; email: string | null; avatar_url: string | null } | null;
   items: OrderItem[];
 }
 
@@ -63,28 +63,40 @@ export interface Order {
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 const EASE_IN  = [0.7, 0, 0.84, 0] as const;
 
+const drawerVariants = {
+  hidden: { x: '100%', opacity: 0 },
+  show: {
+    x: 0,
+    opacity: 1,
+    transition: { type: 'spring' as const, stiffness: 280, damping: 28, mass: 0.9 },
+  },
+  exit: { x: '100%', opacity: 0, transition: { duration: 0.22, ease: EASE_IN } },
+};
+
+const drawerItemVariants = {
+  hidden: { opacity: 0, x: 18 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.28, ease: EASE_OUT } },
+};
+
+const drawerContentVariants = {
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.08 } },
+};
+
 const backdropVariants = {
   hidden: { opacity: 0 },
   show:   { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
   exit:   { opacity: 0, transition: { duration: 0.2,  ease: EASE_IN  } },
 };
 
-const modalVariants = {
-  hidden: { opacity: 0, scale: 0.82, y: 26, rotateX: -12, rotateZ: -1 },
-  show: {
-    opacity: 1, scale: 1, y: 0, rotateX: 0, rotateZ: 0,
-    transition: { type: 'spring' as const, stiffness: 260, damping: 22, mass: 0.8 },
-  },
-  exit: { opacity: 0, scale: 0.9, y: 18, rotateX: 6, rotateZ: 1, transition: { duration: 0.2 } },
-};
+const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
-const modalContentVariants = {
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
-};
-
-const modalItemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show:   { opacity: 1, y: 0, transition: { duration: 0.25, ease: EASE_OUT } },
+const rowVariants = {
+  hidden: { opacity: 0, y: 6 },
+  show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.22, ease: EASE_OUT, delay: i * 0.03 },
+  }),
 };
 
 const deleteBackdropVariants = {
@@ -148,7 +160,7 @@ function MktField({ icon, label, value }: { icon: ReactNode; label: string; valu
   return (
     <div className="min-w-0">
       <div className="mb-1 flex items-center gap-1">
-        <span className="text-[#2C6E69]/60">{icon}</span>
+        <span className="text-[#0B1629]/50">{icon}</span>
         <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
       </div>
       <div className="break-words text-sm font-semibold text-gray-800">{value}</div>
@@ -257,30 +269,38 @@ export default function MarketplaceClient({
   return (
     <>
       {/* Tabs */}
-      <div className="mb-5 flex gap-1 rounded-xl border border-gray-200 bg-white p-1 w-fit">
+      <motion.div
+        className="mb-5 flex gap-1 rounded-xl border border-gray-200 bg-white p-1 w-fit"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
+      >
         <button
           onClick={() => { setTab('products'); setSearch(''); setStatusFilter('all'); }}
-          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === 'products' ? 'bg-[#2C6E69] text-white' : 'text-gray-600 hover:text-gray-900'}`}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === 'products' ? 'bg-[#0B1629] text-white' : 'text-gray-600 hover:text-gray-900'}`}
         >
           <Package className="h-4 w-4" /> Products ({products.length})
         </button>
         <button
           onClick={() => { setTab('orders'); setSearch(''); setStatusFilter('all'); }}
-          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === 'orders' ? 'bg-[#2C6E69] text-white' : 'text-gray-600 hover:text-gray-900'}`}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === 'orders' ? 'bg-[#0B1629] text-white' : 'text-gray-600 hover:text-gray-900'}`}
         >
           <ShoppingBag className="h-4 w-4" /> Orders ({orders.length})
         </button>
-      </div>
+      </motion.div>
 
       {/* Search + Filters */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <motion.div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.04 }}
+      >
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={tab === 'products' ? 'Search product, seller, category…' : 'Search buyer, city…'}
-            className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#2C6E69] focus:outline-none focus:ring-1 focus:ring-[#2C6E69]"
+            className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#0B1629] focus:outline-none focus:ring-1 focus:ring-[#0B1629]"
           />
         </div>
 
@@ -290,7 +310,7 @@ export default function MarketplaceClient({
               <button
                 key={f}
                 onClick={() => setStatusFilter(f)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === f ? 'bg-[#2C6E69] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === f ? 'bg-[#0B1629] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
                 {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
               </button>
@@ -302,18 +322,22 @@ export default function MarketplaceClient({
               <button
                 key={f}
                 onClick={() => setStatusFilter(f)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors ${statusFilter === f ? 'bg-[#2C6E69] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors ${statusFilter === f ? 'bg-[#0B1629] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
                 {f}
               </button>
             ))}
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Products Table */}
       {tab === 'products' && (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <motion.div
+          className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+          initial="hidden" animate="show" variants={fadeUp}
+          transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.08 }}
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -327,14 +351,21 @@ export default function MarketplaceClient({
                 {filteredProducts.length === 0 ? (
                   <tr><td colSpan={9} className="py-16 text-center text-sm text-gray-400">No products found</td></tr>
                 ) : (
-                  filteredProducts.map((p) => (
-                    <tr key={p.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                  filteredProducts.map((p, i) => (
+                    <motion.tr
+                      key={p.id}
+                      custom={i}
+                      variants={rowVariants}
+                      initial="hidden"
+                      animate="show"
+                      className="border-b border-gray-50 last:border-0 hover:bg-[#0B1629]/5 transition-colors"
+                    >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           {p.images?.[0] ? (
                             <img src={p.images[0]} alt={p.name} className="h-9 w-9 rounded-lg object-cover" />
                           ) : (
-                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#B3E0DB] text-[#2C6E69]">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0B1629]/10 text-[#0B1629]">
                               <Package className="h-4 w-4" />
                             </div>
                           )}
@@ -368,7 +399,7 @@ export default function MarketplaceClient({
                           <motion.button
                             type="button"
                             onClick={() => setSelectedProduct(p)}
-                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-[#0B1629] transition-colors"
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-[#0B1629]/5 hover:text-[#0B1629] transition-colors"
                             title="View details"
                             whileHover={{ scale: 1.08, y: -1 }}
                             whileTap={{ scale: 0.96 }}
@@ -399,18 +430,22 @@ export default function MarketplaceClient({
                           </motion.button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Orders Table */}
       {tab === 'orders' && (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <motion.div
+          className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+          initial="hidden" animate="show" variants={fadeUp}
+          transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.08 }}
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -424,10 +459,17 @@ export default function MarketplaceClient({
                 {filteredOrders.length === 0 ? (
                   <tr><td colSpan={7} className="py-16 text-center text-sm text-gray-400">No orders found</td></tr>
                 ) : (
-                  filteredOrders.map((o) => (
-                    <tr key={o.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                  filteredOrders.map((o, i) => (
+                    <motion.tr
+                      key={o.id}
+                      custom={i}
+                      variants={rowVariants}
+                      initial="hidden"
+                      animate="show"
+                      className="border-b border-gray-50 last:border-0 hover:bg-[#0B1629]/5 transition-colors"
+                    >
                       <td className="px-4 py-3">
-                        <p className="font-mono text-xs font-semibold text-[#2C6E69]">{o.id.slice(0, 8).toUpperCase()}</p>
+                        <p className="font-mono text-xs font-semibold text-[#0B1629]">{o.id.slice(0, 8).toUpperCase()}</p>
                         <p className="text-xs text-gray-400">{timeAgo(o.created_at)}</p>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600">
@@ -450,7 +492,7 @@ export default function MarketplaceClient({
                           <motion.button
                             type="button"
                             onClick={() => setSelectedOrder(o)}
-                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-[#0B1629] transition-colors"
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-[#0B1629]/5 hover:text-[#0B1629] transition-colors"
                             title="View details"
                             whileHover={{ scale: 1.08, y: -1 }}
                             whileTap={{ scale: 0.96 }}
@@ -470,42 +512,38 @@ export default function MarketplaceClient({
                           </motion.button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* ── Product Detail Modal ── */}
+      {/* ── Product Detail Drawer ── */}
       <AnimatePresence>
         {selectedProduct && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <>
             <motion.div
-              className="absolute inset-0 bg-black/40 backdrop-blur-[3px]"
-              onClick={() => setSelectedProduct(null)}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[3px]"
               variants={backdropVariants}
               initial="hidden"
               animate="show"
               exit="exit"
+              onClick={() => setSelectedProduct(null)}
             />
-            <motion.div
-              className="relative w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
-              variants={modalVariants}
+            <motion.aside
+              className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-2xl"
+              variants={drawerVariants}
               initial="hidden"
               animate="show"
               exit="exit"
-              style={{ transformOrigin: '50% 10%', transformPerspective: 1200 }}
             >
               {/* Gradient header */}
-              <motion.div
-                className="relative overflow-hidden px-6 pb-6 pt-7"
-                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 50%, #2C6E69 100%)' }}
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
+              <div
+                className="relative flex-shrink-0 overflow-hidden px-6 pb-6 pt-7"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 55%, #2C6E69 100%)' }}
               >
                 <motion.div
                   className="pointer-events-none absolute inset-0 skew-x-[-20deg] bg-white/5"
@@ -523,18 +561,18 @@ export default function MarketplaceClient({
                   <X className="h-5 w-5" />
                 </button>
 
-                <div className="relative flex items-start gap-5">
+                <div className="relative flex items-start gap-4">
                   <div className="relative flex-shrink-0">
                     {selectedProduct.images?.[0] ? (
                       <img
                         src={selectedProduct.images[0]}
                         alt={selectedProduct.name}
-                        className="h-16 w-16 rounded-2xl object-cover ring-2 ring-white/30 shadow-lg"
+                        className="h-14 w-14 rounded-2xl object-cover ring-2 ring-white/30 shadow-lg"
                       />
                     ) : (
                       <div
-                        className="flex h-16 w-16 items-center justify-center rounded-2xl ring-2 ring-white/30 shadow-lg"
-                        style={{ background: 'linear-gradient(135deg, #1a4a45, #3d8f89)' }}
+                        className="flex h-14 w-14 items-center justify-center rounded-2xl ring-2 ring-white/30 shadow-lg"
+                        style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
                       >
                         <Package className="h-7 w-7 text-white/80" />
                       </div>
@@ -559,12 +597,12 @@ export default function MarketplaceClient({
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Scrollable body */}
               <motion.div
-                className="max-h-[60vh] overflow-y-auto"
-                variants={modalContentVariants}
+                className="flex-1 overflow-y-auto"
+                variants={drawerContentVariants}
                 initial="hidden"
                 animate="show"
               >
@@ -572,8 +610,8 @@ export default function MarketplaceClient({
 
                   {/* Images grid */}
                   {selectedProduct.images && selectedProduct.images.length > 0 && (
-                    <motion.section variants={modalItemVariants}>
-                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Photos</p>
+                    <motion.section variants={drawerItemVariants}>
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Photos</p>
                       <div className={`grid gap-2 ${selectedProduct.images.length === 1 ? 'grid-cols-1' : 'grid-cols-3'}`}>
                         {selectedProduct.images.slice(0, 3).map((url, i) => (
                           <motion.div
@@ -594,26 +632,26 @@ export default function MarketplaceClient({
                   {/* Description */}
                   {selectedProduct.description && (
                     <motion.div
-                      className="rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4"
-                      style={{ borderLeft: '3px solid #2C6E69' }}
-                      variants={modalItemVariants}
+                      className="rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4"
+                      style={{ borderLeft: '3px solid #0B1629' }}
+                      variants={drawerItemVariants}
                     >
-                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Description</p>
+                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Description</p>
                       <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">{selectedProduct.description}</p>
                     </motion.div>
                   )}
 
                   {/* Product details */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <Package className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <Package className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Product Details</h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Product Details</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
                       <MktField icon={<DollarSign className="h-3 w-3" />} label="Price" value={`${selectedProduct.currency} ${selectedProduct.price.toLocaleString()}`} />
@@ -627,23 +665,31 @@ export default function MarketplaceClient({
 
                   {/* Seller */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <User className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <User className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Seller</h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Seller</h3>
                     </div>
                     <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm">
-                      <div
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
-                        style={{ background: 'linear-gradient(135deg, #1a3a38, #2C6E69)' }}
-                      >
-                        {(selectedProduct.seller?.display_name || selectedProduct.seller?.email || '?')[0].toUpperCase()}
-                      </div>
+                      {selectedProduct.seller?.avatar_url ? (
+                        <img
+                          src={selectedProduct.seller.avatar_url}
+                          alt={selectedProduct.seller.display_name || ''}
+                          className="h-10 w-10 flex-shrink-0 rounded-xl object-cover shadow-sm"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
+                          style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
+                        >
+                          {(selectedProduct.seller?.display_name || selectedProduct.seller?.email || '?')[0].toUpperCase()}
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="font-bold text-gray-900 text-sm truncate">{selectedProduct.seller?.display_name || 'Unknown'}</p>
                         <p className="text-xs text-gray-400 truncate">{selectedProduct.seller?.email || '—'}</p>
@@ -652,7 +698,7 @@ export default function MarketplaceClient({
                   </motion.section>
 
                   {/* Toggle status */}
-                  <motion.section variants={modalItemVariants}>
+                  <motion.section variants={drawerItemVariants}>
                     <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-gray-400">Product Status</p>
                     <button
                       type="button"
@@ -663,18 +709,11 @@ export default function MarketplaceClient({
                       {selectedProduct.is_active ? 'Deactivate Product' : 'Activate Product'}
                     </button>
                   </motion.section>
-
-                  <p className="text-xs text-gray-300">ID: {selectedProduct.id}</p>
                 </div>
               </motion.div>
 
-              {/* Footer */}
-              <motion.div
-                className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4"
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
-              >
+              {/* Sticky footer */}
+              <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4">
                 <motion.button
                   type="button"
                   onClick={() => setSelectedProduct(null)}
@@ -684,63 +723,46 @@ export default function MarketplaceClient({
                 >
                   Close
                 </motion.button>
-                <div className="flex flex-wrap items-center gap-2">
-                  <motion.button
-                    type="button"
-                    disabled
-                    title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#2C6E69] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    onClick={() => { setSelectedProduct(null); setDeleteProductTarget(selectedProduct); }}
-                    className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
-                    whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ duration: 0.35 }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
-          </motion.div>
+                <motion.button
+                  type="button"
+                  onClick={() => { setSelectedProduct(null); setDeleteProductTarget(selectedProduct); }}
+                  className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
+                  whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </motion.button>
+              </div>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
 
-      {/* ── Order Detail Modal ── */}
+      {/* ── Order Detail Drawer ── */}
       <AnimatePresence>
         {selectedOrder && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <>
             <motion.div
-              className="absolute inset-0 bg-black/40 backdrop-blur-[3px]"
-              onClick={() => setSelectedOrder(null)}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[3px]"
               variants={backdropVariants}
               initial="hidden"
               animate="show"
               exit="exit"
+              onClick={() => setSelectedOrder(null)}
             />
-            <motion.div
-              className="relative w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
-              variants={modalVariants}
+            <motion.aside
+              className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-2xl"
+              variants={drawerVariants}
               initial="hidden"
               animate="show"
               exit="exit"
-              style={{ transformOrigin: '50% 10%', transformPerspective: 1200 }}
             >
               {/* Gradient header */}
-              <motion.div
-                className="relative overflow-hidden px-6 pb-6 pt-7"
-                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 50%, #2C6E69 100%)' }}
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
+              <div
+                className="relative flex-shrink-0 overflow-hidden px-6 pb-6 pt-7"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 55%, #2C6E69 100%)' }}
               >
                 <motion.div
                   className="pointer-events-none absolute inset-0 skew-x-[-20deg] bg-white/5"
@@ -758,12 +780,12 @@ export default function MarketplaceClient({
                   <X className="h-5 w-5" />
                 </button>
 
-                <div className="relative flex items-start gap-5">
+                <div className="relative flex items-start gap-4">
                   <div
-                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg ring-2 ring-white/25"
+                    className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg ring-2 ring-white/25"
                     aria-hidden
                   >
-                    <ShoppingBag className="h-8 w-8 opacity-90" />
+                    <ShoppingBag className="h-7 w-7 opacity-90" />
                   </div>
                   <div className="min-w-0 flex-1 pr-8">
                     <p className="font-mono text-lg font-black tracking-tight text-white">
@@ -784,28 +806,46 @@ export default function MarketplaceClient({
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Scrollable body */}
               <motion.div
-                className="max-h-[60vh] overflow-y-auto"
-                variants={modalContentVariants}
+                className="flex-1 overflow-y-auto"
+                variants={drawerContentVariants}
                 initial="hidden"
                 animate="show"
               >
                 <div className="space-y-4 p-6">
 
                   {/* Buyer + Shipping */}
-                  <motion.div className="grid grid-cols-1 gap-3 sm:grid-cols-2" variants={modalItemVariants}>
-                    <div className="rounded-xl bg-[#2C6E69]/5 p-4 ring-1 ring-[#2C6E69]/10">
-                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
+                  <motion.div className="grid grid-cols-1 gap-3 sm:grid-cols-2" variants={drawerItemVariants}>
+                    <div className="rounded-xl bg-[#0B1629]/5 p-4 ring-1 ring-[#0B1629]/10">
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">
                         <User className="h-3.5 w-3.5" /> Buyer
                       </p>
-                      <p className="text-sm font-bold text-gray-900">{selectedOrder.buyer?.display_name || '—'}</p>
-                      <p className="text-xs text-gray-500">{selectedOrder.buyer?.email}</p>
+                      <div className="flex items-center gap-2">
+                        {selectedOrder.buyer?.avatar_url ? (
+                          <img
+                            src={selectedOrder.buyer.avatar_url}
+                            alt={selectedOrder.buyer.display_name || ''}
+                            className="h-8 w-8 flex-shrink-0 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div
+                            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
+                            style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
+                          >
+                            {(selectedOrder.buyer?.display_name || selectedOrder.buyer?.email || '?')[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-gray-900 truncate">{selectedOrder.buyer?.display_name || '—'}</p>
+                          <p className="text-xs text-gray-500 truncate">{selectedOrder.buyer?.email}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="rounded-xl bg-[#2C6E69]/5 p-4 ring-1 ring-[#2C6E69]/10">
-                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
+                    <div className="rounded-xl bg-[#0B1629]/5 p-4 ring-1 ring-[#0B1629]/10">
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">
                         <MapPin className="h-3.5 w-3.5" /> Shipping
                       </p>
                       <p className="text-sm font-bold text-gray-900">{selectedOrder.shipping_city || '—'}</p>
@@ -815,15 +855,15 @@ export default function MarketplaceClient({
 
                   {/* Order details */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <ShoppingBag className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <ShoppingBag className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Order Details</h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Order Details</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
                       <MktField icon={<DollarSign className="h-3 w-3" />} label="Total" value={`${selectedOrder.currency} ${selectedOrder.total_amount.toLocaleString()}`} />
@@ -841,8 +881,8 @@ export default function MarketplaceClient({
 
                   {/* Items */}
                   {selectedOrder.items && selectedOrder.items.length > 0 && (
-                    <motion.section variants={modalItemVariants}>
-                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
+                    <motion.section variants={drawerItemVariants}>
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">
                         Items ({selectedOrder.items.length})
                       </p>
                       <div className="space-y-2">
@@ -870,7 +910,7 @@ export default function MarketplaceClient({
                   )}
 
                   {/* Update status */}
-                  <motion.section variants={modalItemVariants}>
+                  <motion.section variants={drawerItemVariants}>
                     <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-gray-400">Change Status</p>
                     <div className="flex flex-wrap gap-2">
                       {ORDER_STATUSES.map((s) => (
@@ -879,25 +919,18 @@ export default function MarketplaceClient({
                           type="button"
                           disabled={isPending || selectedOrder.status === s}
                           onClick={() => handleOrderStatus(selectedOrder.id, s)}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors disabled:opacity-40 ${selectedOrder.status === s ? 'bg-[#2C6E69] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors disabled:opacity-40 ${selectedOrder.status === s ? 'bg-[#0B1629] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                         >
                           {s}
                         </button>
                       ))}
                     </div>
                   </motion.section>
-
-                  <p className="text-xs text-gray-300">ID: {selectedOrder.id}</p>
                 </div>
               </motion.div>
 
-              {/* Footer */}
-              <motion.div
-                className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4"
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
-              >
+              {/* Sticky footer */}
+              <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4">
                 <motion.button
                   type="button"
                   onClick={() => setSelectedOrder(null)}
@@ -907,33 +940,20 @@ export default function MarketplaceClient({
                 >
                   Close
                 </motion.button>
-                <div className="flex flex-wrap items-center gap-2">
-                  <motion.button
-                    type="button"
-                    disabled
-                    title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#2C6E69] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    onClick={() => { setSelectedOrder(null); setDeleteOrderTarget(selectedOrder); }}
-                    className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
-                    whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ duration: 0.35 }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
-          </motion.div>
+                <motion.button
+                  type="button"
+                  onClick={() => { setSelectedOrder(null); setDeleteOrderTarget(selectedOrder); }}
+                  className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
+                  whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </motion.button>
+              </div>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
 
@@ -947,7 +967,7 @@ export default function MarketplaceClient({
           deleteProductTarget?.images?.[0] ? (
             <img src={deleteProductTarget.images[0]} alt="" className="h-10 w-10 rounded-xl object-cover" />
           ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#2C6E69] ring-1 ring-red-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#0B1629] ring-1 ring-red-100">
               <Package className="h-5 w-5" />
             </div>
           )
@@ -965,7 +985,7 @@ export default function MarketplaceClient({
         title="Delete order?"
         description={<>Permanently delete order <strong>#{deleteOrderTarget?.id.slice(0, 8).toUpperCase()}</strong>? This will remove all order items.</>}
         preview={
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white font-mono text-xs font-bold text-[#2C6E69] ring-1 ring-red-100">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white font-mono text-xs font-bold text-[#0B1629] ring-1 ring-red-100">
             #
           </div>
         }

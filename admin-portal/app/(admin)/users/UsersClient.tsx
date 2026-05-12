@@ -14,6 +14,7 @@ interface User {
   user_role: string | null;
   avatar_url: string | null;
   is_active: boolean | null;
+  email_verified: boolean | null;
   pets_count: number;
   posts_count: number;
   created_at: string;
@@ -77,6 +78,9 @@ const deleteItemVariants = {
   show:   { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
 };
 
+function isVet(u: User) { return u.user_role === 'vet' || u.account_type === 'vet'; }
+function isCaregiver(u: User) { return u.user_role === 'caregiver' || u.account_type === 'caregiver'; }
+
 export default function UsersClient({ users: initialUsers }: { users: User[] }) {
   const [users, setUsers] = useState(initialUsers);
   const [search, setSearch] = useState('');
@@ -92,9 +96,9 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
         (u.email?.toLowerCase() ?? '').includes(search.toLowerCase());
       const matchesRole =
         roleFilter === 'all' ||
-        (roleFilter === 'vet' && u.account_type === 'vet') ||
-        (roleFilter === 'user' && u.account_type !== 'vet') ||
-        (roleFilter === 'admin' && u.user_role === 'admin');
+        (roleFilter === 'vet' && isVet(u)) ||
+        (roleFilter === 'caregiver' && isCaregiver(u)) ||
+        (roleFilter === 'user' && !isVet(u) && !isCaregiver(u));
       return matchesSearch && matchesRole;
     });
   }, [users, search, roleFilter]);
@@ -114,17 +118,17 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
 
   const roleCounts = useMemo(() => {
     const all = users.length;
-    const vets = users.filter((u) => u.account_type === 'vet').length;
-    const admins = users.filter((u) => u.user_role === 'admin').length;
-    const regular = all - vets;
-    return { all, vets, admins, regular };
+    const vets = users.filter(isVet).length;
+    const caregivers = users.filter(isCaregiver).length;
+    const regular = users.filter((u) => !isVet(u) && !isCaregiver(u)).length;
+    return { all, vets, caregivers, regular };
   }, [users]);
 
   const roleButtons = [
     { key: 'all', label: `All (${roleCounts.all})` },
     { key: 'user', label: `Users (${roleCounts.regular})` },
     { key: 'vet', label: `Vets (${roleCounts.vets})` },
-    { key: 'admin', label: `Admins (${roleCounts.admins})` },
+    { key: 'caregiver', label: `Caregivers (${roleCounts.caregivers})` },
   ];
 
   const display = selectedUser;
@@ -211,13 +215,13 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          u.account_type === 'vet'
+                          isVet(u)
                             ? 'bg-purple-100 text-purple-700'
-                            : u.user_role === 'admin'
-                            ? 'bg-red-100 text-red-700'
+                            : isCaregiver(u)
+                            ? 'bg-amber-100 text-amber-700'
                             : 'bg-gray-100 text-gray-600'
                         }`}>
-                          {u.account_type === 'vet' ? 'Vet' : u.user_role === 'admin' ? 'Admin' : 'User'}
+                          {isVet(u) ? 'Vet' : isCaregiver(u) ? 'Caregiver' : 'User'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center text-gray-600">{u.pets_count}</td>
@@ -380,14 +384,27 @@ export default function UsersClient({ users: initialUsers }: { users: User[] }) 
                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Account</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-                      <InfoItem label="Account Type" value={display.account_type || 'user'} />
-                      <InfoItem label="Role" value={display.user_role || 'user'} />
+                      <InfoItem
+                        label="Role"
+                        value={
+                          isVet(display) ? 'Vet' : isCaregiver(display) ? 'Caregiver' : 'User'
+                        }
+                      />
+                      <InfoItem label="Account Type" value={display.account_type || '—'} />
                       <InfoItem
                         label="Status"
                         value={
                           <span className={`inline-flex items-center gap-1 font-semibold ${display.is_active === false ? 'text-red-500' : 'text-emerald-600'}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${display.is_active === false ? 'bg-red-400' : 'bg-emerald-400'}`} />
                             {display.is_active === false ? 'Inactive' : 'Active'}
+                          </span>
+                        }
+                      />
+                      <InfoItem
+                        label="Email Verified"
+                        value={
+                          <span className={`inline-flex items-center gap-1 font-semibold ${display.email_verified ? 'text-emerald-600' : 'text-gray-400'}`}>
+                            {display.email_verified ? '✓ Verified' : 'Not verified'}
                           </span>
                         }
                       />

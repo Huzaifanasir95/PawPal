@@ -12,7 +12,6 @@ import {
   User,
   Briefcase,
   AlertTriangle,
-  Edit,
   Package,
   Shield,
 } from 'lucide-react';
@@ -34,6 +33,7 @@ export interface Payment {
 export interface Booking {
   id: string;
   booking_number: string;
+  pet_owner_id: string;
   status: string;
   start_datetime: string;
   end_datetime: string;
@@ -46,14 +46,17 @@ export interface Booking {
   requested_at: string;
   created_at: string;
   updated_at: string;
-  pet_owner: { id: string; display_name: string | null; email: string | null } | null;
+  pet_owner: { id: string; display_name: string | null; email: string | null; avatar_url: string | null } | null;
   caregiver: {
     id: string;
     city: string | null;
-    owner: { display_name: string | null; email: string | null } | null;
+    owner: { id: string; display_name: string | null; email: string | null; avatar_url: string | null } | null;
   } | null;
   service: {
     id: string;
+    rate_amount: number | null;
+    currency: string | null;
+    rate_type: string | null;
     service_type: { display_name: string } | null;
   } | null;
 }
@@ -73,32 +76,29 @@ const STATUS_OPTIONS = [
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 const EASE_IN = [0.7, 0, 0.84, 0] as const;
 
+const drawerVariants = {
+  hidden: { x: '100%', opacity: 0 },
+  show: {
+    x: 0,
+    opacity: 1,
+    transition: { type: 'spring' as const, stiffness: 280, damping: 28, mass: 0.9 },
+  },
+  exit: { x: '100%', opacity: 0, transition: { duration: 0.22, ease: EASE_IN } },
+};
+
+const drawerItemVariants = {
+  hidden: { opacity: 0, x: 18 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.28, ease: EASE_OUT } },
+};
+
+const drawerContentVariants = {
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.08 } },
+};
+
 const backdropVariants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
   exit: { opacity: 0, transition: { duration: 0.2, ease: EASE_IN } },
-};
-
-const modalVariants = {
-  hidden: { opacity: 0, scale: 0.82, y: 26, rotateX: -12, rotateZ: -1 },
-  show: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    rotateX: 0,
-    rotateZ: 0,
-    transition: { type: 'spring' as const, stiffness: 260, damping: 22, mass: 0.8 },
-  },
-  exit: { opacity: 0, scale: 0.9, y: 18, rotateX: 6, rotateZ: 1, transition: { duration: 0.2 } },
-};
-
-const modalContentVariants = {
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
-};
-
-const modalItemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: EASE_OUT } },
 };
 
 const deleteBackdropVariants = {
@@ -132,6 +132,21 @@ const deleteItemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
 };
 
+const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
+
+function userInitial(name: string | null | undefined, email: string | null | undefined) {
+  return (name || email || '?')[0].toUpperCase();
+}
+
+const rowVariants = {
+  hidden: { opacity: 0, y: 6 },
+  show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.22, ease: EASE_OUT, delay: i * 0.03 },
+  }),
+};
+
 function statusVariant(status: string): 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'default' {
   switch (status) {
     case 'completed':
@@ -156,20 +171,11 @@ function statusLabel(status: string) {
   return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function InfoItem({ label, value }: { label: string; value: string | null | undefined }) {
-  return (
-    <div>
-      <p className="text-xs text-gray-400">{label}</p>
-      <p className="text-sm font-medium text-gray-700">{value || '—'}</p>
-    </div>
-  );
-}
-
 function BkField({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
   return (
     <div className="min-w-0">
       <div className="mb-1 flex items-center gap-1">
-        <span className="text-[#2C6E69]/60">{icon}</span>
+        <span className="text-[#0B1629]/50">{icon}</span>
         <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
       </div>
       <div className="break-words text-sm font-semibold text-gray-800">{value}</div>
@@ -243,38 +249,48 @@ export default function BookingsClient({
     });
   }
 
-  const display = selectedBooking;
-
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <motion.div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
+      >
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search booking #, owner, caregiver, service…"
-            className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#2C6E69] focus:outline-none focus:ring-1 focus:ring-[#2C6E69]"
+            className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#0B1629] focus:outline-none focus:ring-1 focus:ring-[#0B1629]"
           />
         </div>
-      </div>
+      </motion.div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <motion.div
+        className="mb-4 flex flex-wrap gap-2"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.03 }}
+      >
         {STATUS_OPTIONS.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => setStatusFilter(s)}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              statusFilter === s ? 'bg-[#2C6E69] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              statusFilter === s ? 'bg-[#0B1629] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             {s === 'all' ? 'All' : statusLabel(s)} ({counts[s] ?? 0})
           </button>
         ))}
-      </div>
+      </motion.div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <motion.div
+        className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.06 }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -299,25 +315,51 @@ export default function BookingsClient({
                   </td>
                 </tr>
               ) : (
-                filtered.map((b) => (
-                  <tr
+                filtered.map((b, i) => (
+                  <motion.tr
                     key={b.id}
-                    className="border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/50"
+                    custom={i}
+                    variants={rowVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="border-b border-gray-50 last:border-0 transition-colors hover:bg-[#0B1629]/5"
                   >
                     <td className="px-4 py-3">
-                      <p className="font-mono text-xs font-semibold text-[#2C6E69]">{b.booking_number}</p>
+                      <p className="font-mono text-xs font-semibold text-[#0B1629]">{b.booking_number}</p>
                       <p className="text-xs text-gray-400">{timeAgo(b.created_at)}</p>
                     </td>
                     <td className="px-4 py-3 text-gray-700">
                       {b.service?.service_type?.display_name || '—'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">
-                      <p className="font-medium">{b.pet_owner?.display_name || '—'}</p>
-                      <p className="text-gray-400">{b.pet_owner?.email}</p>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {b.pet_owner?.avatar_url ? (
+                          <img src={b.pet_owner.avatar_url} alt="" className="h-7 w-7 flex-shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+                            {userInitial(b.pet_owner?.display_name, b.pet_owner?.email)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{b.pet_owner?.display_name || '—'}</p>
+                          <p className="text-xs text-gray-400 truncate">{b.pet_owner?.email}</p>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">
-                      <p className="font-medium">{b.caregiver?.owner?.display_name || '—'}</p>
-                      <p className="text-gray-400">{b.caregiver?.city || b.caregiver?.owner?.email}</p>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {b.caregiver?.owner?.avatar_url ? (
+                          <img src={b.caregiver.owner.avatar_url} alt="" className="h-7 w-7 flex-shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#0B1629]/10 text-xs font-bold text-[#0B1629]">
+                            {userInitial(b.caregiver?.owner?.display_name, b.caregiver?.owner?.email)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{b.caregiver?.owner?.display_name || '—'}</p>
+                          <p className="text-xs text-gray-400 truncate">{b.caregiver?.city || b.caregiver?.owner?.email}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-500">
                       <p>{formatDateTime(b.start_datetime)}</p>
@@ -354,41 +396,37 @@ export default function BookingsClient({
                         </motion.button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
+      {/* Right-side animated drawer */}
       <AnimatePresence>
-        {display && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        {selectedBooking && (
+          <>
             <motion.div
-              className="absolute inset-0 bg-black/40 backdrop-blur-[3px]"
-              onClick={() => setSelectedBooking(null)}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[3px]"
               variants={backdropVariants}
               initial="hidden"
               animate="show"
               exit="exit"
+              onClick={() => setSelectedBooking(null)}
             />
-            <motion.div
-              className="relative w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
-              variants={modalVariants}
+            <motion.aside
+              className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-2xl"
+              variants={drawerVariants}
               initial="hidden"
               animate="show"
               exit="exit"
-              style={{ transformOrigin: '50% 10%', transformPerspective: 1200 }}
             >
-              <motion.div
-                className="relative overflow-hidden px-6 pb-6 pt-7"
-                style={{
-                  background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 50%, #2C6E69 100%)',
-                }}
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
+              {/* Gradient header */}
+              <div
+                className="relative flex-shrink-0 overflow-hidden px-6 pb-6 pt-7"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 55%, #2C6E69 100%)' }}
               >
                 <motion.div
                   className="pointer-events-none absolute inset-0 skew-x-[-20deg] bg-white/5"
@@ -406,113 +444,134 @@ export default function BookingsClient({
                   <X className="h-5 w-5" />
                 </button>
 
-                <div className="relative flex items-start gap-5">
+                <div className="relative flex items-start gap-4">
                   <div
-                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg ring-2 ring-white/25"
+                    className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg ring-2 ring-white/25"
                     aria-hidden
                   >
-                    <Package className="h-8 w-8 opacity-90" />
+                    <Package className="h-7 w-7 opacity-90" />
                   </div>
                   <div className="min-w-0 flex-1 pr-8">
                     <p className="font-mono text-lg font-black tracking-tight text-white">
-                      {display.booking_number}
+                      {selectedBooking.booking_number}
                     </p>
-                    <p className="mt-1 text-sm text-white/60">
-                      {display.service?.service_type?.display_name || 'Service booking'}
+                    <p className="mt-0.5 text-sm text-white/60">
+                      {selectedBooking.service?.service_type?.display_name || 'Service booking'}
                     </p>
                     <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                      <Badge variant={statusVariant(display.status)} className="border-0 bg-white/20 text-white ring-1 ring-white/25">
-                        {statusLabel(display.status)}
+                      <Badge
+                        variant={statusVariant(selectedBooking.status)}
+                        className="border-0 bg-white/20 text-white ring-1 ring-white/25"
+                      >
+                        {statusLabel(selectedBooking.status)}
                       </Badge>
                       <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white ring-1 ring-white/15">
                         <DollarSign className="h-3 w-3" />
-                        {display.currency} {display.total_amount.toLocaleString()}
+                        {selectedBooking.currency} {selectedBooking.total_amount.toLocaleString()}
                       </span>
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
+              {/* Scrollable body */}
               <motion.div
-                className="max-h-[60vh] overflow-y-auto"
-                variants={modalContentVariants}
+                className="flex-1 overflow-y-auto"
+                variants={drawerContentVariants}
                 initial="hidden"
                 animate="show"
               >
                 <div className="space-y-4 p-6">
-                  <motion.div
-                    className="grid grid-cols-1 gap-3 sm:grid-cols-2"
-                    variants={modalItemVariants}
-                  >
-                    <div className="rounded-xl bg-[#2C6E69]/5 p-4 ring-1 ring-[#2C6E69]/10">
-                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
+
+                  {/* Parties */}
+                  <motion.div className="grid grid-cols-1 gap-3 sm:grid-cols-2" variants={drawerItemVariants}>
+                    <div className="rounded-xl bg-[#0B1629]/5 p-4 ring-1 ring-[#0B1629]/10" style={{ borderLeft: '3px solid #0B1629' }}>
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">
                         <User className="h-3.5 w-3.5" />
-                        Pet owner
+                        Pet Owner
                       </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {display.pet_owner?.display_name || '—'}
-                      </p>
-                      <p className="text-xs text-gray-500">{display.pet_owner?.email}</p>
+                      <div className="flex items-center gap-2">
+                        {selectedBooking.pet_owner?.avatar_url ? (
+                          <img src={selectedBooking.pet_owner.avatar_url} alt="" className="h-8 w-8 flex-shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+                            {userInitial(selectedBooking.pet_owner?.display_name, selectedBooking.pet_owner?.email)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-gray-900">{selectedBooking.pet_owner?.display_name || '—'}</p>
+                          <p className="truncate text-xs text-gray-500">{selectedBooking.pet_owner?.email}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="rounded-xl bg-[#2C6E69]/5 p-4 ring-1 ring-[#2C6E69]/10">
-                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
+                    <div className="rounded-xl bg-[#0B1629]/5 p-4 ring-1 ring-[#0B1629]/10" style={{ borderLeft: '3px solid #0B1629' }}>
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">
                         <Briefcase className="h-3.5 w-3.5" />
                         Caregiver
                       </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {display.caregiver?.owner?.display_name || '—'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {display.caregiver?.city || display.caregiver?.owner?.email || '—'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        {selectedBooking.caregiver?.owner?.avatar_url ? (
+                          <img src={selectedBooking.caregiver.owner.avatar_url} alt="" className="h-8 w-8 flex-shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#0B1629]/10 text-xs font-bold text-[#0B1629]">
+                            {userInitial(selectedBooking.caregiver?.owner?.display_name, selectedBooking.caregiver?.owner?.email)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-gray-900">{selectedBooking.caregiver?.owner?.display_name || '—'}</p>
+                          <p className="truncate text-xs text-gray-500">{selectedBooking.caregiver?.city || selectedBooking.caregiver?.owner?.email || '—'}</p>
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
 
+                  {/* Schedule */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <Calendar className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <Calendar className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
-                        Schedule &amp; service
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">
+                        Schedule &amp; Service
                       </h3>
                     </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <BkField
                         icon={<Package className="h-3 w-3" />}
                         label="Service"
-                        value={display.service?.service_type?.display_name || '—'}
+                        value={selectedBooking.service?.service_type?.display_name || '—'}
                       />
                       <BkField
                         icon={<Shield className="h-3 w-3" />}
                         label="Currency"
-                        value={display.currency}
+                        value={selectedBooking.currency}
                       />
                       <BkField
                         icon={<Calendar className="h-3 w-3" />}
                         label="Start"
-                        value={formatDateTime(display.start_datetime)}
+                        value={formatDateTime(selectedBooking.start_datetime)}
                       />
                       <BkField
                         icon={<Calendar className="h-3 w-3" />}
                         label="End"
-                        value={formatDateTime(display.end_datetime)}
+                        value={formatDateTime(selectedBooking.end_datetime)}
                       />
                     </div>
                   </motion.section>
 
+                  {/* Pricing */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-2 flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-[#2C6E69]" />
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
+                      <DollarSign className="h-4 w-4 text-[#0B1629]" />
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">
                         Pricing
                       </h3>
                     </div>
@@ -520,31 +579,32 @@ export default function BookingsClient({
                       <div className="flex justify-between px-4 py-2 text-sm">
                         <span className="text-gray-500">Base amount</span>
                         <span className="font-medium">
-                          {display.currency} {display.base_amount?.toLocaleString()}
+                          {selectedBooking.currency} {selectedBooking.base_amount?.toLocaleString()}
                         </span>
                       </div>
                       <div className="flex justify-between px-4 py-2 text-sm">
                         <span className="text-gray-500">Platform fee</span>
                         <span className="font-medium">
-                          {display.currency} {display.service_fee?.toLocaleString()}
+                          {selectedBooking.currency} {selectedBooking.service_fee?.toLocaleString()}
                         </span>
                       </div>
                       <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-900">
                         <span>Total</span>
                         <span>
-                          {display.currency} {display.total_amount?.toLocaleString()}
+                          {selectedBooking.currency} {selectedBooking.total_amount?.toLocaleString()}
                         </span>
                       </div>
                     </div>
                   </motion.section>
 
-                  {bookingPayments(display).length > 0 && (
-                    <motion.section variants={modalItemVariants}>
-                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
+                  {/* Payments */}
+                  {bookingPayments(selectedBooking).length > 0 && (
+                    <motion.section variants={drawerItemVariants}>
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">
                         Payments
                       </p>
                       <div className="space-y-2">
-                        {bookingPayments(display).map((p) => (
+                        {bookingPayments(selectedBooking).map((p) => (
                           <div
                             key={p.id}
                             className="flex items-center justify-between rounded-xl bg-gray-50 px-3 py-2 text-xs"
@@ -557,7 +617,7 @@ export default function BookingsClient({
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-gray-800">
-                                {display.currency} {p.amount.toLocaleString()}
+                                {selectedBooking.currency} {p.amount.toLocaleString()}
                               </span>
                               <Badge
                                 variant={
@@ -577,27 +637,39 @@ export default function BookingsClient({
                     </motion.section>
                   )}
 
-                  {display.special_instructions && (
-                    <motion.div variants={modalItemVariants}>
-                      <InfoItem label="Special instructions" value={display.special_instructions} />
+                  {/* Special instructions */}
+                  {selectedBooking.special_instructions && (
+                    <motion.div
+                      className="rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4"
+                      style={{ borderLeft: '3px solid #0B1629' }}
+                      variants={drawerItemVariants}
+                    >
+                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">
+                        Special Instructions
+                      </p>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {selectedBooking.special_instructions}
+                      </p>
                     </motion.div>
                   )}
 
-                  {display.cancellation_reason && (
+                  {/* Cancellation reason */}
+                  {selectedBooking.cancellation_reason && (
                     <motion.div
                       className="rounded-xl border border-red-100 bg-red-50/60 p-3"
-                      variants={modalItemVariants}
+                      variants={drawerItemVariants}
                     >
                       <p className="mb-1 text-xs font-semibold uppercase text-red-600">
-                        Cancellation reason
+                        Cancellation Reason
                       </p>
-                      <p className="text-sm text-red-800">{display.cancellation_reason}</p>
+                      <p className="text-sm text-red-800">{selectedBooking.cancellation_reason}</p>
                     </motion.div>
                   )}
 
-                  <motion.section variants={modalItemVariants}>
+                  {/* Change status */}
+                  <motion.section variants={drawerItemVariants}>
                     <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-gray-400">
-                      Change status
+                      Change Status
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {(
@@ -613,11 +685,11 @@ export default function BookingsClient({
                         <button
                           key={s}
                           type="button"
-                          disabled={isPending || display.status === s}
-                          onClick={() => handleStatusChange(display.id, s)}
+                          disabled={isPending || selectedBooking.status === s}
+                          onClick={() => handleStatusChange(selectedBooking.id, s)}
                           className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 ${
-                            display.status === s
-                              ? 'bg-[#2C6E69] text-white'
+                            selectedBooking.status === s
+                              ? 'bg-[#0B1629] text-white'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                         >
@@ -626,17 +698,11 @@ export default function BookingsClient({
                       ))}
                     </div>
                   </motion.section>
-
-                  <p className="text-xs text-gray-300">ID: {display.id}</p>
                 </div>
               </motion.div>
 
-              <motion.div
-                className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4"
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
-              >
+              {/* Sticky footer */}
+              <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4">
                 <motion.button
                   type="button"
                   onClick={() => setSelectedBooking(null)}
@@ -646,37 +712,24 @@ export default function BookingsClient({
                 >
                   Close
                 </motion.button>
-                <div className="flex flex-wrap items-center gap-2">
-                  <motion.button
-                    type="button"
-                    disabled
-                    title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#2C6E69] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    onClick={() => {
-                      const b = display;
-                      setSelectedBooking(null);
-                      setDeleteTarget(b);
-                    }}
-                    className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
-                    whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ duration: 0.35 }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
-          </motion.div>
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    const b = selectedBooking;
+                    setSelectedBooking(null);
+                    setDeleteTarget(b);
+                  }}
+                  className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
+                  whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </motion.button>
+              </div>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
 
@@ -762,7 +815,7 @@ function DeleteBookingConfirmModal({
                 className="mt-4 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50/40 p-3"
                 variants={deleteItemVariants}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white font-mono text-xs font-bold text-[#2C6E69] ring-1 ring-red-100">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white font-mono text-xs font-bold text-[#0B1629] ring-1 ring-red-100">
                   #
                 </div>
                 <div className="min-w-0">

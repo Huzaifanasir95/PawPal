@@ -83,10 +83,13 @@ interface Comment {
   likes_count: number;
   created_at: string;
   author: string;
+  author_email: string | null;
+  is_reply: boolean;
 }
 
 interface Post {
   id: string;
+  title: string | null;
   content: string;
   category: string | null;
   likes_count: number | null;
@@ -94,7 +97,7 @@ interface Post {
   image_urls: string[] | null;
   created_at: string;
   user_id: string;
-  profiles: { full_name: string | null; email: string | null } | null;
+  author: { display_name: string | null; email: string | null; avatar_url: string | null } | null;
   comments: Comment[];
 }
 
@@ -111,7 +114,7 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
       posts.filter((p) => {
         const matchesSearch =
           p.content.toLowerCase().includes(search.toLowerCase()) ||
-          (p.profiles?.full_name?.toLowerCase() ?? '').includes(search.toLowerCase());
+          (p.author?.display_name?.toLowerCase() ?? '').includes(search.toLowerCase());
         const matchesCat =
           category === 'all' || (p.category ?? 'general') === category;
         return matchesSearch && matchesCat;
@@ -232,9 +235,10 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
                       transition={{ duration: 0.25, ease: 'easeOut', delay: i * 0.04 }}
                     >
                       <td className="px-4 py-3">
-                        <span className="text-xs text-gray-600">
-                          {p.profiles?.full_name || p.profiles?.email || 'Unknown'}
-                        </span>
+                        <p className="text-sm font-medium text-gray-800">{p.author?.display_name || p.author?.email || 'Unknown'}</p>
+                        {p.author?.display_name && p.author?.email && (
+                          <p className="text-xs text-gray-400">{p.author.email}</p>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-gray-700 max-w-xs">
                         <div className="flex items-center gap-2">
@@ -245,10 +249,7 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge
-                          variant={categoryBadgeVariant[cat] ?? 'default'}
-                          className="bg-[#0B1629]/10 text-[#0B1629]"
-                        >
+                        <Badge variant={categoryBadgeVariant[cat] ?? 'default'}>
                           {cat}
                         </Badge>
                       </td>
@@ -341,14 +342,14 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
                     className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl text-xl font-black text-white ring-2 ring-white/30 shadow-lg"
                     style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
                   >
-                    {(display.profiles?.full_name || display.profiles?.email || '?')[0].toUpperCase()}
+                    {(display.author?.display_name || display.author?.email || '?')[0].toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1 pr-8">
                     <p className="text-lg font-black leading-tight text-white truncate">
-                      Post Details
+                      {display.title || 'Post Details'}
                     </p>
                     <p className="mt-0.5 text-sm text-white/55 truncate">
-                      by {display.profiles?.full_name || display.profiles?.email || 'Unknown'}
+                      by {display.author?.display_name || display.author?.email || 'Unknown'}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold capitalize text-white ring-1 ring-white/20">
@@ -393,11 +394,11 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
                         className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
                         style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
                       >
-                        {(display.profiles?.full_name || display.profiles?.email || '?')[0].toUpperCase()}
+                        {(display.author?.display_name || display.author?.email || '?')[0].toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-gray-900 text-sm truncate">{display.profiles?.full_name || 'Unknown'}</p>
-                        <p className="text-xs text-gray-400 truncate">{display.profiles?.email || '—'}</p>
+                        <p className="font-bold text-gray-900 text-sm truncate">{display.author?.display_name || 'Unknown'}</p>
+                        <p className="text-xs text-gray-400 truncate">{display.author?.email || '—'}</p>
                       </div>
                     </div>
                     <p className="mt-2 text-xs text-gray-400 px-1">Posted {formatDateTime(display.created_at)}</p>
@@ -475,7 +476,13 @@ export default function PostsClient({ posts: initialPosts }: { posts: Post[] }) 
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-xs font-bold text-gray-800">{c.author}</span>
+                                    {c.author_email && c.author_email !== c.author && (
+                                      <span className="text-[10px] text-gray-400">{c.author_email}</span>
+                                    )}
                                     <span className="text-[10px] text-gray-400">{timeAgo(c.created_at)}</span>
+                                    {c.is_reply && (
+                                      <span className="rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-400">reply</span>
+                                    )}
                                     {c.likes_count > 0 && (
                                       <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-400">
                                         <Heart className="h-2.5 w-2.5 fill-rose-400" />
@@ -560,7 +567,7 @@ function DeletePostModal({
   onConfirm: () => void;
 }) {
   const warningControls = useAnimation();
-  const author = post?.profiles?.full_name || post?.profiles?.email || 'Unknown';
+  const author = post?.author?.display_name || post?.author?.email || 'Unknown';
   const preview = post ? truncate(post.content, 80) : '';
 
   useEffect(() => {

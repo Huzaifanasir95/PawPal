@@ -248,7 +248,7 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={pet.type === 'dog' ? 'warning' : 'default'} className="bg-[#0B1629]/10 text-[#0B1629]">
+                        <Badge variant={pet.type === 'dog' ? 'warning' : 'info'}>
                           {pet.type === 'dog' ? '🐕 Dog' : '🐈 Cat'}
                         </Badge>
                       </td>
@@ -258,11 +258,16 @@ export default function PetsClient({ pets: initialPets }: { pets: Pet[] }) {
                         {pet.owner?.name || pet.owner?.email || 'Unknown'}
                       </td>
                       <td className="px-4 py-3">
-                        {pet.is_adopted ? (
-                          <Badge variant="warning" className="bg-[#0B1629]/10 text-[#0B1629]">Adopted</Badge>
-                        ) : (
-                          <Badge variant="success" className="bg-[#0B1629]/10 text-[#0B1629]">Active</Badge>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          {pet.is_adopted ? (
+                            <Badge variant="info">Adopted</Badge>
+                          ) : (
+                            <Badge variant="success">Active</Badge>
+                          )}
+                          {pet.is_verified && (
+                            <Badge variant="success">✓ Verified</Badge>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400">{timeAgo(pet.created_at)}</td>
                       <td className="px-4 py-3">

@@ -33,7 +33,7 @@ class LostFoundPage extends StatelessWidget {
                 context.read<LostFoundCubit>().loadPosts();
               }
             },
-            child: Icon(Icons.add, color: Theme.of(context).colorScheme.secondary, size: 28.sp),
+            child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary, size: 28.sp),
           ),
           body: Column(
             children: [

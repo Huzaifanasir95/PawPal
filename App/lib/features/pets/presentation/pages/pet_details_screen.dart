@@ -616,14 +616,14 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface, size: 24.sp),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary, size: 24.sp),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Pet Details',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
-            color: Theme.of(context).colorScheme.onSurface,
+            color: Theme.of(context).colorScheme.onPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -1203,6 +1203,8 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).colorScheme.secondary,
+                              foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                              padding: EdgeInsets.symmetric(vertical: 14.h),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
@@ -1243,20 +1245,22 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                              padding: EdgeInsets.symmetric(vertical: 14.h),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
                             ),
                             icon: Icon(
                               Icons.add,
-                              color: Theme.of(context).colorScheme.onSurface,
+                              color: Theme.of(context).colorScheme.onPrimary,
                               size: 20.sp,
                             ),
                             label: Text(
                               'Add Journal',
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 14.sp,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color: Theme.of(context).colorScheme.onPrimary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1577,7 +1581,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         borderRadius: BorderRadius.circular(14.r),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.25),
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.35),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -1586,8 +1590,9 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                       child: ElevatedButton.icon(
                         onPressed: _isVerifying ? null : _verifyBreed,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.onSurface,
-                          disabledBackgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          disabledBackgroundColor: Theme.of(context).colorScheme.primary.withOpacity(
                             0.5,
                           ),
                           padding: EdgeInsets.symmetric(

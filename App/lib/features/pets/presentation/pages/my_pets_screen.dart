@@ -92,16 +92,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.add,
-              color: isDark ? colorScheme.onSurface : colorScheme.onPrimary,
-              size: 24.sp,
-            ),
-            onPressed: _navigateToAddPet,
-          ),
-        ],
+
       ),
       body: StreamBuilder<List<PetModel>>(
         stream: _petRepository.getUserPets(),

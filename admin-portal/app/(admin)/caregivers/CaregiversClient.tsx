@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo, useTransition, useEffect, useAnimation, type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useState, useMemo, useTransition, useEffect, type ReactNode } from 'react';
+import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import {
   Search,
   Eye,
@@ -54,35 +54,32 @@ export interface Caregiver {
   owner: { id: string; display_name: string | null; email: string | null; avatar_url: string | null } | null;
 }
 
+// ── Animation constants ──────────────────────────────────────────────────────
+
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-const EASE_IN = [0.7, 0, 0.84, 0] as const;
+const EASE_IN  = [0.7, 0, 0.84, 0] as const;
+
+const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
 const backdropVariants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
-  exit: { opacity: 0, transition: { duration: 0.2, ease: EASE_IN } },
+  show:   { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
+  exit:   { opacity: 0, transition: { duration: 0.2,  ease: EASE_IN  } },
 };
 
-const modalVariants = {
-  hidden: { opacity: 0, scale: 0.82, y: 26, rotateX: -12, rotateZ: -1 },
-  show: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    rotateX: 0,
-    rotateZ: 0,
-    transition: { type: 'spring' as const, stiffness: 260, damping: 22, mass: 0.8 },
-  },
-  exit: { opacity: 0, scale: 0.9, y: 18, rotateX: 6, rotateZ: 1, transition: { duration: 0.2 } },
+const drawerVariants = {
+  hidden: { x: '100%', opacity: 0 },
+  show:   { x: 0, opacity: 1, transition: { type: 'spring' as const, stiffness: 280, damping: 28, mass: 0.9 } },
+  exit:   { x: '100%', opacity: 0, transition: { duration: 0.22, ease: EASE_IN } },
 };
 
-const modalContentVariants = {
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+const drawerItemVariants = {
+  hidden: { opacity: 0, x: 18 },
+  show:   { opacity: 1, x: 0, transition: { duration: 0.28, ease: EASE_OUT } },
 };
 
-const modalItemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: EASE_OUT } },
+const drawerContentVariants = {
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.08 } },
 };
 
 const deleteBackdropVariants = {
@@ -98,10 +95,7 @@ const deleteBackdropVariants = {
 const deleteModalVariants = {
   hidden: { opacity: 0, scale: 0.86, y: -8, rotateZ: -1 },
   show: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    rotateZ: 0,
+    opacity: 1, scale: 1, y: 0, rotateZ: 0,
     transition: { type: 'spring' as const, stiffness: 520, damping: 26, mass: 0.7 },
   },
   exit: { opacity: 0, scale: 0.92, y: 16, transition: { duration: 0.2 } },
@@ -113,14 +107,16 @@ const deleteContentVariants = {
 
 const deleteItemVariants = {
   hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
 };
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function CgField({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
   return (
     <div className="min-w-0">
       <div className="mb-1 flex items-center gap-1">
-        <span className="text-[#2C6E69]/60">{icon}</span>
+        <span className="text-[#0B1629]/50">{icon}</span>
         <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
       </div>
       <div className="break-words text-sm font-semibold text-gray-800">{value}</div>
@@ -130,15 +126,11 @@ function CgField({ icon, label, value }: { icon: ReactNode; label: string; value
 
 function bgCheckVariant(status: string | null): 'success' | 'warning' | 'danger' | 'default' {
   switch (status) {
-    case 'approved':
-      return 'success';
-    case 'in_progress':
-      return 'warning';
+    case 'approved': return 'success';
+    case 'in_progress': return 'warning';
     case 'rejected':
-    case 'expired':
-      return 'danger';
-    default:
-      return 'default';
+    case 'expired': return 'danger';
+    default: return 'default';
   }
 }
 
@@ -149,6 +141,8 @@ function initials(name: string | null | undefined, email: string | null | undefi
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   return s.slice(0, 2).toUpperCase();
 }
+
+// ── Main component ───────────────────────────────────────────────────────────
 
 export default function CaregiversClient({ caregivers: initialCaregivers }: { caregivers: Caregiver[] }) {
   const [caregivers, setCaregivers] = useState(initialCaregivers);
@@ -194,11 +188,8 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
     const next = !current;
     startTransition(async () => {
       const res = await updateCaregiverVerification(id, next);
-      if (res.success) {
-        syncPatch(id, { is_verified: next });
-      } else {
-        alert('Failed: ' + res.error);
-      }
+      if (res.success) syncPatch(id, { is_verified: next });
+      else alert('Failed: ' + res.error);
     });
   }
 
@@ -207,11 +198,8 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
     setModalApproving(true);
     const res = await updateCaregiverVerification(selected.id, true);
     setModalApproving(false);
-    if (res.success) {
-      syncPatch(selected.id, { is_verified: true });
-    } else {
-      alert('Failed: ' + res.error);
-    }
+    if (res.success) syncPatch(selected.id, { is_verified: true });
+    else alert('Failed: ' + res.error);
   }
 
   function handleDelete(id: string) {
@@ -231,83 +219,88 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      {/* Filters */}
+      <motion.div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        initial="hidden"
+        animate="show"
+        variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
+      >
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, email, city, headline…"
-            className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#2C6E69] focus:outline-none focus:ring-1 focus:ring-[#2C6E69]"
+            className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#0B1629] focus:outline-none focus:ring-1 focus:ring-[#0B1629]"
           />
         </div>
-        {(['all', 'verified', 'pending'] as const).map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setFilter(f)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              filter === f ? 'bg-[#2C6E69] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {f === 'all' ? 'All' : f === 'verified' ? '✅ Verified' : '⏳ Pending'} ({counts[f]})
-          </button>
-        ))}
-      </div>
+        <div className="flex gap-1 rounded-xl border border-gray-200 bg-white p-1">
+          {(['all', 'verified', 'pending'] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                filter === f ? 'bg-[#0B1629] text-white' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {f === 'all' ? 'All' : f === 'verified' ? '✅ Verified' : '⏳ Pending'} ({counts[f]})
+            </button>
+          ))}
+        </div>
+      </motion.div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      {/* Table */}
+      <motion.div
+        className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+        initial="hidden"
+        animate="show"
+        variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.05 }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-[#0B1629]">
-                {['Caregiver', 'Location', 'Experience', 'Rating', 'Bookings', 'Bg Check', 'Status', 'Actions'].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white"
-                    >
-                      {h}
-                    </th>
-                  )
-                )}
+                {['Caregiver', 'Location', 'Experience', 'Rating', 'Bookings', 'Bg Check', 'Status', 'Actions'].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-sm text-gray-400">
-                    No caregivers found
-                  </td>
+                  <td colSpan={8} className="py-16 text-center text-sm text-gray-400">No caregivers found</td>
                 </tr>
               ) : (
-                filtered.map((c) => (
-                  <tr
+                filtered.map((c, i) => (
+                  <motion.tr
                     key={c.id}
-                    className="border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/50"
+                    className="border-b border-gray-50 last:border-0 transition-colors hover:bg-[#0B1629]/5"
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25, ease: EASE_OUT, delay: i * 0.04 }}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {c.owner?.avatar_url ? (
                           <img src={c.owner.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
                         ) : (
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#B3E0DB] text-xs font-bold text-[#2C6E69]">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0B1629]/10 text-xs font-bold text-[#0B1629]">
                             {(c.owner?.display_name || c.owner?.email || '?')[0].toUpperCase()}
                           </div>
                         )}
                         <div>
                           <p className="font-medium text-gray-800">{c.owner?.display_name || '—'}</p>
                           <p className="text-xs text-gray-400">{c.owner?.email}</p>
-                          {c.headline && (
-                            <p className="line-clamp-1 text-xs italic text-gray-500">{c.headline}</p>
-                          )}
+                          {c.headline && <p className="line-clamp-1 text-xs italic text-gray-500">{c.headline}</p>}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600">
-                      <p>
-                        {c.city || '—'}
-                        {c.state ? `, ${c.state}` : ''}
-                      </p>
+                      <p>{c.city || '—'}{c.state ? `, ${c.state}` : ''}</p>
                       <p className="text-gray-400">{c.country}</p>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
@@ -335,14 +328,14 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                         <motion.button
                           type="button"
                           onClick={() => setSelected(c)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#0B1629]"
+                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-[#0B1629]/5 hover:text-[#0B1629]"
                           title="View details"
                           whileHover={{ scale: 1.08, y: -1 }}
                           whileTap={{ scale: 0.96 }}
                         >
                           <Eye className="h-4 w-4" />
                         </motion.button>
-                        <button
+                        <motion.button
                           type="button"
                           onClick={() => handleToggleVerify(c.id, c.is_verified)}
                           disabled={isPending}
@@ -352,61 +345,63 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                               ? 'text-gray-400 hover:bg-red-50 hover:text-red-500'
                               : 'text-gray-400 hover:bg-green-50 hover:text-green-600'
                           }`}
+                          whileHover={{ scale: 1.08 }}
+                          whileTap={{ scale: 0.96 }}
                         >
                           {c.is_verified ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button
                           type="button"
                           onClick={() => setDeleteTarget(c)}
                           className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                           title="Delete"
+                          whileHover={{ x: [0, -1.5, 1.5, -1, 1, 0] }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={{ duration: 0.35 }}
                         >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </motion.button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
+      {/* ── Right-side Detail Drawer ── */}
       <AnimatePresence>
         {display && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <motion.div className="fixed inset-0 z-50 flex justify-end">
             <motion.div
-              className="absolute inset-0 bg-black/40 backdrop-blur-[3px]"
+              className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
               onClick={() => setSelected(null)}
               variants={backdropVariants}
               initial="hidden"
               animate="show"
               exit="exit"
             />
+
             <motion.div
-              className="relative w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
-              variants={modalVariants}
+              className="relative flex h-full w-full max-w-lg flex-col bg-white shadow-2xl"
+              variants={drawerVariants}
               initial="hidden"
               animate="show"
               exit="exit"
-              style={{ transformOrigin: '50% 10%', transformPerspective: 1200 }}
             >
-              <motion.div
-                className="relative overflow-hidden px-6 pb-6 pt-7"
-                style={{
-                  background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 50%, #2C6E69 100%)',
-                }}
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
+              {/* Branded header */}
+              <div
+                className="relative flex-shrink-0 overflow-hidden px-6 pb-5 pt-6"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 55%, #2C6E69 100%)' }}
               >
                 <motion.div
                   className="pointer-events-none absolute inset-0 skew-x-[-20deg] bg-white/5"
                   animate={{ x: ['-120%', '220%'] }}
                   transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
                 />
-                <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/5" />
+                <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
 
                 <button
                   type="button"
@@ -417,17 +412,13 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                   <X className="h-5 w-5" />
                 </button>
 
-                <div className="relative flex items-start gap-5">
+                <div className="relative flex items-start gap-4">
                   <div className="relative flex-shrink-0">
                     {display.owner?.avatar_url ? (
-                      <img
-                        src={display.owner.avatar_url}
-                        alt=""
-                        className="h-16 w-16 rounded-full object-cover shadow-lg ring-4 ring-white/90"
-                      />
+                      <img src={display.owner.avatar_url} alt="" className="h-14 w-14 rounded-full object-cover shadow-lg ring-4 ring-white/30" />
                     ) : (
                       <div
-                        className="flex h-16 w-16 items-center justify-center rounded-full text-sm font-black text-white shadow-lg ring-4 ring-white/90"
+                        className="flex h-14 w-14 items-center justify-center rounded-full text-sm font-black text-white shadow-lg ring-4 ring-white/30"
                         style={{ background: 'linear-gradient(135deg, #1a4a45, #3d8f89)' }}
                       >
                         {initials(display.owner?.display_name, display.owner?.email)}
@@ -435,134 +426,100 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                     )}
                   </div>
                   <div className="min-w-0 flex-1 pr-8">
-                    <p className="truncate text-xl font-black leading-tight text-white">
+                    <p className="truncate text-lg font-black leading-tight text-white">
                       {display.owner?.display_name || 'Caregiver'}
                     </p>
-                    <p className="mt-0.5 truncate text-sm text-white/60">{display.owner?.email || '—'}</p>
+                    <p className="mt-0.5 truncate text-sm text-white/55">{display.owner?.email || '—'}</p>
                     {(display.city || display.country) && (
-                      <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white ring-1 ring-white/15">
+                      <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white ring-1 ring-white/15">
                         <MapPin className="h-3 w-3 shrink-0" />
-                        {[display.city, display.state, display.country].filter(Boolean).join(', ') || '—'}
+                        {[display.city, display.state, display.country].filter(Boolean).join(', ')}
                       </div>
                     )}
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       {display.is_verified ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/25 px-2.5 py-1 text-[11px] font-bold text-emerald-100 ring-1 ring-emerald-300/40">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/25 px-2.5 py-0.5 text-[11px] font-bold text-emerald-100 ring-1 ring-emerald-300/40">
                           <ShieldCheck className="h-3 w-3" />
                           Verified
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2.5 py-1 text-[11px] font-bold text-amber-100 ring-1 ring-amber-300/35">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[11px] font-bold text-amber-100 ring-1 ring-amber-300/35">
                           <AlertTriangle className="h-3 w-3" />
                           Pending
                         </span>
                       )}
-                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white ring-1 ring-white/15">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white ring-1 ring-white/15">
                         {display.is_active ? 'Active' : 'Inactive'}
                       </span>
                       {display.is_accepting_bookings && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white ring-1 ring-white/15">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white ring-1 ring-white/15">
                           Accepting bookings
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
+              {/* Scrollable body */}
               <motion.div
-                className="max-h-[60vh] overflow-y-auto"
-                variants={modalContentVariants}
+                className="flex-1 overflow-y-auto"
+                variants={drawerContentVariants}
                 initial="hidden"
                 animate="show"
               >
                 <div className="space-y-4 p-6">
+
                   {display.headline && (
-                    <motion.p
-                      className="text-sm font-medium italic text-gray-700"
-                      variants={modalItemVariants}
-                    >
+                    <motion.p className="text-sm font-medium italic text-gray-600" variants={drawerItemVariants}>
                       &ldquo;{display.headline}&rdquo;
                     </motion.p>
                   )}
+
                   {display.bio && (
                     <motion.div
-                      className="rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4"
-                      style={{ borderLeft: '3px solid #2C6E69' }}
-                      variants={modalItemVariants}
+                      className="rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4"
+                      style={{ borderLeft: '3px solid #0B1629' }}
+                      variants={drawerItemVariants}
                     >
-                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">Bio</p>
+                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Bio</p>
                       <p className="text-sm leading-relaxed text-gray-700">{display.bio}</p>
                     </motion.div>
                   )}
 
+                  {/* Profile */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <Briefcase className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <Briefcase className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
-                        Profile
-                      </h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Profile</h3>
                     </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <CgField
-                        icon={<Award className="h-3 w-3" />}
-                        label="Experience"
-                        value={
-                          display.years_of_experience != null
-                            ? `${display.years_of_experience} years`
-                            : '—'
-                        }
-                      />
-                      <CgField
-                        icon={<Star className="h-3 w-3" />}
-                        label="Rating"
-                        value={`${display.average_rating?.toFixed(1) ?? '0'} (${display.total_reviews} reviews)`}
-                      />
-                      <CgField
-                        icon={<Calendar className="h-3 w-3" />}
-                        label="Total bookings"
-                        value={String(display.total_bookings)}
-                      />
-                      <CgField
-                        icon={<Award className="h-3 w-3" />}
-                        label="Completion rate"
-                        value={`${display.completion_rate?.toFixed(1) ?? '0'}%`}
-                      />
-                      <CgField
-                        icon={<MapPin className="h-3 w-3" />}
-                        label="Service radius"
-                        value={
-                          display.service_radius_km != null
-                            ? `${display.service_radius_km} km`
-                            : '—'
-                        }
-                      />
-                      <CgField
-                        icon={<Calendar className="h-3 w-3" />}
-                        label="Joined"
-                        value={formatDateTime(display.created_at)}
-                      />
+                      <CgField icon={<Award className="h-3 w-3" />} label="Experience" value={display.years_of_experience != null ? `${display.years_of_experience} years` : '—'} />
+                      <CgField icon={<Star className="h-3 w-3" />} label="Rating" value={`${display.average_rating?.toFixed(1) ?? '0'} (${display.total_reviews} reviews)`} />
+                      <CgField icon={<Calendar className="h-3 w-3" />} label="Total bookings" value={String(display.total_bookings)} />
+                      <CgField icon={<Award className="h-3 w-3" />} label="Completion rate" value={`${display.completion_rate?.toFixed(1) ?? '0'}%`} />
+                      <CgField icon={<MapPin className="h-3 w-3" />} label="Service radius" value={display.service_radius_km != null ? `${display.service_radius_km} km` : '—'} />
+                      <CgField icon={<Calendar className="h-3 w-3" />} label="Joined" value={formatDateTime(display.created_at)} />
                     </div>
                   </motion.section>
 
+                  {/* Credentials */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <Shield className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <Shield className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
-                        Credentials
-                      </h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Credentials</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant={display.id_verified ? 'success' : 'default'}>
@@ -580,73 +537,61 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                     </div>
                   </motion.section>
 
+                  {/* Pet preferences */}
                   {(display.accepted_pet_types?.length || display.accepted_pet_sizes?.length) ? (
                     <motion.section
-                      className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                      style={{ borderLeft: '3px solid #2C6E69' }}
-                      variants={modalItemVariants}
+                      className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                      style={{ borderLeft: '3px solid #0B1629' }}
+                      variants={drawerItemVariants}
                     >
                       <div className="mb-3 flex items-center gap-2">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                          <Heart className="h-3.5 w-3.5 text-[#2C6E69]" />
+                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                          <Heart className="h-3.5 w-3.5 text-[#0B1629]" />
                         </div>
-                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
-                          Pet preferences
-                        </h3>
+                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Pet Preferences</h3>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {display.accepted_pet_types?.map((t) => (
-                          <Badge key={t} variant="teal" className="capitalize">
-                            {t}
-                          </Badge>
+                          <Badge key={t} variant="teal" className="capitalize">{t}</Badge>
                         ))}
                         {display.accepted_pet_sizes?.map((s) => (
-                          <Badge key={s} variant="info" className="capitalize">
-                            {s}
-                          </Badge>
+                          <Badge key={s} variant="info" className="capitalize">{s}</Badge>
                         ))}
                       </div>
                     </motion.section>
                   ) : null}
 
+                  {/* Linked account */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <User className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <User className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
-                        Linked account
-                      </h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Linked Account</h3>
                     </div>
                     <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm">
                       <div
                         className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
-                        style={{ background: 'linear-gradient(135deg, #1a3a38, #2C6E69)' }}
+                        style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
                       >
                         {initials(display.owner?.display_name, display.owner?.email)}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-gray-900">
-                          {display.owner?.display_name || 'Unknown'}
-                        </p>
+                        <p className="truncate text-sm font-bold text-gray-900">{display.owner?.display_name || 'Unknown'}</p>
                         <p className="truncate text-xs text-gray-400">{display.owner?.email || '—'}</p>
                       </div>
                     </div>
-                    <p className="mt-2 text-xs text-gray-400">Profile ID: {display.id}</p>
                   </motion.section>
+
                 </div>
               </motion.div>
 
-              <motion.div
-                className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4"
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
-              >
+              {/* Sticky footer */}
+              <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
                 <motion.button
                   type="button"
                   onClick={() => setSelected(null)}
@@ -662,7 +607,7 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                       type="button"
                       disabled={modalApproving}
                       onClick={() => void handleModalApprove()}
-                      className="flex items-center gap-2 rounded-xl bg-[#2C6E69] px-5 py-2.5 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
+                      className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm disabled:opacity-50 hover:bg-emerald-600"
                       whileHover={!modalApproving ? { scale: 1.02 } : {}}
                       whileTap={!modalApproving ? { scale: 0.97 } : {}}
                     >
@@ -683,7 +628,7 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                     type="button"
                     disabled
                     title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#2C6E69] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
+                    className="flex items-center gap-2 rounded-xl bg-[#0B1629] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                   >
@@ -692,11 +637,7 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                   </motion.button>
                   <motion.button
                     type="button"
-                    onClick={() => {
-                      const cg = display;
-                      setSelected(null);
-                      setDeleteTarget(cg);
-                    }}
+                    onClick={() => { const cg = display; setSelected(null); setDeleteTarget(cg); }}
                     className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
                     whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
                     whileTap={{ scale: 0.97 }}
@@ -706,7 +647,7 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
                     Delete
                   </motion.button>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -722,6 +663,8 @@ export default function CaregiversClient({ caregivers: initialCaregivers }: { ca
     </>
   );
 }
+
+// ── Animated delete confirmation ─────────────────────────────────────────────
 
 function DeleteCaregiverConfirmModal({
   caregiver,
@@ -768,12 +711,7 @@ function DeleteCaregiverConfirmModal({
             exit="exit"
             style={{ transformOrigin: '85% 15%', transformPerspective: 1200 }}
           >
-            <motion.div
-              className="px-6 py-5"
-              variants={deleteContentVariants}
-              initial="hidden"
-              animate="show"
-            >
+            <motion.div className="px-6 py-5" variants={deleteContentVariants} initial="hidden" animate="show">
               <motion.div className="flex items-start gap-4" variants={deleteItemVariants}>
                 <motion.div
                   className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100"
@@ -794,13 +732,9 @@ function DeleteCaregiverConfirmModal({
                 variants={deleteItemVariants}
               >
                 {caregiver.owner?.avatar_url ? (
-                  <img
-                    src={caregiver.owner.avatar_url}
-                    alt=""
-                    className="h-10 w-10 rounded-xl object-cover"
-                  />
+                  <img src={caregiver.owner.avatar_url} alt="" className="h-10 w-10 rounded-xl object-cover" />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sm font-black text-[#2C6E69] ring-1 ring-red-100">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sm font-black text-[#0B1629] ring-1 ring-red-100">
                     {initials(caregiver.owner?.display_name, caregiver.owner?.email)}
                   </div>
                 )}

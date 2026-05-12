@@ -28,6 +28,6 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(const PawPawlApp());
+  runApp(const PawPalApp());
   FlutterNativeSplash.remove();
 }

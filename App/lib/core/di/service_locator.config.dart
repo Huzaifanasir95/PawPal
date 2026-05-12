@@ -11,32 +11,32 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
-import 'package:pawpawl/core/di/api_client_module.dart' as _i509;
-import 'package:pawpawl/core/services/api_client.dart' as _i428;
-import 'package:pawpawl/core/utils/image_service.dart' as _i480;
-import 'package:pawpawl/features/auth/data/repositories/auth_repository.dart'
+import 'package:pawpal/core/di/api_client_module.dart' as _i509;
+import 'package:pawpal/core/services/api_client.dart' as _i428;
+import 'package:pawpal/core/utils/image_service.dart' as _i480;
+import 'package:pawpal/features/auth/data/repositories/auth_repository.dart'
     as _i681;
-import 'package:pawpawl/features/caregiver/data/repositories/booking_repository.dart'
+import 'package:pawpal/features/caregiver/data/repositories/booking_repository.dart'
     as _i537;
-import 'package:pawpawl/features/caregiver/data/repositories/caregiver_repository.dart'
+import 'package:pawpal/features/caregiver/data/repositories/caregiver_repository.dart'
     as _i238;
-import 'package:pawpawl/features/chat/data/repositories/chat_repository.dart'
+import 'package:pawpal/features/chat/data/repositories/chat_repository.dart'
     as _i218;
-import 'package:pawpawl/features/chat/presentation/bloc/chat_bloc.dart'
+import 'package:pawpal/features/chat/presentation/bloc/chat_bloc.dart'
     as _i638;
-import 'package:pawpawl/features/chatbot/data/repositories/chatbot_repository.dart'
+import 'package:pawpal/features/chatbot/data/repositories/chatbot_repository.dart'
     as _i922;
-import 'package:pawpawl/features/community/data/repositories/community_repository.dart'
+import 'package:pawpal/features/community/data/repositories/community_repository.dart'
     as _i37;
-import 'package:pawpawl/features/community/data/repositories/community_repository_api.dart'
+import 'package:pawpal/features/community/data/repositories/community_repository_api.dart'
     as _i7;
-import 'package:pawpawl/features/community/presentation/bloc/community_bloc.dart'
+import 'package:pawpal/features/community/presentation/bloc/community_bloc.dart'
     as _i404;
-import 'package:pawpawl/features/pets/data/repositories/pet_repository_api.dart'
+import 'package:pawpal/features/pets/data/repositories/pet_repository_api.dart'
     as _i11;
-import 'package:pawpawl/features/vet/data/repositories/vet_repository.dart'
+import 'package:pawpal/features/vet/data/repositories/vet_repository.dart'
     as _i217;
-import 'package:pawpawl/features/vet/presentation/bloc/vet_bloc.dart' as _i490;
+import 'package:pawpal/features/vet/presentation/bloc/vet_bloc.dart' as _i490;
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt

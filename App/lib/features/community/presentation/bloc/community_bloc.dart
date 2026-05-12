@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:pawpawl/features/community/data/models/post.dart';
+import 'package:pawpal/features/community/data/models/post.dart';
 
 import '../../data/models/comment.dart';
 import '../../data/repositories/community_repository_api.dart';

@@ -55,22 +55,19 @@ const backdropVariants = {
   exit:   { opacity: 0, transition: { duration: 0.2,  ease: EASE_IN  } },
 };
 
-const modalVariants = {
-  hidden: { opacity: 0, scale: 0.82, y: 26, rotateX: -12, rotateZ: -1 },
-  show: {
-    opacity: 1, scale: 1, y: 0, rotateX: 0, rotateZ: 0,
-    transition: { type: 'spring' as const, stiffness: 260, damping: 22, mass: 0.8 },
-  },
-  exit: { opacity: 0, scale: 0.9, y: 18, rotateX: 6, rotateZ: 1, transition: { duration: 0.2 } },
+const drawerVariants = {
+  hidden: { x: '100%', opacity: 0 },
+  show:   { x: 0, opacity: 1, transition: { type: 'spring' as const, stiffness: 280, damping: 28, mass: 0.9 } },
+  exit:   { x: '100%', opacity: 0, transition: { duration: 0.22, ease: EASE_IN } },
 };
 
-const modalContentVariants = {
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+const drawerContentVariants = {
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.08 } },
 };
 
-const modalItemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show:   { opacity: 1, y: 0, transition: { duration: 0.25, ease: EASE_OUT } },
+const drawerItemVariants = {
+  hidden: { opacity: 0, x: 18 },
+  show:   { opacity: 1, x: 0, transition: { duration: 0.28, ease: EASE_OUT } },
 };
 
 const deleteBackdropVariants = {
@@ -322,33 +319,29 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
         </div>
       </motion.div>
 
-      {/* ── Detail Modal ── */}
+      {/* ── Detail Drawer ── */}
       <AnimatePresence>
         {display && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <>
             <motion.div
-              className="absolute inset-0 bg-black/40 backdrop-blur-[3px]"
-              onClick={() => setSelectedItem(null)}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[3px]"
               variants={backdropVariants}
               initial="hidden"
               animate="show"
               exit="exit"
+              onClick={() => setSelectedItem(null)}
             />
-            <motion.div
-              className="relative w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
-              variants={modalVariants}
+            <motion.aside
+              className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-2xl"
+              variants={drawerVariants}
               initial="hidden"
               animate="show"
               exit="exit"
-              style={{ transformOrigin: '50% 10%', transformPerspective: 1200 }}
             >
               {/* Gradient header */}
-              <motion.div
-                className="relative overflow-hidden px-6 pb-6 pt-7"
-                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 50%, #2C6E69 100%)' }}
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
+              <div
+                className="relative flex-shrink-0 overflow-hidden px-6 pb-6 pt-7"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 55%, #2C6E69 100%)' }}
               >
                 <motion.div
                   className="pointer-events-none absolute inset-0 skew-x-[-20deg] bg-white/5"
@@ -366,19 +359,18 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                   <X className="h-5 w-5" />
                 </button>
 
-                <div className="relative flex items-start gap-5">
-                  {/* Avatar / photo */}
+                <div className="relative flex items-start gap-4">
                   <div className="relative flex-shrink-0">
                     {display.image_urls?.[0] ? (
                       <img
                         src={display.image_urls[0]}
                         alt={display.pet_name || 'Pet'}
-                        className="h-16 w-16 rounded-2xl object-cover ring-2 ring-white/30 shadow-lg"
+                        className="h-14 w-14 rounded-2xl object-cover ring-2 ring-white/30 shadow-lg"
                       />
                     ) : (
                       <div
-                        className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl ring-2 ring-white/30 shadow-lg"
-                        style={{ background: 'linear-gradient(135deg, #1a4a45, #3d8f89)' }}
+                        className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl ring-2 ring-white/30 shadow-lg"
+                        style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a38)' }}
                       >
                         🐾
                       </div>
@@ -386,7 +378,7 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                   </div>
 
                   <div className="min-w-0 flex-1 pr-8">
-                    <p className="text-xl font-black text-white leading-tight truncate">
+                    <p className="text-lg font-black text-white leading-tight truncate">
                       {display.pet_name || 'Unknown Pet'}
                     </p>
                     <p className="mt-0.5 text-sm text-white/55 capitalize truncate">
@@ -416,12 +408,12 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Scrollable body */}
               <motion.div
-                className="max-h-[60vh] overflow-y-auto"
-                variants={modalContentVariants}
+                className="flex-1 overflow-y-auto"
+                variants={drawerContentVariants}
                 initial="hidden"
                 animate="show"
               >
@@ -429,7 +421,7 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
 
                   {/* Photos */}
                   {display.image_urls && display.image_urls.length > 0 && (
-                    <motion.section variants={modalItemVariants}>
+                    <motion.section variants={drawerItemVariants}>
                       <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Photos</p>
                       <div className={`grid gap-2 ${display.image_urls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                         {display.image_urls.map((url, i) => (
@@ -441,7 +433,7 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                             transition={{ duration: 0.3, delay: 0.1 + i * 0.07, ease: EASE_OUT }}
                             whileHover={{ scale: 1.02 }}
                           >
-                            <img src={url} alt={`Photo ${i + 1}`} className="h-36 w-full object-cover" />
+                            <img src={url} alt={`Photo ${i + 1}`} className="h-32 w-full object-cover" />
                           </motion.div>
                         ))}
                       </div>
@@ -453,7 +445,7 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                     <motion.div
                       className="rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4"
                       style={{ borderLeft: '3px solid #0B1629' }}
-                      variants={modalItemVariants}
+                      variants={drawerItemVariants}
                     >
                       <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">Description</p>
                       <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{display.description}</p>
@@ -464,7 +456,7 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                   <motion.section
                     className="overflow-hidden rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4 shadow-sm"
                     style={{ borderLeft: '3px solid #0B1629' }}
-                    variants={modalItemVariants}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
                       <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
@@ -484,7 +476,7 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                   <motion.section
                     className="overflow-hidden rounded-2xl border border-[#0B1629]/15 bg-[#0B1629]/5 p-4 shadow-sm"
                     style={{ borderLeft: '3px solid #0B1629' }}
-                    variants={modalItemVariants}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
                       <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
@@ -532,7 +524,7 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                   </motion.section>
 
                   {/* Change status */}
-                  <motion.section variants={modalItemVariants}>
+                  <motion.section variants={drawerItemVariants}>
                     <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-gray-400">Change Status</p>
                     <div className="flex flex-wrap gap-2">
                       {(['open', 'resolved', 'closed'] as const).map((s) => (
@@ -553,13 +545,8 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                 </div>
               </motion.div>
 
-              {/* Footer */}
-              <motion.div
-                className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4"
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
-              >
+              {/* Sticky footer */}
+              <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4">
                 <motion.button
                   type="button"
                   onClick={() => setSelectedItem(null)}
@@ -580,9 +567,9 @@ export default function LostFoundClient({ items: initialItems }: { items: LostFo
                   <Trash2 className="h-4 w-4" />
                   Delete
                 </motion.button>
-              </motion.div>
-            </motion.div>
-          </motion.div>
+              </div>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
 

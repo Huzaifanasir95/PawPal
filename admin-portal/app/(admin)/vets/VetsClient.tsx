@@ -17,7 +17,6 @@ import {
   AlertTriangle,
   ShieldCheck,
   Check,
-  Edit,
   Phone,
   Award,
   DollarSign,
@@ -184,16 +183,16 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
     });
   }
 
-  async function handleModalApprove() {
-    if (!displayVet || displayVet.is_verified) return;
+  async function handleModalToggleVerify(newValue: boolean) {
+    if (!displayVet) return;
     setModalApproving(true);
-    const result = await updateVetVerification(displayVet.id, true);
+    const result = await updateVetVerification(displayVet.id, newValue);
     setModalApproving(false);
     if (result.success) {
-      syncVetPatch(displayVet.id, { is_verified: true });
-      setToast('Vet approved');
+      syncVetPatch(displayVet.id, { is_verified: newValue });
+      setToast(newValue ? 'Vet approved' : 'Verification revoked');
     } else {
-      alert('Failed to approve: ' + result.error);
+      alert('Failed to update: ' + result.error);
     }
   }
 
@@ -274,8 +273,14 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
               {filtered.length === 0 ? (
                 <tr><td colSpan={8} className="py-16 text-center text-sm text-gray-400">No vets found</td></tr>
               ) : (
-                filtered.map((v) => (
-                  <tr key={v.id} className="border-b border-gray-50 last:border-0 transition-colors hover:bg-[#0B1629]/5">
+                filtered.map((v, i) => (
+                  <motion.tr
+                    key={v.id}
+                    className="border-b border-gray-50 last:border-0 transition-colors hover:bg-[#0B1629]/5"
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25, ease: EASE_OUT, delay: i * 0.04 }}
+                  >
                     <td className="px-4 py-3">
                       <p className="font-medium text-gray-800">{v.name}</p>
                       <p className="text-xs text-gray-400">{v.email || '—'}</p>
@@ -343,7 +348,7 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                         </motion.button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               )}
             </tbody>
@@ -590,11 +595,32 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                   Close
                 </motion.button>
                 <div className="flex flex-wrap items-center gap-2">
-                  {!displayVet.is_verified && (
+                  {displayVet.is_verified ? (
                     <motion.button
                       type="button"
                       disabled={modalApproving}
-                      onClick={() => void handleModalApprove()}
+                      onClick={() => void handleModalToggleVerify(false)}
+                      className="flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm disabled:opacity-50 hover:bg-amber-600"
+                      whileHover={!modalApproving ? { scale: 1.02 } : {}}
+                      whileTap={!modalApproving ? { scale: 0.97 } : {}}
+                    >
+                      {modalApproving ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
+                          Revoking…
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-4 w-4" />
+                          Revoke
+                        </>
+                      )}
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      type="button"
+                      disabled={modalApproving}
+                      onClick={() => void handleModalToggleVerify(true)}
                       className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm disabled:opacity-50 hover:bg-emerald-600"
                       whileHover={!modalApproving ? { scale: 1.02 } : {}}
                       whileTap={!modalApproving ? { scale: 0.97 } : {}}
@@ -612,17 +638,6 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                       )}
                     </motion.button>
                   )}
-                  <motion.button
-                    type="button"
-                    disabled
-                    title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#0B1629] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </motion.button>
                   <motion.button
                     type="button"
                     onClick={() => { const v = displayVet; setSelectedVet(null); setDeleteTarget(v); }}

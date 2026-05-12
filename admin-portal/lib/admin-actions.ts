@@ -196,14 +196,11 @@ export async function updateEventStatus(eventId: string, status: string): Promis
 export async function updateVetVerification(vetId: string, isVerified: boolean): Promise<Result> {
   try {
     const supabase = getAdminClient();
-    const { error, count } = await supabase
+    const { error } = await supabase
       .from('vet_profiles')
       .update({ is_verified: isVerified, updated_at: new Date().toISOString() })
-      .eq('id', vetId)
-      .select('id, is_verified');   // forces Supabase to return affected rows
+      .eq('id', vetId);
     if (error) return { success: false, error: error.message };
-    // count === 0 means RLS blocked the update silently — treat as failure
-    if (count === 0) return { success: false, error: 'No rows updated — check RLS or vet ID' };
     return { success: true };
   } catch (e) { return { success: false, error: String(e) }; }
 }
@@ -211,6 +208,58 @@ export async function updateVetVerification(vetId: string, isVerified: boolean):
 export async function deleteVet(vetId: string): Promise<Result> {
   try {
     const supabase = getAdminClient();
+
+    // Fetch vet profile to get user_id
+    const { data: vetProfile } = await supabase
+      .from('vet_profiles')
+      .select('id, user_id')
+      .eq('id', vetId)
+      .maybeSingle();
+    if (!vetProfile) return { success: false, error: 'Vet profile not found' };
+
+    const userId = vetProfile.user_id;
+
+    // 1. Delete vet appointments and nullify any chat appointment_id FKs
+    const { data: appts } = await supabase
+      .from('vet_appointments')
+      .select('id')
+      .eq('vet_user_id', userId);
+    const apptIds = (appts ?? []).map((a: { id: string }) => a.id);
+    if (apptIds.length > 0) {
+      await supabase.from('chats').update({ appointment_id: null }).in('appointment_id', apptIds);
+      await supabase.from('vet_appointments').delete().in('id', apptIds);
+    }
+
+    // 2. Delete chats where this vet is a participant, plus their messages
+    const { data: vetChats } = await supabase
+      .from('chats')
+      .select('id')
+      .eq('vet_id', userId);
+    const chatIds = (vetChats ?? []).map((c: { id: string }) => c.id);
+    if (chatIds.length > 0) {
+      await supabase.from('messages').delete().in('chat_id', chatIds);
+      await supabase.from('chats').delete().in('id', chatIds);
+    }
+
+    // 3. Delete service bookings where this vet was the provider
+    const { data: vetBookings } = await supabase
+      .from('service_bookings')
+      .select('id')
+      .eq('caregiver_id', userId);
+    const bookingIds = (vetBookings ?? []).map((b: { id: string }) => b.id);
+    if (bookingIds.length > 0) {
+      await supabase.from('booking_payments').delete().in('booking_id', bookingIds);
+      await supabase.from('booking_tracking').delete().in('booking_id', bookingIds);
+      await supabase.from('booking_completion_reports').delete().in('booking_id', bookingIds);
+      await supabase.from('service_reviews').delete().in('booking_id', bookingIds);
+      await supabase.from('service_incidents').delete().in('booking_id', bookingIds);
+      await supabase.from('service_bookings').delete().in('id', bookingIds);
+    }
+
+    // 4. Delete vet reviews
+    await supabase.from('vet_reviews').delete().eq('vet_id', userId);
+
+    // 5. Finally delete the vet profile
     const { error } = await supabase.from('vet_profiles').delete().eq('id', vetId);
     if (error) return { success: false, error: error.message };
     return { success: true };

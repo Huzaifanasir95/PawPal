@@ -12,7 +12,6 @@ import {
   User,
   Briefcase,
   AlertTriangle,
-  Edit,
   Package,
   Shield,
 } from 'lucide-react';
@@ -34,6 +33,7 @@ export interface Payment {
 export interface Booking {
   id: string;
   booking_number: string;
+  pet_owner_id: string;
   status: string;
   start_datetime: string;
   end_datetime: string;
@@ -46,14 +46,17 @@ export interface Booking {
   requested_at: string;
   created_at: string;
   updated_at: string;
-  pet_owner: { id: string; display_name: string | null; email: string | null } | null;
+  pet_owner: { id: string; display_name: string | null; email: string | null; avatar_url: string | null } | null;
   caregiver: {
     id: string;
     city: string | null;
-    owner: { display_name: string | null; email: string | null } | null;
+    owner: { id: string; display_name: string | null; email: string | null; avatar_url: string | null } | null;
   } | null;
   service: {
     id: string;
+    rate_amount: number | null;
+    currency: string | null;
+    rate_type: string | null;
     service_type: { display_name: string } | null;
   } | null;
 }
@@ -128,6 +131,12 @@ const deleteItemVariants = {
   hidden: { opacity: 0, y: 8 },
   show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
 };
+
+const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
+
+function userInitial(name: string | null | undefined, email: string | null | undefined) {
+  return (name || email || '?')[0].toUpperCase();
+}
 
 const rowVariants = {
   hidden: { opacity: 0, y: 6 },
@@ -242,7 +251,11 @@ export default function BookingsClient({
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <motion.div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
+      >
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -252,9 +265,13 @@ export default function BookingsClient({
             className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#0B1629] focus:outline-none focus:ring-1 focus:ring-[#0B1629]"
           />
         </div>
-      </div>
+      </motion.div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <motion.div
+        className="mb-4 flex flex-wrap gap-2"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.03 }}
+      >
         {STATUS_OPTIONS.map((s) => (
           <button
             key={s}
@@ -267,9 +284,13 @@ export default function BookingsClient({
             {s === 'all' ? 'All' : statusLabel(s)} ({counts[s] ?? 0})
           </button>
         ))}
-      </div>
+      </motion.div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <motion.div
+        className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+        initial="hidden" animate="show" variants={fadeUp}
+        transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.06 }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -301,7 +322,7 @@ export default function BookingsClient({
                     variants={rowVariants}
                     initial="hidden"
                     animate="show"
-                    className="border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/50"
+                    className="border-b border-gray-50 last:border-0 transition-colors hover:bg-[#0B1629]/5"
                   >
                     <td className="px-4 py-3">
                       <p className="font-mono text-xs font-semibold text-[#0B1629]">{b.booking_number}</p>
@@ -310,13 +331,35 @@ export default function BookingsClient({
                     <td className="px-4 py-3 text-gray-700">
                       {b.service?.service_type?.display_name || '—'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">
-                      <p className="font-medium">{b.pet_owner?.display_name || '—'}</p>
-                      <p className="text-gray-400">{b.pet_owner?.email}</p>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {b.pet_owner?.avatar_url ? (
+                          <img src={b.pet_owner.avatar_url} alt="" className="h-7 w-7 flex-shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+                            {userInitial(b.pet_owner?.display_name, b.pet_owner?.email)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{b.pet_owner?.display_name || '—'}</p>
+                          <p className="text-xs text-gray-400 truncate">{b.pet_owner?.email}</p>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">
-                      <p className="font-medium">{b.caregiver?.owner?.display_name || '—'}</p>
-                      <p className="text-gray-400">{b.caregiver?.city || b.caregiver?.owner?.email}</p>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {b.caregiver?.owner?.avatar_url ? (
+                          <img src={b.caregiver.owner.avatar_url} alt="" className="h-7 w-7 flex-shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#0B1629]/10 text-xs font-bold text-[#0B1629]">
+                            {userInitial(b.caregiver?.owner?.display_name, b.caregiver?.owner?.email)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{b.caregiver?.owner?.display_name || '—'}</p>
+                          <p className="text-xs text-gray-400 truncate">{b.caregiver?.city || b.caregiver?.owner?.email}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-500">
                       <p>{formatDateTime(b.start_datetime)}</p>
@@ -359,7 +402,7 @@ export default function BookingsClient({
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
       {/* Right-side animated drawer */}
       <AnimatePresence>
@@ -442,27 +485,43 @@ export default function BookingsClient({
 
                   {/* Parties */}
                   <motion.div className="grid grid-cols-1 gap-3 sm:grid-cols-2" variants={drawerItemVariants}>
-                    <div className="rounded-xl bg-[#0B1629]/5 p-4 ring-1 ring-[#0B1629]/10">
-                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">
+                    <div className="rounded-xl bg-[#0B1629]/5 p-4 ring-1 ring-[#0B1629]/10" style={{ borderLeft: '3px solid #0B1629' }}>
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">
                         <User className="h-3.5 w-3.5" />
                         Pet Owner
                       </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {selectedBooking.pet_owner?.display_name || '—'}
-                      </p>
-                      <p className="text-xs text-gray-500">{selectedBooking.pet_owner?.email}</p>
+                      <div className="flex items-center gap-2">
+                        {selectedBooking.pet_owner?.avatar_url ? (
+                          <img src={selectedBooking.pet_owner.avatar_url} alt="" className="h-8 w-8 flex-shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+                            {userInitial(selectedBooking.pet_owner?.display_name, selectedBooking.pet_owner?.email)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-gray-900">{selectedBooking.pet_owner?.display_name || '—'}</p>
+                          <p className="truncate text-xs text-gray-500">{selectedBooking.pet_owner?.email}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="rounded-xl bg-[#0B1629]/5 p-4 ring-1 ring-[#0B1629]/10">
-                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]">
+                    <div className="rounded-xl bg-[#0B1629]/5 p-4 ring-1 ring-[#0B1629]/10" style={{ borderLeft: '3px solid #0B1629' }}>
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">
                         <Briefcase className="h-3.5 w-3.5" />
                         Caregiver
                       </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {selectedBooking.caregiver?.owner?.display_name || '—'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {selectedBooking.caregiver?.city || selectedBooking.caregiver?.owner?.email || '—'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        {selectedBooking.caregiver?.owner?.avatar_url ? (
+                          <img src={selectedBooking.caregiver.owner.avatar_url} alt="" className="h-8 w-8 flex-shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#0B1629]/10 text-xs font-bold text-[#0B1629]">
+                            {userInitial(selectedBooking.caregiver?.owner?.display_name, selectedBooking.caregiver?.owner?.email)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-gray-900">{selectedBooking.caregiver?.owner?.display_name || '—'}</p>
+                          <p className="truncate text-xs text-gray-500">{selectedBooking.caregiver?.city || selectedBooking.caregiver?.owner?.email || '—'}</p>
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
 
@@ -653,34 +712,21 @@ export default function BookingsClient({
                 >
                   Close
                 </motion.button>
-                <div className="flex flex-wrap items-center gap-2">
-                  <motion.button
-                    type="button"
-                    disabled
-                    title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#0B1629] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    onClick={() => {
-                      const b = selectedBooking;
-                      setSelectedBooking(null);
-                      setDeleteTarget(b);
-                    }}
-                    className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
-                    whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ duration: 0.35 }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </motion.button>
-                </div>
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    const b = selectedBooking;
+                    setSelectedBooking(null);
+                    setDeleteTarget(b);
+                  }}
+                  className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
+                  whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </motion.button>
               </div>
             </motion.aside>
           </>

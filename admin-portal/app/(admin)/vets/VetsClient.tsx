@@ -28,36 +28,29 @@ import { formatDateTime } from '@/lib/utils';
 import { prefetchVetForModal, type PrefetchedVet } from './actions';
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-const EASE_IN = [0.7, 0, 0.84, 0] as const;
+const EASE_IN  = [0.7, 0, 0.84, 0] as const;
 
 const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
 const backdropVariants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
-  exit: { opacity: 0, transition: { duration: 0.2, ease: EASE_IN } },
+  show:   { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
+  exit:   { opacity: 0, transition: { duration: 0.2,  ease: EASE_IN  } },
 };
 
-const modalVariants = {
-  hidden: { opacity: 0, scale: 0.82, y: 26, rotateX: -12, rotateZ: -1 },
-  show: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    rotateX: 0,
-    rotateZ: 0,
-    transition: { type: 'spring' as const, stiffness: 260, damping: 22, mass: 0.8 },
-  },
-  exit: { opacity: 0, scale: 0.9, y: 18, rotateX: 6, rotateZ: 1, transition: { duration: 0.2 } },
+const drawerVariants = {
+  hidden: { x: '100%', opacity: 0 },
+  show:   { x: 0, opacity: 1, transition: { type: 'spring' as const, stiffness: 280, damping: 28, mass: 0.9 } },
+  exit:   { x: '100%', opacity: 0, transition: { duration: 0.22, ease: EASE_IN } },
 };
 
-const modalContentVariants = {
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+const drawerItemVariants = {
+  hidden: { opacity: 0, x: 18 },
+  show:   { opacity: 1, x: 0, transition: { duration: 0.28, ease: EASE_OUT } },
 };
 
-const modalItemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: EASE_OUT } },
+const drawerContentVariants = {
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.08 } },
 };
 
 const deleteBackdropVariants = {
@@ -73,10 +66,7 @@ const deleteBackdropVariants = {
 const deleteModalVariants = {
   hidden: { opacity: 0, scale: 0.86, y: -8, rotateZ: -1 },
   show: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    rotateZ: 0,
+    opacity: 1, scale: 1, y: 0, rotateZ: 0,
     transition: { type: 'spring' as const, stiffness: 520, damping: 26, mass: 0.7 },
   },
   exit: { opacity: 0, scale: 0.92, y: 16, transition: { duration: 0.2 } },
@@ -88,7 +78,7 @@ const deleteContentVariants = {
 
 const deleteItemVariants = {
   hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT } },
 };
 
 export type Vet = PrefetchedVet;
@@ -100,54 +90,31 @@ function vetInitials(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-/** DB may store specialization as text, JSON array, or comma-separated string. */
 function specializationAsText(s: unknown): string {
   if (s == null) return '';
-  if (Array.isArray(s)) {
-    return s.map((x) => String(x).trim()).filter(Boolean).join(', ');
-  }
-  if (typeof s === 'object') {
-    try {
-      return JSON.stringify(s);
-    } catch {
-      return String(s);
-    }
-  }
+  if (Array.isArray(s)) return s.map((x) => String(x).trim()).filter(Boolean).join(', ');
+  if (typeof s === 'object') { try { return JSON.stringify(s); } catch { return String(s); } }
   return String(s).trim();
 }
 
 function specializationTags(s: unknown): string[] {
   const text = specializationAsText(s);
   if (!text) return [];
-  return text
-    .split(/[,;]/)
-    .map((x) => x.trim())
-    .filter(Boolean);
+  return text.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
 }
 
 function formatConsultationFee(fee: number | null, currency: string | null) {
   if (fee == null) return '—';
   const c = (currency || 'USD').toUpperCase();
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(fee);
-  } catch {
-    return `${c} ${fee}`;
-  }
+  try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(fee); }
+  catch { return `${c} ${fee}`; }
 }
 
-function VetField({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: ReactNode;
-}) {
+function VetField({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
   return (
     <div className="min-w-0">
       <div className="mb-1 flex items-center gap-1">
-        <span className="text-[#2C6E69]/60">{icon}</span>
+        <span className="text-[#0B1629]/50">{icon}</span>
         <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
       </div>
       <div className="break-words text-sm font-semibold text-gray-800">{value}</div>
@@ -212,11 +179,8 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
     const newValue = !currentValue;
     startTransition(async () => {
       const result = await updateVetVerification(id, newValue);
-      if (result.success) {
-        syncVetPatch(id, { is_verified: newValue });
-      } else {
-        alert('Failed to update: ' + result.error);
-      }
+      if (result.success) syncVetPatch(id, { is_verified: newValue });
+      else alert('Failed to update: ' + result.error);
     });
   }
 
@@ -240,11 +204,7 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
         setVets((prev) => prev.filter((v) => v.id !== vet.id));
         setDeleteTarget(null);
         setSelectedVet(null);
-        setDetailById((prev) => {
-          const next = { ...prev };
-          delete next[vet.id];
-          return next;
-        });
+        setDetailById((prev) => { const next = { ...prev }; delete next[vet.id]; return next; });
       } else {
         alert('Failed to delete vet: ' + res.error);
       }
@@ -259,6 +219,7 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
 
   return (
     <>
+      {/* Filters */}
       <motion.div
         className="mb-4 flex flex-wrap items-center gap-3"
         initial="hidden"
@@ -273,19 +234,17 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
             placeholder="Search vets..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-64 rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-4 text-sm text-gray-700 outline-none focus:border-[#2C6E69] focus:ring-1 focus:ring-[#2C6E69]"
+            className="w-64 rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-4 text-sm text-gray-700 outline-none focus:border-[#0B1629] focus:ring-1 focus:ring-[#0B1629]"
           />
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1 rounded-xl border border-gray-200 bg-white p-1">
           {(['all', 'verified', 'pending'] as const).map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFilter(f)}
-              className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
-                filter === f
-                  ? 'bg-[#2C6E69] text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                filter === f ? 'bg-[#0B1629] text-white' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               {f}
@@ -294,6 +253,7 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
         </div>
       </motion.div>
 
+      {/* Table */}
       <motion.div
         className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
         initial="hidden"
@@ -306,28 +266,16 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
             <thead>
               <tr className="border-b border-gray-100 bg-[#0B1629]">
                 {['Vet', 'Clinic', 'Specialization', 'License', 'Fee', 'Rating', 'Status', 'Actions'].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white"
-                  >
-                    {h}
-                  </th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-16 text-center text-sm text-gray-400">
-                    No vets found
-                  </td>
-                </tr>
+                <tr><td colSpan={8} className="py-16 text-center text-sm text-gray-400">No vets found</td></tr>
               ) : (
                 filtered.map((v) => (
-                  <tr
-                    key={v.id}
-                    className="border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/50"
-                  >
+                  <tr key={v.id} className="border-b border-gray-50 last:border-0 transition-colors hover:bg-[#0B1629]/5">
                     <td className="px-4 py-3">
                       <p className="font-medium text-gray-800">{v.name}</p>
                       <p className="text-xs text-gray-400">{v.email || '—'}</p>
@@ -336,13 +284,9 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                       <p>{v.clinic_name || '—'}</p>
                       <p className="text-xs text-gray-400">{v.clinic_address || ''}</p>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {specializationAsText(v.specialization) || '—'}
-                    </td>
+                    <td className="px-4 py-3 text-gray-600">{specializationAsText(v.specialization) || '—'}</td>
                     <td className="px-4 py-3 font-mono text-xs text-gray-500">{v.license_number || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {formatConsultationFee(v.consultation_fee, v.currency)}
-                    </td>
+                    <td className="px-4 py-3 text-gray-600">{formatConsultationFee(v.consultation_fee, v.currency)}</td>
                     <td className="px-4 py-3">
                       {v.rating != null ? (
                         <span className="flex items-center gap-1 text-amber-600">
@@ -364,14 +308,14 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                           type="button"
                           onClick={() => setSelectedVet(v)}
                           onMouseEnter={() => requestPrefetch(v)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#0B1629]"
+                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-[#0B1629]/5 hover:text-[#0B1629]"
                           title="View details"
                           whileHover={{ scale: 1.08, y: -1 }}
                           whileTap={{ scale: 0.96 }}
                         >
                           <Eye className="h-4 w-4" />
                         </motion.button>
-                        <button
+                        <motion.button
                           type="button"
                           onClick={() => handleToggleVerify(v.id, v.is_verified)}
                           disabled={isPending}
@@ -381,17 +325,22 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                               ? 'text-gray-400 hover:bg-red-50 hover:text-red-500'
                               : 'text-gray-400 hover:bg-green-50 hover:text-green-600'
                           }`}
+                          whileHover={{ scale: 1.08 }}
+                          whileTap={{ scale: 0.96 }}
                         >
                           {v.is_verified ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button
                           type="button"
                           onClick={() => setDeleteTarget(v)}
                           className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                           title="Delete vet"
+                          whileHover={{ x: [0, -1.5, 1.5, -1, 1, 0] }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={{ duration: 0.35 }}
                         >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </motion.button>
                       </div>
                     </td>
                   </tr>
@@ -402,11 +351,12 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
         </div>
       </motion.div>
 
+      {/* ── Right-side Detail Drawer ── */}
       <AnimatePresence>
         {displayVet && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <motion.div className="fixed inset-0 z-50 flex justify-end">
             <motion.div
-              className="absolute inset-0 bg-black/40 backdrop-blur-[3px]"
+              className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
               onClick={() => setSelectedVet(null)}
               variants={backdropVariants}
               initial="hidden"
@@ -415,27 +365,23 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
             />
 
             <motion.div
-              className="relative w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5"
-              variants={modalVariants}
+              className="relative flex h-full w-full max-w-lg flex-col bg-white shadow-2xl"
+              variants={drawerVariants}
               initial="hidden"
               animate="show"
               exit="exit"
-              style={{ transformOrigin: '50% 10%', transformPerspective: 1200 }}
             >
-              <motion.div
-                className="relative overflow-hidden px-6 pb-6 pt-7"
-                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 50%, #2C6E69 100%)' }}
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
+              {/* Branded header */}
+              <div
+                className="relative flex-shrink-0 overflow-hidden px-6 pb-5 pt-6"
+                style={{ background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 55%, #2C6E69 100%)' }}
               >
                 <motion.div
                   className="pointer-events-none absolute inset-0 skew-x-[-20deg] bg-white/5"
                   animate={{ x: ['-120%', '220%'] }}
                   transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
                 />
-                <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/5" />
-                <div className="pointer-events-none absolute right-8 top-12 h-24 w-24 rounded-full bg-white/5" />
+                <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
 
                 <button
                   type="button"
@@ -446,17 +392,13 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                   <X className="h-5 w-5" />
                 </button>
 
-                <div className="relative flex items-start gap-5">
+                <div className="relative flex items-start gap-4">
                   <div className="relative flex-shrink-0">
                     {headerAvatar ? (
-                      <img
-                        src={headerAvatar}
-                        alt=""
-                        className="h-16 w-16 rounded-full object-cover shadow-lg ring-4 ring-white/90"
-                      />
+                      <img src={headerAvatar} alt="" className="h-14 w-14 rounded-full object-cover shadow-lg ring-4 ring-white/30" />
                     ) : (
                       <div
-                        className="flex h-16 w-16 items-center justify-center rounded-full text-sm font-black text-white shadow-lg ring-4 ring-white/90"
+                        className="flex h-14 w-14 items-center justify-center rounded-full text-sm font-black text-white shadow-lg ring-4 ring-white/30"
                         style={{ background: 'linear-gradient(135deg, #1a4a45, #3d8f89)' }}
                       >
                         {vetInitials(displayVet.name)}
@@ -465,205 +407,144 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                   </div>
 
                   <div className="min-w-0 flex-1 pr-8">
-                    <p className="truncate text-xl font-black leading-tight text-white">{displayVet.name}</p>
-                    <p className="mt-0.5 truncate text-sm text-white/60">{displayVet.email || '—'}</p>
-
+                    <p className="truncate text-lg font-black leading-tight text-white">{displayVet.name}</p>
+                    <p className="mt-0.5 truncate text-sm text-white/55">{displayVet.email || '—'}</p>
                     {displayVet.clinic_name && (
-                      <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white ring-1 ring-white/15">
+                      <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white ring-1 ring-white/15">
                         <Building2 className="h-3 w-3 shrink-0" />
                         {displayVet.clinic_name}
                       </div>
                     )}
-
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       {displayVet.is_verified ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/25 px-2.5 py-1 text-[11px] font-bold text-emerald-100 ring-1 ring-emerald-300/40 shadow-[0_0_12px_rgba(52,211,153,0.35)]">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/25 px-2.5 py-0.5 text-[11px] font-bold text-emerald-100 ring-1 ring-emerald-300/40">
                           <ShieldCheck className="h-3 w-3" />
                           Verified
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2.5 py-1 text-[11px] font-bold text-amber-100 ring-1 ring-amber-300/35">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[11px] font-bold text-amber-100 ring-1 ring-amber-300/35">
                           <AlertTriangle className="h-3 w-3" />
                           Pending
                         </span>
                       )}
                       {tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-flex rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold capitalize text-white ring-1 ring-white/15"
-                        >
+                        <span key={tag} className="inline-flex rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold capitalize text-white ring-1 ring-white/15">
                           {tag}
                         </span>
                       ))}
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
+              {/* Scrollable body */}
               <motion.div
-                className="max-h-[60vh] overflow-y-auto"
-                variants={modalContentVariants}
+                className="flex-1 overflow-y-auto"
+                variants={drawerContentVariants}
                 initial="hidden"
                 animate="show"
               >
                 <div className="space-y-4 p-6">
+
+                  {/* Vet details */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <Stethoscope className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <Stethoscope className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
-                        Vet details
-                      </h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Vet Details</h3>
                     </div>
                     <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                      <VetField
-                        icon={<Award className="h-3 w-3" />}
-                        label="License number"
-                        value={displayVet.license_number || '—'}
-                      />
-                      <VetField
-                        icon={<Stethoscope className="h-3 w-3" />}
-                        label="Specializations"
-                        value={specializationAsText(displayVet.specialization) || '—'}
-                      />
-                      <VetField
-                        icon={<DollarSign className="h-3 w-3" />}
-                        label="Consultation fee"
-                        value={formatConsultationFee(displayVet.consultation_fee, displayVet.currency)}
-                      />
+                      <VetField icon={<Award className="h-3 w-3" />} label="License number" value={displayVet.license_number || '—'} />
+                      <VetField icon={<Stethoscope className="h-3 w-3" />} label="Specializations" value={specializationAsText(displayVet.specialization) || '—'} />
+                      <VetField icon={<DollarSign className="h-3 w-3" />} label="Consultation fee" value={formatConsultationFee(displayVet.consultation_fee, displayVet.currency)} />
                       <VetField
                         icon={<Star className="h-3 w-3" />}
                         label="Rating"
-                        value={
-                          displayVet.rating != null ? (
-                            <span className="inline-flex items-center gap-1">
-                              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                              {displayVet.rating.toFixed(1)}
-                            </span>
-                          ) : (
-                            '—'
-                          )
-                        }
+                        value={displayVet.rating != null ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                            {displayVet.rating.toFixed(1)}
+                          </span>
+                        ) : '—'}
                       />
-                      <VetField
-                        icon={<User className="h-3 w-3" />}
-                        label="Years of experience"
-                        value={
-                          displayVet.years_of_experience != null
-                            ? `${displayVet.years_of_experience} years`
-                            : '—'
-                        }
-                      />
-                      <VetField
-                        icon={<Phone className="h-3 w-3" />}
-                        label="Phone"
-                        value={displayVet.phone || '—'}
-                      />
+                      <VetField icon={<User className="h-3 w-3" />} label="Years of experience" value={displayVet.years_of_experience != null ? `${displayVet.years_of_experience} years` : '—'} />
+                      <VetField icon={<Phone className="h-3 w-3" />} label="Phone" value={displayVet.phone || '—'} />
                     </div>
                   </motion.section>
 
+                  {/* Clinic details */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <Building2 className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <Building2 className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
-                        Clinic details
-                      </h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Clinic Details</h3>
                     </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <VetField
-                        icon={<Building2 className="h-3 w-3" />}
-                        label="Clinic name"
-                        value={displayVet.clinic_name || '—'}
-                      />
-                      <VetField
-                        icon={<Building2 className="h-3 w-3" />}
-                        label="Clinic address"
-                        value={displayVet.clinic_address || '—'}
-                      />
-                      <VetField
-                        icon={<Phone className="h-3 w-3" />}
-                        label="Clinic contact"
-                        value={displayVet.phone || '—'}
-                      />
+                      <VetField icon={<Building2 className="h-3 w-3" />} label="Clinic name" value={displayVet.clinic_name || '—'} />
+                      <VetField icon={<Building2 className="h-3 w-3" />} label="Clinic address" value={displayVet.clinic_address || '—'} />
+                      <VetField icon={<Phone className="h-3 w-3" />} label="Clinic contact" value={displayVet.phone || '—'} />
                     </div>
                   </motion.section>
 
+                  {/* Linked account */}
                   {displayVet.linked_user && (
                     <motion.section
-                      className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                      style={{ borderLeft: '3px solid #2C6E69' }}
-                      variants={modalItemVariants}
+                      className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                      style={{ borderLeft: '3px solid #0B1629' }}
+                      variants={drawerItemVariants}
                     >
                       <div className="mb-3 flex items-center gap-2">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                          <User className="h-3.5 w-3.5 text-[#2C6E69]" />
+                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                          <User className="h-3.5 w-3.5 text-[#0B1629]" />
                         </div>
-                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
-                          Linked account
-                        </h3>
+                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Linked Account</h3>
                       </div>
-                      <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm transition-shadow hover:shadow-md">
+                      <div className="flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 shadow-sm">
                         {displayVet.linked_user.avatar_url ? (
-                          <img
-                            src={displayVet.linked_user.avatar_url}
-                            alt=""
-                            className="h-10 w-10 flex-shrink-0 rounded-xl object-cover shadow-sm"
-                          />
+                          <img src={displayVet.linked_user.avatar_url} alt="" className="h-10 w-10 flex-shrink-0 rounded-xl object-cover shadow-sm" />
                         ) : (
                           <div
                             className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
-                            style={{ background: 'linear-gradient(135deg, #1a3a38, #2C6E69)' }}
+                            style={{ background: 'linear-gradient(135deg, #0B1629, #1a3a5c)' }}
                           >
-                            {vetInitials(
-                              displayVet.linked_user.display_name ||
-                                displayVet.linked_user.email ||
-                                '?'
-                            )}
+                            {vetInitials(displayVet.linked_user.display_name || displayVet.linked_user.email || '?')}
                           </div>
                         )}
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-gray-900">
-                            {displayVet.linked_user.display_name || 'Unknown'}
-                          </p>
-                          <p className="truncate text-xs text-gray-400">
-                            {displayVet.linked_user.email || '—'}
-                          </p>
+                          <p className="truncate text-sm font-bold text-gray-900">{displayVet.linked_user.display_name || 'Unknown'}</p>
+                          <p className="truncate text-xs text-gray-400">{displayVet.linked_user.email || '—'}</p>
                         </div>
                       </div>
                     </motion.section>
                   )}
 
+                  {/* Status */}
                   <motion.section
-                    className="overflow-hidden rounded-2xl border border-[#2C6E69]/15 bg-[#2C6E69]/5 p-4 shadow-sm"
-                    style={{ borderLeft: '3px solid #2C6E69' }}
-                    variants={modalItemVariants}
+                    className="overflow-hidden rounded-2xl border border-[#0B1629]/10 bg-[#0B1629]/5 p-4 shadow-sm"
+                    style={{ borderLeft: '3px solid #0B1629' }}
+                    variants={drawerItemVariants}
                   >
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2C6E69]/15">
-                        <Shield className="h-3.5 w-3.5 text-[#2C6E69]" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0B1629]/10">
+                        <Shield className="h-3.5 w-3.5 text-[#0B1629]" />
                       </div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#2C6E69]">
-                        Status
-                      </h3>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#0B1629]/70">Status</h3>
                     </div>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-4">
                       <div>
-                        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                          Verification
-                        </p>
+                        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Verification</p>
                         {displayVet.is_verified ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 ring-1 ring-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 ring-1 ring-emerald-200">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                             Verified
                           </span>
@@ -675,9 +556,7 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                         )}
                       </div>
                       <div>
-                        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                          Availability
-                        </p>
+                        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Availability</p>
                         {displayVet.is_available ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 ring-1 ring-emerald-200">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -690,24 +569,17 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                         )}
                       </div>
                       <div>
-                        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                          Member since
-                        </p>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {formatDateTime(displayVet.created_at)}
-                        </p>
+                        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Member Since</p>
+                        <p className="text-sm font-semibold text-gray-800">{formatDateTime(displayVet.created_at)}</p>
                       </div>
                     </div>
                   </motion.section>
+
                 </div>
               </motion.div>
 
-              <motion.div
-                className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4"
-                variants={modalItemVariants}
-                initial="hidden"
-                animate="show"
-              >
+              {/* Sticky footer */}
+              <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
                 <motion.button
                   type="button"
                   onClick={() => setSelectedVet(null)}
@@ -723,7 +595,7 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                       type="button"
                       disabled={modalApproving}
                       onClick={() => void handleModalApprove()}
-                      className="flex items-center gap-2 rounded-xl bg-[#2C6E69] px-5 py-2.5 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
+                      className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm disabled:opacity-50 hover:bg-emerald-600"
                       whileHover={!modalApproving ? { scale: 1.02 } : {}}
                       whileTap={!modalApproving ? { scale: 0.97 } : {}}
                     >
@@ -744,7 +616,7 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                     type="button"
                     disabled
                     title="Edit coming soon"
-                    className="flex items-center gap-2 rounded-xl bg-[#2C6E69] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
+                    className="flex items-center gap-2 rounded-xl bg-[#0B1629] px-5 py-2.5 text-sm font-semibold text-white opacity-50 shadow-sm"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                   >
@@ -753,11 +625,7 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                   </motion.button>
                   <motion.button
                     type="button"
-                    onClick={() => {
-                      const v = displayVet;
-                      setSelectedVet(null);
-                      setDeleteTarget(v);
-                    }}
+                    onClick={() => { const v = displayVet; setSelectedVet(null); setDeleteTarget(v); }}
                     className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
                     whileHover={{ scale: 1.02, x: [0, -2, 2, -1, 1, 0] }}
                     whileTap={{ scale: 0.97 }}
@@ -767,7 +635,7 @@ export default function VetsClient({ vets: initialVets }: { vets: Vet[] }) {
                     Delete
                   </motion.button>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -842,12 +710,7 @@ function DeleteVetConfirmModal({
             exit="exit"
             style={{ transformOrigin: '85% 15%', transformPerspective: 1200 }}
           >
-            <motion.div
-              className="px-6 py-5"
-              variants={deleteContentVariants}
-              initial="hidden"
-              animate="show"
-            >
+            <motion.div className="px-6 py-5" variants={deleteContentVariants} initial="hidden" animate="show">
               <motion.div className="flex items-start gap-4" variants={deleteItemVariants}>
                 <motion.div
                   className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100"
@@ -867,7 +730,7 @@ function DeleteVetConfirmModal({
                 className="mt-4 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50/40 p-3"
                 variants={deleteItemVariants}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-lg font-black text-[#2C6E69] ring-1 ring-red-100">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sm font-black text-[#0B1629] ring-1 ring-red-100">
                   {vetInitials(vet.name)}
                 </div>
                 <div className="min-w-0">

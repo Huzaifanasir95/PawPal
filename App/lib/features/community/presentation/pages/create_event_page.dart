@@ -54,19 +54,19 @@ class _CreateEventPageState extends State<CreateEventPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F6F2),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.primary,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.secondary, size: 24.sp),
+            icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary, size: 24.sp),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             'Create Event',
             style: AppTextStyles.onboardingTitle.copyWith(
               fontSize: 20.sp,
-              color: Theme.of(context).colorScheme.secondary,
+              color: Theme.of(context).colorScheme.onPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),

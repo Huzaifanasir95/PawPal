@@ -62,42 +62,15 @@ class ProductCard extends StatelessWidget {
               // Content
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(10.w, 10.h, 10.w, 10.h),
+                  padding: EdgeInsets.fromLTRB(10.w, 6.h, 10.w, 6.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (product.categoryName != null)
-                        Container(
-                          constraints: BoxConstraints(maxWidth: 96.w),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 7.w,
-                            vertical: 3.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer.withValues(
-                              alpha: 0.55,
-                            ),
-                            borderRadius: BorderRadius.circular(6.r),
-                          ),
-                          child: Text(
-                            product.categoryName!,
-                            style: GoogleFonts.mulish(
-                              fontSize: 9.sp,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.primary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-
-                      SizedBox(height: 4.h),
-
                       // Name
                       Text(
                         product.name,
                         style: GoogleFonts.mulish(
-                          fontSize: 14.sp,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w700,
                           color: colorScheme.onSurface,
                         ),
@@ -105,29 +78,29 @@ class ProductCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
 
-                      SizedBox(height: 6.h),
+                      SizedBox(height: 2.h),
 
                       Row(
                         children: [
                           Icon(
                             Icons.star_rounded,
-                            size: 12.sp,
+                            size: 10.sp,
                             color: colorScheme.tertiary,
                           ),
                           SizedBox(width: 2.w),
                           Text(
                             product.rating.toStringAsFixed(1),
                             style: GoogleFonts.mulish(
-                              fontSize: 10.sp,
+                              fontSize: 8.sp,
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
-                          SizedBox(width: 4.w),
+                          SizedBox(width: 3.w),
                           Text(
                             '(${product.totalReviews})',
                             style: GoogleFonts.mulish(
-                              fontSize: 9.sp,
+                              fontSize: 7.sp,
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
@@ -143,7 +116,7 @@ class ProductCard extends StatelessWidget {
                             child: Text(
                               'PKR ${product.price.toStringAsFixed(0)}',
                               style: GoogleFonts.mulish(
-                                fontSize: 18.sp,
+                                fontSize: 13.sp,
                                 fontWeight: FontWeight.w800,
                                 color: colorScheme.primary,
                               ),
@@ -155,15 +128,15 @@ class ProductCard extends StatelessWidget {
                             GestureDetector(
                               onTap: onAddToCart,
                               child: Container(
-                                width: 32.w,
-                                height: 32.w,
+                                width: 26.w,
+                                height: 26.w,
                                 decoration: BoxDecoration(
                                   color: colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(10.r),
+                                  borderRadius: BorderRadius.circular(6.r),
                                 ),
                                 child: Icon(
                                   Icons.add,
-                                  size: 18.sp,
+                                  size: 14.sp,
                                   color: colorScheme.onPrimary,
                                 ),
                               ),

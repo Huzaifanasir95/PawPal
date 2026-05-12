@@ -237,33 +237,32 @@ class _SignInScreenState extends State<SignInScreen> {
         );
         final colorScheme = Theme.of(context).colorScheme;
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final foregroundColor =
-            isLoading
-                ? colorScheme.onSurfaceVariant.withValues(alpha: 0.7)
-                : colorScheme.onSurface;
+        
+        // Use primary color for better contrast and visibility
+        final buttonBgColor = isLoading 
+          ? colorScheme.primary.withValues(alpha: 0.6)
+          : colorScheme.primary;
+        final buttonTextColor = colorScheme.onPrimary;
         
         return Container(
           height: 50.h,
           decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(25.r),
-            border: Border.all(
-              color: colorScheme.outline.withValues(alpha: 0.4),
-            ),
+            color: buttonBgColor,
+            borderRadius: BorderRadius.circular(12.r),
             boxShadow: [
               BoxShadow(
                 color: colorScheme.shadow.withValues(
-                  alpha: isDark ? 0.18 : 0.08,
+                  alpha: isDark ? 0.15 : 0.1,
                 ),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(25.r),
+              borderRadius: BorderRadius.circular(12.r),
               onTap: isLoading ? null : () {
                 if (!mounted) return;
                 
@@ -295,23 +294,23 @@ class _SignInScreenState extends State<SignInScreen> {
                       child: CircularProgressIndicator(
                         strokeWidth: 2.w,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          foregroundColor,
+                          buttonTextColor,
                         ),
                       ),
                     )
                   else
                     Icon(
                       Icons.g_mobiledata,
-                      color: foregroundColor,
-                      size: 30.sp,
+                      color: buttonTextColor,
+                      size: 24.sp,
                     ),
-                  SizedBox(width: 8.w),
+                  SizedBox(width: 10.w),
                   Text(
                     AppStrings.withGoogle,
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 14.sp,
-                      color: foregroundColor,
-                      fontWeight: FontWeight.w600,
+                      color: buttonTextColor,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -331,25 +330,35 @@ class _SignInScreenState extends State<SignInScreen> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    // Single clean container with no overlapping layers
     return Container(
       height: 60.h,
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.4),
-          width: 1,
+          color: colorScheme.outline.withValues(alpha: 0.3),
+          width: 1.5,
         ),
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Row(
         children: [
-          SizedBox(width: 16.w),
+          SizedBox(width: 14.w),
+          // Icon on the left
+          Icon(
+            icon,
+            color: colorScheme.onSurfaceVariant,
+            size: 20.sp,
+          ),
+          SizedBox(width: 12.w),
+          // Transparent TextField with no background
           Expanded(
             child: TextField(
               controller: controller,
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 14.sp,
                 color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
               ),
               decoration: InputDecoration(
                 isCollapsed: true,
@@ -357,7 +366,9 @@ class _SignInScreenState extends State<SignInScreen> {
                 hintStyle: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 14.sp,
                   color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
                 ),
+                // Remove all borders and backgrounds
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -365,15 +376,12 @@ class _SignInScreenState extends State<SignInScreen> {
                 disabledBorder: InputBorder.none,
                 focusedErrorBorder: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
+                fillColor: Colors.transparent,
+                filled: false,
               ),
             ),
           ),
-          Icon(
-            icon,
-            color: colorScheme.onSurfaceVariant,
-            size: 18.sp,
-          ),
-          SizedBox(width: 16.w),
+          SizedBox(width: 14.w),
         ],
       ),
     );

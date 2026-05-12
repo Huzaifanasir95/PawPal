@@ -13,6 +13,11 @@ import '../../../caregiver/presentation/pages/caregivers_list_screen.dart';
 import '../../../caregiver/presentation/pages/owner_bookings_screen.dart';
 import '../../../home/presentation/pages/all_categories_page.dart';
 import '../../../marketplace/data/repositories/marketplace_repository.dart';
+import '../../../marketplace/presentation/cubit/marketplace_cubit.dart';
+import '../../../marketplace/presentation/cubit/marketplace_state.dart';
+import '../../../marketplace/presentation/cubit/cart_cubit.dart';
+import '../../../marketplace/presentation/widgets/product_card.dart';
+import '../../../marketplace/presentation/pages/product_detail_screen.dart';
 import '../../../pets/presentation/pages/add_pet_screen.dart';
 import '../../../pets/presentation/pages/pet_identification_scan_screen.dart';
 import '../../../pets/presentation/pages/my_pets_screen.dart';
@@ -401,6 +406,20 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
                   ),
             ),
             SizedBox(height: 14.h),
+            
+            // Marketplace Products Section
+            Text(
+              'Featured Products',
+              style: TextStyle(
+                fontSize: 24.sp,
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            SizedBox(height: 12.h),
+            _buildMarketplaceProductsSection(colorScheme),
+            
+            SizedBox(height: 14.h),
             Text(
               'Most Popular',
               style: TextStyle(
@@ -673,6 +692,108 @@ class _PetOwnerDashboardState extends State<PetOwnerDashboard> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMarketplaceProductsSection(ColorScheme colorScheme) {
+    final repo = MarketplaceRepository.instance;
+    
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => MarketplaceCubit(repo)..loadInitial()),
+        BlocProvider(create: (_) => CartCubit(repo)..loadCart()),
+      ],
+      child: BlocBuilder<MarketplaceCubit, MarketplaceState>(
+        builder: (context, state) {
+          if (state.isLoading) {
+            return SizedBox(
+              height: 240.h,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: colorScheme.primary,
+                ),
+              ),
+            );
+          }
+
+          if (state.error != null && state.products.isEmpty) {
+            return Container(
+              height: 120.h,
+              alignment: Alignment.center,
+              child: Text(
+                'Unable to load products',
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 14.sp,
+                ),
+              ),
+            );
+          }
+
+          if (state.products.isEmpty) {
+            return Container(
+              height: 120.h,
+              alignment: Alignment.center,
+              child: Text(
+                'No products available',
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 14.sp,
+                ),
+              ),
+            );
+          }
+
+          // Show first 4 products in a 2x2 grid or scrollable list
+          final displayProducts = state.products.take(4).toList();
+          
+          return SizedBox(
+            height: 240.h,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: displayProducts.length,
+              itemBuilder: (context, index) {
+                final product = displayProducts[index];
+                return Padding(
+                  padding: EdgeInsets.only(right: 12.w),
+                  child: SizedBox(
+                    width: 160.w,
+                    child: ProductCard(
+                      product: product,
+                      onTap: () {
+                        final marketplaceCubit = context.read<MarketplaceCubit>();
+                        final cartCubit = context.read<CartCubit>();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MultiBlocProvider(
+                              providers: [
+                                BlocProvider.value(value: marketplaceCubit),
+                                BlocProvider.value(value: cartCubit),
+                              ],
+                              child: ProductDetailScreen(productId: product.id),
+                            ),
+                          ),
+                        );
+                      },
+                      onAddToCart: () {
+                        final cartCubit = context.read<CartCubit>();
+                        cartCubit.addToCart(product.id, 1);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${product.name} added to cart'),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }

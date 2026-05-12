@@ -60,8 +60,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             );
           }
 
-          final product = state.selectedProduct;
-          if (product == null) {
+          if (state.selectedProduct == null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -97,6 +96,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             );
           }
 
+          final product = state.selectedProduct!;
           final safeImageIndex =
               product.images.isNotEmpty &&
                       _selectedImageIndex < product.images.length
@@ -333,28 +333,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     ],
                                   ),
                                 ),
-                                OutlinedButton.icon(
-                                  onPressed:
-                                      _isOpeningSellerChat ||
-                                              ApiClient.instance.userId ==
-                                                  product.sellerId
-                                          ? null
-                                          : () => _startChatWithSeller(product),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: colorScheme.primary,
-                                    side: BorderSide(
-                                      color: colorScheme.primary.withValues(
-                                        alpha: 0.6,
+                                SizedBox(
+                                  width: 80.w,
+                                  child: OutlinedButton.icon(
+                                    onPressed:
+                                        _isOpeningSellerChat ||
+                                                ApiClient.instance.userId ==
+                                                    product.sellerId
+                                            ? null
+                                            : () => _startChatWithSeller(product),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: colorScheme.primary,
+                                      side: BorderSide(
+                                        color: colorScheme.primary.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10.r),
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 10.w,
+                                        vertical: 8.h,
                                       ),
                                     ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10.r),
-                                    ),
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 10.w,
-                                      vertical: 8.h,
-                                    ),
-                                  ),
                                   icon:
                                       _isOpeningSellerChat
                                           ? SizedBox(
@@ -369,13 +371,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                             Icons.chat_bubble_outline_rounded,
                                             size: 15.sp,
                                           ),
-                                  label: Text(
-                                    _isOpeningSellerChat
-                                        ? 'Opening...'
-                                        : 'Message',
-                                    style: GoogleFonts.mulish(
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w700,
+                                    label: Text(
+                                      _isOpeningSellerChat
+                                          ? 'Opening...'
+                                          : 'Message',
+                                      style: GoogleFonts.mulish(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ),

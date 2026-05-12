@@ -141,20 +141,11 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
+  image_path: "assets/appicon/launcher_icon.png"
   remove_alpha_ios: true
-  web:
-    generate: true
-    image_path: assets/appicon/appicon_square.png
-    background_color: "#132A63"
-    theme_color: "#132A63"
-  windows:
-    generate: true
-    image_path: assets/appicon/appicon_square.png
-  macos:
-    generate: true
-    image_path: assets/appicon/appicon_square.png
-  image_path: assets/appicon/appicon_square.png
   min_sdk_android: 21
+  adaptive_icon_foreground: "assets/appicon/launcher_adaptive_foreground.png"
+  adaptive_icon_background: "assets/appicon/launcher_adaptive_background.png"
 
 flutter_native_splash:
   color: "#0D1F3C"          # your dark navy (for pre-Android 12)

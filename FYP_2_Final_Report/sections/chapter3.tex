@@ -1,0 +1,344 @@
+\chapter{System Overview}
+This chapter presents the PawPal system architecture, data design, domain models, and detailed design diagrams. The system employs a modular monolithic backend, cross-platform mobile frontend, and specialized AI services.
+
+\section{Architectural Design}
+The system uses a six-tier architecture: presentation tier, API gateway tier, business logic tier, AI services tier, data storage tier, and external integrations tier. AI services run as isolated Python FastAPI microservices for efficient ML framework integration while all other backend logic is implemented as a Golang modular monolith.
+
+\subsection{High-Level Architecture}
+The PawPal high-level component architecture consists of a Flutter mobile client and a Next.js admin portal in the presentation layer, a Golang/Gin API gateway handling JWT authentication and routing, a modular monolith business logic layer with modules for User Management, Pet Profiles, Breed Identification, AI Chatbot, Marketplace, Community Hub, Veterinary Services, Caregiver Services, Payment Processing, Notifications, Chat, and Admin. The AI services layer runs as separate Python FastAPI servers for the Chatbot (Groq LLM + ChromaDB) and CNN breed prediction. The data layer uses PostgreSQL, Redis, ChromaDB, and local file storage. External integrations include Groq LLM API, OpenStreetMap, Firebase Cloud Messaging, and Blockchain (BTC/ETH/USDT).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/architecture_highlevel.png}
+    \caption{PawPal High-Level Component Architecture Diagram}
+    \label{fig:architecture_highlevel}
+\end{figure}
+
+\subsection{Modular Monolithic Architecture}
+All backend modules deploy as a single Golang binary with clear boundaries and interfaces. Benefits include direct function calls for inter-module communication, simplified deployment, centralized logging, atomic transactions, and lower infrastructure costs compared to a microservices approach.
+
+\subsection{Layered Architecture}
+The system implements six-tier separation of concerns: Presentation Layer (Flutter mobile app and Next.js admin portal), API Gateway and Routing Layer (Gin HTTP router with JWT, validation, logging, and CORS middleware), Business Logic Layer (Golang modular monolith with all domain modules), AI Services Layer (Python FastAPI servers for CNN and RAG chatbot), Data Storage Layer (PostgreSQL, Redis, ChromaDB, local file system), and External Integrations Layer (Groq LLM, OpenStreetMap, Firebase FCM, blockchain).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/architecture_layered.png}
+    \caption{PawPal Detailed Layered Architecture}
+    \label{fig:architecture_layered}
+\end{figure}
+
+\section{Data Design}
+The data layer uses PostgreSQL, Redis, and ChromaDB. Schema design follows normalization principles with PostgreSQL JSONB for flexible metadata.
+
+\subsection{Data Flow Diagrams}
+The following data flow diagrams illustrate how data moves through the PawPal system across three levels of abstraction: Level 0 (context), Level 1 (main processes), and Level 2 (detailed sub-processes).
+
+\subsubsection{Level 0: Context Diagram}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/dfd_level0.png}
+    \caption{DFD Level 0: PawPal System Context Diagram showing external entities and data flows}
+    \label{fig:dfd_level0}
+\end{figure}
+
+\subsubsection{Level 1: Main Processes}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/dfd_level1.png}
+    \caption{DFD Level 1: Main system processes with data stores (D1--D19)}
+    \label{fig:dfd_level1}
+\end{figure}
+
+\subsubsection{Level 2: Detailed Sub-Processes}
+
+\textbf{Pet Toy Marketplace}
+
+The Level 2 DFD for the Marketplace module decomposes the e-commerce process into six sub-processes: product browsing and search, seller product listing management, shopping cart management, order placement, order management, and product reviews. Buyers interact with all six processes, sellers manage their listings and orders, and the Admin oversees listings and all orders. Six data stores support these processes: Products, Categories, Cart, Orders, Reviews, and Users.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/dfd_level2_marketplace.png}
+    \caption{DFD Level 2: Pet Toy Marketplace sub-processes}
+    \label{fig:dfd_level2_marketplace}
+\end{figure}
+
+\textbf{Community Hub}
+
+The Level 2 DFD for the Community Hub module decomposes into four sub-processes: Community Forum (posts, comments, likes, groups, hashtags), Lost \& Found Alerts, Pet Adoption Listings, and Events Management (including RSVP). Community Members interact with all four processes and the Admin moderates across all of them. Seven data stores support these processes: Posts, Comments, Groups, Lost \& Found, Adoptions, Events, and Users.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/dfd_level2_community.png}
+    \caption{DFD Level 2: Community Hub sub-processes}
+    \label{fig:dfd_level2_community}
+\end{figure}
+
+\textbf{Pet Caregiver Services}
+
+The Level 2 DFD for the Pet Caregiver Services module decomposes into six sub-processes: Caregiver Profile Management (profile, services, availability, gallery), Search and Browse Caregivers, Booking Management (create, accept/reject, cancel), Live GPS Tracking (real-time location updates and route history), Service Completion and Reviews (completion report, mutual reviews, incident reporting), and Payment Processing. Pet Owners and Caregivers interact across all processes while the Admin manages profiles, bookings, and incidents. Eight data stores support these processes: Caregiver Profiles, Services, Availability, Bookings, GPS Tracking, Reviews, Payments, and Users.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/dfd_level2_caregiver.png}
+    \caption{DFD Level 2: Pet Caregiver Services sub-processes}
+    \label{fig:dfd_level2_caregiver}
+\end{figure}
+
+\textbf{Admin Portal}
+
+The Level 2 DFD for the Admin Portal decomposes into eight sub-processes: Admin Authentication, Dashboard and Analytics, User and Pet Management, Marketplace Moderation, Appointments and Vet Management, Bookings and Caregiver Management, Community Moderation (posts, lost-found, adoptions, events), and Chat Monitoring. The System Administrator interacts with all eight processes through a dedicated Next.js web application. Nine data stores are accessed: Users, Pets, Marketplace, Appointments, Bookings, Community, Vets, Caregivers, and Chats.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/dfd_level2_admin_portal.png}
+    \caption{DFD Level 2: Admin Portal sub-processes}
+    \label{fig:dfd_level2_admin_portal}
+\end{figure}
+
+\textbf{Payment Integration}
+
+The Level 2 DFD for the Payment Integration module decomposes into five sub-processes: Payment Initiation (triggered from marketplace orders and caregiver bookings), Cryptocurrency Processing (Bitcoin, Ethereum, USDT with QR code generation and blockchain confirmation), Digital Wallet Management (balance top-up, deductions, and transaction history), Transaction Logging and Invoicing (full audit trail with PDF invoice generation), and Refund and Dispute Management (admin-mediated refunds with automatic wallet crediting). Pet Owners initiate payments, Sellers and Caregivers receive funds, and the Admin resolves disputes. Five data stores support these processes: Transactions, Wallets, Orders, Bookings, and Users.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/dfd_level2_payment.png}
+    \caption{DFD Level 2: Payment Integration sub-processes}
+    \label{fig:dfd_level2_payment}
+\end{figure}
+
+\subsection{Data Storage Strategies}
+\begin{itemize}
+    \item \textbf{PostgreSQL:} Primary database storing user accounts, pet profiles, health records, marketplace data, and transactions with structured relationships.
+    \item \textbf{Redis Caching:} Temporary storage for active user sessions, frequently accessed pet data, and API responses to improve system performance.
+    \item \textbf{ChromaDB:} Vector database containing veterinary documents enabling intelligent chatbot responses through semantic search.
+\end{itemize}
+
+\section{Domain Model}
+The domain model represents core business entities across five domains: Core (User/Pet), Marketplace, Community, Services, and Payment/AI.
+
+\subsection{Core Domain Model}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/domain_core.png}
+    \caption{Core Domain Model --- User and Pet Entities}
+    \label{fig:domain_core}
+\end{figure}
+
+\subsection{Marketplace Domain Model}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/domain_marketplace.png}
+    \caption{Marketplace Domain Model --- E-commerce Entities}
+    \label{fig:domain_marketplace}
+\end{figure}
+
+\subsection{Community Domain Model}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/domain_community.png}
+    \caption{Community Domain Model --- Social and Collaboration Entities}
+    \label{fig:domain_community}
+\end{figure}
+
+\subsection{Services Domain Model}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/domain_services.png}
+    \caption{Services Domain Model --- Veterinary and Caregiver Entities}
+    \label{fig:domain_services}
+\end{figure}
+
+\subsection{Payment and AI Domain Model}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/domain_payment_ai.png}
+    \caption{Payment and AI Domain Model --- Transaction and ML Entities}
+    \label{fig:domain_payment_ai}
+\end{figure}
+
+\section{Design Models}
+This section presents UML diagrams for the current iteration: Pet Toy Marketplace, Community Hub (Lost Pet Alerts and Pet Adoption), and Pet Caregiver Services.
+
+\subsection{Activity Diagrams}
+
+\subsubsection{Marketplace Purchase Flow}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/activity_marketplace_purchase.png}
+    \caption{Marketplace Purchase Flow Activity Diagram}
+    \label{fig:activity_marketplace_purchase}
+\end{figure}
+
+\subsubsection{Pet Caregiver Service Booking}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/activity_caregiver_booking.png}
+    \caption{Pet Caregiver Service Booking Activity Diagram}
+    \label{fig:activity_caregiver_booking}
+\end{figure}
+
+\subsubsection{Lost Pet Alert System}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/activity_lost_pet_alert.png}
+    \caption{Lost Pet Alert System Activity Diagram}
+    \label{fig:activity_lost_pet_alert}
+\end{figure}
+
+\subsubsection{Pet Adoption Process}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/activity_pet_adoption.png}
+    \caption{Pet Adoption Process Activity Diagram}
+    \label{fig:activity_pet_adoption}
+\end{figure}
+
+\subsubsection{Community Event Management}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/activity_event_management.png}
+    \caption{Community Event Management Activity Diagram}
+    \label{fig:activity_event_management}
+\end{figure}
+
+\subsubsection{Payment Processing}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/activity_payment.png}
+    \caption{Payment Processing Activity Diagram}
+    \label{fig:activity_payment}
+\end{figure}
+
+\subsubsection{Admin Portal Management}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/activity_admin_portal.png}
+    \caption{Admin Portal Management Activity Diagram}
+    \label{fig:activity_admin_portal}
+\end{figure}
+
+\subsection{Class Diagram}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/class_diagram.png}
+    \caption{PawPal Core Class Diagram}
+    \label{fig:class_diagram}
+\end{figure}
+
+\subsection{Sequence Diagrams}
+
+\subsubsection{Marketplace Payment Processing}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/seq_payment_processing.png}
+    \caption{Payment Processing Sequence Diagram}
+    \label{fig:seq_payment_processing}
+\end{figure}
+
+\subsubsection{Cryptocurrency Payment Flow}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/seq_cryptocurrency_payment.png}
+    \caption{Cryptocurrency Payment Flow Sequence Diagram}
+    \label{fig:seq_cryptocurrency_payment}
+\end{figure}
+
+\subsubsection{Caregiver GPS Tracking}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/seq_caregiver_gps_tracking.png}
+    \caption{Caregiver GPS Tracking Sequence Diagram}
+    \label{fig:seq_caregiver_gps_tracking}
+\end{figure}
+
+\subsubsection{Community Post Creation}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/seq_community_post.png}
+    \caption{Community Post Creation Sequence Diagram}
+    \label{fig:seq_community_post}
+\end{figure}
+
+\subsubsection{Lost Pet Alert Broadcasting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/seq_lost_pet_alert.png}
+    \caption{Lost Pet Alert Broadcasting Sequence Diagram}
+    \label{fig:seq_lost_pet_alert}
+\end{figure}
+
+\subsection{State Transition Diagrams}
+
+\subsubsection{Marketplace Order Fulfillment}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/state_order_fulfillment.png}
+    \caption{Marketplace Order Fulfillment State Diagram}
+    \label{fig:state_order_fulfillment}
+\end{figure}
+
+\subsubsection{Payment Transaction}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/state_payment_transaction.png}
+    \caption{Payment Transaction State Diagram}
+    \label{fig:state_payment_transaction}
+\end{figure}
+
+\subsubsection{Pet Caregiver Service Booking}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/state_service_booking.png}
+    \caption{Pet Caregiver Service Booking State Diagram}
+    \label{fig:state_service_booking}
+\end{figure}
+
+\subsubsection{Lost Pet Alert Lifecycle}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/state_lost_pet_alert.png}
+    \caption{Lost Pet Alert Lifecycle State Diagram}
+    \label{fig:state_lost_pet_alert}
+\end{figure}
+
+\subsubsection{Caregiver Profile Lifecycle}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/state_caregiver_service.png}
+    \caption{Caregiver Profile Lifecycle State Diagram}
+    \label{fig:state_caregiver_service}
+\end{figure}
+
+\subsubsection{Community Post Lifecycle}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/state_community_post.png}
+    \caption{Community Post Lifecycle State Diagram}
+    \label{fig:state_community_post}
+\end{figure}

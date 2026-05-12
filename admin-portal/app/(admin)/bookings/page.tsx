@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { createClient } from '@supabase/supabase-js';
-import BookingsClient from './BookingsClient';
+import BookingsClient, { type Booking, type Payment } from './BookingsClient';
 
 async function getBookings() {
   const supabase = createClient(
@@ -60,7 +60,10 @@ export default async function BookingsPage() {
           {data.bookings.length} caregiver service bookings
         </p>
       </div>
-      <BookingsClient bookings={data.bookings as any} payments={data.payments as any} />
+      <BookingsClient
+        bookings={data.bookings as unknown as Booking[]}
+        payments={data.payments as unknown as Payment[]}
+      />
     </div>
   );
 }

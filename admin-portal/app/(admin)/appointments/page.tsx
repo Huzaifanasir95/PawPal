@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { createClient } from '@supabase/supabase-js';
-import AppointmentsClient from './AppointmentsClient';
+import AppointmentsClient, { type Appointment } from './AppointmentsClient';
 
 async function getAppointments() {
   const supabase = createClient(
@@ -45,13 +45,22 @@ export default async function AppointmentsPage() {
   const appointments = await getAppointments();
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Vet Appointments</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {appointments.length} total appointments
-        </p>
+      <div
+        className="mb-6 overflow-hidden rounded-2xl shadow-md ring-1 ring-black/5"
+        style={{
+          background: 'linear-gradient(135deg, #0B1629 0%, #1a3a38 50%, #2C6E69 100%)',
+        }}
+      >
+        <div className="px-6 py-5 sm:px-8 sm:py-6">
+          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-[1.75rem]">
+            Vet Appointments
+          </h1>
+          <p className="mt-1.5 text-sm text-white/70">
+            {appointments.length} total appointments
+          </p>
+        </div>
       </div>
-      <AppointmentsClient appointments={appointments as any} />
+      <AppointmentsClient appointments={appointments as unknown as Appointment[]} />
     </div>
   );
 }

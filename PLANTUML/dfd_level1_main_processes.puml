@@ -1,112 +1,179 @@
 @startuml DFD_Level1_Main_Processes
-!define RECTANGLE class
 
 skinparam defaultTextAlignment center
 skinparam componentStyle rectangle
 
+title DFD Level 1: PawPal Main Processes
+
 ' External Entities
 actor "Pet Owner" as Owner <<External Entity>>
 actor "Veterinarian" as Vet <<External Entity>>
-actor "Caregiver/Seller" as Caregiver <<External Entity>>
+actor "Caregiver" as Caregiver <<External Entity>>
+actor "Seller" as Seller <<External Entity>>
+actor "System Administrator" as Admin <<External Entity>>
 database "OpenStreetMap API" as OSM <<External System>>
 database "Groq LLM API" as Groq <<External System>>
 database "Firebase FCM" as FCM <<External System>>
+database "Blockchain\n(BTC/ETH/USDT)" as Blockchain <<External System>>
 
 ' Main Processes
-rectangle "1.0\nUser Authentication\n& Authorization" as Auth <<Process>>
-rectangle "2.0\nPet Profile\nManagement" as PetMgmt <<Process>>
-rectangle "3.0\nBreed Identification\n(AI/ML)" as BreedID <<Process>>
-rectangle "4.0\nAI Chatbot\n(RAG System)" as Chatbot <<Process>>
-rectangle "5.0\nDiet & Care\nRecommendations" as DietCare <<Process>>
-rectangle "6.0\nVeterinary\nAppointment Booking" as VetAppt <<Process>>
-rectangle "7.0\nNotification\nManagement" as Notify <<Process>>
+rectangle "1.0\nUser Authentication\n& Management" as Auth <<Process>>
+rectangle "2.0\nPet Profile\n& Health Management" as PetMgmt <<Process>>
+rectangle "3.0\nBreed Identification\n(ConvNeXt V2 CNN)" as BreedID <<Process>>
+rectangle "4.0\nAI Chatbot\n(RAG + Groq LLM)" as Chatbot <<Process>>
+rectangle "5.0\nVeterinary Services\n& Appointments" as VetAppt <<Process>>
+rectangle "6.0\nPet Toy Marketplace" as Marketplace <<Process>>
+rectangle "7.0\nCommunity Hub\n(Posts/Lost-Found/\nAdoption/Events)" as Community <<Process>>
+rectangle "8.0\nCaregiver Services\n& GPS Tracking" as Caregiver_P <<Process>>
+rectangle "9.0\nPayment Integration\n(Crypto + Wallet)" as Payment <<Process>>
+rectangle "10.0\nChat &\nMessaging" as Chat <<Process>>
+rectangle "11.0\nAdmin Portal\n& Analytics" as AdminP <<Process>>
+rectangle "12.0\nNotification\nManagement" as Notify <<Process>>
 
-' Data Stores (Current Iteration)
+' Data Stores
 database "D1: Users" as D1 <<Data Store>>
 database "D2: Pets" as D2 <<Data Store>>
-database "D3: Health Journals" as D3 <<Data Store>>
+database "D3: Health Records\n& Journals" as D3 <<Data Store>>
 database "D4: Breed Database" as D4 <<Data Store>>
 database "D5: Knowledge Base\n(ChromaDB 281,438 docs)" as D5 <<Data Store>>
 database "D6: Appointments" as D6 <<Data Store>>
-database "D7: Clinics" as D7 <<Data Store>>
+database "D7: Vet Clinics" as D7 <<Data Store>>
 database "D8: Sessions/Cache\n(Redis)" as D8 <<Data Store>>
 database "D9: Chatbot Messages" as D9 <<Data Store>>
 database "D10: Vaccinations" as D10 <<Data Store>>
+database "D11: Products &\nCategories" as D11 <<Data Store>>
+database "D12: Orders & Cart" as D12 <<Data Store>>
+database "D13: Community Posts\nComments & Groups" as D13 <<Data Store>>
+database "D14: Lost-Found\n& Adoptions" as D14 <<Data Store>>
+database "D15: Events & RSVPs" as D15 <<Data Store>>
+database "D16: Caregiver Profiles\n& Bookings" as D16 <<Data Store>>
+database "D17: GPS Tracking\nWaypoints" as D17 <<Data Store>>
+database "D18: Payments\n& Wallets" as D18 <<Data Store>>
+database "D19: Chat Messages" as D19 <<Data Store>>
 
-' Owner flows
-Owner --> Auth : Registration Data\nLogin Credentials
-Auth --> Owner : JWT Token\nAuth Status
-Owner --> PetMgmt : Pet Details\nHealth Records
-PetMgmt --> Owner : Pet Information\nHealth History
-Owner --> BreedID : Pet Photo
-BreedID --> Owner : Breed Predictions\nCare Guide
-Owner --> Chatbot : Health Query
-Chatbot --> Owner : AI Response\nSources
-Owner --> VetAppt : Appointment Request\nGPS Location
-VetAppt --> Owner : Available Slots\nConfirmation
-
-' Vet flows
-Vet --> VetAppt : Clinic Info\nAvailability
-VetAppt --> Vet : Appointment Details
-Vet --> Auth : Login Credentials
-Auth --> Vet : JWT Token
-
-' Data Store interactions
-Auth <--> D1 : User Data\nCredentials
+' Auth flows
+Owner --> Auth : Registration / Login
+Vet --> Auth : Login
+Caregiver --> Auth : Login
+Seller --> Auth : Login
+Admin --> Auth : Login
+Auth --> Owner : JWT Token
+Auth <--> D1 : User Data
 Auth <--> D8 : Session Tokens
 
+' Pet management flows
+Owner --> PetMgmt : Pet Details / Health Records
+PetMgmt --> Owner : Pet Info / Health History
 PetMgmt <--> D2 : Pet Profiles
 PetMgmt <--> D3 : Health Records
+PetMgmt <--> D10 : Vaccination Records
 
+' Breed ID flows
+Owner --> BreedID : Pet Photo
+BreedID --> Owner : Breed Predictions + Care Guide
 BreedID --> D4 : Breed Info Query
-D4 --> BreedID : Breed Details
-BreedID --> D2 : Store Breed
+BreedID --> D2 : Store Breed Result
 
-Chatbot <--> D5 : Vector Search\nKnowledge Retrieval
+' Chatbot flows
+Owner --> Chatbot : Health Query
+Chatbot --> Owner : AI Response + Sources
+Chatbot <--> D5 : Vector Search
 Chatbot --> D3 : Read Health Journal
 Chatbot --> D2 : Read Pet Profile
 Chatbot --> D9 : Log Conversations
-
-DietCare --> D4 : Breed Info
-DietCare --> D2 : Pet Data
-DietCare --> Owner : Diet Plans\nCare Schedule
-
-VetAppt <--> D6 : Appointments
-VetAppt <--> D7 : Clinic Data
-VetAppt --> D2 : Pet Info
-
-Notify --> D6 : Appointment Details
-Notify --> D10 : Vaccination Due Dates
-Notify --> D1 : User Tokens
-Notify --> Owner : Push Notifications
-
-PetMgmt <--> D10 : Vaccination Records
-
-' External API flows
-VetAppt --> OSM : GPS + Radius
-OSM --> VetAppt : Clinic Locations
-
 Chatbot --> Groq : Prompt + Context
 Groq --> Chatbot : LLM Response
 
+' Vet appointment flows
+Owner --> VetAppt : Appointment Request / GPS Location
+Vet --> VetAppt : Clinic Info / Availability
+VetAppt --> Owner : Available Slots / Confirmation
+VetAppt --> Vet : Appointment Details
+VetAppt <--> D6 : Appointments
+VetAppt <--> D7 : Clinic Data
+VetAppt --> D2 : Pet Info
+VetAppt --> OSM : GPS + Radius
+OSM --> VetAppt : Clinic Locations
+
+' Marketplace flows
+Owner --> Marketplace : Browse / Order / Review
+Seller --> Marketplace : Product Listings / Order Updates
+Marketplace --> Owner : Product List / Order Confirmation
+Marketplace --> Seller : Order Notifications
+Marketplace <--> D11 : Products & Categories
+Marketplace <--> D12 : Orders & Cart
+
+' Community flows
+Owner --> Community : Posts / Lost-Found / Adoption / Events
+Community --> Owner : Feed / Alerts / Event List
+Community <--> D13 : Posts & Comments
+Community <--> D14 : Lost-Found & Adoptions
+Community <--> D15 : Events & RSVPs
+
+' Caregiver flows
+Owner --> Caregiver_P : Booking Request / View Location
+Caregiver --> Caregiver_P : Accept Booking / GPS Update / Completion
+Caregiver_P --> Owner : Booking Status / Live Location
+Caregiver_P --> Caregiver : Booking Requests
+Caregiver_P <--> D16 : Profiles & Bookings
+Caregiver_P --> D17 : GPS Waypoints
+
+' Payment flows
+Owner --> Payment : Payment Request
+Payment --> Owner : Confirmation / Invoice
+Payment <--> D18 : Transactions & Wallets
+Payment --> D12 : Update Order Status
+Payment --> D16 : Update Booking Status
+Payment --> Blockchain : Crypto Payment
+Blockchain --> Payment : Transaction Confirmation
+
+' Chat flows
+Owner --> Chat : Send Message
+Vet --> Chat : Send Message
+Caregiver --> Chat : Send Message
+Chat --> D19 : Chat Messages
+
+' Admin flows
+Admin --> AdminP : Moderation / Management
+AdminP --> Admin : Dashboard Stats
+AdminP --> D1 : Manage Users
+AdminP --> D11 : Manage Products
+AdminP --> D6 : Manage Appointments
+AdminP --> D16 : Manage Bookings
+AdminP --> D13 : Moderate Posts
+
+' Notification flows
+Notify --> D6 : Appointment Details
+Notify --> D10 : Vaccination Due Dates
+Notify --> D1 : User Device Tokens
+Notify --> D16 : Booking Updates
+Notify --> D14 : Lost-Found Alerts
+Notify --> Owner : Push Notifications
+Notify --> Vet : Push Notifications
+Notify --> Caregiver : Push Notifications
 Notify --> FCM : Notification Payload
 FCM --> Notify : Delivery Status
 
 note bottom of Auth
-  Level 1 DFD - Current Iteration
-  
-  7 Core Modules Implemented:
-  1.0 - User Authentication & Authorization
-  2.0 - Pet Profile Management
-  3.0 - Breed Identification (ConvNeXt V2 CNN)
-  4.0 - AI Chatbot (RAG with Groq LLM)
-  5.0 - Diet & Care Recommendations
-  6.0 - Veterinary Appointment Booking
-  7.0 - Notification Management
-  
-  Data Stores: PostgreSQL (D1-D4, D6-D7, D9-D10)
-               Redis (D8 - caching/sessions)
-               ChromaDB (D5 - vector embeddings)
+  Level 1 DFD - Final Iteration
+
+  12 Core Modules Implemented:
+  1.0  - User Authentication & Management
+  2.0  - Pet Profile & Health Management
+  3.0  - Breed Identification (ConvNeXt V2 CNN)
+  4.0  - AI Chatbot (RAG + Groq LLM)
+  5.0  - Veterinary Services & Appointments
+  6.0  - Pet Toy Marketplace
+  7.0  - Community Hub
+  8.0  - Caregiver Services & GPS Tracking
+  9.0  - Payment Integration (Crypto + Wallet)
+  10.0 - Chat & Messaging
+  11.0 - Admin Portal & Analytics
+  12.0 - Notification Management
+
+  Data Stores: PostgreSQL (D1-D19 except D5,D8)
+               Redis      (D8 - caching/sessions)
+               ChromaDB   (D5 - vector embeddings)
 end note
 
 @enduml

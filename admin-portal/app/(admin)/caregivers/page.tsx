@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { createClient } from '@supabase/supabase-js';
-import CaregiversClient from './CaregiversClient';
+import CaregiversClient, { type Caregiver } from './CaregiversClient';
 
 async function getCaregivers() {
   const supabase = createClient(
@@ -51,10 +51,11 @@ export default async function CaregiversPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Caregivers</h1>
         <p className="mt-1 text-sm text-gray-500">
-          {caregivers.length} registered caregivers · {caregivers.filter((c: any) => !c.is_verified).length} pending verification
+          {caregivers.length} registered caregivers ·{' '}
+          {caregivers.filter((c) => !c.is_verified).length} pending verification
         </p>
       </div>
-      <CaregiversClient caregivers={caregivers as any} />
+      <CaregiversClient caregivers={caregivers as unknown as Caregiver[]} />
     </div>
   );
 }

@@ -1,0 +1,165 @@
+\chapter{Introduction}
+\label{sec:introduction}
+PawPal is a comprehensive mobile application designed to revolutionize pet care by integrating health management, community engagement, and intelligent AI-powered services into a unified platform. This document specifies the development, implementation, and testing approach for the PawPal system, addressing the fragmented nature of existing pet care solutions through an all-in-one platform that delivers convenience, personalized care, and active community involvement.
+
+\section{Existing Solutions}
+
+The pet care industry currently offers several solutions, each addressing specific aspects of pet management. However, these solutions suffer from various limitations that PawPal aims to overcome through comprehensive integration and advanced AI capabilities.
+
+\begin{table}[H]
+\centering
+\caption{Comparison of Existing Pet Care Solutions}
+\begin{tabular}{|p{2.5cm}|p{5cm}|p{5cm}|}
+\hline
+\textbf{System Name} & \textbf{System Overview} & \textbf{System Limitations} \\ \hline
+PetDesk & Mobile application focusing on veterinary appointment booking and medication reminders with basic health tracking features. & Limited to appointment scheduling and reminders only. No AI-powered health guidance, breed identification, or marketplace features. Lacks community engagement and caregiver services integration. \\ \hline
+Rover & Platform connecting pet owners with pet sitters and dog walkers through verified caregiver profiles and booking system. & Exclusively focused on caregiver services. No health tracking, veterinary integration, breed identification, or AI chatbot support. Does not provide marketplace or community features. \\ \hline
+Chewy & E-commerce platform specializing in pet products including food, toys, and accessories with auto-ship subscriptions. & Pure marketplace solution without health management capabilities. No AI-powered recommendations, breed identification, veterinary services, or community engagement features. \\ \hline
+Pawtrack & GPS tracking device and application for monitoring pet location with geofencing and activity tracking capabilities. & Limited to GPS tracking only. Lacks comprehensive health records, AI assistance, marketplace integration, and community features. Requires additional hardware device. \\ \hline
+Puppr & Dog training application providing step-by-step training guides with video demonstrations and progress tracking. & Focused solely on training functionality. No health tracking, veterinary integration, marketplace, or community features. Does not support cats or other pets. \\ \hline
+\end{tabular}
+\label{tab:system_comparison}
+\end{table}
+
+These existing solutions demonstrate clear market segmentation where each application addresses only a single aspect of pet care. Pet owners are forced to maintain multiple subscriptions, manage separate accounts, and manually integrate information across platforms. This creates data silos, increases management overhead, and provides suboptimal user experience. None of these solutions leverage advanced artificial intelligence for breed identification or provide intelligent chatbot assistance for veterinary guidance, representing a significant gap in the market that PawPal aims to fill.
+
+\section{Problem Statement}
+
+Pet owners face significant challenges managing multiple aspects of pet care due to fragmented applications for health tracking, veterinary booking, lost pet alerts, and marketplaces. This creates inefficiencies, complicates access to reliable services, and limits pet safety through unstructured adoption and recovery systems.
+
+Key challenges include difficulty finding verified caregivers and obtaining reliable veterinary guidance during emergencies, absence of integrated breed identification technology forcing extensive manual research, lack of sophisticated AI chatbots providing context-aware health guidance, isolated communities limiting socialization opportunities, non-personalized marketplaces lacking breed-specific recommendations, and limited payment flexibility without modern options like cryptocurrency.
+
+PawPal addresses these challenges by providing a comprehensive ecosystem consolidating all pet care needs into a single, intelligent platform with AI-powered insights, community engagement, and secure transactions.
+
+\section{Scope}
+
+PawPal is a cross-platform mobile application built with Flutter for iOS and Android, using a Golang backend with modular monolithic architecture. The system uses PostgreSQL for persistent data, Redis for caching and sessions, and integrates AI through breed identification and RAG-based chatbot.
+
+Key functionalities include pet breed identification with care recommendations, AI veterinary chatbot for 24/7 health guidance, pet profile and health journal management with vaccination reminders, marketplace for pet products with cryptocurrency payment support, community hub with forums and lost/found networks, veterinary appointment booking with OpenStreetMap integration, caregiver services with GPS tracking, and comprehensive push notifications.
+
+The modular monolithic architecture enables efficient inter-module communication through direct function calls while maintaining clear separation of concerns. The current iteration focuses on User Authentication, Pet Breed Identification, AI Chatbot System, Diet and Care Recommendations, Veterinary Appointment Booking, Initial Backend Infrastructure, and Basic UI/UX Components.
+
+\section{Modules}
+
+The PawPal system is structured into eight major modules, each addressing specific pet care needs and user requirements. These modules work cohesively to provide a comprehensive pet care ecosystem within a single mobile application, with backend modules implemented within a unified codebase for optimal performance and efficient inter-module communication through direct function calls.
+
+\subsection{Pet Identification Module}
+Provides instant breed recognition using ConvNeXt V2 CNN architecture. Upon identification, delivers comprehensive breed-specific information including health concerns, dietary requirements, exercise needs, behavioral characteristics, grooming requirements, and common genetic conditions.
+\begin{enumerate}
+    \item Breed detection from images with real-time processing
+    \item Breed-specific care recommendations covering health, nutrition, and behavior
+    \item Dietary requirements and feeding schedules with portion sizes
+    \item Health predisposition information with preventive care tips
+    \item Training and behavioral guidance
+    \item Confidence scoring with alternative suggestions when primary confidence $<$85\%
+    \item Integration with pet profile system for breed information storage
+\end{enumerate}
+
+\subsection{Chatbot Module}
+A 24/7 virtual veterinary assistant using Retrieval-Augmented Generation. The system implements semantic search through veterinary knowledge chunks using sentence transformers, followed by contextual response generation.
+\begin{enumerate}
+    \item AI-powered veterinary guidance with evidence-based recommendations
+    \item Personalized diet plan generation based on breed, age, weight, and health conditions
+    \item 24/7 availability with average response times under 3 seconds
+    \item Emergency guidance and symptom assessment with severity classification
+    \item Integration with pet health journals for context-aware, personalized responses
+    \item Source citation and confidence scoring for transparency
+    \item Conversation history maintenance for multi-turn dialogues
+    \item Emergency detection with automatic veterinarian referral recommendations
+    \item Multi-pet support with profile-specific contextual responses
+\end{enumerate}
+
+\subsection{Pet Profiles \& Journals Module}
+Comprehensive digital record-keeping with timeline-based health event tracking. Includes vaccination tracking with automatic 7-day advance reminders, medication schedules with adherence monitoring, weight tracking with growth charts, symptom logging, and vet visit summaries. Generates PDF health reports shareable with veterinarians.
+\begin{enumerate}
+    \item Digital pet profile creation with comprehensive information fields
+    \item Health journal with vaccination records and medical history with timeline visualization
+    \item Medication tracking with automated reminders and adherence monitoring
+    \item Weight and growth monitoring with charts and trend analysis
+    \item Activity and behavior logging with pattern recognition
+    \item Document storage for medical certificates and lab reports
+    \item Multi-pet management with household view and individual dashboards
+    \item PDF health report generation for veterinary appointments
+\end{enumerate}
+
+\subsection{Pet Toy Marketplace Module}
+E-commerce platform for pet products with advanced search, secure payment processing including cryptocurrency, and comprehensive review systems. Features intelligent product recommendations based on breed and purchase history using collaborative filtering.
+\begin{enumerate}
+    \item Product listing with up to 10 photos and detailed descriptions
+    \item Advanced search and filtering by category, price, breed compatibility, and ratings
+    \item Shopping cart with session persistence and saved items
+    \item Rating and review system with photo/video support
+    \item In-app messaging between buyers and sellers
+    \item Multiple payment methods including cryptocurrency and digital wallets
+    \item Seller profile management with performance metrics
+    \item Admin moderation tools for marketplace integrity
+\end{enumerate}
+
+\subsection{Community Hub Module}
+Social platform fostering connections through forums, lost/found networks, adoption systems, and events. Lost pet alerts use GPS to notify community members within 5km radius.
+\begin{enumerate}
+    \item Real-time forum posting with threaded discussions and media
+    \item GPS-based lost pet alert system with nearby notifications
+    \item Pet adoption listings with application processing
+    \item Event planning with RSVP management and calendar integration
+    \item Media sharing with automatic compression
+    \item Social interactions including likes, comments, and follows
+    \item Group creation with role-based access control
+    \item Success story sharing for recoveries and adoptions
+    \item AI-powered content moderation and reporting
+\end{enumerate}
+
+\subsection{Veterinary Services Integration Module}
+Facilitates veterinary care through appointment booking, clinic discovery via OpenStreetMap, and online consultations. Features real-time availability checking, automated reminders (24h and 2h before appointments), and video/audio consultation capabilities.
+\begin{enumerate}
+    \item Instant appointment booking with real-time availability
+    \item GPS-based clinic discovery with distance calculations
+    \item Clinic profile management with specializations and hours
+    \item Appointment reminders via push notifications and email
+    \item Online consultation with video, audio, and chat
+    \item Digital prescription management
+    \item Payment integration with invoice generation
+    \item Veterinarian verification using registration numbers
+    \item Review and rating system
+    \item Integration with health journal for medical history access
+\end{enumerate}
+
+\subsection{Pet Caregiver Services Module}
+Connects owners with verified caregivers (walkers, sitters, groomers, trainers) with GPS tracking during services. Updates location every 2 minutes with route history and photo updates.
+\begin{enumerate}
+    \item Caregiver profiles with service offerings and credentials
+    \item Background verification and credential checking
+    \item Service booking with availability calendars
+    \item Real-time GPS tracking with 2-minute updates and route history
+    \item Rating and review system with photo/video support
+    \item In-app communication with photo/video sharing
+    \item Secure payment processing with automatic payout
+    \item Incident reporting with photo documentation
+    \item Service completion confirmation with proof
+    \item Recurring booking support for regular schedules
+\end{enumerate}
+
+\subsection{Payment Integration Module}
+Secure payment system supporting cryptocurrency (Bitcoin, Ethereum, USDT) and traditional methods. Features PCI-compliant processing, blockchain monitoring, escrow functionality, and fraud detection.
+\begin{enumerate}
+    \item Cryptocurrency wallet support with QR code generation
+    \item Digital wallet for credits and refunds
+    \item Transaction history with PDF invoices
+    \item Refund and dispute management
+    \item Automatic payment retry for failed transactions
+    \item Escrow service for marketplace transactions
+    \item Real-time currency conversion
+    \item Payment tokenization for recurring payments
+    \item Comprehensive audit logging
+\end{enumerate}
+
+\section{Work Division}
+
+The PawPal project development is divided among three team members with specialized expertise while collaborating on shared infrastructure.
+
+\textbf{Huzaifa Nasir (22I-1053) --- AI/ML \& Backend Lead:} Responsible for Pet Identification Module (ConvNeXt V2 CNN) and Chatbot Module (RAG-based system). Handles Golang backend API development, PostgreSQL database design, Redis caching, and Python service integration.
+
+\textbf{Maaz Ali (22I-1042) --- Mobile Development \& Community Features Lead:} Responsible for Flutter mobile application development (iOS/Android), Community Hub Module (forums, lost/found, adoption, events), and Pet Profiles \& Journals Module. Handles UI/UX design, state management, local persistence, and Firebase Cloud Messaging integration.
+
+\textbf{Hamza Naveed (22I-0961) --- E-commerce \& Services Lead:} Responsible for Pet Toy Marketplace Module, Veterinary Services Integration Module (OpenStreetMap integration, appointment booking), Pet Caregiver Services Module (GPS tracking), and Payment Integration Module (cryptocurrency and digital wallets).
+

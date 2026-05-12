@@ -157,15 +157,13 @@ flutter_launcher_icons:
   min_sdk_android: 21
 
 flutter_native_splash:
-  color: "#132A63"
-  image: assets/appicon/appicon_square-removebg.png
-  color_dark: "#132A63"
-  image_dark: assets/appicon/appicon_square-removebg.png
+  color: "#0D1F3C"          # your dark navy (for pre-Android 12)
+  image: assets/appicon/paw_transparent.png
+
   android_12:
-    color: "#132A63"
-    image: assets/appicon/appicon_square-removebg.png
-    color_dark: "#132A63"
-    image_dark: assets/appicon/appicon_square-removebg.png
+    image: assets/appicon/android12_splash_icon.png
+    color: "#0D1F3C"        # window background color
+    # icon_background_color: "#0D1F3C"  # optional, only if you want a circle bg behind the icon
     
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/widgets/custom_search_bar.dart';
 import '../../../../core/services/api_client.dart';
 import '../../data/models/marketplace_models.dart';
 import '../../data/repositories/marketplace_repository.dart';
@@ -232,66 +233,15 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
   }
 
   Widget _buildSearchBar(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Padding(
+    return CustomSearchBar(
+      controller: _searchController,
+      hintText: 'Search products...',
+      onChanged: (val) {
+        setState(() {
+          _searchQuery = val;
+        });
+      },
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
-      child: Container(
-        height: 50.h,
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(25.r),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: isDark ? 0.32 : 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            SizedBox(width: 16.w),
-            Icon(Icons.search_rounded,
-                color: colorScheme.onSurfaceVariant, size: 20.sp),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: TextField(
-                controller: _searchController,
-                style: GoogleFonts.mulish(
-                    fontSize: 14.sp, color: colorScheme.onSurface),
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  hintStyle: GoogleFonts.mulish(
-                      fontSize: 14.sp, color: colorScheme.onSurfaceVariant),
-                  border: InputBorder.none,
-                  isDense: true,
-                ),
-                onChanged: (val) {
-                  setState(() {
-                    _searchQuery = val;
-                  });
-                },
-              ),
-            ),
-            if (_searchController.text.isNotEmpty)
-              GestureDetector(
-                onTap: () {
-                  _searchController.clear();
-                  setState(() {
-                    _searchQuery = '';
-                  });
-                },
-                child: Padding(
-                  padding: EdgeInsets.only(right: 12.w),
-                  child: Icon(Icons.close_rounded,
-                      color: colorScheme.onSurfaceVariant, size: 18.sp),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 

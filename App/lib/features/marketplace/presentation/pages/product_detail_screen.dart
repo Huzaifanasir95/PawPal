@@ -713,11 +713,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                   ),
                   SizedBox(height: 12.h),
-                  Wrap(
-                    spacing: 4.w,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
                       5,
                       (index) => IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                         onPressed: () {
                           setDialogState(() => rating = index + 1);
                         },
@@ -726,6 +728,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ? Icons.star_rounded
                               : Icons.star_outline_rounded,
                           color: colorScheme.secondary,
+                          size: 32.sp,
                         ),
                       ),
                     ),

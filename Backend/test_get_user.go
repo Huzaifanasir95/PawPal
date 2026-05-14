@@ -1,3 +1,5 @@
+//go:build ignore
+
 package main
 
 import (
@@ -22,7 +24,7 @@ func main() {
 		log.Printf("Warning: %v", err)
 	}
 
-	repo := repositories.NewUserRepositorySupabase(database.Supabase)
+	repo := repositories.NewUserRepository(database.DB)
 	ctx := context.Background()
 	
 	// Test GetByEmail

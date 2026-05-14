@@ -430,7 +430,9 @@ func (r *MarketplaceRepository) CreateOrder(ctx context.Context, order *models.O
 		order.PaymentMethod = "cash_on_delivery"
 	}
 	order.Status = "pending"
-	order.PaymentStatus = "pending"
+	if order.PaymentStatus == "" {
+		order.PaymentStatus = "pending"
+	}
 
 	_, err = tx.Exec(ctx, `
 		INSERT INTO orders
@@ -613,6 +615,15 @@ func (r *MarketplaceRepository) UpdateOrderStatus(ctx context.Context, orderID u
 			`UPDATE orders SET status=$2, updated_at=NOW() WHERE id=$1`,
 			orderID, status)
 	}
+	return err
+}
+
+// UpdateOrderPaymentStatus updates the payment state for an order.
+func (r *MarketplaceRepository) UpdateOrderPaymentStatus(ctx context.Context, orderID uuid.UUID, status string) error {
+	_, err := r.db.Exec(ctx,
+		`UPDATE orders SET payment_status = $2, updated_at = NOW() WHERE id = $1`,
+		orderID, status,
+	)
 	return err
 }
 

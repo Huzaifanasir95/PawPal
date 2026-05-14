@@ -129,13 +129,16 @@ class AllCategoriesPage extends StatelessWidget {
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
-        backgroundColor: theme.scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
         title: Text(
           'All Categories',
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.w800,
+            color: colorScheme.onSurface,
           ),
         ),
       ),

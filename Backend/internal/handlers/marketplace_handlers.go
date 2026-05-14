@@ -694,6 +694,60 @@ func (h *MarketplaceHandlers) PlaceOrder(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"success": true, "order": order})
 }
 
+// CompleteStripePayment marks a card order as completed through a simulated Stripe webhook flow.
+func (h *MarketplaceHandlers) CompleteStripePayment(c *gin.Context) {
+	userID, ok := getAuthUserID(c)
+	if !ok {
+		return
+	}
+
+	orderID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid order ID"})
+		return
+	}
+
+	order, err := h.marketplaceRepo.GetOrderByID(c.Request.Context(), orderID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to load order"})
+		return
+	}
+	if order == nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Order not found"})
+		return
+	}
+	if order.BuyerID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You can only confirm your own order"})
+		return
+	}
+	if !strings.EqualFold(order.PaymentMethod, "card") {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Stripe webhook is only used for card payments"})
+		return
+	}
+
+	if strings.EqualFold(order.PaymentStatus, "completed") {
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "Payment already completed", "order": order})
+		return
+	}
+
+	if err := h.marketplaceRepo.UpdateOrderPaymentStatus(c.Request.Context(), orderID, "completed"); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to complete payment"})
+		return
+	}
+
+	updatedOrder, err := h.marketplaceRepo.GetOrderByID(c.Request.Context(), orderID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to load order"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Stripe payment completed",
+		"order":   updatedOrder,
+	})
+}
+
 // GetOrders returns orders for the authenticated buyer
 func (h *MarketplaceHandlers) GetOrders(c *gin.Context) {
 	userID, ok := getAuthUserID(c)

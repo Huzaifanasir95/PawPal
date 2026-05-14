@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -290,34 +291,36 @@ class AppThemeController extends ChangeNotifier {
       // ── Inputs ───────────────────────────────────────────────────────────
       inputDecorationTheme: base.inputDecorationTheme.copyWith(
         filled: true,
-        fillColor: raisedSurface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
+        fillColor: raisedSurface.withOpacity(isDark ? 0.4 : 0.6),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 16.w,
+          vertical: 12.h,
         ),
         border: OutlineInputBorder(
           borderSide: BorderSide(
-            color: onSurfaceVariant.withValues(alpha: 0.35),
+            color: onSurfaceVariant.withOpacity(0.2),
+            width: 1,
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
         ),
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(
-            color: onSurfaceVariant.withValues(alpha: 0.35),
+            color: onSurfaceVariant.withOpacity(0.2),
+            width: 1,
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: primary, width: 1.8),
-          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: primary, width: 1.5),
+          borderRadius: BorderRadius.circular(12.r),
         ),
         errorBorder: OutlineInputBorder(
           borderSide: const BorderSide(color: Color(0xFFE53E3E)),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Color(0xFFE53E3E), width: 1.8),
-          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE53E3E), width: 1.5),
+          borderRadius: BorderRadius.circular(12.r),
         ),
         hintStyle: GoogleFonts.mulish(
           fontSize: 15,

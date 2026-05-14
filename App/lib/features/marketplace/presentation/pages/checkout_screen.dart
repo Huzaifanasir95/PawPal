@@ -6,6 +6,9 @@ import '../../data/models/marketplace_models.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/cart_state.dart';
 import 'orders_screen.dart';
+import '../../../../core/presentation/pages/payment_completed_screen.dart';
+import '../../../../core/widgets/custom_text_field.dart';
+import '../../../payments/presentation/pages/payment_methods_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final List<CartItem> cartItems;
@@ -64,7 +67,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       body: BlocListener<CartCubit, CartState>(
         listener: (context, state) {
           if (state.lastOrder != null) {
-            _showOrderSuccessDialog(context, state.lastOrder!);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PaymentCompletedScreen(
+                  amount: state.lastOrder!.totalAmount,
+                  transactionId: '',
+                  referenceId: state.lastOrder!.id,
+                  paymentMethod: state.lastOrder!.paymentMethod,
+                  isBooking: false,
+                  onViewDetails: () {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const OrdersScreen()),
+                    );
+                  },
+                ),
+              ),
+            );
           }
           if (state.error != null) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -276,6 +297,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   child: Column(
                     children: [
                       _buildPaymentOption(
+                        value: 'card',
+                        label: 'Card',
+                        subtitle: 'Use a saved card to complete payment',
+                        icon: Icons.credit_card_rounded,
+                      ),
+                      SizedBox(height: 8.h),
+                      _buildPaymentOption(
                         value: 'cash_on_delivery',
                         label: 'Cash on Delivery',
                         subtitle: 'Pay when your order arrives',
@@ -294,6 +322,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         label: 'Easypaisa',
                         subtitle: 'Pay via Easypaisa mobile wallet',
                         icon: Icons.phone_android_outlined,
+                      ),
+                      SizedBox(height: 12.h),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PaymentMethodsScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.add_card_rounded),
+                          label: const Text('Add / Manage Cards'),
+                        ),
                       ),
                     ],
                   ),
@@ -493,47 +537,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return TextFormField(
+    return CustomTextField(
       controller: controller,
+      hintText: hint,
       maxLines: maxLines,
-      keyboardType: keyboardType,
+      keyboardType: keyboardType ?? TextInputType.text,
       validator: validator,
-      style: GoogleFonts.mulish(
-        fontSize: 14.sp,
-        color: colorScheme.onSurface,
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.mulish(
-          fontSize: 13.sp,
-          color: colorScheme.onSurfaceVariant,
-        ),
-        filled: true,
-        fillColor: colorScheme.surfaceContainerHighest,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.28), width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: colorScheme.error, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: colorScheme.error, width: 1.5),
-        ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-      ),
     );
   }
 
@@ -655,120 +664,5 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
 
     context.read<CartCubit>().placeOrder(request);
-  }
-
-  void _showOrderSuccessDialog(BuildContext context, order) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder:
-          (_) => Dialog(
-            backgroundColor: colorScheme.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24.r),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(24.w),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 72.w,
-                    height: 72.w,
-                    decoration: BoxDecoration(
-                      color: colorScheme.tertiary.withValues(alpha: 0.14),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check_circle_rounded,
-                      size: 40.sp,
-                      color: colorScheme.tertiary,
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    'Order Placed!',
-                    style: GoogleFonts.mulish(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.w800,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'Your order has been placed successfully. We\'ll notify you when it\'s confirmed.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.mulish(
-                      fontSize: 13.sp,
-                      color: colorScheme.onSurfaceVariant,
-                      height: 1.5,
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.pop(context); // close dialog
-                            Navigator.pop(context); // close checkout
-                            Navigator.pop(context); // close cart
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: colorScheme.primary),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            padding: EdgeInsets.symmetric(vertical: 12.h),
-                          ),
-                          child: Text(
-                            'Continue',
-                            style: GoogleFonts.mulish(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context); // close dialog
-                            Navigator.pop(context); // close checkout
-                            Navigator.pop(context); // close cart
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const OrdersScreen(),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: colorScheme.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            padding: EdgeInsets.symmetric(vertical: 12.h),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            'My Orders',
-                            style: GoogleFonts.mulish(
-                              color: colorScheme.onPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-    );
   }
 }

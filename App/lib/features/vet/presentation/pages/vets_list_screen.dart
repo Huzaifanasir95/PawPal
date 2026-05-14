@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../core/widgets/custom_search_bar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../data/models/vet_profile_model.dart';
@@ -229,70 +230,15 @@ class _VetsListScreenState extends State<VetsListScreen> {
   }
 
   Widget _buildSearchBar() {
-    return Padding(
+    return CustomSearchBar(
+      controller: _searchController,
+      hintText: 'Search by name or specialization...',
+      onChanged: (value) {
+        setState(() {
+          _searchQuery = value.trim().toLowerCase();
+        });
+      },
       padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(14.r),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline,
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.16),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: (value) {
-            setState(() {
-              _searchQuery = value.trim().toLowerCase();
-            });
-          },
-          style: TextStyle(
-            fontSize: 15.sp,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Search by name or specialization...',
-            hintStyle: TextStyle(
-              fontSize: 15.sp,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            prefixIcon: Padding(
-              padding: EdgeInsets.only(left: 16.w, right: 12.w),
-              child: Icon(
-                Icons.search_rounded,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                size: 22.sp,
-              ),
-            ),
-            prefixIconConstraints: BoxConstraints(minWidth: 50.w),
-            suffixIcon: _searchController.text.isEmpty
-                ? null
-                : IconButton(
-                    icon: Icon(
-                      Icons.close_rounded,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                      size: 18.sp,
-                    ),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() {
-                        _searchQuery = '';
-                      });
-                    },
-                  ),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: 16.h),
-          ),
-        ),
-      ),
     );
   }
 

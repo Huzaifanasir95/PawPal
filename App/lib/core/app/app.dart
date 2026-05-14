@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -294,6 +295,19 @@ class _PawPawlAppState extends State<PawPawlApp> {
                 theme: themeController.lightTheme,
                 darkTheme: themeController.darkTheme,
                 themeMode: themeController.themeMode,
+                builder: (context, child) {
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  return AnnotatedRegion<SystemUiOverlayStyle>(
+                    value: SystemUiOverlayStyle(
+                      statusBarColor: Colors.transparent,
+                      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+                      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+                      systemNavigationBarColor: Theme.of(context).colorScheme.surface,
+                      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+                    ),
+                    child: child!,
+                  );
+                },
                 home: AuthFlow(authRepository: _authRepository),
               );
             },

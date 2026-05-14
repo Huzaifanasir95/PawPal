@@ -48,6 +48,7 @@ func main() {
 	chatRepo := repositories.NewChatRepository(db)
 	messageRepo := repositories.NewMessageRepository(db)
 	marketplaceRepo := repositories.NewMarketplaceRepository(db)
+	paymentMethodRepo := repositories.NewPaymentMethodRepository(db)
 	communityHubRepo := repositories.NewCommunityHubRepository(db)
 	caregiverRepo := repositories.NewCaregiverRepository(db)
 	bookingRepo := repositories.NewBookingRepository(db)
@@ -83,13 +84,14 @@ func main() {
 	)
 	wsHandler := handlers.NewWebSocketHandler(messageRepo, chatRepo)
 	marketplaceHandlers := handlers.NewMarketplaceHandlers(marketplaceRepo, userRepo)
+	paymentMethodHandlers := handlers.NewPaymentMethodHandler(paymentMethodRepo, userRepo, cfg.Payments.DemoMode)
 	communityHubHandlers := handlers.NewCommunityHubHandlers(communityHubRepo, userRepo)
 	caregiverHandlers := handlers.NewCaregiverHandler(caregiverRepo, bookingRepo, userRepo)
 	bookingHandlers := handlers.NewBookingHandler(bookingRepo, caregiverRepo)
 	vetAppointmentHandlers := handlers.NewVetAppointmentHandlers(vetAppointmentRepo, vetRepo)
 
 	// Setup router
-	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, wsHandler, marketplaceHandlers, communityHubHandlers, caregiverHandlers, bookingHandlers, vetAppointmentHandlers, authService, cfg)
+	router := setupRouter(h, authHandlers, petHandlers, healthHandlers, communityHandlers, vetHandlers, chatHandlers, wsHandler, marketplaceHandlers, paymentMethodHandlers, communityHubHandlers, caregiverHandlers, bookingHandlers, vetAppointmentHandlers, authService, cfg)
 
 	// Start server
 	port := os.Getenv("PORT")
@@ -106,7 +108,7 @@ func main() {
 	}
 }
 
-func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, wsHandler *handlers.WebSocketHandler, marketplaceHandlers *handlers.MarketplaceHandlers, communityHubHandlers *handlers.CommunityHubHandlers, caregiverHandlers *handlers.CaregiverHandler, bookingHandlers *handlers.BookingHandler, vetAppointmentHandlers *handlers.VetAppointmentHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
+func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petHandlers *handlers.PetHandlers, healthHandlers *handlers.HealthHandlers, communityHandlers *handlers.CommunityHandlers, vetHandlers *handlers.VetHandlers, chatHandlers *handlers.ChatHandlers, wsHandler *handlers.WebSocketHandler, marketplaceHandlers *handlers.MarketplaceHandlers, paymentMethodHandlers *handlers.PaymentMethodHandler, communityHubHandlers *handlers.CommunityHubHandlers, caregiverHandlers *handlers.CaregiverHandler, bookingHandlers *handlers.BookingHandler, vetAppointmentHandlers *handlers.VetAppointmentHandlers, authService *services.AuthService, cfg *config.Config) *gin.Engine {
 	// Set Gin mode
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -174,6 +176,15 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 		protected := v1.Group("")
 		protected.Use(middleware.AuthMiddleware(authService))
 		{
+				// Demo payment methods (masked cards only)
+				paymentMethods := protected.Group("/payment-methods")
+				{
+					paymentMethods.GET("", paymentMethodHandlers.ListPaymentMethods)
+					paymentMethods.POST("", paymentMethodHandlers.CreatePaymentMethod)
+					paymentMethods.POST("/:id/default", paymentMethodHandlers.SetDefaultPaymentMethod)
+					paymentMethods.DELETE("/:id", paymentMethodHandlers.DeletePaymentMethod)
+				}
+
 			// User profile and role
 			protected.GET("/profile", authHandlers.GetProfile)
 			protected.PUT("/profile", authHandlers.UpdateProfile)
@@ -308,6 +319,7 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				market.POST("/orders", marketplaceHandlers.PlaceOrder)
 				market.GET("/orders", marketplaceHandlers.GetOrders)
 				market.GET("/orders/:id", marketplaceHandlers.GetOrder)
+				market.POST("/orders/:id/stripe-webhook", marketplaceHandlers.CompleteStripePayment)
 				market.PUT("/orders/:id/status", marketplaceHandlers.UpdateOrderStatus)
 
 				// Seller orders view

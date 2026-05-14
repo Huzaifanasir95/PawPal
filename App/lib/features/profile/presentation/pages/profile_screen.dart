@@ -11,6 +11,7 @@ import '../../../../core/utils/image_service.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/data/models/auth_user.dart';
+import '../../../payments/presentation/pages/payment_methods_screen.dart';
 import '../../data/repositories/profile_repository.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -767,6 +768,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     passwordController.dispose();
   }
 
+  void _openPaymentMethods() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PaymentMethodsScreen()),
+    );
+  }
+
   Future<void> _showUpdatePasswordDialog() async {
     final currentPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
@@ -1483,6 +1491,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                 ],
+                              ),
+                              SizedBox(height: 12.h),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: _openPaymentMethods,
+                                  icon: Icon(
+                                    Icons.credit_card_rounded,
+                                    size: 20.sp,
+                                  ),
+                                  label: Text('Card Details'),
+                                ),
                               ),
                               SizedBox(height: 20.h),
                               SizedBox(

@@ -304,6 +304,22 @@ class MarketplaceRepository {
     }
   }
 
+  Future<Order> completeStripePayment(String orderId) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/v1/marketplace/orders/$orderId/stripe-webhook',
+      );
+      if (response.data['success'] == true) {
+        return Order.fromJson(response.data['order'] as Map<String, dynamic>);
+      }
+      throw Exception(response.data['error'] ?? 'Failed to complete payment');
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data?['error'] ?? 'Network error: ${e.message}',
+      );
+    }
+  }
+
   Future<List<Order>> getMyOrders({int page = 1, int limit = 20}) async {
     try {
       final response = await _apiClient.get(

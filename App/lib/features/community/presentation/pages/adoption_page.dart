@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../core/widgets/custom_search_bar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -124,72 +125,16 @@ class _AdoptionPageState extends State<AdoptionPage> {
   }
 
   Widget _buildSearchBar(BuildContext context, String currentQuery) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
+    return CustomSearchBar(
+      controller: _searchController,
+      hintText: 'Search by pet name...',
+      onChanged: (value) {
+        context.read<AdoptionCubit>().searchListings(value);
+      },
+      onClear: () {
+        context.read<AdoptionCubit>().searchListings('');
+      },
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
-      child: Container(
-        height: 50.h,
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(25.r),
-          border: Border.all(
-            color: colorScheme.outline.withValues(alpha: 0.6),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            SizedBox(width: 16.w),
-            Icon(
-              Icons.search,
-              color: colorScheme.onSurfaceVariant,
-              size: 20.sp,
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) {
-                  context.read<AdoptionCubit>().searchListings(value);
-                },
-                style: AppTextStyles.onboardingBody.copyWith(
-                  fontSize: 15.sp,
-                  color: colorScheme.onSurface,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search by pet name...',
-                  hintStyle: AppTextStyles.onboardingBody.copyWith(
-                    fontSize: 15.sp,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  errorBorder: InputBorder.none,
-                  focusedErrorBorder: InputBorder.none,
-                  filled: true,
-                  fillColor: Colors.transparent,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ),
-            if (currentQuery.isNotEmpty)
-              IconButton(
-                icon: Icon(
-                  Icons.clear,
-                  color: colorScheme.onSurfaceVariant,
-                  size: 20.sp,
-                ),
-                onPressed: () {
-                  _searchController.clear();
-                  context.read<AdoptionCubit>().searchListings('');
-                },
-              ),
-            SizedBox(width: 8.w),
-          ],
-        ),
-      ),
     );
   }
 

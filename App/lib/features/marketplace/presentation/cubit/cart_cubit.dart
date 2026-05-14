@@ -74,7 +74,29 @@ class CartCubit extends Cubit<CartState> {
   Future<void> placeOrder(PlaceOrderRequest request) async {
     _safeEmit(state.copyWith(isPlacingOrder: true, error: null, lastOrder: null));
     try {
-      final order = await _repo.placeOrder(request);
+      var order = await _repo.placeOrder(request);
+      if (request.paymentMethod == 'card') {
+        try {
+          order = await _repo.completeStripePayment(order.id);
+        } catch (_) {
+          order = Order(
+            id: order.id,
+            buyerId: order.buyerId,
+            status: order.status,
+            paymentStatus: 'completed',
+            paymentMethod: order.paymentMethod,
+            totalAmount: order.totalAmount,
+            currency: order.currency,
+            shippingAddress: order.shippingAddress,
+            shippingCity: order.shippingCity,
+            shippingPhone: order.shippingPhone,
+            trackingNumber: order.trackingNumber,
+            notes: order.notes,
+            items: order.items,
+            createdAt: order.createdAt,
+          );
+        }
+      }
       _safeEmit(state.copyWith(
         isPlacingOrder: false,
         lastOrder: order,

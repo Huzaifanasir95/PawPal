@@ -24,7 +24,7 @@ class AppConfig {
   /// Replace with your ngrok URL from: ngrok http 8081
   ///                             https://transudatory-fecklessly-karisa.ngrok-free.dev
   ///                             https://terminational-severer-aubrianna.ngrok-free.dev
-  static const String ngrokUrl = 'https://terminational-severer-aubrianna.ngrok-free.dev'; // Set to your ngrok URL or leave as is for local development
+  static const String ngrokUrl = 'https://transudatory-fecklessly-karisa.ngrok-free.dev'; // Set to your ngrok URL or leave as is for local development
   static String get backendBaseUrl {
     // If ngrok URL is configured, use it (works for emulator, device, and simulator)
     if (ngrokUrl.isNotEmpty) {

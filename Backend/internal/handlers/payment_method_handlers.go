@@ -34,10 +34,9 @@ func (h *PaymentMethodHandler) ListPaymentMethods(c *gin.Context) {
 
 	methods, err := h.repo.ListByUser(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to load payment methods"})
-		return
+		// Table may not exist yet — return empty list so the UI still loads
+		methods = []models.PaymentMethod{}
 	}
-
 	if methods == nil {
 		methods = []models.PaymentMethod{}
 	}

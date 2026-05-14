@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/joho/godotenv"
+
 	"pawpal-backend/internal/config"
 	"pawpal-backend/internal/database"
 	"pawpal-backend/internal/handlers"
@@ -16,6 +18,9 @@ import (
 )
 
 func main() {
+	// Load .env file so os.Getenv picks up STRIPE_SECRET_KEY and all other vars
+	_ = godotenv.Load()
+
 	// Initialize logger
 	logger := logger.NewLogger()
 

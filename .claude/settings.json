@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(dart analyze *)",
+      "Bash(PGPASSWORD=hz5L8q-5c5z_2UL psql postgresql://postgres.uicsjgjpvzajvbnvaygb:hz5L8q-5c5z_2UL@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require -c 'SELECT table_name FROM information_schema.tables WHERE table_schema = '\\\\''public'\\\\'' AND table_name = '\\\\''payment_methods'\\\\'';')",
+      "Bash(PGPASSWORD=hz5L8q-5c5z_2UL psql postgresql://postgres.uicsjgjpvzajvbnvaygb:hz5L8q-5c5z_2UL@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require -c '\\\\d public.payment_methods')",
+      "Bash(PGPASSWORD=hz5L8q-5c5z_2UL psql postgresql://postgres.uicsjgjpvzajvbnvaygb:hz5L8q-5c5z_2UL@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require -c 'ALTER TABLE public.payment_methods ADD COLUMN IF NOT EXISTS stripe_payment_method_id character varying;' -c 'CREATE UNIQUE INDEX IF NOT EXISTS payment_methods_stripe_payment_method_id_idx ON public.payment_methods\\(stripe_payment_method_id\\) WHERE stripe_payment_method_id IS NOT NULL;')"
     ]
   }
 }

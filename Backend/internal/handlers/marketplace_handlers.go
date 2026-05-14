@@ -732,13 +732,26 @@ func (h *MarketplaceHandlers) CreateOrderPaymentIntent(c *gin.Context) {
 	}
 
 	stripe.Key = stripeSecretKey
-	amountCents := int64(order.TotalAmount * 100)
-	if amountCents < 50 {
-		amountCents = 50 // Stripe minimum is 50 cents
-	}
-	currency := strings.ToLower(order.Currency)
-	if currency == "" {
+
+	// Stripe test accounts only accept a subset of currencies.
+	// PKR (and other regional currencies) is often not enabled on test accounts,
+	// so we normalise to USD for demo/test mode using a rough exchange rate.
+	currency := strings.ToLower(strings.TrimSpace(order.Currency))
+	amount := order.TotalAmount
+	switch currency {
+	case "usd", "eur", "gbp", "cad", "aud", "sgd", "aed", "sar":
+		// supported – use as-is
+	case "pkr":
+		// ~280 PKR per USD; keep at least $0.50
 		currency = "usd"
+		amount = amount / 280.0
+	default:
+		currency = "usd"
+	}
+
+	amountCents := int64(amount * 100)
+	if amountCents < 50 {
+		amountCents = 50
 	}
 
 	intent, err := paymentintent.New(&stripe.PaymentIntentParams{
@@ -746,12 +759,15 @@ func (h *MarketplaceHandlers) CreateOrderPaymentIntent(c *gin.Context) {
 		Currency:           stripe.String(currency),
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		Metadata: map[string]string{
-			"order_id": order.ID.String(),
-			"user_id":  userID.String(),
+			"order_id":          order.ID.String(),
+			"user_id":           userID.String(),
+			"original_currency": strings.ToLower(order.Currency),
+			"original_amount":   strconv.FormatFloat(order.TotalAmount, 'f', 2, 64),
 		},
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to create Stripe payment intent"})
+		stripeErr := err.Error()
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Stripe error: " + stripeErr})
 		return
 	}
 

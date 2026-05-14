@@ -307,7 +307,7 @@ class MarketplaceRepository {
 
   Future<Order> completeStripePayment(String orderId) async {
     try {
-      // Step 1: create a PaymentIntent on the backend
+      // Get PaymentIntent from backend
       final piResponse = await _apiClient.post(
         '/api/v1/marketplace/orders/$orderId/payment-intent',
       );
@@ -317,11 +317,11 @@ class MarketplaceRepository {
       final clientSecret = piResponse.data['clientSecret'] as String;
       final publishableKey = piResponse.data['publishableKey'] as String;
 
-      // Step 2: initialize Stripe with the publishable key
+      // Initialise Stripe
       Stripe.publishableKey = publishableKey;
       await Stripe.instance.applySettings();
 
-      // Step 3: present the Stripe PaymentSheet to the user
+      // Show Stripe PaymentSheet
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: clientSecret,
@@ -330,7 +330,7 @@ class MarketplaceRepository {
       );
       await Stripe.instance.presentPaymentSheet();
 
-      // Step 4: confirm the order on the backend
+      // Confirm order on backend
       final response = await _apiClient.post(
         '/api/v1/marketplace/orders/$orderId/stripe-webhook',
       );

@@ -1,3 +1,5 @@
+//go:build ignore
+
 package main
 
 import (
@@ -23,12 +25,11 @@ func main() {
 		log.Println("Continuing with Supabase REST API only...")
 	}
 
-	// Create Supabase repository
-	if database.Supabase == nil {
-		log.Fatal("Supabase client not initialized")
+	if database.DB == nil {
+		log.Fatal("DB pool not initialized")
 	}
 
-	repo := repositories.NewUserRepositorySupabase(database.Supabase)
+	repo := repositories.NewUserRepository(database.DB)
 
 	// Test GetByEmail (legacy method)
 	ctx := context.Background()

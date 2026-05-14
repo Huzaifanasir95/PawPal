@@ -273,3 +273,31 @@ func (r *ChatRepository) CheckUserIsInChat(ctx context.Context, chatID, userID u
 	err := r.db.QueryRow(ctx, query, chatID, userID).Scan(&exists)
 	return exists, err
 }
+
+// UpdateLastMessage updates the last message preview, timestamp, and unread counts
+func (r *ChatRepository) UpdateLastMessage(ctx context.Context, chatID uuid.UUID, senderID uuid.UUID, content string) error {
+	// First get the chat to know who is the owner and vet
+	var ownerID, vetID uuid.UUID
+	err := r.db.QueryRow(ctx, `SELECT pet_owner_id, vet_id FROM chats WHERE id = $1`, chatID).Scan(&ownerID, &vetID)
+	if err != nil {
+		return err
+	}
+
+	var query string
+	if senderID == ownerID {
+		// Sender is owner, increment unread for vet
+		query = `
+			UPDATE chats 
+			SET last_message = $2, last_message_at = $3, unread_count_vet = unread_count_vet + 1, updated_at = $3
+			WHERE id = $1`
+	} else {
+		// Sender is vet (or caregiver), increment unread for owner
+		query = `
+			UPDATE chats 
+			SET last_message = $2, last_message_at = $3, unread_count_owner = unread_count_owner + 1, updated_at = $3
+			WHERE id = $1`
+	}
+
+	_, err = r.db.Exec(ctx, query, chatID, content, time.Now())
+	return err
+}

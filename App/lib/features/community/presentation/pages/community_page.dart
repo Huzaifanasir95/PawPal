@@ -130,15 +130,13 @@ class _CommunityPageState extends State<CommunityPage> {
       builder: (context, state) {
         return Scaffold(
           key: _scaffoldKey,
-          backgroundColor: const Color(
-            0xFFF1F1F1,
-          ), // Background color from design
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           drawer: const CustomDrawer(),
           appBar: AppBar(
             backgroundColor: Theme.of(context).colorScheme.primary,
             elevation: 0,
             leading: IconButton(
-              icon: Icon(Icons.menu, color: Theme.of(context).colorScheme.secondary, size: 24.sp),
+              icon: Icon(Icons.menu, color: Theme.of(context).colorScheme.onPrimary, size: 24.sp),
               onPressed: () {
                 _scaffoldKey.currentState?.openDrawer();
               },
@@ -147,7 +145,7 @@ class _CommunityPageState extends State<CommunityPage> {
               'Community',
               style: AppTextStyles.onboardingTitle.copyWith(
                 fontSize: 20.sp,
-                color: Theme.of(context).colorScheme.secondary,
+                color: Theme.of(context).colorScheme.onPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -187,6 +185,7 @@ class _CommunityPageState extends State<CommunityPage> {
   }
 
   Widget _buildHeader() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -194,7 +193,7 @@ class _CommunityPageState extends State<CommunityPage> {
           'Welcome to the',
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 16.sp,
-            color: const Color(0xFFA1A1A1),
+            color: colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -203,7 +202,7 @@ class _CommunityPageState extends State<CommunityPage> {
           'Community Page',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 32.sp,
-            color: const Color(0xFF324B49),
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -212,51 +211,70 @@ class _CommunityPageState extends State<CommunityPage> {
   }
 
   Widget _buildSearchAndFilter() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         // Search Box
         Expanded(
           child: Container(
-            height: 58.h,
+            height: 50.h,
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFA1A1A1), width: 1.w),
-              borderRadius: BorderRadius.circular(47.r),
+              color: colorScheme.surface,
+              border: Border.all(color: colorScheme.outline.withOpacity(0.5), width: 1),
+              borderRadius: BorderRadius.circular(25.r),
             ),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search posts...',
-                hintStyle: AppTextStyles.onboardingBody.copyWith(
-                  fontSize: 14.sp,
-                  color: const Color(0xFFA1A1A1),
-                ),
-                prefixIcon: Icon(
+            child: Row(
+              children: [
+                SizedBox(width: 16.w),
+                Icon(
                   Icons.search,
-                  color: const Color(0xFFA1A1A1),
-                  size: 17.w,
+                  color: colorScheme.onSurfaceVariant,
+                  size: 20.sp,
                 ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16.w,
-                  vertical: 16.h,
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    style: AppTextStyles.onboardingBody.copyWith(
+                      fontSize: 14.sp,
+                      color: colorScheme.onSurface,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Search posts...',
+                      hintStyle: AppTextStyles.onboardingBody.copyWith(
+                        fontSize: 14.sp,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
+                      filled: true,
+                      fillColor: Colors.transparent,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.trim().toLowerCase();
+                      });
+                    },
+                  ),
                 ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.trim().toLowerCase();
-                });
-              },
+                SizedBox(width: 8.w),
+              ],
             ),
           ),
         ),
         SizedBox(width: 12.w),
         // Filter Button
         Container(
-          width: 49.w,
+          width: 46.w,
           height: 46.h,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.secondary,
-            borderRadius: BorderRadius.circular(484.r),
+            color: colorScheme.primary,
+            borderRadius: BorderRadius.circular(23.r),
           ),
           child: PopupMenuButton<String>(
             onSelected: (value) {
@@ -287,7 +305,7 @@ class _CommunityPageState extends State<CommunityPage> {
                 ],
             child: Icon(
               Icons.filter_list,
-              color: Theme.of(context).colorScheme.surface,
+              color: colorScheme.onPrimary,
               size: 20.w,
             ),
           ),
@@ -351,19 +369,19 @@ class _CommunityPageState extends State<CommunityPage> {
                 PostCategory.getLabel(category),
                 style: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 12.sp,
-                  color: isSelected ? Colors.white : const Color(0xFF324B49),
+                  color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               selected: isSelected,
               onSelected: (_) => _onCategorySelected(category),
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               selectedColor: Theme.of(context).colorScheme.primary,
-              checkmarkColor: Colors.white,
+              checkmarkColor: Theme.of(context).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20.r),
                 side: BorderSide(
                   color:
-                      isSelected ? Theme.of(context).colorScheme.primary : const Color(0xFFAAD5D1),
+                      isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
                 ),
               ),
             ),
@@ -388,7 +406,7 @@ class _CommunityPageState extends State<CommunityPage> {
           'Trending Hashtags',
           style: AppTextStyles.titleMedium.copyWith(
             fontSize: 16.sp,
-            color: const Color(0xFF324B49),
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -407,16 +425,16 @@ class _CommunityPageState extends State<CommunityPage> {
                     '${trend.tag} (${trend.usageCount})',
                     style: AppTextStyles.labelSmall.copyWith(
                       color:
-                          isSelected ? Colors.white : const Color(0xFF324B49),
+                          isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   backgroundColor:
-                      isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
+                      isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface,
                   side: BorderSide(
                     color:
                         isSelected
                             ? Theme.of(context).colorScheme.primary
-                            : const Color(0xFFAAD5D1),
+                            : Theme.of(context).colorScheme.outline,
                   ),
                   onPressed: () {
                     final value = trend.tag.toLowerCase();
@@ -447,7 +465,7 @@ class _CommunityPageState extends State<CommunityPage> {
               'Popular Groups',
               style: AppTextStyles.titleMedium.copyWith(
                 fontSize: 16.sp,
-                color: const Color(0xFF324B49),
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -471,9 +489,9 @@ class _CommunityPageState extends State<CommunityPage> {
                 width: 210.w,
                 padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(14.r),
-                  border: Border.all(color: const Color(0xFFAAD5D1)),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -501,7 +519,7 @@ class _CommunityPageState extends State<CommunityPage> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: const Color(0xFF6B7280),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     const Spacer(),
@@ -563,7 +581,7 @@ class _CommunityPageState extends State<CommunityPage> {
           'No posts yet. Be the first to share!',
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 16.sp,
-            color: const Color(0xFFA1A1A1),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       );
@@ -575,7 +593,7 @@ class _CommunityPageState extends State<CommunityPage> {
           'No posts matched your search.',
           style: AppTextStyles.onboardingBody.copyWith(
             fontSize: 15.sp,
-            color: const Color(0xFFA1A1A1),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       );

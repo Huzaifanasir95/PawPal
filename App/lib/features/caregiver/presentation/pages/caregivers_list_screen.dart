@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/widgets/custom_search_bar.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../data/repositories/caregiver_repository.dart';
@@ -204,59 +205,16 @@ class _CaregiversListScreenState extends State<CaregiversListScreen> {
   }
 
   Widget _buildSearchBar() {
-    return Container(
-      margin: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 12.h),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(18.r),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.12),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Search by name or location...',
-          hintStyle: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.6),
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: Theme.of(context).colorScheme.primary,
-            size: 22.w,
-          ),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), size: 20.w),
-                  onPressed: () {
-                    _searchController.clear();
-                    _applyFilters();
-                  },
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18.r),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18.r),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18.r),
-            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
-          ),
-          filled: true,
-          fillColor: Theme.of(context).colorScheme.surface,
-          contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-        ),
-        onSubmitted: (value) => _applyFilters(),
-        onChanged: (value) => setState(() {}),
-      ),
+    return CustomSearchBar(
+      controller: _searchController,
+      hintText: 'Search by name or location...',
+      onChanged: (value) {
+        setState(() {});
+      },
+      onClear: () {
+        _applyFilters();
+      },
+      padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 12.h),
     );
   }
 

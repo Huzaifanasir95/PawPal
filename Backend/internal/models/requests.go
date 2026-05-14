@@ -72,6 +72,17 @@ type UpdatePasswordRequest struct {
 	NewPassword     string `json:"newPassword" binding:"required,min=6"`
 }
 
+// CreatePaymentMethodRequest captures a card for demo-only saved payment methods.
+type CreatePaymentMethodRequest struct {
+	CardholderName string  `json:"cardholderName" binding:"required"`
+	CardNumber     string  `json:"cardNumber" binding:"required"`
+	ExpiryMonth    int     `json:"expiryMonth" binding:"required,min=1,max=12"`
+	ExpiryYear     int     `json:"expiryYear" binding:"required,min=2024"`
+	Cvv            string  `json:"cvv" binding:"required,min=3,max=4"`
+	Nickname       *string `json:"nickname,omitempty"`
+	SetAsDefault   bool    `json:"setAsDefault"`
+}
+
 // AddRoleRequest represents a request to assign an additional role to a user.
 type AddRoleRequest struct {
 	Role string `json:"role" binding:"required"`

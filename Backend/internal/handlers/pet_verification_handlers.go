@@ -90,11 +90,12 @@ func (h *PetVerificationHandlers) VerifyPetBreed(c *gin.Context) {
 
 	// Determine pet type
 	var petType models.PetType
-	if pet.Type == "dog" {
+	switch pet.Type {
+	case "dog":
 		petType = models.PetTypeDog
-	} else if pet.Type == "cat" {
+	case "cat":
 		petType = models.PetTypeCat
-	} else {
+	default:
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Success: false,
 			Error:   "Invalid pet type. Must be 'dog' or 'cat'",
@@ -262,11 +263,12 @@ func (h *PetVerificationHandlers) VerifyPetBreedFromFile(c *gin.Context) {
 
 	// Determine pet type
 	var petType models.PetType
-	if pet.Type == "dog" {
+	switch pet.Type {
+	case "dog":
 		petType = models.PetTypeDog
-	} else if pet.Type == "cat" {
+	case "cat":
 		petType = models.PetTypeCat
-	} else {
+	default:
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Success: false,
 			Error:   "Invalid pet type. Must be 'dog' or 'cat'",
@@ -387,11 +389,12 @@ func (h *PetVerificationHandlers) VerifyPetBreedFromURL(c *gin.Context) {
 
 	// Determine pet type
 	var petType models.PetType
-	if pet.Type == "dog" {
+	switch pet.Type {
+	case "dog":
 		petType = models.PetTypeDog
-	} else if pet.Type == "cat" {
+	case "cat":
 		petType = models.PetTypeCat
-	} else {
+	default:
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Success: false,
 			Error:   "Invalid pet type. Must be 'dog' or 'cat'",

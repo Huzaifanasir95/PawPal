@@ -116,14 +116,14 @@ class _CreatePostPageState extends State<CreatePostPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F1F1),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: Theme.of(context).colorScheme.secondary,
+            color: Theme.of(context).colorScheme.onPrimary,
             size: 24.sp,
           ),
           onPressed: () => Navigator.pop(context),
@@ -132,7 +132,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
           'Create Post',
           style: AppTextStyles.onboardingTitle.copyWith(
             fontSize: 20.sp,
-            color: Theme.of(context).colorScheme.secondary,
+            color: Theme.of(context).colorScheme.onPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -145,14 +145,14 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     height: 20.h,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.w,
-                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.secondary),
+                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.onPrimary),
                     ),
                   )
                 : Text(
                     'Post',
                     style: AppTextStyles.onboardingBody.copyWith(
                       fontSize: 16.sp,
-                      color: Theme.of(context).colorScheme.secondary,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -169,7 +169,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               'Title',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 16.sp,
-                color: const Color(0xFF324B49),
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -181,15 +181,15 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 hintText: 'Enter post title...',
                 hintStyle: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 14.sp,
-                  color: const Color(0xFFA1A1A1),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
-                  borderSide: const BorderSide(color: Color(0xFFAAD5D1)),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
-                  borderSide: const BorderSide(color: Color(0xFFAAD5D1), width: 2),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
                 ),
                 contentPadding: EdgeInsets.all(16.w),
               ),
@@ -202,7 +202,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               'Category',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 16.sp,
-                color: const Color(0xFF324B49),
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -210,7 +210,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFAAD5D1)),
+                border: Border.all(color: Theme.of(context).colorScheme.outline),
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: DropdownButtonHideUnderline(
@@ -225,7 +225,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                               PostCategory.getLabel(category),
                               style: AppTextStyles.onboardingBody.copyWith(
                                 fontSize: 14.sp,
-                                color: const Color(0xFF324B49),
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ))
@@ -246,7 +246,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               'Content',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 16.sp,
-                color: const Color(0xFF324B49),
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -259,15 +259,15 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 hintText: 'Share your thoughts...',
                 hintStyle: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 14.sp,
-                  color: const Color(0xFFA1A1A1),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
-                  borderSide: const BorderSide(color: Color(0xFFAAD5D1)),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
-                  borderSide: const BorderSide(color: Color(0xFFAAD5D1), width: 2),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
                 ),
                 contentPadding: EdgeInsets.all(16.w),
               ),
@@ -280,7 +280,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               'Photos',
               style: AppTextStyles.onboardingBody.copyWith(
                 fontSize: 16.sp,
-                color: const Color(0xFF324B49),
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -295,13 +295,13 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     icon: Icon(
                       Icons.photo_library,
                       size: 20.w,
-                      color: Theme.of(context).colorScheme.secondary,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                     label: Text(
                       'Gallery',
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 14.sp,
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -321,13 +321,13 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     icon: Icon(
                       Icons.camera_alt,
                       size: 20.w,
-                      color: Theme.of(context).colorScheme.secondary,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                     label: Text(
                       'Camera',
                       style: AppTextStyles.onboardingBody.copyWith(
                         fontSize: 14.sp,
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -350,7 +350,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 'Selected Images (${_selectedImages.length})',
                 style: AppTextStyles.onboardingBody.copyWith(
                   fontSize: 14.sp,
-                  color: const Color(0xFF324B49),
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),

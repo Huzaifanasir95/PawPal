@@ -346,11 +346,13 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
                     ),
                   ),
                   SizedBox(height: 12.h),
-                  Wrap(
-                    spacing: 4.w,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
                       5,
                       (index) => IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                         onPressed: () {
                           setDialogState(() => rating = index + 1);
                         },
@@ -359,6 +361,7 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
                               ? Icons.star_rounded
                               : Icons.star_outline_rounded,
                           color: Colors.amber,
+                          size: 32.sp,
                         ),
                       ),
                     ),
@@ -651,7 +654,7 @@ class _VetAppointmentsScreenState extends State<VetAppointmentsScreen>
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 44.h),
                 backgroundColor: colorScheme.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: colorScheme.onPrimary,
               ),
               icon: const Icon(Icons.star_rate_rounded),
               label: const Text('Leave Review'),

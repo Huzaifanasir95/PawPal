@@ -62,4 +62,12 @@ class AppColors {
   static const Color googleButton = Color(0xFFAAD5D1);
   static const Color socialBorder = Color(0xFFAAD5D1);
   static const Color socialIcon = Color(0xFF81B5B0);
+
+  // Dark Mode Colors
+  static const Color darkBackground = Color(0xFF121212);
+  static const Color darkSurface = Color(0xFF1E1E1E);
+  static const Color darkSurfaceContainer = Color(0xFF2C2C2C);
+  static const Color darkTextPrimary = Color(0xFFF5F5F5);
+  static const Color darkTextSecondary = Color(0xFFB0B0B0);
+  static const Color darkBorder = Color(0xFF333333);
 }

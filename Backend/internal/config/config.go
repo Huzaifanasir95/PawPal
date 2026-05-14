@@ -8,6 +8,7 @@ type Config struct {
 	Server ServerConfig `json:"server"`
 	Models ModelsConfig `json:"models"`
 	Python PythonConfig `json:"python"`
+	Payments PaymentsConfig `json:"payments"`
 }
 
 type ServerConfig struct {
@@ -55,6 +56,10 @@ type PythonConfig struct {
 	VenvPath     string `json:"venv_path"`
 }
 
+type PaymentsConfig struct {
+	DemoMode bool `json:"demo_mode"`
+}
+
 func LoadConfig() (*Config, error) {
 	// Default configuration
 	config := &Config{
@@ -95,6 +100,9 @@ func LoadConfig() (*Config, error) {
 			ScriptPath: getEnv("PYTHON_SCRIPT_PATH", "d:\\PawPal\\Backend\\scripts\\python\\predict.py"),
 			Timeout:    getEnvInt("PYTHON_TIMEOUT", 30),
 			VenvPath:   getEnv("PYTHON_VENV_PATH", ""),
+		},
+		Payments: PaymentsConfig{
+			DemoMode: getEnvBool("PAYMENT_DEMO_MODE", true),
 		},
 	}
 	

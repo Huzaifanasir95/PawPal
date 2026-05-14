@@ -1,3 +1,5 @@
+//go:build ignore
+
 package main
 
 import (
@@ -23,7 +25,7 @@ func main() {
 		log.Fatalf("Database init failed: %v", err)
 	}
 
-	repo := repositories.NewUserRepositorySupabase(database.Supabase)
+	repo := repositories.NewUserRepository(database.DB)
 	ctx := context.Background()
 	
 	// Use the latest test email from the PowerShell test

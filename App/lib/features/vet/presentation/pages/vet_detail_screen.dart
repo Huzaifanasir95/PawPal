@@ -245,7 +245,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
             height: 140.h,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.14),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
             ),
           ),
         ),
@@ -343,7 +343,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
               ),
               child: Icon(
                 Icons.arrow_back_rounded,
-                color: Theme.of(context).colorScheme.secondary,
+                color: Theme.of(context).colorScheme.onPrimary,
                 size: 22.sp,
               ),
             ),
@@ -409,7 +409,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
             width: 100.w,
             height: 100.h,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.28),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(24.r),
               border: Border.all(color: Theme.of(context).colorScheme.outline, width: 2),
               image:
@@ -498,12 +498,12 @@ class _VetDetailScreenState extends State<VetDetailScreen>
     return Row(
       children: [
         Container(
-          width: 28.w,
-          height: 28.h,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.35),
-            borderRadius: BorderRadius.circular(8.r),
-          ),
+            width: 28.w,
+            height: 28.h,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
           child: Icon(icon, size: 16.sp, color: Theme.of(context).colorScheme.primary),
         ),
         SizedBox(width: 8.w),
@@ -569,12 +569,12 @@ class _VetDetailScreenState extends State<VetDetailScreen>
       child: Column(
         children: [
           Container(
-            width: 44.w,
-            height: 44.h,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.35),
-              borderRadius: BorderRadius.circular(12.r),
-            ),
+              width: 44.w,
+              height: 44.h,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
             child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 22.sp),
           ),
           SizedBox(height: 8.h),
@@ -663,7 +663,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.45),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(20.r),
         ),
         child: Text(
@@ -1382,7 +1382,7 @@ class _VetDetailScreenState extends State<VetDetailScreen>
                         width: 42.w,
                         height: 4.h,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6).withOpacity(0.35),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(999.r),
                         ),
                       ),

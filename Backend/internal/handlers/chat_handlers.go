@@ -325,6 +325,9 @@ func (h *ChatHandlers) SendMessage(c *gin.Context) {
 		return
 	}
 
+	// Update the chat's last message
+	_ = h.chatRepo.UpdateLastMessage(c.Request.Context(), req.ChatID, userUUID, req.Content)
+
 	// Broadcast message via WebSocket to other users in the chat
 	messageData := map[string]interface{}{
 		"id":        message.ID.String(),

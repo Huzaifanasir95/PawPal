@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../core/presentation/pages/payment_completed_screen.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import '../../../../core/di/service_locator.dart';
@@ -7,6 +8,7 @@ import '../../data/repositories/booking_repository.dart';
 import '../../data/models/booking_models.dart';
 import '../../../chat/data/repositories/chat_repository.dart';
 import '../../../chat/presentation/pages/chat_conversation_screen.dart';
+import '../../../payments/presentation/pages/payment_methods_screen.dart';
 
 class BookingDetailScreen extends StatefulWidget {
   final String bookingId;
@@ -909,6 +911,21 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           labelText: 'Payment Method',
                         ),
                       ),
+                      SizedBox(height: 10.h),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const PaymentMethodsScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.add_card_rounded),
+                          label: const Text('Card Details'),
+                        ),
+                      ),
                     ],
                   ),
                   actions: [
@@ -935,7 +952,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
     setState(() => _isProcessingPayment = true);
     try {
-      await _repository.processPayment(
+      final payment = await _repository.processPayment(
         widget.bookingId,
         ProcessPaymentRequest(
           amount: _booking!.totalAmount,
@@ -945,9 +962,21 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       );
 
       if (mounted) {
-        CustomSnackbar.showSuccess(
+        Navigator.push(
           context,
-          'Payment completed. Your caregiver can now start the service.',
+          MaterialPageRoute(
+            builder: (_) => PaymentCompletedScreen(
+              amount: payment.amount,
+              currency: payment.currency,
+              transactionId: payment.transactionId ?? '',
+              referenceId: _booking!.bookingNumber,
+              paymentMethod: payment.paymentMethod ?? method,
+              isBooking: true,
+              onViewDetails: () {
+                Navigator.pop(context); // close payment screen
+              },
+            ),
+          ),
         );
       }
       await _loadData();

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../../../core/services/api_client.dart';
 import '../models/marketplace_models.dart';
 
@@ -306,6 +307,30 @@ class MarketplaceRepository {
 
   Future<Order> completeStripePayment(String orderId) async {
     try {
+      // Step 1: create a PaymentIntent on the backend
+      final piResponse = await _apiClient.post(
+        '/api/v1/marketplace/orders/$orderId/payment-intent',
+      );
+      if (piResponse.data['success'] != true) {
+        throw Exception(piResponse.data['error'] ?? 'Failed to create payment');
+      }
+      final clientSecret = piResponse.data['clientSecret'] as String;
+      final publishableKey = piResponse.data['publishableKey'] as String;
+
+      // Step 2: initialize Stripe with the publishable key
+      Stripe.publishableKey = publishableKey;
+      await Stripe.instance.applySettings();
+
+      // Step 3: present the Stripe PaymentSheet to the user
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: clientSecret,
+          merchantDisplayName: 'PawPal',
+        ),
+      );
+      await Stripe.instance.presentPaymentSheet();
+
+      // Step 4: confirm the order on the backend
       final response = await _apiClient.post(
         '/api/v1/marketplace/orders/$orderId/stripe-webhook',
       );
@@ -313,6 +338,8 @@ class MarketplaceRepository {
         return Order.fromJson(response.data['order'] as Map<String, dynamic>);
       }
       throw Exception(response.data['error'] ?? 'Failed to complete payment');
+    } on StripeException catch (e) {
+      throw Exception(e.error.localizedMessage ?? 'Payment cancelled');
     } on DioException catch (e) {
       throw Exception(
         e.response?.data?['error'] ?? 'Network error: ${e.message}',

@@ -4,12 +4,15 @@ import (
 	"errors"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v81/paymentintent"
 
 	"pawpal-backend/internal/models"
 	"pawpal-backend/internal/repositories"
@@ -692,6 +695,73 @@ func (h *MarketplaceHandlers) PlaceOrder(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"success": true, "order": order})
+}
+
+// CreateOrderPaymentIntent creates a Stripe PaymentIntent for an order so the client can present the PaymentSheet.
+func (h *MarketplaceHandlers) CreateOrderPaymentIntent(c *gin.Context) {
+	userID, ok := getAuthUserID(c)
+	if !ok {
+		return
+	}
+
+	orderID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid order ID"})
+		return
+	}
+
+	order, err := h.marketplaceRepo.GetOrderByID(c.Request.Context(), orderID)
+	if err != nil || order == nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Order not found"})
+		return
+	}
+	if order.BuyerID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You can only pay for your own order"})
+		return
+	}
+	if !strings.EqualFold(order.PaymentMethod, "card") {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Order payment method is not card"})
+		return
+	}
+
+	stripeSecretKey := strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY"))
+	stripePublishableKey := strings.TrimSpace(os.Getenv("STRIPE_PUBLISHABLE_KEY"))
+	if stripeSecretKey == "" || stripePublishableKey == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Stripe configuration is missing"})
+		return
+	}
+
+	stripe.Key = stripeSecretKey
+	amountCents := int64(order.TotalAmount * 100)
+	if amountCents < 50 {
+		amountCents = 50 // Stripe minimum is 50 cents
+	}
+	currency := strings.ToLower(order.Currency)
+	if currency == "" {
+		currency = "usd"
+	}
+
+	intent, err := paymentintent.New(&stripe.PaymentIntentParams{
+		Amount:             stripe.Int64(amountCents),
+		Currency:           stripe.String(currency),
+		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		Metadata: map[string]string{
+			"order_id": order.ID.String(),
+			"user_id":  userID.String(),
+		},
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to create Stripe payment intent"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":        true,
+		"clientSecret":   intent.ClientSecret,
+		"publishableKey": stripePublishableKey,
+		"amount":         order.TotalAmount,
+		"currency":       currency,
+	})
 }
 
 // CompleteStripePayment marks a card order as completed through a simulated Stripe webhook flow.

@@ -321,6 +321,7 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				market.POST("/orders", marketplaceHandlers.PlaceOrder)
 				market.GET("/orders", marketplaceHandlers.GetOrders)
 				market.GET("/orders/:id", marketplaceHandlers.GetOrder)
+				market.POST("/orders/:id/payment-intent", marketplaceHandlers.CreateOrderPaymentIntent)
 				market.POST("/orders/:id/stripe-webhook", marketplaceHandlers.CompleteStripePayment)
 				market.PUT("/orders/:id/status", marketplaceHandlers.UpdateOrderStatus)
 

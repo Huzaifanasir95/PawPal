@@ -76,26 +76,7 @@ class CartCubit extends Cubit<CartState> {
     try {
       var order = await _repo.placeOrder(request);
       if (request.paymentMethod == 'card') {
-        try {
-          order = await _repo.completeStripePayment(order.id);
-        } catch (_) {
-          order = Order(
-            id: order.id,
-            buyerId: order.buyerId,
-            status: order.status,
-            paymentStatus: 'completed',
-            paymentMethod: order.paymentMethod,
-            totalAmount: order.totalAmount,
-            currency: order.currency,
-            shippingAddress: order.shippingAddress,
-            shippingCity: order.shippingCity,
-            shippingPhone: order.shippingPhone,
-            trackingNumber: order.trackingNumber,
-            notes: order.notes,
-            items: order.items,
-            createdAt: order.createdAt,
-          );
-        }
+        order = await _repo.completeStripePayment(order.id);
       }
       _safeEmit(state.copyWith(
         isPlacingOrder: false,

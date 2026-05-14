@@ -83,6 +83,22 @@ type CreatePaymentMethodRequest struct {
 	SetAsDefault   bool    `json:"setAsDefault"`
 }
 
+// CreateStripeSetupIntentResponse returns the Stripe setup intent and publishable key.
+type CreateStripeSetupIntentResponse struct {
+	Success         bool   `json:"success"`
+	SetupIntentID   string `json:"setupIntentId"`
+	ClientSecret    string `json:"clientSecret"`
+	PublishableKey  string `json:"publishableKey"`
+}
+
+// ConfirmStripePaymentMethodRequest finalizes a saved card after Stripe confirms the setup intent.
+type ConfirmStripePaymentMethodRequest struct {
+	SetupIntentID  string  `json:"setupIntentId" binding:"required"`
+	CardholderName string  `json:"cardholderName" binding:"required"`
+	Nickname       *string `json:"nickname,omitempty"`
+	SetAsDefault   bool    `json:"setAsDefault"`
+}
+
 // AddRoleRequest represents a request to assign an additional role to a user.
 type AddRoleRequest struct {
 	Role string `json:"role" binding:"required"`

@@ -181,6 +181,8 @@ func setupRouter(h *handlers.Handlers, authHandlers *handlers.AuthHandlers, petH
 				{
 					paymentMethods.GET("", paymentMethodHandlers.ListPaymentMethods)
 					paymentMethods.POST("", paymentMethodHandlers.CreatePaymentMethod)
+					paymentMethods.POST("/stripe/setup-intent", paymentMethodHandlers.CreateStripeSetupIntent)
+					paymentMethods.POST("/stripe/confirm", paymentMethodHandlers.ConfirmStripePaymentMethod)
 					paymentMethods.POST("/:id/default", paymentMethodHandlers.SetDefaultPaymentMethod)
 					paymentMethods.DELETE("/:id", paymentMethodHandlers.DeletePaymentMethod)
 				}

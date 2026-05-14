@@ -17,10 +17,6 @@ class StripeCardFormScreen extends StatefulWidget {
 
 class _StripeCardFormScreenState extends State<StripeCardFormScreen> {
   final _cardholderController = TextEditingController();
-  final _cardNumberController = TextEditingController();
-  final _expiryMonthController = TextEditingController();
-  final _expiryYearController = TextEditingController();
-  final _cvcController = TextEditingController();
   final _nicknameController = TextEditingController();
   bool _setAsDefault = true;
   bool _isSaving = false;
@@ -28,57 +24,22 @@ class _StripeCardFormScreenState extends State<StripeCardFormScreen> {
   @override
   void dispose() {
     _cardholderController.dispose();
-    _cardNumberController.dispose();
-    _expiryMonthController.dispose();
-    _expiryYearController.dispose();
-    _cvcController.dispose();
     _nicknameController.dispose();
     super.dispose();
   }
 
   Future<void> _saveCard() async {
-    final cardNumber = _cardNumberController.text.trim();
-    final expiryMonth = _expiryMonthController.text.trim();
-    final expiryYear = _expiryYearController.text.trim();
-    final cvc = _cvcController.text.trim();
     final cardholder = _cardholderController.text.trim();
 
-    if (cardNumber.isEmpty || expiryMonth.isEmpty || expiryYear.isEmpty || cvc.isEmpty || cardholder.isEmpty) {
-      _showSnackBar('Please fill in all card details', isError: true);
-      return;
-    }
-
-    if (cardNumber.length < 13 || cardNumber.length > 19) {
-      _showSnackBar('Invalid card number', isError: true);
-      return;
-    }
-
-    if (cvc.length < 3 || cvc.length > 4) {
-      _showSnackBar('Invalid CVC', isError: true);
+    if (cardholder.isEmpty) {
+      _showSnackBar('Please enter the cardholder name', isError: true);
       return;
     }
 
     setState(() => _isSaving = true);
     try {
-      final expiryMonthInt = int.tryParse(expiryMonth) ?? 0;
-      final expiryYearInt = int.tryParse(expiryYear) ?? 0;
-
-      if (expiryMonthInt < 1 || expiryMonthInt > 12) {
-        _showSnackBar('Invalid expiry month', isError: true);
-        return;
-      }
-
-      if (expiryYearInt < 2024) {
-        _showSnackBar('Card has expired', isError: true);
-        return;
-      }
-
       await widget.repo.addPaymentMethod(
         cardholderName: cardholder,
-        cardNumber: cardNumber,
-        expiryMonth: expiryMonthInt,
-        expiryYear: expiryYearInt,
-        cvv: cvc,
         nickname: _nicknameController.text.trim().isEmpty
             ? null
             : _nicknameController.text.trim(),
@@ -183,7 +144,6 @@ class _StripeCardFormScreenState extends State<StripeCardFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Card Form Title
             Row(
               children: [
                 Container(
@@ -224,62 +184,27 @@ class _StripeCardFormScreenState extends State<StripeCardFormScreen> {
               ],
             ),
             SizedBox(height: 24.h),
-            // Cardholder Name
+            Text(
+              'Stripe will open a secure payment popup after you continue.',
+              style: GoogleFonts.mulish(
+                fontSize: 13.sp,
+                color: colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+            SizedBox(height: 20.h),
             _buildCardField(
               controller: _cardholderController,
               label: 'Cardholder Name',
               hint: 'John Doe',
             ),
             SizedBox(height: 16.h),
-            // Card Number
-            _buildCardField(
-              controller: _cardNumberController,
-              label: 'Card Number',
-              hint: '1234 5678 9012 3456',
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 16.h),
-            // Expiry and CVC
-            Row(
-              children: [
-                Expanded(
-                  child: _buildCardField(
-                    controller: _expiryMonthController,
-                    label: 'Expiry Month',
-                    hint: 'MM',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: _buildCardField(
-                    controller: _expiryYearController,
-                    label: 'Expiry Year',
-                    hint: 'YYYY',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: _buildCardField(
-                    controller: _cvcController,
-                    label: 'CVC',
-                    hint: '123',
-                    keyboardType: TextInputType.number,
-                    obscureText: true,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16.h),
-            // Card Nickname
             _buildCardField(
               controller: _nicknameController,
               label: 'Card Nickname (optional)',
               hint: 'Personal Visa',
             ),
             SizedBox(height: 16.h),
-            // Set as default toggle
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
               value: _setAsDefault,
@@ -294,7 +219,6 @@ class _StripeCardFormScreenState extends State<StripeCardFormScreen> {
               ),
             ),
             SizedBox(height: 20.h),
-            // Security info
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
@@ -323,7 +247,6 @@ class _StripeCardFormScreenState extends State<StripeCardFormScreen> {
               ),
             ),
             SizedBox(height: 32.h),
-            // Save button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -346,7 +269,7 @@ class _StripeCardFormScreenState extends State<StripeCardFormScreen> {
                         ),
                       )
                     : Text(
-                        'Save Card',
+                        'Continue to Stripe',
                         style: GoogleFonts.mulish(
                           color: colorScheme.onPrimary,
                           fontWeight: FontWeight.w700,

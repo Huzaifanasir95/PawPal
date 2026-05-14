@@ -11,6 +11,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v81/paymentmethod"
+	"github.com/stripe/stripe-go/v81/setupintent"
 )
 
 type PaymentMethodHandler struct {
@@ -96,6 +99,120 @@ func (h *PaymentMethodHandler) CreatePaymentMethod(c *gin.Context) {
 		"success": true,
 		"message": "Card saved in demo vault",
 		"paymentMethod": method,
+	})
+}
+
+func (h *PaymentMethodHandler) CreateStripeSetupIntent(c *gin.Context) {
+	userID, ok := getAuthUserID(c)
+	if !ok {
+		return
+	}
+
+	stripeSecretKey := strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY"))
+	stripePublishableKey := strings.TrimSpace(os.Getenv("STRIPE_PUBLISHABLE_KEY"))
+	if stripeSecretKey == "" || stripePublishableKey == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Stripe configuration is missing"})
+		return
+	}
+
+	stripe.Key = stripeSecretKey
+	intent, err := setupintent.New(&stripe.SetupIntentParams{
+		Usage:             stripe.String(string(stripe.SetupIntentUsageOffSession)),
+		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		Metadata:          map[string]string{"user_id": userID.String()},
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to create Stripe setup intent"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success":        true,
+		"setupIntentId":  intent.ID,
+		"clientSecret":   intent.ClientSecret,
+		"publishableKey": stripePublishableKey,
+	})
+}
+
+func (h *PaymentMethodHandler) ConfirmStripePaymentMethod(c *gin.Context) {
+	userID, ok := getAuthUserID(c)
+	if !ok {
+		return
+	}
+
+	stripeSecretKey := strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY"))
+	if stripeSecretKey == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Stripe configuration is missing"})
+		return
+	}
+
+	var req models.ConfirmStripePaymentMethodRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+
+	stripe.Key = stripeSecretKey
+	intent, err := setupintent.Get(req.SetupIntentID, nil)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Failed to load Stripe setup intent"})
+		return
+	}
+	if intent == nil || intent.Status != stripe.SetupIntentStatusSucceeded {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Stripe setup intent is not completed"})
+		return
+	}
+	if intent.PaymentMethod == nil || intent.PaymentMethod.ID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Stripe payment method was not returned"})
+		return
+	}
+
+	stripePaymentMethod, err := paymentmethod.Get(intent.PaymentMethod.ID, nil)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Failed to load Stripe payment method"})
+		return
+	}
+	if stripePaymentMethod.Card == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Stripe payment method is not a card"})
+		return
+	}
+
+	cardholderName := strings.TrimSpace(req.CardholderName)
+	if cardholderName == "" && stripePaymentMethod.BillingDetails != nil {
+		cardholderName = strings.TrimSpace(stripePaymentMethod.BillingDetails.Name)
+	}
+	if cardholderName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Cardholder name is required"})
+		return
+	}
+
+	stripePaymentMethodID := stripePaymentMethod.ID
+	method := &models.PaymentMethod{
+		UserID:                userID,
+		MethodType:            "card",
+		StripePaymentMethodID: &stripePaymentMethodID,
+		Brand:                 string(stripePaymentMethod.Card.Brand),
+		CardholderName:        cardholderName,
+		Last4:                 stripePaymentMethod.Card.Last4,
+		ExpiryMonth:           int(stripePaymentMethod.Card.ExpMonth),
+		ExpiryYear:            int(stripePaymentMethod.Card.ExpYear),
+		Nickname:              req.Nickname,
+		IsDefault:             req.SetAsDefault,
+	}
+
+	if method.Brand == "" {
+		method.Brand = "Card"
+	}
+
+	if err := h.repo.Create(c.Request.Context(), method); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to save payment method"})
+		return
+	}
+
+	method.MaskedNumber = "**** **** **** " + method.Last4
+	c.JSON(http.StatusCreated, gin.H{
+		"success":        true,
+		"message":        "Stripe card saved successfully",
+		"paymentMethod":   method,
 	})
 }
 

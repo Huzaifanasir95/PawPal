@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"time"
 
@@ -22,7 +23,7 @@ func NewPaymentMethodRepository(db *pgxpool.Pool) *PaymentMethodRepository {
 
 func (r *PaymentMethodRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]models.PaymentMethod, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT id, user_id, method_type, brand, cardholder_name, last4,
+		SELECT id, user_id, method_type, stripe_payment_method_id, brand, cardholder_name, last4,
 			expiry_month, expiry_year, nickname, is_default, created_at, updated_at
 		FROM payment_methods
 		WHERE user_id = $1
@@ -36,11 +37,15 @@ func (r *PaymentMethodRepository) ListByUser(ctx context.Context, userID uuid.UU
 	methods := make([]models.PaymentMethod, 0)
 	for rows.Next() {
 		var method models.PaymentMethod
+		var stripePaymentMethodID sql.NullString
 		if err := rows.Scan(
-			&method.ID, &method.UserID, &method.MethodType, &method.Brand, &method.CardholderName, &method.Last4,
+			&method.ID, &method.UserID, &method.MethodType, &stripePaymentMethodID, &method.Brand, &method.CardholderName, &method.Last4,
 			&method.ExpiryMonth, &method.ExpiryYear, &method.Nickname, &method.IsDefault, &method.CreatedAt, &method.UpdatedAt,
 		); err != nil {
 			return nil, err
+		}
+		if stripePaymentMethodID.Valid {
+			method.StripePaymentMethodID = &stripePaymentMethodID.String
 		}
 		method.MaskedNumber = maskedNumber(method.Last4)
 		methods = append(methods, method)
@@ -68,11 +73,11 @@ func (r *PaymentMethodRepository) Create(ctx context.Context, method *models.Pay
 
 	err = tx.QueryRow(ctx, `
 		INSERT INTO payment_methods (
-			id, user_id, method_type, brand, cardholder_name, last4,
+			id, user_id, method_type, stripe_payment_method_id, brand, cardholder_name, last4,
 			expiry_month, expiry_year, nickname, is_default, created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
 		RETURNING id, created_at, updated_at
-	`, method.ID, method.UserID, method.MethodType, method.Brand, method.CardholderName, method.Last4,
+	`, method.ID, method.UserID, method.MethodType, nullableString(method.StripePaymentMethodID), method.Brand, method.CardholderName, method.Last4,
 		method.ExpiryMonth, method.ExpiryYear, method.Nickname, method.IsDefault, method.CreatedAt, method.UpdatedAt,
 	).Scan(&method.ID, &method.CreatedAt, &method.UpdatedAt)
 	if err != nil {
@@ -121,4 +126,15 @@ func maskedNumber(last4 string) string {
 		return "**** **** **** ****"
 	}
 	return "**** **** **** " + trimmed[len(trimmed)-4:]
+}
+
+func nullableString(value *string) any {
+	if value == nil {
+		return nil
+	}
+	trimmed := strings.TrimSpace(*value)
+	if trimmed == "" {
+		return nil
+	}
+	return trimmed
 }

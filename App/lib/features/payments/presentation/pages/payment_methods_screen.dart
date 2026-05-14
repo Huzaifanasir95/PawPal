@@ -74,13 +74,21 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   }
 
   void _openAddCardSheet() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => StripeCardFormScreen(repo: _repo),
-      ),
-    ).then((_) {
-      _loadMethods();
+    showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return FractionallySizedBox(
+          heightFactor: 0.95,
+          child: StripeCardFormScreen(repo: _repo),
+        );
+      },
+    ).then((saved) {
+      if (saved == true) {
+        _loadMethods();
+      }
     });
   }
 
@@ -213,7 +221,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                           ),
                           SizedBox(height: 6.h),
                           Text(
-                            'Add a card to use the demo checkout flow for marketplace, bookings, caregivers, and vet appointments.',
+                            'Add a card to use the secure Stripe checkout flow for marketplace, bookings, caregivers, and vet appointments.',
                             textAlign: TextAlign.center,
                             style: AppTextStyles.onboardingBody.copyWith(
                               fontSize: 12.sp,
